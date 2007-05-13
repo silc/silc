@@ -50,6 +50,8 @@ typedef struct {
   void *context;
 } *SilcLog, SilcLogStruct;
 
+#ifndef SILC_SYMBIAN
+
 /* Default settings */
 static SilcLogSettingsStruct silclog =
 {
@@ -66,8 +68,14 @@ static SilcLogSettingsStruct silclog =
   TRUE,
 };
 
+#endif /* !SILC_SYMBIAN */
+
 /* Default log contexts */
+#ifndef SILC_SYMBIAN
 static SilcLogStruct silclogs[4] =
+#else
+const SilcLogStruct silclogs[4] =
+#endif /* !SILC_SYMBIAN */
 {
   {"", NULL, 0, "Info", SILC_LOG_INFO, NULL, NULL},
   {"", NULL, 0, "Warning", SILC_LOG_WARNING, NULL, NULL},
@@ -81,7 +89,7 @@ static SilcLog silc_log_get_context(SilcLogType type)
 {
   if (type < 1 || type > 4)
     return NULL;
-  return &silclogs[(int)type - 1];
+  return (SilcLog)&silclogs[(int)type - 1];
 }
 
 /* Check log file site and cycle log file if it is over max size. */
@@ -129,6 +137,7 @@ static void silc_log_checksize(SilcLog log)
 
 SILC_TASK_CALLBACK(silc_log_fflush_callback)
 {
+#ifndef SILC_SYMBIAN
   SilcLog log;
 
   if (!silclog.quick) {
@@ -149,6 +158,7 @@ SILC_TASK_CALLBACK(silc_log_fflush_callback)
     silclog.flushdelay = 2;
   silc_schedule_task_add_timeout(context, silc_log_fflush_callback, context,
 				 silclog.flushdelay, 0);
+#endif /* !SILC_SYMBIAN */
 }
 
 /* Output log message to log file */
@@ -169,6 +179,7 @@ void silc_log_output(SilcLogType type, char *string)
 
   typename = log->typename;
 
+#ifndef SILC_SYMBIAN
   if (!silclog.scheduled) {
     if (silclog.no_init == FALSE) {
       fprintf(stderr,
@@ -181,6 +192,7 @@ void silc_log_output(SilcLogType type, char *string)
     log = NULL;
     goto found;
   }
+#endif /* !SILC_SYMBIAN */
 
   /* Find open log file */
   while (log) {
@@ -194,6 +206,7 @@ void silc_log_output(SilcLogType type, char *string)
   if (!log || !log->fp)
     goto end;
 
+#ifndef SILC_SYMBIAN
  found:
   if (silclog.timestamp)
     fprintf(fp, "[%s] [%s] %s\n", silc_time_string(0), typename, string);
@@ -205,13 +218,19 @@ void silc_log_output(SilcLogType type, char *string)
     if (log)
       silc_log_checksize(log);
   }
+#endif /* !SILC_SYMBIAN */
 
  end:
+#ifndef SILC_SYMBIAN
   /* Output log to stderr if debugging */
   if (typename && silclog.debug) {
     fprintf(stderr, "[Logging] [%s] %s\n", typename, string);
     fflush(stderr);
   }
+#else
+  fprintf(stderr, "[Logging] [%s] %s\n", typename, string);
+#endif /* !SILC_SYMBIAN */
+
   silc_free(string);
 }
 
@@ -220,6 +239,7 @@ void silc_log_output(SilcLogType type, char *string)
 SilcBool silc_log_set_file(SilcLogType type, char *filename,
 			   SilcUInt32 maxsize, SilcSchedule scheduler)
 {
+#ifndef SILC_SYMBIAN
   FILE *fp = NULL;
   SilcLog log;
 
@@ -269,6 +289,7 @@ SilcBool silc_log_set_file(SilcLogType type, char *filename,
     silclog.scheduled = TRUE;
   }
 
+#endif /* !SILC_SYMBIAN */
   return TRUE;
 }
 
@@ -284,17 +305,20 @@ char *silc_log_get_file(SilcLogType type)
 
 void silc_log_set_callback(SilcLogType type, SilcLogCb cb, void *context)
 {
+#ifndef SILC_SYMBIAN
   SilcLog log = silc_log_get_context(type);
   if (log) {
     log->cb = cb;
     log->context = context;
   }
+#endif /* !SILC_SYMBIAN */
 }
 
 /* Reset log callbacks */
 
 void silc_log_reset_callbacks(void)
 {
+#ifndef SILC_SYMBIAN
   SilcLog log;
   log = silc_log_get_context(SILC_LOG_INFO);
   log->cb = log->context = NULL;
@@ -304,6 +328,7 @@ void silc_log_reset_callbacks(void)
   log->cb = log->context = NULL;
   log = silc_log_get_context(SILC_LOG_FATAL);
   log->cb = log->context = NULL;
+#endif /* !SILC_SYMBIAN */
 }
 
 /* Flush all log files */
@@ -370,26 +395,31 @@ void silc_log_set_debug_callbacks(SilcLogDebugCb debug_cb,
 				  SilcLogHexdumpCb hexdump_cb,
 				  void *hexdump_context)
 {
+#ifndef SILC_SYMBIAN
   silclog.debug_cb = debug_cb;
   silclog.debug_context = debug_context;
   silclog.hexdump_cb = hexdump_cb;
   silclog.hexdump_context = hexdump_context;
+#endif /* !SILC_SYMBIAN */
 }
 
 /* Resets debug callbacks */
 
 void silc_log_reset_debug_callbacks()
 {
+#ifndef SILC_SYMBIAN
   silclog.debug_cb = NULL;
   silclog.debug_context = NULL;
   silclog.hexdump_cb = NULL;
   silclog.hexdump_context = NULL;
+#endif /* !SILC_SYMBIAN */
 }
 
 /* Set current debug string */
 
 void silc_log_set_debug_string(const char *debug_string)
 {
+#ifndef SILC_SYMBIAN
   char *string;
   int len;
   if ((strchr(debug_string, '(') && strchr(debug_string, ')')) ||
@@ -403,41 +433,52 @@ void silc_log_set_debug_string(const char *debug_string)
   memset(silclog.debug_string, 0, sizeof(silclog.debug_string));
   strncpy(silclog.debug_string, string, len);
   silc_free(string);
+#endif /* !SILC_SYMBIAN */
 }
 
 /* Set timestamp */
 
 void silc_log_timestamp(SilcBool enable)
 {
+#ifndef SILC_SYMBIAN
   silclog.timestamp = enable;
+#endif /* !SILC_SYMBIAN */
 }
 
 /* Set flushdelay */
 
 void silc_log_flushdelay(SilcUInt32 flushdelay)
 {
+#ifndef SILC_SYMBIAN
   silclog.flushdelay = flushdelay;
+#endif /* !SILC_SYMBIAN */
 }
 
 /* Set quick logging */
 
 void silc_log_quick(SilcBool enable)
 {
+#ifndef SILC_SYMBIAN
   silclog.quick = enable;
+#endif /* !SILC_SYMBIAN */
 }
 
 /* Set debugging */
 
 void silc_log_debug(SilcBool enable)
 {
+#ifndef SILC_SYMBIAN
   silclog.debug = enable;
+#endif /* !SILC_SYMBIAN */
 }
 
 /* Set debug hexdump */
 
 void silc_log_debug_hexdump(SilcBool enable)
 {
+#ifndef SILC_SYMBIAN
   silclog.debug_hexdump = enable;
+#endif /* !SILC_SYMBIAN */
 }
 
 /* Outputs the debug message to stderr. */
@@ -445,6 +486,7 @@ void silc_log_debug_hexdump(SilcBool enable)
 void silc_log_output_debug(char *file, const char *function,
 			   int line, char *string)
 {
+#ifndef SILC_SYMBIAN
   if (!silclog.debug)
     goto end;
 
@@ -457,16 +499,20 @@ void silc_log_output_debug(char *file, const char *function,
 			    silclog.debug_context))
       goto end;
   }
+#endif /* !SILC_SYMBIAN */
 
 #ifdef SILC_WIN32
   if (strrchr(function, '\\'))
     fprintf(stderr, "%s:%d: %s\n", strrchr(function, '\\') + 1, line, string);
   else
 #endif /* SILC_WIN32 */
-
+#ifdef SILC_SYMBIAN
+  silc_symbian_debug(function, line, string);
+#else
   fprintf(stderr, "%s:%d: %s\n", function, line, string);
   fflush(stderr);
-
+#endif /* SILC_SYMBIAN */
+  
  end:
   silc_free(string);
 }
@@ -481,6 +527,7 @@ void silc_log_output_hexdump(char *file, const char *function,
   int off, pos, count;
   unsigned char *data = (unsigned char *)data_in;
 
+#ifndef SILC_SYMBIAN
   if (!silclog.debug_hexdump)
     goto end;
 
@@ -493,6 +540,7 @@ void silc_log_output_hexdump(char *file, const char *function,
 			      data_in, len, string, silclog.hexdump_context))
       goto end;
   }
+#endif /* !SILC_SYMBIAN */
 
   fprintf(stderr, "%s:%d: %s\n", function, line, string);
 

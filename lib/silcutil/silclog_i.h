@@ -24,9 +24,9 @@
 #error "Do not include this header directly"
 #endif
 
-#if defined(WIN32)
+#if defined(SILC_WIN32)
 #ifndef __FUNCTION__
-#define __FUNCTION__ __LINE__
+#define __FUNCTION__ __FILE__
 #endif
 #endif
 
