@@ -180,11 +180,15 @@ SilcUInt64 silc_file_size(const char *filename)
   int ret;
   struct stat stats;
 
-#ifndef SILC_WIN32
-  ret = lstat(filename, &stats);
-#else
+#ifdef SILC_WIN32
   ret = stat(filename, &stats);
-#endif
+#endif /* SILC_WIN32 */
+#ifdef SILC_UNIX
+  ret = lstat(filename, &stats);
+#endif /* SILC_UNIX */
+#ifdef SILC_SYMBIAN
+  ret = stat(filename, &stats);
+#endif /* SILC_SYMBIAN */
   if (ret < 0)
     return 0;
 
