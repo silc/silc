@@ -22,6 +22,8 @@
 
 /**************************** SILC Thread API *******************************/
 
+extern "C" {
+
 /* Thread structure for Symbian */
 typedef struct {
 #ifdef SILC_THREADS
@@ -40,16 +42,16 @@ static TInt silc_thread_start(TAny *context)
 #ifdef SILC_THREADS
   SilcSymbianThread tc = (SilcSymbianThread)context;
   SilcThreadStart start_func = tc->start_func;
-  void *context = tc->context;
+  void *user_context = tc->context;
   SilcBool waitable = tc->waitable;
 
   silc_free(tc);
 
   /* Call the thread function */
   if (waitable)
-    silc_thread_exit(start_func(context));
+    silc_thread_exit(start_func(user_context));
   else
-    start_func(context);
+    start_func(user_context);
 
 #endif
   return KErrNone;
@@ -58,7 +60,7 @@ static TInt silc_thread_start(TAny *context)
 /* Executed new thread */
 
 SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
-			      bool waitable)
+			      SilcBool waitable)
 {
 #ifdef SILC_THREADS
   SilcSymbianThread tc;
@@ -112,7 +114,7 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 void silc_thread_exit(void *exit_value)
 {
 #ifdef SILC_THREADS
-  RThread().Kill((Tint)exit_value);
+  RThread().Kill((TInt)exit_value);
 #endif
 }
 
@@ -121,7 +123,8 @@ void silc_thread_exit(void *exit_value)
 SilcThread silc_thread_self(void)
 {
 #ifdef SILC_THREADS
-  return (SilcThread)&RThread();
+  RThread thread = RThread();
+  return (SilcThread)&thread;
 #else
   return NULL;
 #endif
@@ -259,7 +262,7 @@ SilcBool silc_rwlock_alloc(SilcRwLock *rwlock)
 void silc_rwlock_free(SilcRwLock rwlock)
 {
 #ifdef SILC_THREADS
-  if (mutex) {
+  if (rwlock) {
     silc_mutex_free(rwlock->mutex);
     silc_cond_free(rwlock->cond);
     silc_free(rwlock);
@@ -385,3 +388,5 @@ SilcBool silc_cond_timedwait(SilcCond cond, SilcMutex mutex,
   return FALSE;
 #endif /* SILC_THREADS*/
 }
+
+} /* extern "C" */

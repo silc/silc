@@ -18,6 +18,10 @@
 */
 
 #include "silc.h"
+#include <e32std.h>
+#include <e32svr.h>
+
+extern "C" {
 
 /* Returns the username of the user. */
 
@@ -72,3 +76,15 @@ int silc_file_set_nonblock(int fd)
 {
   return 0;
 }
+
+void silc_symbian_usleep(long microseconds)
+{
+  User::After(microseconds / 1000);
+}
+
+void silc_symbian_debug(const char *function, int line, char *string)
+{
+  RDebug::Print(_L("%s:%d: %s"), function, line, string);
+}
+
+} /* extern "C" */

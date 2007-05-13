@@ -31,7 +31,8 @@ static void silc_net_accept_stream(SilcSocketStreamStatus status,
 {
   SilcNetListener listener = (SilcNetListener)context;
 
-  /* In case of error, the socket has been destroyed already */
+  /* In case of error, the socket has been destroyed already via
+     silc_stream_destroy. */
   if (status != SILC_SOCKET_OK)
     return;
 
@@ -57,6 +58,8 @@ public:
   /* Listen for connection */
   void Listen()
   {
+    SILC_LOG_DEBUG(("Listen()"));
+
     new_conn = new RSocket;
     if (!new_conn)
       return;
@@ -73,6 +76,8 @@ public:
   /* Listener callback */
   virtual void RunL()
   {
+    SILC_LOG_DEBUG(("RunL(), iStatus=%d", iStatus));
+
     if (iStatus != KErrNone) {
       if (new_conn)
 	delete new_conn;
@@ -80,6 +85,8 @@ public:
       Listen();
       return;
     }
+
+    SILC_LOG_DEBUG(("Accept new connection"));
 
     /* Set socket options */
     new_conn->SetOpt(KSoReuseAddr, KSolInetIp, 1);
@@ -110,6 +117,8 @@ public:
   RSocketServ ss;
   SilcNetListener listener;
 };
+
+extern "C" {
 
 /* Create TCP listener */
 
@@ -145,7 +154,7 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
 
   if (local_ip_count > 0) {
     listener->socks = (SilcSocket *)silc_calloc(local_ip_count,
-					      sizeof(*listener->socks));
+					        sizeof(*listener->socks));
     if (!listener->socks) {
       callback(SILC_NET_NO_MEMORY, NULL, context);
       return NULL;
@@ -188,28 +197,28 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     /* Create the socket */
     ret = l->sock.Open(l->ss, KAfInet, KSockStream, KProtocolInetTcp);
     if (ret != KErrNone) {
-      SILC_LOG_ERROR(("Cannot create socket"));
+      SILC_LOG_ERROR(("Cannot create socket, error %d", ret));
       goto err;
     }
 
     /* Set the socket options */
     ret = l->sock.SetOpt(KSoReuseAddr, KSolInetIp, 1);
     if (ret != KErrNone) {
-      SILC_LOG_ERROR(("Cannot set socket options"));
+      SILC_LOG_ERROR(("Cannot set socket options, error %d", ret));
       goto err;
     }
 
     /* Bind the listener socket */
     ret = l->sock.Bind(server);
     if (ret != KErrNone) {
-      SILC_LOG_DEBUG(("Cannot bind socket"));
+      SILC_LOG_DEBUG(("Cannot bind socket, error %d", ret));
       goto err;
     }
 
     /* Specify that we are listenning */
     ret = l->sock.Listen(5);
     if (ret != KErrNone) {
-      SILC_LOG_ERROR(("Cannot set socket listenning"));
+      SILC_LOG_ERROR(("Cannot set socket listenning, error %d", ret));
       goto err;
     }
     l->Listen();
@@ -241,6 +250,9 @@ void silc_net_close_listener(SilcNetListener listener)
 
   SILC_LOG_DEBUG(("Closing network listener"));
 
+  if (!listener)
+    return;
+
   for (i = 0; i < listener->socks_count; i++) {
     SilcSymbianTCPListener *l = (SilcSymbianTCPListener *)listener->socks[i];
     l->sock.CancelAll();
@@ -255,10 +267,12 @@ void silc_net_close_listener(SilcNetListener listener)
   silc_free(listener);
 }
 
+} /* extern "C" */
+
 /**************************** TCP/IP connecting *****************************/
 
 static void silc_net_connect_stream(SilcSocketStreamStatus status,
-				    SilcStream stream, void *context);
+	    SilcStream stream, void *context);
 
 /* TCP connecting class */
 
@@ -282,6 +296,7 @@ public:
   /* Connect to remote host */
   void Connect(TSockAddr &addr)
   {
+    SILC_LOG_DEBUG(("Connect()"));
     sock->Connect(addr, iStatus);
     SetActive();
   }
@@ -289,6 +304,8 @@ public:
   /* Connection callback */
   virtual void RunL()
   {
+    SILC_LOG_DEBUG(("RunL(), iStatus=%d", iStatus));
+
     if (iStatus != KErrNone) {
       if (callback)
 	callback(SILC_NET_ERROR, NULL, context);
@@ -301,6 +318,8 @@ public:
       delete this;
       return;
     }
+
+    SILC_LOG_DEBUG(("Connected to host %s on %d", remote_ip, port));
 
     /* Create stream */
     if (callback) {
@@ -315,9 +334,8 @@ public:
       delete ss;
       sock = NULL;
       ss = NULL;
+      delete this;
     }
-
-    delete this;
   }
 
   /* Cancel */
@@ -344,7 +362,9 @@ public:
   void *context;
 };
 
-/* Stream creation callback */
+extern "C" {
+
+/* TCP stream creation callback */
 
 static void silc_net_connect_stream(SilcSocketStreamStatus status,
 				    SilcStream stream, void *context)
@@ -352,8 +372,11 @@ static void silc_net_connect_stream(SilcSocketStreamStatus status,
   SilcSymbianTCPConnect *conn = (SilcSymbianTCPConnect *)context;
   SilcNetStatus net_status = SILC_NET_OK;
 
+  SILC_LOG_DEBUG(("Socket stream creation status %d", status));
+
   if (status != SILC_SOCKET_OK) {
-    /* In case of error, the socket has been destroyed already */
+    /* In case of error, the socket has been destroyed already via
+       silc_stream_destroy. */
     if (status == SILC_SOCKET_UNKNOWN_IP)
       net_status = SILC_NET_UNKNOWN_IP;
     else if (status == SILC_SOCKET_UNKNOWN_HOST)
@@ -381,7 +404,7 @@ static void silc_net_connect_abort(SilcAsyncOperation op, void *context)
   conn->callback = NULL;
   conn->op = NULL;
   if (conn->sock)
-    sock->CancelConnect();
+    conn->sock->CancelConnect();
 }
 
 /* Create TCP/IP connection */
@@ -449,22 +472,18 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
   }
 
   /* Do host lookup */
-  if (!silc_net_is_ip(remote_ip_addr)) {
-    if (!silc_net_gethostbyname(remote_ip_addr, FALSE, conn->remote_ip,
-				sizeof(conn->remote_ip))) {
-      SILC_LOG_ERROR(("Network (%s) unreachable: could not resolve the "
-		      "host", conn->remote));
-      status = SILC_NET_HOST_UNREACHABLE;
-      goto err;
-    }
-  } else {
-    strcpy(conn->remote_ip, remote_ip_addr);
+  if (!silc_net_gethostbyname(remote_ip_addr, FALSE, conn->remote_ip,
+			      sizeof(conn->remote_ip))) {
+    SILC_LOG_ERROR(("Network (%s) unreachable: could not resolve the "
+		    "host", conn->remote));
+    status = SILC_NET_HOST_UNREACHABLE;
+    goto err;
   }
 
   /* Create the connection socket */
   ret = conn->sock->Open(*conn->ss, KAfInet, KSockStream, KProtocolInetTcp);
   if (ret != KErrNone) {
-    SILC_LOG_ERROR(("Cannot create socket"));
+    SILC_LOG_ERROR(("Cannot create socket, error %d", ret));
     status = SILC_NET_ERROR;
     goto err;
   }
@@ -487,7 +506,7 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
   tmp = (TText *)conn->remote_ip;
   ret = remote.Input(tmp);
   if (ret != KErrNone) {
-    SILC_LOG_ERROR(("Cannot connect (cannot set address)"));
+    SILC_LOG_ERROR(("Cannot connect (cannot set address), error %d", ret));
     status = SILC_NET_ERROR;
     goto err;
   }
@@ -633,8 +652,8 @@ int silc_net_set_socket_nonblock(SilcSocket sock)
 SilcBool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
 {
   int ret = 0;
-
   struct in_addr tmp;
+
   ret = inet_aton(addr, &tmp);
   if (bin_len < 4)
     return FALSE;
@@ -749,3 +768,5 @@ SilcUInt16 silc_net_get_local_port(SilcSocket sock)
   s->sock->LocalName(addr);
   return (SilcUInt16)addr.Port();
 }
+
+} /* extern "C" */

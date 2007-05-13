@@ -1,3 +1,4 @@
+
 /*
 
   silcsymbiansocketstream.cpp
@@ -48,6 +49,7 @@ public:
   /* Send data */
   void Send(const TDesC8& buf, TSockXfrLength& ret_len)
   {
+    SILC_LOG_DEBUG(("Send()"));
     s->sock->Send(buf, 0, iStatus, ret_len);
     SetActive();
   }
@@ -58,6 +60,8 @@ public:
   {
     TInetAddr remote;
     TBuf<64> tmp;
+
+    SILC_LOG_DEBUG(("Send()"));
 
     remote = TInetAddr(remote_port);
     tmp = (TText *)remote_ip;
@@ -70,6 +74,8 @@ public:
   /* Sending callback */
   virtual void RunL()
   {
+    SILC_LOG_DEBUG(("RunL(), iStatus=%d", iStatus));
+
     if (iStatus != KErrNone) {
       if (iStatus == KErrEof)
 	s->eof = 1;
@@ -79,9 +85,12 @@ public:
     }
 
     /* Call stream callback */
-    if (s->stream && s->stream->notifier)
-      s->stream->notifier(s->stream, SILC_STREAM_CAN_WRITE,
-			  s->stream->notifier_context);
+    if (s->would_block) {
+      s->would_block = 0;
+      if (s->stream && s->stream->notifier)
+	s->stream->notifier(s->stream, SILC_STREAM_CAN_WRITE,
+			    s->stream->notifier_context);
+    }
   }
 
   /* Cancel */
@@ -112,32 +121,48 @@ public:
   /* Read data */
   void Read()
   {
+    SILC_LOG_DEBUG(("Read()"));
+
     if (!s->stream || s->stream->connected)
-      s->sock->RecvOneOrMore(inbuf, 0, iStatus, inbuf_len);
+      s->sock->RecvOneOrMore(inbuf, 0, iStatus, read_len);
     else
       s->sock->RecvFrom(inbuf, remote, 0, iStatus);
+
     SetActive();
   }
 
   /* Reading callback */
   virtual void RunL()
   {
+    SILC_LOG_DEBUG(("RunL(), iStatus=%d", iStatus));
+
     if (iStatus != KErrNone) {
       if (iStatus == KErrEof)
 	s->eof = 1;
       else
 	s->error = 1;
+
+      /* Call stream callback */
+      if (s->stream && s->stream->notifier)
+	s->stream->notifier(s->stream, SILC_STREAM_CAN_READ,
+			    s->stream->notifier_context);
       return;
     }
 
-    if (!inbuf_ptr)
-      inbuf_ptr = inbuf.Ptr();
-    inbuf_len = inbuf.Length();
+    if (!s->stream || s->stream->connected)
+      inbuf_len = read_len();
+    else
+      inbuf_len = inbuf.Length();
 
-    /* Call stream callback */
-    if (s->stream && s->stream->notifier)
-      s->stream->notifier(s->stream, SILC_STREAM_CAN_READ,
-			  s->stream->notifier_context);
+    if (inbuf_len) {
+      inbuf_ptr = inbuf.Ptr();
+      while (inbuf_ptr) {
+	/* Call stream callback until all has been read */
+	if (s->stream && s->stream->notifier)
+	  s->stream->notifier(s->stream, SILC_STREAM_CAN_READ,
+			      s->stream->notifier_context);
+      }
+    }
 
     /* Read more */
     Read();
@@ -151,7 +176,8 @@ public:
 
   TBuf8<8192> inbuf;
   const unsigned char *inbuf_ptr;
-  TSockXfrLength inbuf_len;
+  TInt inbuf_len;
+  TSockXfrLength read_len;
   SilcSymbianSocket *s;
   TInetAddr remote;
 };
@@ -169,6 +195,8 @@ SilcSymbianSocket *silc_create_symbian_socket(RSocket *sock,
   stream->sock = sock;
   stream->ss = ss;
 
+  SILC_LOG_DEBUG(("Create new Symbian socket %p", stream));
+
   stream->send = new SilcSymbianSocketSend;
   if (!stream->send) {
     silc_free(stream);
@@ -181,11 +209,15 @@ SilcSymbianSocket *silc_create_symbian_socket(RSocket *sock,
     silc_free(stream);
     return NULL;
   }
+  stream->receive->inbuf_ptr = NULL;
+  stream->receive->inbuf_len = 0;
 
   return stream;
 }
 
 /***************************** SILC Stream API ******************************/
+
+extern "C" {
 
 /* Stream read operation */
 
@@ -197,23 +229,37 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
   SilcSymbianSocketReceive *recv = s->receive;
   int len;
 
-  if (s->error || !s->stream)
-    return -2;
-  if (s->eof)
-    return 0;
-  if (!recv->inbuf_len() || !recv->inbuf_ptr)
-    return -1;
+  SILC_LOG_DEBUG(("Reading from sock %p", s));
 
-  len = recv->inbuf_len();
+  if (s->error || !s->stream) {
+    SILC_LOG_DEBUG(("Error reading from sock %p", s));
+    return -2;
+  }
+  if (s->eof) {
+    SILC_LOG_DEBUG(("EOF from sock %p", s));
+    return 0;
+  }
+  if (!recv->inbuf_len || !recv->inbuf_ptr) {
+    SILC_LOG_DEBUG(("Cannot read now from sock %p", s));
+    return -1;
+  }
+
+  len = recv->inbuf_len;
   if (buf_len < len)
     len = buf_len;
 
   /* Copy the read data */
   memcpy(buf, recv->inbuf_ptr, len);
 
-  recv->inbuf_ptr = NULL;
-  if (len < recv->inbuf_len())
+  if (len < recv->inbuf_len) {
     recv->inbuf_ptr += len;
+    recv->inbuf_len -= len;
+  } else {
+    recv->inbuf_ptr = NULL;
+    recv->inbuf_len = 0;
+  }
+
+  SILC_LOG_DEBUG(("Read %d bytes", len));
 
   return len;
 }
@@ -229,18 +275,30 @@ int silc_socket_stream_write(SilcStream stream, const unsigned char *data,
   TSockXfrLength ret_len;
   TPtrC8 write_buf(data, data_len);
 
-  if (s->would_block)
-    return -1;
-  if (s->error || !s->stream)
+  SILC_LOG_DEBUG(("Writing to sock %p", s));
+
+  if (s->error || !s->stream) {
+    SILC_LOG_DEBUG(("Error writing to sock %p", s));
     return -2;
-  if (s->eof)
+  }
+  if (s->eof) {
+    SILC_LOG_DEBUG(("EOF from sock %p", s));
     return 0;
+  }
+  if (s->would_block) {
+    SILC_LOG_DEBUG(("Cannot write now to sock %p", s));
+    return -1;
+  }
 
   /* Send data */
   send->Send(write_buf, ret_len);
   if (send->iStatus.Int() != KErrNone) {
-    if (send->iStatus.Int() == KErrEof)
+    if (send->iStatus.Int() == KErrEof) {
+      SILC_LOG_DEBUG(("EOF from sock %p", s));
       return 0;
+    }
+    SILC_LOG_DEBUG(("Error writing to sock %p, error %d", s,
+		    send->iStatus.Int()));
     return -2;
   }
 
@@ -250,6 +308,8 @@ int silc_socket_stream_write(SilcStream stream, const unsigned char *data,
   s->would_block = 0;
   if (ret_len() < data_len)
     s->would_block = 1;
+
+  SILC_LOG_DEBUG(("Wrote %d bytes", ret_len()));
 
   return ret_len();
 }
@@ -290,19 +350,23 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
 
   if (s->eof)
     return 0;
-  if (!recv->inbuf_len() || !recv->inbuf_ptr)
+  if (!recv->inbuf_len || !recv->inbuf_ptr)
     return -1;
 
-  len = recv->inbuf_len();
+  len = recv->inbuf_len;
   if (buf_len < len)
     len = buf_len;
 
   /* Copy the read data */
   memcpy(buf, recv->inbuf_ptr, len);
 
-  recv->inbuf_ptr = NULL;
-  if (len < recv->inbuf_len())
+  if (len < recv->inbuf_len) {
     recv->inbuf_ptr += len;
+    recv->inbuf_len -= len;
+  } else {
+    recv->inbuf_ptr = NULL;
+    recv->inbuf_len = 0;
+  }
 
   if (remote_ip_addr && remote_ip_addr_size && remote_port) {
     TBuf<64> ip;
@@ -368,6 +432,8 @@ void silc_socket_stream_destroy(SilcStream stream)
   SilcSocketStream socket_stream = (SilcSocketStream)stream;
   SilcSymbianSocket *s = (SilcSymbianSocket *)socket_stream->sock;
 
+  SILC_LOG_DEBUG(("Destroying sock %p", s));
+
   silc_socket_stream_close(stream);
   silc_free(socket_stream->ip);
   silc_free(socket_stream->hostname);
@@ -392,6 +458,8 @@ SilcBool silc_socket_stream_notifier(SilcStream stream,
   SilcSocketStream socket_stream = (SilcSocketStream)stream;
   SilcSymbianSocket *s = (SilcSymbianSocket *)socket_stream->sock;
 
+  SILC_LOG_DEBUG(("Setting stream notifier for sock %p", s));
+
   if (callback)
     s->stream = socket_stream;
   else
@@ -401,5 +469,11 @@ SilcBool silc_socket_stream_notifier(SilcStream stream,
   socket_stream->notifier_context = context;
   socket_stream->schedule = schedule;
 
+  /* Schedule for receiving data by doing one read operation */
+  if (callback)
+    s->receive->Read();
+
   return TRUE;
 }
+
+} /* extern "C" */

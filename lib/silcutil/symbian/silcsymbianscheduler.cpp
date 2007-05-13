@@ -29,6 +29,8 @@
 
 #include "silc.h"
 
+extern "C" {
+
 int silc_poll(SilcSchedule schedule, void *context)
 {
   /* Return immediately, timeout. */
@@ -94,7 +96,7 @@ void silc_schedule_internal_signals_unblock(SilcSchedule schedule,
   /* Nothing to do */
 }
 
-const SilcScheduleOps schedule_ops =
+EXPORT_C const SilcScheduleOps schedule_ops =
 {
   silc_schedule_internal_init,
   silc_schedule_internal_uninit,
@@ -107,3 +109,5 @@ const SilcScheduleOps schedule_ops =
   silc_schedule_internal_signals_block,
   silc_schedule_internal_signals_unblock,
 };
+
+} /* extern "C" */

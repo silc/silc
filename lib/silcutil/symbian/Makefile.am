@@ -18,4 +18,6 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
+EXTRA_DIST = *.cpp *.h
+
 include $(top_srcdir)/Makefile.defines.in
