@@ -1,0 +1,38 @@
+TARGETTYPE lib
+TARGET silc.lib
+VENDORID 0x00000000
+
+UID 0x00000000 0x00000000
+
+SYSTEMINCLUDE \epoc32\include \epoc32\include\libc \epoc32\include\variant .
+CAPABILITY NONE
+MACRO HAVE_SILCDEFS_H
+
+SOURCEPATH ..\lib\contrib
+SOURCE getopti.c nfkc.c regexpr.c rfc3454.c stringprep.c
+SOURCEPATH ..\lib\silcapputil
+SOURCE silcapputil.c silcidcache.c
+SOURCEPATH ..\lib\silcasn1
+SOURCE silcasn1.c silcasn1_decode.c silcasn1_encode.c silcber.c
+SOURCEPATH ..\lib\silccore
+SOURCE silcargument.c silcattrs.c silcauth.c silcchannel.c silccommand.c silcid.c silcmessage.c silcnotify.c silcpacket.c silcpubkey.c silcstatus.c
+SOURCEPATH ..\lib\silccrypt
+SOURCE aes.c blowfish.c cast.c md5.c none.c rc5.c rsa.c sha1.c sha256.c silccipher.c silchash.c silchmac.c silcpk.c silcpkcs.c silcpkcs1.c silcrng.c twofish.c
+SOURCEPATH ..\lib\silchttp
+SOURCE silchttpserver.c
+SOURCEPATH ..\lib\silcmath
+SOURCE modinv.c mp_tma.c mpbin.c silcprimegen.c tma.c
+SOURCEPATH ..\lib\silcsftp
+SOURCE sftp_client.c sftp_fs_memory.c sftp_server.c sftp_util.c
+SOURCEPATH ..\lib\silcskr
+SOURCE silcskr.c
+SOURCEPATH ..\lib\silcutil
+SOURCE silcasync.c silcbuffmt.c silcconfig.c silcfdstream.c silcfileutil.c silcfsm.c silchashtable.c silclog.c silcmemory.c silcmime.c silcnet.c silcschedule.c silcsnprintf.c silcsocketstream.c silcstack.c silcstream.c silcstringprep.c silcstrutil.c silctime.c silcutf8.c silcutil.c
+SOURCEPATH ..\lib\silcutil\symbian
+SOURCE silcsymbiannet.cpp silcsymbianscheduler.cpp silcsymbiansocketstream.cpp silcsymbianthread.cpp silcsymbianutil.cpp
+SOURCEPATH ..\lib\silcvcard
+SOURCE silcvcard.c
+SOURCEPATH ..\lib\silcske
+SOURCE groups.c payload.c silcconnauth.c silcske.c
+
+USERINCLUDE . ..\includes ..\lib\silcutil ..\lib\silcvcard ..\lib\silccore ..\lib\silcasn1 ..\lib\contrib ..\lib\silchttp ..\lib\silcapputil ..\lib\silcskr ..\lib\silccrypt ..\lib\silcmath ..\lib\silcsftp ..\lib\silcske

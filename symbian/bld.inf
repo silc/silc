@@ -1,0 +1,11 @@
+PRJ_PLATFORMS
+GCCE WINSCW
+
+PRJ_MMPFILES
+silc.mmp
+silc_static.mmp
+silcclient.mmp
+silcclient_static.mmp
+
+PRJ_TESTMMPFILES
+test_silcnet.mmp

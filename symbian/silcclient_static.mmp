@@ -1,0 +1,14 @@
+TARGETTYPE lib
+TARGET silcclient.lib
+VENDORID 0x00000000
+
+UID 0x00000000 0x00000000
+
+SYSTEMINCLUDE \epoc32\include \epoc32\include\libc \epoc32\include\variant .
+CAPABILITY NONE
+MACRO HAVE_SILCDEFS_H
+
+SOURCEPATH ..\lib\silcclient
+SOURCE client.c client_attrs.c client_channel.c client_connect.c client_entry.c client_ftp.c client_keyagr.c client_listener.c client_notify.c client_prvmsg.c client_register.c command.c command_reply.c
+
+USERINCLUDE . ..\includes ..\lib\silcutil ..\lib\silcvcard ..\lib\silccore ..\lib\silcasn1 ..\lib\contrib ..\lib\silchttp ..\lib\silcapputil ..\lib\silcskr ..\lib\silccrypt ..\lib\silcmath ..\lib\silcsftp ..\lib\silcske ..\lib\silcclient

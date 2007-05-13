@@ -41,7 +41,7 @@
 #define HAVE_GETENV 1
 
 /* Define to 1 if you have the `getgid' function. */
-#define HAVE_GETGID 1
+//#define HAVE_GETGID 1
 
 /* Define to 1 if you have the `gethostbyaddr' function. */
 #define HAVE_GETHOSTBYADDR 1
@@ -50,10 +50,10 @@
 #define HAVE_GETHOSTNAME 1
 
 /* Define to 1 if you have the `getpgid' function. */
-#define HAVE_GETPGID 1
+//#define HAVE_GETPGID 1
 
 /* Define to 1 if you have the `getpgrp' function. */
-#define HAVE_GETPGRP 1
+//#define HAVE_GETPGRP 1
 
 /* Define to 1 if you have the `getpid' function. */
 #define HAVE_GETPID 1
@@ -65,7 +65,7 @@
 #define HAVE_GETSERVBYPORT 1
 
 /* Define to 1 if you have the `getsid' function. */
-#define HAVE_GETSID 1
+//#define HAVE_GETSID 1
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
