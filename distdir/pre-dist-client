@@ -1,0 +1,11 @@
+#!/bin/sh
+
+distribution=$1
+dist_version=$2
+package=$3
+distdir=$4
+
+cd doc
+make dist-hook
+cd ..
+

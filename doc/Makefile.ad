@@ -113,13 +113,13 @@ EXTRA_DIST = 			\
 #endif SILC_DIST_CLIENT
 #ifdef SILC_DIST_SERVER
 	examples silcd.8 silcd.conf.5	\
+	example_silcd.conf 	\
 #endif SILC_DIST_SERVER
 #ifdef SILC_DIST_TOOLKIT
 	toolkit			\
 	CodingStyle 		\
 #endif SILC_DIST_TOOLKIT
 	FAQ 			\
-	example_silcd.conf 	\
 	silcalgs.conf 		\
 	draft-riikonen*.txt
 

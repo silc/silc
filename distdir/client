@@ -7,5 +7,6 @@ define SILC_DIST_CLIENT
 define SILC_DIST_CLIENTLIB
 
 pre-hook distdir/pre-run
+pre-dist-hook distdir/pre-dist-client
 post-process-dist-hook distdir/post-process-dist
 post-dist-hook distdir/post-dist
