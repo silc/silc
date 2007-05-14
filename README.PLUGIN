@@ -1,0 +1,15 @@
+In order to compile the SILC Plugin (instead of the SILC Client), pass the
+following options to configure:
+
+	--enable-silc-plugin --without-silc-includes
+
+Depending on your OS/architecture you may also need to pass:
+
+	--with-pic --without-pthreads
+
+For installing the SILC Plugin to the appropriate directories, you have to
+define the following paths (assuming Irssi is installed to /usr)
+
+	--prefix=/usr
+	--with-simdir=/usr/lib/irssi
+	--with-helpdir=/usr/share/irssi/help

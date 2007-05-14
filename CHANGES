@@ -1,3 +1,7 @@
+Mon May 14 19:45:14 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
+
+	* Include a README for the SILC Plugin
+
 Sun May 13 22:08:59 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
 
 	* Adopt perl Makefiles for SILC Plugin.
