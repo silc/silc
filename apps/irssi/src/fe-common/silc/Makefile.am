@@ -68,3 +68,11 @@ noinst_HEADERS = \
 	fe-silcnet.h \
 	fe-common-silc.h \
 	module.h
+
+all-local: libfe_common_silc.a
+
+clean-local:
+	-rm -f libfe_common_silc.a
+
+libfe_common_silc.a: libfe_common_silc.la
+	cp .libs/libfe_common_silc.a .
