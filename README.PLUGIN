@@ -13,3 +13,6 @@ define the following paths (assuming Irssi is installed to /usr)
 	--prefix=/usr
 	--with-simdir=/usr/lib/irssi
 	--with-helpdir=/usr/share/irssi/help
+
+If you're using Irssi 0.8.10, you may need to rename libfe_common_silc.so to
+libfe_silc.so
