@@ -51,7 +51,7 @@ rpm: Makefile
 	rpm -ta --clean $(PACKAGE)-$(VERSION).tar.gz
 
 install-dirs-client:
-	-mkdir -p $(helpdir)
+	-mkdir -p $(docdir)
 	-mkdir -p $(mandir)/man1
 
 doc-install-client:
