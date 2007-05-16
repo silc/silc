@@ -1,0 +1,13 @@
+
+SILC %|LIST-CIPHERS list supported chipher algorithms
+SILC %|LIST-HASH-FUNCS list supported hash algorithms
+SILC %|LIST-HMACS list supported hmac algorithms
+SILC %|LIST-PKCS list supported pkcs algorithms
+SILC %|DEBUG [on [string]| off] report debugging state or turn it on or off
+SILC %|CREATE-KEY-PAIR [-pkcs <pkcs>] [-bits <bits>] create a new key pair
+                     with the specified pkcs and bit size
+SILC %|PASSPHRASE-CHANGE <file> change the passphrase of the key in <file> or
+                              the default key if no filename was supplied
+
+Controlls some aspects of the SILC plugin.
+

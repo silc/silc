@@ -26,7 +26,7 @@ themedir = $(datadir)/irssi/themes
 else
 themedir = $(datadir)/silc/themes
 endif
-theme_DATA = default.theme
+theme_DATA = default.theme plugin.theme
 
 noinst_HEADERS = irssi-version.h.in
 

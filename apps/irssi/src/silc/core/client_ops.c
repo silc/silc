@@ -749,7 +749,10 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     if (client_entry == server->conn->local_entry) {
       /* You joined to channel */
       chanrec = silc_channel_find(server, channel->channel_name);
-      if (chanrec != NULL && !chanrec->joined)
+      if (chanrec == NULL)
+	chanrec = silc_channel_create(server, channel->channel_name,
+					channel->channel_name, TRUE);
+      if (!chanrec->joined)
 	chanrec->entry = channel;
     } else {
       chanrec = silc_channel_find_entry(server, channel);

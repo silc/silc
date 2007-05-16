@@ -2,12 +2,14 @@
 
 if SILCPLUGIN
 helpdir = $(datadir)/irssi/help/silc
+SILCHELP = silc
 else
 helpdir = $(datadir)/irssi/help
+SILCHELP = 
 endif
 
 
-help_DATA = \
+help_DATA = $(SILCHELP) \
 @HELPFILES@
 
 EXTRA_DIST = \
