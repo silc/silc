@@ -766,7 +766,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 	       client_entry->username, client_entry->hostname);
     signal_emit("message join", 4, server, channel->channel_name,
 		client_entry->nickname,
-		client_entry->username == NULL ? "" : buf);
+		!client_entry->username[0] ? "" : buf);
 
     /* If there are multiple same nicknames on channel now, tell it to user. */
     if (client_entry != server->conn->local_entry) {
