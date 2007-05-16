@@ -42,11 +42,6 @@ SILC Client	****PARTLY DONE****
 
  o Improve help files, especially /cmode, /cumode and /key.
 
- o /listkeys crash when silc_pkcs_public_key_encode returns NULL.
-
- o /key channel * list doesn't return aything when key is set and user
-   got "Private key set to channel xxx".
-
 
 lib/silcclient, The Client Library	***PARTLY DONE****
 ==================================

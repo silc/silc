@@ -747,6 +747,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 	if (!ckeys)
 	  goto out;
 
+	silc_dlist_start(ckeys);
 	if (!number || number > silc_dlist_count(ckeys)) {
 	  silc_dlist_uninit(ckeys);
 	  goto out;
@@ -858,6 +859,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
       if (!ckeys)
 	goto out;
 
+      silc_dlist_start(ckeys);
       while ((ch = silc_dlist_get(ckeys))) {
 	memset(buf, 0, sizeof(buf));
 	strncat(buf, "  ", 2);
@@ -961,6 +963,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
       if (!ckeys)
 	goto out;
 
+      silc_dlist_start(ckeys);
       if (argc == 4) {
 	chanrec->cur_key++;
 	if (chanrec->cur_key >= silc_dlist_count(ckeys))
@@ -1090,6 +1093,8 @@ void silc_list_key(const char *pub_filename, int verbose)
   ident = &silc_pubkey->identifier;
 
   pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+  if (!pk)
+    return;
   fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
   babbleprint = silc_hash_babbleprint(NULL, pk, pk_len);
   key_len = silc_pkcs_public_key_get_len(public_key);

@@ -1,3 +1,14 @@
+Wed May 16 18:59:22 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed channel private key listing with /key.  Affected file
+	  is apps/irssi/src/silc/core/silc-channels.c.
+
+	* Fixed the public headers from anonymous structures.  Affected
+	  files are lib/.
+
+	* Changed silc_buffer_*len macros to inline functions.  Affected
+	  file is lib/silcutil/silcbuffer.h.
+
 Wed May 16 10:21:45 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed nickname format parsing in JOIN notify handling and
