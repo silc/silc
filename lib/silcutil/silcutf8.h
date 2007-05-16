@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2004 - 2005 Pekka Riikonen
+  Copyright (C) 2004 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -73,6 +73,51 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
 SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
 			    SilcStringEncoding bin_encoding,
 			    unsigned char *bin, SilcUInt32 bin_size);
+
+/****f* silcutil/SilcStrUtilAPI/silc_utf8_c2w
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_utf8_c2w(const unsigned char *utf8,
+ *                             SilcUInt32 utf8_len,
+ *                             SilcUInt16 *utf8_wide,
+ *                             SilcUInt32 utf8_wide_size);
+ *
+ * DESCRIPTION
+ *
+ *    Converts UTF-8 string into UTF-8 wide character string into the
+ *    `utf8_wide' buffer of size of `utf8_wide_size' in characters.  Returns
+ *    the length of the UTF-8 wide character string or 0 on error.  The
+ *    returned length is in characters and not in bytes.  The byte length
+ *    is twice the returned character length.
+ *
+ *    If there is extra space in `utf8_wide' this will NULL terminate the
+ *    string automatically.
+ *
+ ***/
+SilcUInt32 silc_utf8_c2w(const unsigned char *utf8, SilcUInt32 utf8_len,
+			 SilcUInt16 *utf8_wide, SilcUInt32 utf8_wide_size);
+
+/****f* silcutil/SilcStrUtilAPI/silc_utf8_w2c
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_utf8_w2c(const SilcUInt16 *wide_str,
+ *                             SilcUInt32 wide_str_len,
+ *                             unsigned char *utf8, SilcUInt32 utf8_size);
+ *
+ * DESCRIPTION
+ *
+ *    Converts UTF-8 wide character string into UTF-8 binary string into the
+ *    `utf8' buffer of size of `utf8_size' in bytes.  Returns the length of
+ *    the encoded UTF-8 string in bytes or 0 on error.
+ *
+ *    If there is extra space in `utf8' this will NULL terminate the string
+ *    automatically.
+ *
+ ***/
+SilcUInt32 silc_utf8_w2c(const SilcUInt16 *wide_str, SilcUInt32 wide_str_len,
+			 unsigned char *utf8, SilcUInt32 utf8_size);
 
 /****f* silcutil/SilcStrUtilAPI/silc_utf8_encoded_len
  *
@@ -148,7 +193,7 @@ SilcBool silc_utf8_strcasecmp(const char *s1, const char *s2);
  * SYNOPSIS
  *
  *    SilcBool silc_utf8_strcasecmp(const char *s1, const char *s2,
- *                              SilcUInt32 n);
+ *                                  SilcUInt32 n);
  *
  * DESCRIPTION
  *

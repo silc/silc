@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2004 - 2005 Pekka Riikonen
+  Copyright (C) 2004 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -513,6 +513,67 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
   }
 
   return enclen;
+}
+
+/* UTF-8 to wide characters */
+
+SilcUInt32 silc_utf8_c2w(const unsigned char *utf8, SilcUInt32 utf8_len,
+			 SilcUInt16 *utf8_wide, SilcUInt32 utf8_wide_size)
+{
+  unsigned char *tmp;
+  SilcUInt32 tmp_len;
+  int i, k;
+
+  tmp_len = silc_utf8_decoded_len(utf8, utf8_len, SILC_STRING_BMP);
+  if (!tmp_len)
+    return 0;
+
+  if (utf8_wide_size < tmp_len / 2)
+    return 0;
+
+  memset(utf8_wide, 0, utf8_wide_size * 2);
+
+  tmp = silc_malloc(tmp_len);
+  if (!tmp)
+    return 0;
+
+  silc_utf8_decode(utf8, utf8_len, SILC_STRING_BMP, tmp, tmp_len);
+
+  for (i = 0, k = 0; i < tmp_len; i += 2, k++)
+    SILC_GET16_MSB(utf8_wide[k], tmp + i);
+
+  silc_free(tmp);
+  return k + 1;
+}
+
+/* Wide characters to UTF-8 */
+
+SilcUInt32 silc_utf8_w2c(const SilcUInt16 *wide_str,
+			 SilcUInt32 wide_str_len,
+			 unsigned char *utf8, SilcUInt32 utf8_size)
+
+{
+  unsigned char *tmp;
+  SilcUInt32 tmp_len;
+  int i, k;
+
+  if (utf8_size < wide_str_len * 2)
+    return 0;
+
+  memset(utf8, 0, utf8_size);
+
+  tmp = silc_malloc(wide_str_len * 2);
+  if (!tmp)
+    return 0;
+
+  for (i = 0, k = 0; i < wide_str_len; i += 2, k++)
+    SILC_PUT16_MSB(wide_str[k], tmp + i);
+
+  tmp_len = silc_utf8_encode(tmp, wide_str_len * 2, SILC_STRING_BMP,
+			     utf8, utf8_size);
+
+  silc_free(tmp);
+  return tmp_len;
 }
 
 /* Returns the length of UTF-8 encoded string if the `bin' of
