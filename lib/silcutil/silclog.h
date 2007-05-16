@@ -309,6 +309,32 @@ typedef SilcBool (*SilcLogHexdumpCb)(char *file, char *function, int line,
 #endif /* SILC_DEBUG */
 /***/
 
+/****d* silcutil/SilcLogAPI/SILC_VERIFY
+ *
+ * NAME
+ *
+ *    #define SILC_VERIFY(experssion)
+ *
+ * DESCRIPTION
+ *
+ *    Verification macro that prints error message to stderr and calls 
+ *    abort() if the `expression' is false (ie. compares equal to zero)
+ *    on debug builds (SILC_DEBUG defined), and prints error message to
+ *    stderr on release builds (SILC_DEBUG undefined) but does not abort().
+ *    This macro is always compiled even if debugging (SILC_DEBUG) is not
+ *    defined.
+ *
+ * SOURCE
+ */
+#if defined(SILC_DEBUG)
+#define SILC_VERIFY(expr) assert((expr));
+#else
+#define SILC_VERIFY(expr)						\
+  if (!(expr))								\
+    SILC_LOG_ERROR(("SILC_VERIFY %s:%d", __FUNCTION__, __LINE__));
+#endif /* SILC_DEBUG */
+/***/
+
 /* Prototypes */
 
 /****f* silcutil/SilcLogAPI/silc_log_set_file
