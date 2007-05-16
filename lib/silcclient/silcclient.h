@@ -277,7 +277,7 @@ struct SilcChannelUserStruct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcClientStatsStruct {
   SilcUInt32 starttime;		/* SILC server start time */
   SilcUInt32 uptime;		/* SILC server uptime*/
   SilcUInt32 my_clients;	/* Number of clients in the server */
@@ -365,7 +365,7 @@ typedef void (*SilcKeyAgreementCallback)(SilcClient client,
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcPrivateMessageKeysStruct {
   SilcClientEntry client_entry;       /* The remote client entry */
   char *cipher;			      /* The cipher name */
   unsigned char *key;		      /* The original key, If the appliation
@@ -501,7 +501,7 @@ typedef enum {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcClientOperationsStruct {
   /* Message sent to the application by library. `conn' associates the
      message to a specific connection.  `conn', however, may be NULL.
      The `type' indicates the type of the message sent by the library.
@@ -641,7 +641,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcClientParamsStruct {
   /* If this boolean is set to TRUE then the client library will use
      threads.  Any of the callback functions in the SilcClientOperations
      and other callbacks may be called at any time in a thread.  The
@@ -839,7 +839,7 @@ void silc_client_stop(SilcClient client, SilcClientStopped stopped,
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcClientConnectionParamsStruct {
   /* If this is provided the user's nickname in the network will be the
      string given here.  If it is given, it must be UTF-8 encoded.  If this
      string is not given, the user's username by default is used as nickname.

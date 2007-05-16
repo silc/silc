@@ -116,7 +116,7 @@ typedef enum {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcSKESecurityPropertiesStruct {
   SilcSKESecurityPropertyFlag flags;	 /* Flags */
   SilcSKEDiffieHellmanGroup group;	 /* Selected Diffie Hellman group */
   SilcCipher cipher;			 /* Selected cipher */
@@ -142,7 +142,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcSKEKeyMaterialStruct {
   unsigned char *send_iv;
   unsigned char *receive_iv;
   SilcUInt32 iv_len;
@@ -171,7 +171,7 @@ typedef struct {
  *    function.
  *
  ***/
-typedef struct {
+typedef struct SilcSKERekeyMaterialStruct {
   unsigned char *send_enc_key;
   char *hash;
   unsigned int enc_key_len  : 23;
@@ -192,7 +192,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcSKEParamsObject {
   /* The SKE version string that is sent to the remote end.  This field
      must be set.  Caller must free the pointer. */
   char *version;

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2006 Pekka Riikonen
+  Copyright (C) 1998 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -110,7 +110,7 @@
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcBufferObject {
   unsigned char *head;
   unsigned char *data;
   unsigned char *tail;
@@ -119,66 +119,6 @@ typedef struct {
 /***/
 
 /* Macros */
-
-/****d* silcutil/SilcBufferAPI/silc_buffer_truelen
- *
- * NAME
- *
- *    SilcUInt32 silc_buffer_truelen(SilcBuffer sb)
- *
- * DESCRIPTION
- *
- *    Returns the true length of the buffer.
- *
- * SOURCE
- */
-#define silc_buffer_truelen(x) (SilcUInt32)((x)->end - (x)->head)
-/***/
-
-/****d* silcutil/SilcBufferAPI/silc_buffer_len
- *
- * NAME
- *
- *    SilcUInt32 silc_buffer_len(SilcBuffer sb)
- *
- * DESCRIPTION
- *
- *    Returns the current length of the data area of the buffer.
- *
- * SOURCE
- */
-#define silc_buffer_len(x) (SilcUInt32)((x)->tail - (x)->data)
-/***/
-
-/****d* silcutil/SilcBufferAPI/silc_buffer_headlen
- *
- * NAME
- *
- *    SilcUInt32 silc_buffer_headlen(SilcBuffer sb)
- *
- * DESCRIPTION
- *
- *    Returns the current length of the head data area of the buffer.
- *
- * SOURCE
- */
-#define silc_buffer_headlen(x) (SilcUInt32)((x)->data - (x)->head)
-/***/
-
-/****d* silcutil/SilcBufferAPI/silc_buffer_taillen
- *
- * NAME
- *
- *    SilcUInt32 silc_buffer_taillen(SilcBuffer sb)
- *
- * DESCRIPTION
- *
- *    Returns the current length of the tail data area of the buffer.
- *
- * SOURCE
- */
-#define silc_buffer_taillen(x) (SilcUInt32)((x)->end - (x)->tail)
-/***/
 
 /****f* silcutil/SilcBufferAPI/silc_buffer_data
  *
@@ -220,6 +160,74 @@ typedef struct {
 /***/
 
 /* Inline functions */
+
+/****d* silcutil/SilcBufferAPI/silc_buffer_truelen
+ *
+ * NAME
+ *
+ *    SilcUInt32 silc_buffer_truelen(SilcBuffer sb)
+ *
+ * DESCRIPTION
+ *
+ *    Returns the true length of the buffer.
+ *
+ ***/
+static inline
+SilcUInt32 silc_buffer_truelen(SilcBuffer x)
+{
+  return (SilcUInt32)(x->end - x->head);
+}
+
+/****d* silcutil/SilcBufferAPI/silc_buffer_len
+ *
+ * NAME
+ *
+ *    SilcUInt32 silc_buffer_len(SilcBuffer sb)
+ *
+ * DESCRIPTION
+ *
+ *    Returns the current length of the data area of the buffer.
+ *
+ ***/
+static inline
+SilcUInt32 silc_buffer_len(SilcBuffer x)
+{
+  return (SilcUInt32)(x->tail - x->data);
+}
+
+/****d* silcutil/SilcBufferAPI/silc_buffer_headlen
+ *
+ * NAME
+ *
+ *    SilcUInt32 silc_buffer_headlen(SilcBuffer sb)
+ *
+ * DESCRIPTION
+ *
+ *    Returns the current length of the head data area of the buffer.
+ *
+ ***/
+static inline
+SilcUInt32 silc_buffer_headlen(SilcBuffer x)
+{
+  return (SilcUInt32)(x->data - x->head);
+}
+
+/****d* silcutil/SilcBufferAPI/silc_buffer_taillen
+ *
+ * NAME
+ *
+ *    SilcUInt32 silc_buffer_taillen(SilcBuffer sb)
+ *
+ * DESCRIPTION
+ *
+ *    Returns the current length of the tail data area of the buffer.
+ *
+ ***/
+static inline
+SilcUInt32 silc_buffer_taillen(SilcBuffer x)
+{
+  return (SilcUInt32)(x->end - x->tail);
+}
 
 /****f* silcutil/SilcBufferAPI/silc_buffer_alloc
  *

@@ -277,7 +277,7 @@ typedef struct SilcSFTPFilesystemOpsStruct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcSFTPFilesystemStruct {
   SilcSFTPFilesystemOps fs;
   void *fs_context;
 } *SilcSFTPFilesystem;

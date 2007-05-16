@@ -82,7 +82,7 @@ typedef SilcUInt16 SilcIdType;
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcIDIPStruct {
   unsigned char data[16];	/* IP data (in MSB first order) */
   SilcUInt8 data_len;		/* Length of the data (4 or 16) */
 } SilcIDIP;
@@ -104,7 +104,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcServerIDStruct {
   SilcIDIP ip;			/* n bit IP address */
   SilcUInt16 port;		/* 16 bit port */
   SilcUInt16 rnd;		/* 16 bit random number */
@@ -127,7 +127,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcClientIDStruct {
   SilcIDIP ip;					/* n bit IP address */
   unsigned char rnd;				/* 8 bit random number */
   unsigned char hash[CLIENTID_HASH_LEN];	/* 88 bit MD5 hash */
@@ -150,7 +150,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcChannelIDStruct {
   SilcIDIP ip;			/* n bit IP address */
   SilcUInt16 port;		/* 16 bit port */
   SilcUInt16 rnd;		/* 16 bit random number */
@@ -172,7 +172,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcIDStruct {
   union {
     SilcServerID server_id;
     SilcChannelID channel_id;

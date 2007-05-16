@@ -595,8 +595,10 @@ unsigned char *silc_pkcs_silc_export_public_key(void *public_key,
   /* Export PKCS algorithm public key */
   if (pkcs->export_public_key)
     pk = pkcs->export_public_key(silc_pubkey->public_key, &pk_len);
-  if (!pk)
+  if (!pk) {
+    SILC_LOG_ERROR(("Error exporting PKCS algorithm key"));
     return NULL;
+  }
   silc_buffer_set(&alg_key, pk, pk_len);
 
   /* Encode identifier */
@@ -608,8 +610,10 @@ unsigned char *silc_pkcs_silc_export_public_key(void *public_key,
 				     silc_pubkey->identifier.org,
 				     silc_pubkey->identifier.country,
 				     silc_pubkey->identifier.version);
-  if (!identifier)
+  if (!identifier) {
+    SILC_LOG_ERROR(("Error encoding SILC public key identifier"));
     goto err;
+  }
 
   asn1 = silc_asn1_alloc();
   if (!asn1)
@@ -658,7 +662,7 @@ unsigned char *silc_pkcs_silc_export_public_key(void *public_key,
     goto err;
 
   } else {
-    SILC_LOG_DEBUG(("Unsupported PKCS algorithm"));
+    SILC_LOG_ERROR(("Unsupported PKCS algorithm: %s", pkcs->name));
     goto err;
   }
 

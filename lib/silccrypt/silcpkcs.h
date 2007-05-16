@@ -70,7 +70,7 @@ typedef enum {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcPublicKeyStruct {
   const SilcPKCSObject *pkcs;	/* PKCS */
   void *public_key;		/* PKCS specific public key */
 } *SilcPublicKey;
@@ -88,7 +88,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcPrivateKeyStruct {
   const SilcPKCSObject *pkcs;	/* PKCS */
   void *private_key;		/* PKCS specific private key */
 } *SilcPrivateKey;

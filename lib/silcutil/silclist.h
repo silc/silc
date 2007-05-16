@@ -44,7 +44,7 @@
  *    function silc_list_init.
  *
  ***/
-typedef struct {
+typedef struct SilcListStruct {
   void *head;			     /* Start of the list */
   void *tail;			     /* End of the list */
   void *current;		     /* Current pointer in list */

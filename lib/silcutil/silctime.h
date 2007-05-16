@@ -44,7 +44,7 @@
  * SOURCE
  *
  ***/
-typedef struct {
+typedef struct SilcTimeObject {
   unsigned int year       : 15;	   /* Year,     0 - 32768 */
   unsigned int month      : 4;	   /* Month,    1 - 12 */
   unsigned int day        : 5;	   /* Day,      1 - 31 */
@@ -251,7 +251,7 @@ SilcBool silc_time_generalized_string(SilcTime time_val, char *ret_string,
  *
  * DESCRIPTION
  *
- *    Compares `t1' and `t2' time structures and returns less than zero, 
+ *    Compares `t1' and `t2' time structures and returns less than zero,
  *    zero or more than zero when `t1' is smaller, equal or bigger than
  *    `t2', respectively.
  *

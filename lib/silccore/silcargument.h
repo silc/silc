@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2006 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -308,7 +308,7 @@ silc_argument_list_parse(const unsigned char *payload, SilcUInt32 payload_len);
  *    of freeing the contents of the structure and the structure itself.
  *
  ***/
-typedef struct {
+typedef struct SilcArgumentDecodedListStruct {
   void *argument;	     /* Decoded argument, caller must know its type */
   SilcUInt32 arg_type;	     /* Argument type number from the payload */
 } *SilcArgumentDecodedList;

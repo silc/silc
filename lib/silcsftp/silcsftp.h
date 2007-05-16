@@ -158,7 +158,7 @@ typedef enum {
  *    server, and by server to return file attributes to the client.
  *
  ***/
-typedef struct {
+typedef struct SilcSFTPAttributesObject {
   SilcUInt32 flags;	       	/* Flags to indicate present attributes */
   SilcUInt64 size;	       	/* Sife of the file in bytes */
   SilcUInt32 uid;      	        /* Unix user ID */
@@ -186,7 +186,7 @@ typedef struct {
  *    example when reading the contents of a directory.
  *
  ***/
-typedef struct {
+typedef struct SilcSFTPNameObject {
   char **filename;
   char **long_filename;
   SilcSFTPAttributes *attrs;
@@ -948,7 +948,7 @@ typedef enum {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcSFTPMonitorDataObject {
   SilcSFTPVersion version;	/* _INIT */
   char *name;			/* _OPEN, _REMOVE, _RENAME, _MKDIR,
 				   _RMDIR, _OPENDIR, _STAT, _LSTAT,

@@ -43,7 +43,7 @@
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcPublicKeyIdentifierObject {
   char *username;
   char *host;
   char *realname;
@@ -69,7 +69,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcSILCPublicKeyStruct {
   SilcPublicKeyIdentifierStruct identifier;
   const SilcPKCSAlgorithm *pkcs;   /* PKCS algorithm */
   void *public_key;	           /* PKCS algorithm specific public key */
@@ -89,7 +89,7 @@ typedef struct {
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcSILCPrivateKeyStruct {
   const SilcPKCSAlgorithm *pkcs;   /* PKCS algorithm */
   void *private_key;	           /* PKCS algorithm specific private key */
 } *SilcSILCPrivateKey;
