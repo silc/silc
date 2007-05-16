@@ -770,12 +770,13 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     /* If there are multiple same nicknames on channel now, tell it to user. */
     if (client_entry != server->conn->local_entry) {
-      char nick[128 + 1], tmp[32];
+      char *nick, tmp[32];
       int count = 0;
 
-      silc_parse_userfqdn(client_entry->nickname, nick, sizeof(nick), NULL, 0);
+      silc_client_nickname_parse(client, conn, client_entry->nickname, &nick);
       clients = silc_client_get_clients_local(client, conn, nick, TRUE);
       if (!clients || silc_dlist_count(clients) < 2) {
+	silc_free(nick);
 	silc_client_list_free(client, conn, clients);
 	break;
       }
@@ -793,6 +794,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 			   buf, client_entry->nickname);
       }
       silc_client_list_free(client, conn, clients);
+      silc_free(nick);
     }
     break;
 
@@ -1507,7 +1509,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
   switch(command) {
   case SILC_COMMAND_WHOIS:
     {
-      char buf[1024], *nickname, *username, *realname, nick[128 + 1];
+      char buf[1024], *nickname, *username, *realname, *nick;
       unsigned char *fingerprint;
       SilcUInt32 idle, mode, *user_modes;
       SilcDList channels;
@@ -1548,13 +1550,14 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       user_modes = va_arg(vp, SilcUInt32 *);
       attrs = va_arg(vp, SilcDList);
 
-      silc_parse_userfqdn(nickname, nick, sizeof(nick), NULL, 0);
+      silc_client_nickname_parse(client, conn, client_entry->nickname, &nick);
       printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_WHOIS_USERINFO, nickname,
 			 client_entry->username, client_entry->hostname,
 			 nick, client_entry->nickname);
       printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_WHOIS_REALNAME, realname);
+      silc_free(nick);
 
       if (channels && user_modes) {
 	SilcChannelPayload entry;
