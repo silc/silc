@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 Pekka Riikonen
+  Copyright (C) 2002 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@
 /****s* silcvcard/SilcVCard/SilcVCard
  *
  * NAME
- * 
+ *
  *    typedef struct { ... } SilcVCardStruct, *SilcVCard;
  *
  * DESCRIPTION
@@ -48,7 +48,7 @@
  *
  * SOURCE
  */
-typedef struct {
+typedef struct SilcVCardObject {
   char *full_name;	    /* full name, X.520 common name */
   char *family_name;	    /* last name, string */
   char *first_name;	    /* first name, string */
