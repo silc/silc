@@ -148,6 +148,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "key_agreement_started", "Key agreement is already started with {nick $0}", 1, { 0 } },
 	{ "key_agreement_denied", "Key agreement cannot be started with yourself", 0 },
 	{ "pubkey_received", "Received {hilight $0} public key", 1, { 0 } },
+	{ "pubkey_received_client", "Client {hilight $0} ($1 $2)", 3, { 0, 0, 0 } },
 	{ "pubkey_fingerprint", "Fingerprint and babbleprint for the {hilight $0} key are %: $1", 2, { 0, 0 } },
 	{ "pubkey_babbleprint", " $0", 1, { 0 } },
 	{ "pubkey_unsupported", "We don't support {hilight $0} public key type {hilight $1}", 2, { 0, 0 } },
@@ -160,7 +161,8 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "pubkey_maybe_expired", "It is possible that the key has expired or changed", 0 },
 	{ "pubkey_mitm_attack", "It is also possible that someone is performing a man-in-the-middle attack", 0 },
 	{ "pubkey_notkey", "Server did not return any public key", 0 },
-	{ "pubkey_verified", "Verified successfully $0 {hilight $1}'s cached public key", 2, { 0, 0 } },
+	{ "pubkey_verified", "Verified successfully server {hilight $0} cached public key", 1, { 0 } },
+	{ "pubkey_verified_client", "Verified successfully user {hilight $0}'s ($1 $2) cached public key", 3, { 0, 0, 0 } },
 	{ "pubkey_notverified", "Could not verify $0 {hilight $1}'s public key", 2, { 0, 0 } },
 
 	/* Misc messages */
