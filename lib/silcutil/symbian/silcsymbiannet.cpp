@@ -64,6 +64,8 @@ static SilcBool silc_net_set_sockaddr(TInetAddr *addr, const char *ip_addr,
 
 class SilcSymbianTCPListener;
 
+extern "C" {
+
 /* Deliver new stream to upper layer */
 
 static void silc_net_accept_stream(SilcSocketStreamStatus status,
@@ -78,6 +80,8 @@ static void silc_net_accept_stream(SilcSocketStreamStatus status,
 
   listener->callback(SILC_NET_OK, stream, listener->context);
 }
+
+} /* extern "C" */
 
 /* TCP Listener class */
 
@@ -304,12 +308,13 @@ void silc_net_close_listener(SilcNetListener listener)
   silc_free(listener);
 }
 
-} /* extern "C" */
 
 /**************************** TCP/IP connecting *****************************/
 
 static void silc_net_connect_stream(SilcSocketStreamStatus status,
 	    SilcStream stream, void *context);
+
+} /* extern "C" */
 
 /* TCP connecting class */
 
