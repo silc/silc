@@ -862,3 +862,6 @@ EXPORTS
 	silc_vcard_encode @ 870 ;
 	silc_vcard_fprintf @ 871 ;
 	silc_vcard_free @ 872 ;
+	silc_utf8_c2w @ 873 ;
+	silc_utf8_w2c @ 874 ;
+
