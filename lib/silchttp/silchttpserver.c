@@ -146,7 +146,7 @@ static SilcBool silc_http_server_parse(SilcHttpServer httpd,
     SILC_LOG_DEBUG(("URI: '%s'", conn->uri));
 
     /* Protocol version compatibility */
-    tmp = memchr(tmp, '\0', data_len - (tmp - data)) + 1;
+    tmp = ((unsigned char *)memchr(tmp, '\0', data_len - (tmp - data))) + 1;
     SILC_LOG_DEBUG(("Protocol: %s", tmp));
     if (strstr(tmp, "HTTP/1.0"))
       conn->keepalive = FALSE;

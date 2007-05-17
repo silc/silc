@@ -1208,7 +1208,8 @@ SilcBool silc_atomic_cas_pointer(SilcAtomicPointer *atomic, void *old_val,
 
 #elif defined(SILC_WIN32)
   /* Windows */
-  return InterlockedCompareExchangePointer(&atomic->value, n, o) == o;
+  return InterlockedCompareExchangePointer(&atomic->value, new_val, old_val)
+    == old_val;
 
 #elif defined(__GNUC__) && defined(SILC_I486)
   /* GCC + i486 */
