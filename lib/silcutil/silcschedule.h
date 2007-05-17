@@ -263,18 +263,18 @@ void silc_schedule_stop(SilcSchedule schedule);
  *
  * DESCRIPTION
  *
- *    The SILC scheduler. The program will run inside this function.
- *    When this returns the program is to be ended. Before this function can
- *    be called, one must call silc_schedule_init function.
+ *    The SILC scheduler.  The program will run inside this function.
+ *    When this returns the program is to be ended.  Before this function
+ *    can be called, one must call silc_schedule_init function.
  *
  * NOTES
  *
- *    On Windows this will block the program, but will continue dispatching
- *    window messages, and thus can be used as the main loop of the program.
+ *    On Windows this will block the calling thread but will continue
+ *    to dispatch window messages, and thus can be used as the main loop
+ *    of the program.
  *
- *    On Symbian this will return immediately.  On Symbian calling
- *    silc_schedule is same as calling silc_schedule_one.  This also means
- *    the caller must be already running Symbian Active Scheduler.
+ *    On Symbian this will block the calling thread.  The Symbian Active
+ *    Scheduler must be running before calling this function.
  *
  ***/
 void silc_schedule(SilcSchedule schedule);

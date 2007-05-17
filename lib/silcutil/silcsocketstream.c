@@ -171,6 +171,7 @@ silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
   stream->ops = &silc_socket_stream_ops;
   stream->sock = sock;
   stream->schedule = schedule;
+  stream->connected = TRUE;
 
   l = silc_calloc(1, sizeof(*l));
   if (!l) {

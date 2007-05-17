@@ -92,6 +92,10 @@ typedef void *(*SilcThreadStart)(void *context);
  *    If the `waitable' is TRUE then another thread must always issue
  *    silc_thread_wait to avoid memory leaks.
  *
+ *    On Symbian Cleanup Stack is created and new Active Scheduler is
+ *    installed automatically for the created thread.  The thread also
+ *    shares heap with the calling thread.
+ *
  ***/
 SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 			      SilcBool waitable);

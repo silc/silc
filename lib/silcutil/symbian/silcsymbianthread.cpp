@@ -18,6 +18,7 @@
 */
 
 #include "silc.h"
+#include <e32base.h>
 #include <e32std.h>
 
 /**************************** SILC Thread API *******************************/
@@ -25,7 +26,7 @@
 extern "C" {
 
 /* Thread structure for Symbian */
-typedef struct {
+struct SilcSymbianThread {
 #ifdef SILC_THREADS
   SilcThreadStart start_func;
   void *context;
@@ -33,25 +34,36 @@ typedef struct {
 #else
   void *tmp;
 #endif
-} *SilcSymbianThread;
+};
 
 /* The actual thread function */
 
 static TInt silc_thread_start(TAny *context)
 {
 #ifdef SILC_THREADS
-  SilcSymbianThread tc = (SilcSymbianThread)context;
+  SilcSymbianThread *tc = (SilcSymbianThread *)context;
   SilcThreadStart start_func = tc->start_func;
   void *user_context = tc->context;
   SilcBool waitable = tc->waitable;
+  void *ret = NULL;
 
   silc_free(tc);
 
-  /* Call the thread function */
-  if (waitable)
-    silc_thread_exit(start_func(user_context));
-  else
-    start_func(user_context);
+  CTrapCleanup *cs = CTrapCleanup::New();
+  if (cs) {
+    CActiveScheduler *s = new CActiveScheduler;
+    if(s) {
+      CActiveScheduler::Install(s);
+
+      /* Call the thread function */
+      TRAPD(ret_val, ret = start_func(user_context));
+
+      delete s;
+    }
+    delete cs;
+  }
+
+  silc_thread_exit(ret);
 
 #endif
   return KErrNone;
@@ -63,14 +75,15 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 			      SilcBool waitable)
 {
 #ifdef SILC_THREADS
-  SilcSymbianThread tc;
+  SilcSymbianThread *tc;
   RThread *thread;
   TInt ret;
-  TBuf<32> name;
+  char tmp[24];
+  SilcUInt16 wname[24];
 
   SILC_LOG_DEBUG(("Creating new thread"));
 
-  tc = (SilcSymbianThread)silc_calloc(1, sizeof(*thread));
+  tc = (SilcSymbianThread *)silc_calloc(1, sizeof(*tc));
   if (!tc)
     return NULL;
   tc->start_func = start_func;
@@ -78,18 +91,21 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
   tc->waitable = waitable;
 
   /* Allocate thread */
-  thread = new RThread();
+  thread = new RThread;
   if (!thread) {
     silc_free(tc);
     return NULL;
   }
 
   /* Create the thread */
-  name = (TText *)silc_time_string(0);
-  ret = thread->Create(name, silc_thread_start, 8192, 4096, 1024 * 1024,
-		       (TAny *)tc);
+  silc_snprintf(tmp, sizeof(tmp), "thread-%p", tc);
+  silc_utf8_c2w((const unsigned char *)tmp, strlen(tmp), wname,
+		sizeof(wname) / sizeof(wname[0]));
+  TBuf<24> name((unsigned short *)wname);
+  name.PtrZ();
+  ret = thread->Create(name, silc_thread_start, 8192, NULL, tc);
   if (ret != KErrNone) {
-    SILC_LOG_ERROR(("Could not create new thread"));
+    SILC_LOG_ERROR(("Could not create new thread, error %d", ret));
     delete thread;
     silc_free(tc);
     return NULL;
@@ -380,9 +396,13 @@ SilcBool silc_cond_timedwait(SilcCond cond, SilcMutex mutex,
 			     int timeout)
 {
 #ifdef SILC_THREADS
-  if (timeout)
-    return (cond->cond->TimedWait(*mutex->mutex, (TInt)timeout * 1000) ==
-	    KErrNone);
+  TInt ret;
+  if (timeout) {
+    ret = cond->cond->TimedWait(*mutex->mutex, (TInt)timeout * 1000);
+    if (ret != KErrNone)
+      SILC_LOG_DEBUG(("TimedWait returned %d", ret));
+    return ret != KErrTimedOut;
+  }
   return (cond->cond->Wait(*mutex->mutex) == KErrNone);
 #else
   return FALSE;

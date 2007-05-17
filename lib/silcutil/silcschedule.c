@@ -476,9 +476,12 @@ static SilcBool silc_schedule_iterate(SilcSchedule schedule, int timeout_usecs)
       continue;
 
     } else {
-      /* Error */
-      if (silc_likely(errno == EINTR))
+      /* Error or special case handling */
+      if (errno == EINTR)
 	continue;
+      if (ret == -2)
+	break;
+
       SILC_LOG_ERROR(("Error in select()/poll(): %s", strerror(errno)));
       continue;
     }
@@ -501,6 +504,7 @@ SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs)
 /* Runs the scheduler and blocks here.  When this returns the scheduler
    has ended. */
 
+#ifndef SILC_SYMBIAN
 void silc_schedule(SilcSchedule schedule)
 {
   SILC_LOG_DEBUG(("Running scheduler"));
@@ -510,6 +514,7 @@ void silc_schedule(SilcSchedule schedule)
   silc_schedule_iterate(schedule, -1);
   SILC_SCHEDULE_UNLOCK(schedule);
 }
+#endif /* !SILC_SYMBIAN */
 
 /* Wakes up the scheduler. This is used only in multi-threaded
    environments where threads may add new tasks or remove old tasks
@@ -664,6 +669,15 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 
  out:
   SILC_SCHEDULE_UNLOCK(schedule);
+
+#ifdef SILC_SYMBIAN
+  /* On symbian we wakeup scheduler immediately after adding timeout task
+     in case the task is added outside the scheduler loop (in some active
+     object). */
+  if (task && task->type == 1)
+    silc_schedule_wakeup(schedule);
+#endif /* SILC_SYMBIAN */
+
   return task;
 }
 

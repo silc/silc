@@ -186,7 +186,7 @@
 
 /* HAVE_VA_COPY */
 //#define HAVE_VA_COPY
-#define HAVE_VA_COPY_AARRAY
+#define HAVE_VA_COPY_ARRAY
 
 /* Name of package */
 #define PACKAGE "silc-toolkit"

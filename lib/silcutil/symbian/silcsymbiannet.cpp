@@ -20,6 +20,46 @@
 #include "silc.h"
 #include "silcsymbiansocketstream.h"
 
+/************************ Static utility functions **************************/
+
+static SilcBool silc_net_set_sockaddr(TInetAddr *addr, const char *ip_addr,
+                                      int port)
+{
+  /* Check for IPv4 and IPv6 addresses */
+  if (ip_addr) {
+    if (!silc_net_is_ip(ip_addr)) {
+      SILC_LOG_ERROR(("%s is not IP address", ip_addr));
+      return FALSE;
+    }
+
+    if (silc_net_is_ip4(ip_addr)) {
+      /* IPv4 address */
+      unsigned char buf[4];
+      TUint32 a;
+
+      if (!silc_net_addr2bin(ip_addr, buf, sizeof(buf)))
+        return FALSE;
+
+      SILC_GET32_MSB(a, buf);
+      addr->SetAddress(a);
+      addr->SetPort(port);
+    } else {
+#ifdef HAVE_IPV6
+      SILC_LOG_ERROR(("IPv6 not supported"));
+      return FALSE;
+#else
+      SILC_LOG_ERROR(("Operating System does not support IPv6"));
+      return FALSE;
+#endif
+    }
+  } else {
+    addr->SetAddress(0);
+    addr->SetPort(port);
+  }
+
+  return TRUE;
+}
+
 /****************************** TCP Listener ********************************/
 
 class SilcSymbianTCPListener;
@@ -133,7 +173,6 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
   SilcSymbianTCPListener *l = NULL;
   TInetAddr server;
   TInt ret;
-  TBuf<64> tmp;
   int i;
 
   SILC_LOG_DEBUG(("Creating TCP listener"));
@@ -183,16 +222,14 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     if (ret != KErrNone)
       goto err;
 
+#ifdef SILC_THREADS
+    /* Make our socket shareable between threads */
+    l->ss.ShareAuto();
+#endif /* SILC_THREADS */
+
     /* Set listener address */
-    if (local_ip_addr) {
-      server = TInetAddr(port);
-      tmp = (TText *)local_ip_addr[i];
-      ret = server.Input(tmp);
-      if (ret != KErrNone)
-	goto err;
-    } else {
-      server = TInetAddr(KInetAddrAny, port);
-    }
+    if (!silc_net_set_sockaddr(&server, local_ip_addr[i], port))
+      goto err;
 
     /* Create the socket */
     ret = l->sock.Open(l->ss, KAfInet, KSockStream, KProtocolInetTcp);
@@ -327,6 +364,8 @@ public:
 			     (SilcSocket)silc_create_symbian_socket(sock, ss),
 			     TRUE, FALSE, schedule, silc_net_connect_stream,
 			     (void *)this);
+      sock = NULL;
+      ss = NULL;
     } else {
       sock->Close();
       delete sock;
@@ -419,7 +458,6 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
   SilcSymbianTCPConnect *conn;
   TInetAddr local, remote;
   SilcNetStatus status;
-  TBuf<64> tmp;
   TInt ret;
 
   if (!remote_ip_addr || remote_port < 1 || !schedule || !callback)
@@ -460,9 +498,15 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
   /* Connect to socket server */
   ret = conn->ss->Connect();
   if (ret != KErrNone) {
+    SILC_LOG_ERROR(("Error connecting to socket server, error %d", ret));
     status = SILC_NET_ERROR;
     goto err;
   }
+
+#ifdef SILC_THREADS
+  /* Make our socket shareable between threads */
+  conn->ss->ShareAuto();
+#endif /* SILC_THREADS */
 
   /* Start async operation */
   conn->op = silc_async_alloc(silc_net_connect_abort, NULL, (void *)conn);
@@ -493,20 +537,13 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
   conn->sock->SetOpt(KSoTcpKeepAlive, KSolInetTcp, 1);
 
   /* Bind to the local address if provided */
-  if (local_ip_addr) {
-    local = TInetAddr(0);
-    tmp = (TText *)local_ip_addr;
-    ret = local.Input(tmp);
-    if (ret == KErrNone)
-      ret = conn->sock->Bind(local);
-  }
+  if (local_ip_addr)
+    if (silc_net_set_sockaddr(&local, local_ip_addr, 0))
+      conn->sock->Bind(local);
 
   /* Connect to the host */
-  remote = TInetAddr(remote_port);
-  tmp = (TText *)conn->remote_ip;
-  ret = remote.Input(tmp);
-  if (ret != KErrNone) {
-    SILC_LOG_ERROR(("Cannot connect (cannot set address), error %d", ret));
+  if (!silc_net_set_sockaddr(&remote, conn->remote_ip, remote_port)) {
+    SILC_LOG_ERROR(("Cannot connect (cannot set address)"));
     status = SILC_NET_ERROR;
     goto err;
   }
@@ -546,7 +583,6 @@ SilcStream silc_net_udp_connect(const char *local_ip_addr, int local_port,
   TRequestStatus status;
   RSocket *sock = NULL;
   RSocketServ *ss = NULL;
-  TBuf<64> tmp;
   TInt ret;
 
   SILC_LOG_DEBUG(("Creating UDP stream"));
@@ -570,16 +606,14 @@ SilcStream silc_net_udp_connect(const char *local_ip_addr, int local_port,
   if (ret != KErrNone)
     goto err;
 
+#ifdef SILC_THREADS
+  /* Make our socket shareable between threads */
+  ss->ShareAuto();
+#endif /* SILC_THREADS */
+
   /* Get local bind address */
-  if (local_ip_addr) {
-    local = TInetAddr(local_port);
-    tmp = (TText *)local_ip_addr;
-    ret = local.Input(tmp);
-    if (ret != KErrNone)
-      goto err;
-  } else {
-    local = TInetAddr(KInetAddrAny, local_port);
-  }
+  if (!silc_net_set_sockaddr(&local, local_ip_addr, local_port))
+    goto err;
 
   /* Create the socket */
   ret = sock->Open(*ss, KAfInet, KSockDatagram, KProtocolInetUdp);
@@ -600,16 +634,12 @@ SilcStream silc_net_udp_connect(const char *local_ip_addr, int local_port,
 
   /* Set to connected state if remote address is provided. */
   if (remote_ip_addr && remote_port) {
-    remote = TInetAddr(remote_port);
-    tmp = (TText *)remote_ip_addr;
-    ret = remote.Input(tmp);
-    if (ret != KErrNone)
-      goto err;
-
-    sock->Connect(remote, status);
-    if (status != KErrNone) {
-      SILC_LOG_DEBUG(("Cannot connect UDP stream"));
-      goto err;
+    if (silc_net_set_sockaddr(&remote, remote_ip_addr, remote_port)) {
+      sock->Connect(remote, status);
+      if (status != KErrNone) {
+	SILC_LOG_DEBUG(("Cannot connect UDP stream"));
+	goto err;
+      }
     }
   }
 

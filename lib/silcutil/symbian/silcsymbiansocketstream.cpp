@@ -51,7 +51,8 @@ public:
   {
     SILC_LOG_DEBUG(("Send()"));
     s->sock->Send(buf, 0, iStatus, ret_len);
-    SetActive();
+    if (!IsActive())
+      SetActive();
   }
 
   /* Send data */
@@ -67,7 +68,8 @@ public:
     tmp = (TText *)remote_ip;
     if (remote.Input(tmp) == KErrNone) {
       s->sock->SendTo(buf, remote, 0, iStatus, ret_len);
-      SetActive();
+      if (!IsActive())
+        SetActive();
     }
   }
 
@@ -123,7 +125,7 @@ public:
   {
     SILC_LOG_DEBUG(("Read()"));
 
-    if (!s->stream || s->stream->connected)
+    if (s->stream && s->stream->connected)
       s->sock->RecvOneOrMore(inbuf, 0, iStatus, read_len);
     else
       s->sock->RecvFrom(inbuf, remote, 0, iStatus);
@@ -202,6 +204,7 @@ SilcSymbianSocket *silc_create_symbian_socket(RSocket *sock,
     silc_free(stream);
     return NULL;
   }
+  stream->send->s = stream;
 
   stream->receive = new SilcSymbianSocketReceive;
   if (!stream->receive) {
@@ -209,6 +212,7 @@ SilcSymbianSocket *silc_create_symbian_socket(RSocket *sock,
     silc_free(stream);
     return NULL;
   }
+  stream->receive->s = stream;
   stream->receive->inbuf_ptr = NULL;
   stream->receive->inbuf_len = 0;
 

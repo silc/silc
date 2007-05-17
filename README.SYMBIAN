@@ -46,7 +46,7 @@ Building with Carbide.c++
 
 After starting the Carbide.c++ you will need to import the SILC Toolkit 
 project.  Go to File -> Import -> Symbian OS -> Symbian OS Bld.inf file, 
-and go to the extracted SILC Toolkit source tree and find symbian/bld.inf 
+and go to the extracted SILC Toolkit source tree and find symbian\bld.inf 
 file and import it.  When Carbide.c++ asks for the Root Directory, select 
 the root of the extracted SILC Toolkit source tree, if not already 
 selected.

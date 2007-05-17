@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ extern "C" {
 
 char *silc_get_username()
 {
+#if 0
   char *logname = NULL;
 
   logname = getlogin();
@@ -41,12 +42,16 @@ char *silc_get_username()
   }
 
   return strdup(logname);
+#else
+  return strdup("Symbian");
+#endif /* 0 */
 }
 
 /* Returns the real name of ther user. */
 
 char *silc_get_real_name()
 {
+#if 0
   char *realname = NULL;
   struct passwd *pw;
 
@@ -63,6 +68,9 @@ char *silc_get_real_name()
   realname = strdup(pw->pw_gecos);
 
   return realname;
+#else
+  return strdup("Lastname");
+#endif /* 0 */
 }
 
 /* Return current time to struct timeval. */
@@ -84,7 +92,8 @@ void silc_symbian_usleep(long microseconds)
 
 void silc_symbian_debug(const char *function, int line, char *string)
 {
-  RDebug::Print(_L("%s:%d: %s"), function, line, string);
+  fprintf(stderr, "%s:%d: %s\n", function, line, string);
+  // RDebug::Print(_L("%s:%d: %s"), function, line, string);
 }
 
 } /* extern "C" */
