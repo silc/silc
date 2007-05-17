@@ -287,18 +287,14 @@ SilcBool silc_show_public_key(SilcPublicKey public_key)
   SilcUInt32 key_len = 0;
 
   silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
-  if (!silc_pubkey) {
-    silc_pkcs_public_key_free(public_key);
+  if (!silc_pubkey)
     return FALSE;
-  }
 
   ident = &silc_pubkey->identifier;
   key_len = silc_pkcs_public_key_get_len(public_key);
   pk = silc_pkcs_public_key_encode(public_key, &pk_len);
-  if (!pk) {
-    silc_pkcs_public_key_free(public_key);
+  if (!pk)
     return FALSE;
-  }
   fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
   babbleprint = silc_hash_babbleprint(NULL, pk, pk_len);
 
