@@ -99,9 +99,6 @@ if($p =~ /.*(\/win32)/)
 		push(@excludeList, "--exclude $top/win32/libsilcclient_static/CVS");
 		push(@excludeList, "--exclude $top/win32/libsilcclient_static/libsilcclient_static.plg");
 		push(@excludeList, "--exclude $top/win32/silc.ncb");
-		push(@excludeList, "--exclude $top/includes/CVS");
-		push(@excludeList, "--exclude $top/lib/silcutil/win32/.cvsignore");
-		push(@excludeList, "--exclude $top/lib/silcutil/win32/CVS");
 		push(@excludeList, "--exclude $top/win32/all.plg");
 		push(@excludeList, "--exclude $top/win32/buildDistAfterAllReleaseAndDebug.plg");
 		push(@excludeList, "--exclude $top/win32/CVS");
@@ -114,34 +111,14 @@ if($p =~ /.*(\/win32)/)
 		push(@excludeList, "--exclude $top/win32/libsilc/Release/libsilc.pdb");
 		push(@excludeList, "--exclude $top/win32/libsilcclient/Release/libsilcclient.ilk");
 		push(@excludeList, "--exclude $top/win32/silc.opt");
-		push(@excludeList, "--exclude $top/irssi");
+		push(@excludeList, "--exclude $top/win32/tests");
+		push(@excludeList, "--exclude $top/apps");
 		push(@excludeList, "--exclude $top/doc/CVS");
 		push(@excludeList, "--exclude $top/doc/examples/CVS");
-		push(@excludeList, "--exclude $top/lib/doc/CVS");
-		push(@excludeList, "--exclude $top/lib/silcclient/.libs");
-		push(@excludeList, "--exclude $top/lib/silccore/.libs");
-		push(@excludeList, "--exclude $top/lib/silccore/tests/CVS");
-		push(@excludeList, "--exclude $top/lib/silccrypt/.libs");
-		push(@excludeList, "--exclude $top/lib/silccrypt/tests/CVS");
-		push(@excludeList, "--exclude $top/lib/silcmath/.libs");
-		push(@excludeList, "--exclude $top/lib/silcmath/mpi/.libs");
-		push(@excludeList, "--exclude $top/lib/silcsftp/.libs");
-		push(@excludeList, "--exclude $top/lib/silcsftp/tests/CVS");
-		push(@excludeList, "--exclude $top/lib/silcsim/.libs");
-		push(@excludeList, "--exclude $top/lib/silcske/.libs");
-		push(@excludeList, "--exclude $top/lib/silcutil/.libs");
-		push(@excludeList, "--exclude $top/lib/silcutil/win32/.libs");
-		push(@excludeList, "--exclude $top/silcer/CVS");
-		push(@excludeList, "--exclude $top/silcer/intl/CVS");
-		push(@excludeList, "--exclude $top/silcer/macros/CVS");
-		push(@excludeList, "--exclude $top/silcer/pixmaps/CVS");
-		push(@excludeList, "--exclude $top/silcer/po/CVS");
-		push(@excludeList, "--exclude $top/silcer/src/CVS");
-		push(@excludeList, "--exclude $top/silcer/ui/CVS");
+		push(@excludeList, "--exclude $top/includes/CVS");
+		push(@excludeList, "--exclude $top/lib");
 		push(@excludeList, "--exclude $top/tutorial/CVS");
 		push(@excludeList, "--exclude $top/tutorial/mybot/CVS");
-
-
 
 		$excludes = "";
 		foreach $entry(@excludeList)

@@ -11,12 +11,6 @@ Copyright &copy; 1997 - 2007 The SILC Project<br />
 Updated: @DATE@
 </small>
 <br /><br /><br />
-<b>NOTE: This is reference manual of alpha version of SILC Toolkit 1.1 and
-the reference may be incomplete, inaccurate and document nonexistent APIs.
-The APIs provided by alpha versions of SILC Toolkit 1.1 may not be stable yet.
-</b>
-
-<br /><br /><br />
 Welcome to the SILC Toolkit Reference Manual.  The manual is a complete
 developer guide and reference for the SILC application programmer.  The manual
 is intended for application programmers who would like to integrate the SILC
