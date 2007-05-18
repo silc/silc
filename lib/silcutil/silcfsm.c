@@ -151,6 +151,9 @@ SILC_TASK_CALLBACK(silc_fsm_free_final)
   if (f->thread && f->u.t.event)
     silc_fsm_event_free(f->u.t.event);
 
+  if (!f->thread)
+    silc_atomic_uninit32(&f->u.m.threads);
+
   silc_free(f);
 }
 
@@ -485,7 +488,6 @@ SILC_TASK_CALLBACK(silc_fsm_finish_fsm)
       silc_mutex_free(fsm->u.m.lock);
       fsm->u.m.lock = NULL;
     }
-    silc_atomic_uninit32(&fsm->u.m.threads);
 
     /* Call the destructor callback. */
     if (fsm->destructor)

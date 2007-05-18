@@ -94,7 +94,7 @@ public:
     Cancel();
   }
 
-  /* Wakeup */
+  /* Wakeup.  This is called with scheduler locked. */
   void Wakeup(TThreadId thread_id)
   {
     if (wake_signal)
@@ -113,6 +113,9 @@ public:
   {
     SILC_LOG_DEBUG(("Wakeup scheduler"));
 
+    /* We need to synchronize with calls to Wakeup() */
+    silc_mutex_lock(schedule->lock);
+
     /* Wakeup scheduler */
     timer->Cancel();
     timer->After(0);
@@ -120,16 +123,19 @@ public:
 
     iStatus = KRequestPending;
     SetActive();
+
+    silc_mutex_unlock(schedule->lock);
   }
 
   virtual void DoCancel()
   {
-
+    wake_signal = TRUE;
   }
 
   RThread thread;
   TThreadId id;
   SilcSymbianScheduler *timer;
+  SilcSchedule schedule;
   unsigned int wake_signal  : 1;
 };
 
@@ -159,6 +165,7 @@ void silc_schedule(SilcSchedule schedule)
   internal->wakeup->id = RThread().Id();
   internal->wakeup->thread.Open(internal->wakeup->id);
   internal->wakeup->timer = internal->timer;
+  internal->wakeup->schedule = schedule;
 
   /* Start Active Scheduler */
   s->Start();
@@ -188,7 +195,7 @@ int silc_poll(SilcSchedule schedule, void *context)
     return 0;
 
   if (timeout == -1)
-    timeout = 0;
+    return -2;
 
   /* Set the timeout value */
   at_timeout.HomeTime();
@@ -199,6 +206,8 @@ int silc_poll(SilcSchedule schedule, void *context)
   at_timeout += (TTimeIntervalMicroSeconds32)timeout;
 
   /* Schedule the timeout */
+  if (internal->timer->IsActive())
+    internal->timer->Cancel();
   internal->timer->At(at_timeout);
 
   /* Return special "ignore" value.  Causes the scheduler to just break
@@ -279,7 +288,11 @@ void silc_schedule_internal_signals_unblock(SilcSchedule schedule,
   /* Nothing to do */
 }
 
+#ifdef __WINSCW__
 EXPORT_C const SilcScheduleOps schedule_ops =
+#else
+const SilcScheduleOps schedule_ops =
+#endif /* __WINSCW__ */
 {
   silc_schedule_internal_init,
   silc_schedule_internal_uninit,

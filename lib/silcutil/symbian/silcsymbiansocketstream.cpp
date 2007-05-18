@@ -130,7 +130,8 @@ public:
     else
       s->sock->RecvFrom(inbuf, remote, 0, iStatus);
 
-    SetActive();
+    if (!IsActive())
+      SetActive();
   }
 
   /* Reading callback */
