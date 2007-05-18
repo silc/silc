@@ -1099,9 +1099,9 @@ SilcClientEntry silc_client_nickname_format(SilcClient client,
   char *cp;
   char newnick[128 + 1];
   int i, off = 0, len;
-  SilcBool freebase;
   SilcDList clients;
   SilcClientEntry entry, unformatted = NULL;
+  SilcBool formatted = FALSE;
 
   if (!client->internal->params->nickname_format[0])
     return client_entry;
@@ -1118,32 +1118,70 @@ SilcClientEntry silc_client_nickname_format(SilcClient client,
 					      TRUE, FALSE);
   if (!clients)
     return NULL;
-  if (silc_dlist_count(clients) == 1 &&
+  if (silc_dlist_count(clients) == 1 && !priority &&
       !client->internal->params->nickname_force_format) {
     silc_client_list_free(client, conn, clients);
     return client_entry;
   }
 
-  len = 0;
-  freebase = TRUE;
+  /* Is the requested client formatted already */
+  if (!silc_utf8_strcasecmp(client_entry->nickname, 
+			    client_entry->nickname_normalized))
+    formatted = TRUE;
+
+  if (client->internal->params->nickname_force_format)
+    formatted = FALSE;
+
+  /* Find unformatted client entry */
   while ((entry = silc_dlist_get(clients))) {
-    if (entry->internal.valid && entry != client_entry)
-      len++;
-    if (entry->internal.valid && entry != client_entry &&
-	silc_utf8_strcasecmp(entry->nickname, client_entry->nickname)) {
-      freebase = FALSE;
+    if (!entry->internal.valid)
+      continue;
+    if (entry == client_entry)
+      continue;
+    if (silc_utf8_strcasecmp(entry->nickname, entry->nickname_normalized)) {
       unformatted = entry;
       break;
     }
-  }
-  if (!len || freebase) {
+  }  
+
+  /* If there are no other unformatted clients and the requested client is
+     unformatted, just return it. */
+  if (!unformatted && !formatted) {
     silc_client_list_free(client, conn, clients);
     return client_entry;
   }
 
-  /* If priority formatting, this client always gets unformatted nickname. */
-  if (unformatted && priority)
+  /* If priority formatting then the requested client will get the 
+     unformatted nickname, and the unformatted client will get a new
+     formatted nickname. */
+  if (priority) {
+    if (formatted) {
+      /* Simply change the client's nickname to unformatted */
+      if (!silc_client_nickname_parse(client, conn, client_entry->nickname,
+				      &cp))
+        return NULL;
+
+      silc_snprintf(client_entry->nickname, sizeof(client_entry->nickname), 
+		    cp);
+      silc_free(cp);
+    }
+
+    if (!unformatted) {
+      /* There was no other unformatted client */
+      silc_client_list_free(client, conn, clients);
+      return client_entry;
+    }
+
+    /* Now format the previously unformatted client */
     client_entry = unformatted;
+    formatted = FALSE;
+  }
+
+  /* If already formatted just return it */
+  if (formatted) {
+    silc_client_list_free(client, conn, clients);
+    return client_entry;
+  }
 
   memset(newnick, 0, sizeof(newnick));
   cp = client->internal->params->nickname_format;

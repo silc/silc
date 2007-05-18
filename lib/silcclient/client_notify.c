@@ -503,7 +503,7 @@ SILC_FSM_STATE(silc_client_notify_signoff)
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry;
-  SilcChannelEntry channel;
+  SilcChannelEntry channel = NULL;
   unsigned char *tmp;
   SilcUInt32 tmp_len;
   SilcID id;
@@ -524,20 +524,19 @@ SILC_FSM_STATE(silc_client_notify_signoff)
   if (tmp && tmp_len > 128)
     tmp[128] = '\0';
 
+  if (packet->dst_id_type == SILC_ID_CHANNEL) 
+    if (silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CHANNEL,
+		       &id.u.channel_id, sizeof(id.u.channel_id)))
+      channel = silc_client_get_channel_by_id(client, conn, &id.u.channel_id);
+
   /* Notify application */
   if (client_entry->internal.valid)
-    NOTIFY(client, conn, type, client_entry, tmp);
+    NOTIFY(client, conn, type, client_entry, tmp, channel);
 
   /* Remove from channel */
-  if (packet->dst_id_type == SILC_ID_CHANNEL) {
-    if (silc_id_str2id(packet->dst_id, packet->dst_id_len, SILC_ID_CHANNEL,
-		       &id.u.channel_id, sizeof(id.u.channel_id))) {
-      channel = silc_client_get_channel_by_id(client, conn, &id.u.channel_id);
-      if (channel) {
-	silc_client_remove_from_channel(client, conn, channel, client_entry);
-	silc_client_unref_channel(client, conn, channel);
-      }
-    }
+  if (channel) {
+    silc_client_remove_from_channel(client, conn, channel, client_entry);
+    silc_client_unref_channel(client, conn, channel);
   }
 
   /* Delete client */
