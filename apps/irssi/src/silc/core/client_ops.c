@@ -825,6 +825,32 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       if (nickrec != NULL)
 	nicklist_remove(CHANNEL(chanrec), NICK(nickrec));
     }
+
+    /* If there is only one client with this same nickname on channel now
+       change it to the base format if it is formatted nickname. */
+    if (channel) {
+      silc_client_nickname_parse(client, conn, client_entry->nickname, &name);
+      clients = silc_client_get_clients_local(client, conn, name, TRUE);
+      if (!clients || silc_dlist_count(clients) != 2) {
+	silc_free(name);
+	silc_client_list_free(client, conn, clients);
+	break;
+      }
+      silc_dlist_start(clients);
+      client_entry2 = silc_dlist_get(clients);
+      if (client_entry2 == client_entry)
+        client_entry2 = silc_dlist_get(clients);
+      if (silc_client_on_channel(channel, client_entry2)) {
+	silc_snprintf(buf, sizeof(buf), "%s", client_entry2->nickname);
+	silc_client_nickname_format(client, conn, client_entry2, TRUE);
+	if (!silc_utf8_strcasecmp(buf, client_entry2->nickname))
+	  printformat_module("fe-common/silc", server, channel->channel_name,
+			     MSGLEVEL_CRAP, SILCTXT_CHANNEL_USER_APPEARS,
+			     buf, client_entry2->nickname);
+      }
+      silc_client_list_free(client, conn, clients);
+      silc_free(name);
+    }
     break;
 
   case SILC_NOTIFY_TYPE_SIGNOFF:
@@ -836,21 +862,16 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 
     client_entry = va_arg(va, SilcClientEntry);
     tmp = va_arg(va, char *);
+    channel = va_arg(va, SilcChannelEntry);
 
     silc_server_free_ftp(server, client_entry);
 
-    /* Print only if we have the nickname.  If this cliente has just quit
-       when we were only resolving it, it is possible we don't have the
-       nickname. */
-    if (client_entry->nickname[0]) {
-      memset(buf, 0, sizeof(buf));
-      if (client_entry->username)
-        snprintf(buf, sizeof(buf) - 1, "%s@%s",
-		 client_entry->username, client_entry->hostname);
-      signal_emit("message quit", 4, server, client_entry->nickname,
-		  client_entry->username[0] ? buf : "",
-		  tmp ? tmp : "");
-    }
+    memset(buf, 0, sizeof(buf));
+    if (client_entry->username)
+      snprintf(buf, sizeof(buf) - 1, "%s@%s",
+	       client_entry->username, client_entry->hostname);
+    signal_emit("message quit", 4, server, client_entry->nickname,
+		client_entry->username[0] ? buf : "", tmp ? tmp : "");
 
     list1 = nicklist_get_same_unique(SERVER(server), client_entry);
     for (list_tmp = list1; list_tmp != NULL; list_tmp =
@@ -859,6 +880,32 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       NICK_REC *nickrec = list_tmp->next->data;
 
       nicklist_remove(channel, nickrec);
+    }
+
+    /* If there is only one client with this same nickname on channel now
+       change it to the base format if it is formatted nickname. */
+    if (channel) {
+      silc_client_nickname_parse(client, conn, client_entry->nickname, &name);
+      clients = silc_client_get_clients_local(client, conn, name, TRUE);
+      if (!clients || silc_dlist_count(clients) != 2) {
+	silc_free(name);
+	silc_client_list_free(client, conn, clients);
+	break;
+      }
+      silc_dlist_start(clients);
+      client_entry2 = silc_dlist_get(clients);
+      if (client_entry2 == client_entry)
+        client_entry2 = silc_dlist_get(clients);
+      if (silc_client_on_channel(channel, client_entry2)) {
+	silc_snprintf(buf, sizeof(buf), "%s", client_entry2->nickname);
+	silc_client_nickname_format(client, conn, client_entry2, TRUE);
+	if (!silc_utf8_strcasecmp(buf, client_entry2->nickname))
+	  printformat_module("fe-common/silc", server, channel->channel_name,
+			     MSGLEVEL_CRAP, SILCTXT_CHANNEL_USER_APPEARS,
+			     buf, client_entry2->nickname);
+      }
+      silc_client_list_free(client, conn, clients);
+      silc_free(name);
     }
     break;
 
