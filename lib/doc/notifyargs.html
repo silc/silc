@@ -113,11 +113,11 @@ Sent when someone leaves (parts) the channel.
 <td><small>SILC_NOTIFY_TYPE_SIGNOFF</td>
 <td><small>
 Sent when someone signoff the SILC network.  The 'signoff_message' may be
-NULL.  The 'leaving_client' SilcClientEntry may be incomplete and contain
-NULL pointers, application must check it's pointers before attempting to
-display for example nickname information.
+NULL.  The `signoff_client' is the client signing off.  The `channel' is
+the channel where the client was joined.  The `channel' may be NULL.
 </td>
-<td width="50%"><small>SilcClientEntry signoff_client, char *signoff_message
+<td width="50%"><small>SilcClientEntry signoff_client, char 
+*signoff_message, SilcChannelEntry channel
 </td>
 </tr>
 

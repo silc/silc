@@ -4,22 +4,20 @@
 This document describes the implementation issues with different platforms
 that the SILC Toolkit support.  Some of the supported platforms does not
 support all the features delivered with the Toolkit or they may behave
-differently from other platforms.  This document descibres these
-differences between platforms.
+differently from other platforms.
 
 <br />&nbsp;<br />
 <li><a href="#unix">Unix & Linux Implementation</a><br />
 <li><a href="#windows">Windows Implementation</a><br />
 <li><a href="#macosx">Mac OS X Implementation</a>
-<li><a href="#symbian">Symbian Implementation</a>
+<li><a href="#symbian">Symbian OS Implementation</a>
 
 <br />&nbsp;<br />&nbsp;<br />
 <b>Supported Platforms</b>
 
 <br />&nbsp;<br />
 SILC Toolkit supports by default all Unix and Linux platforms, Windows
-platforms from Windows 98 and newer, and Mac OS X.  In the future there is
-also plans to add support for other platforms such as Symbian OS (EPOC).
+platforms from Windows 2000 and newer, Mac OS X and Symbian OS.
 
 <br />&nbsp;<br />&nbsp;<br />
 <b><a name="unix"></a>Unix Implementation</b>
@@ -34,15 +32,12 @@ implementation issues with current version of SILC Toolkit.
 <b><a name="windows"></a>Windows Implementation</b>
 
 <br />&nbsp;<br />
-By default all features and components delivered with SILC Toolkit are
-supported on Windows.  However, there are some certain issues with the
+By default all features and components delivered with SILC Toolkit are 
+supported on Windows.  However, there are some certain issues with the 
 Windows version of the SILC Toolkit.
 
 <br />&nbsp;<br />
-<li>Toolkit users should not use <tt>silc_client_run</tt> function to
-execute the Client Library.  Instead the <tt>silc_client_run_one</tt> should
-be used, for example as an timer task and the Windows application's own
-message loop should be used as the main message loop.
+<li>Some of the network routines do not support IPv6.
 
 
 <br />&nbsp;<br />&nbsp;<br />
@@ -55,19 +50,30 @@ implementation issues with current version of SILC Toolkit.
 
 
 <br />&nbsp;<br />&nbsp;<br />
-<b><a name="symbian"></a>Symbian Implementation</b>
+<b><a name="symbian"></a>Symbian OS Implementation</b>
 
 <br />&nbsp;<br />
-Symbian support in SILC Toolkit is still experimental.  By default all
-feature and components delivered with SILC Toolkit are supported on
-Symbian.  However, there are some certain issues with the Symbian version
-of the SILC Toolkit
+Symbian OS support in SILC Toolkit is still experimental.  By default all 
+features and components delivered with SILC Toolkit are supported and 
+should work on Symbian.  However, there are some issues with the Symbian 
+version of the SILC Toolkit of what Symbian developers need to be aware.
 
 <br />&nbsp;<br />
-<li>The function <tt>silc_schedule</tt> on Symbian will return immediately,
-instead of blocking the calling thread/process as on other platforms.  On
-symbian the function is equivalent to <tt>silc_schedule_one</tt>, and that
-function should be used instead.  The design of SilcSchedule on Symbian
-enables efficient data I/O even when <tt>silc_schedule_one</tt> is called
-from a timer task.  The data I/O is scheduled separately by the Symbian
-Active Scheduler and the SilcSchedule will merely schedule timeouts.
+<li>The function <tt>silc_schedule</tt> on Symbian will allocate new Active 
+Scheduler Waiter and will block the calling thread.  The caller should 
+allocate Active Scheduler before calling <tt>silc_schedule</tt>.
+
+<li>When adding timeout tasks to SILC Scheduler the SILC Scheduler is woken 
+up after the timeout task has been added.  This allows adding of the 
+timeout tasks from Symbian active objects outside the SILC Scheduler loop.  
+On other platforms this wakeup operation is not performed.
+
+<li>Adding fd task to SILC Scheduler will not schedule the fd for any 
+operation.  Instead, programmer should use SILC Socket Stream API and SILC 
+Fd Stream API on Symbian when dealing with file descriptors and sockets.  
+These APIs provide asynchronous notification when data is available and can 
+be written.
+
+<li>The function <tt>silc_thread_create</tt> on Symbian will install Active 
+Scheduler and allocate Cleanup Stack for the new thread.  The created 
+thread always shares heap with the parent thread.
