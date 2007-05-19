@@ -1,7 +1,7 @@
 <big><b>Building the Toolkit</b></big>
 
 <br />&nbsp;<br />
-SILC Toolkit works on various platforms, such as on several Unix systems and 
+SILC Toolkit works on various platforms, such as on several Unix systems and
 on Windows.  Building of the Toolkit on some platform may differ from the
 other.  This document describes how to build the Toolkit from the sources,
 to create linkable libraries and binaries, on all platforms the Toolkit
@@ -67,7 +67,7 @@ to enable run-time debugging.
 If you wish to use GMP library for arbitrary precision arithmetic
 library instead of using the MPI library included in the package, you can
 give the --with-gmp[=DIR] option to the `configure'. The DIR is the upper
-path in your system which contains lib/ and include/ for GMP library. 
+path in your system which contains lib/ and include/ for GMP library.
 
 <br />&nbsp;<br />
 <tt>--with-iconv[=DIR]</tt>
@@ -124,7 +124,7 @@ MinGW.  For these systems please refer to the README.WIN32 file in the
 Toolkit package.
 
 <br />&nbsp;<br />
-The Toolkit package includes ready MSVC++ Workspace files, that will 
+The Toolkit package includes ready MSVC++ Workspace files, that will
 automatically compile the Toolkit.  The MSVC++ workspace and project files
 resides in the win32/ subdirectory of the Toolkit package.  The `silc.dsw'
 file is the workspace file that automatically supports compiling the Toolkit
@@ -190,5 +190,32 @@ the command:
 <br />&nbsp;<br />&nbsp;<br />
 <b><a name="symbian"></a>Building on Symbian OS</b>
 
-Please read the README.SYMBIAN from the SILC Toolkit package for building 
-instructions.
+<br />&nbsp;<br />
+The build environment for Symbian OS requires Carbide.c++ and MS Windows.
+
+<br />&nbsp;<br />
+Download the freely available Carbide.c++ from Nokia at
+<a href="http://forum.nokia.com">http://forum.nokia.com</a>.  The exact
+hyperlink location changes often, so it is not referenced here.  It is
+usually under "Tools and SDKs" link.
+
+<br />&nbsp;<br />
+After installation a web browser is opened automatically by the
+Carbide.c++ installer.  Follow its instructions by installing the Perl,
+CTags and the SDK.  Perl and the SDK are required, but CTags is
+optional and if necessary can be omitted.
+
+<br />&nbsp;<br />
+The SILC Toolkit is generic C and C++ code and should work with any
+SDK.  If you don't have SDK already installed, install the latest
+version you can find.  The links to SDKs are found in the Carbide.c++
+instructions after installation.  If you already have SDK in your
+system, you should use that.
+
+<br />&nbsp;<br />
+After installation import the SILC Toolkit project to Carbide.c++ from the
+symbian/ subdirectory in the SILC Toolkit package.
+
+<br />&nbsp;<br />
+Please read the README.SYMBIAN from the SILC Toolkit package for complete
+building instructions.

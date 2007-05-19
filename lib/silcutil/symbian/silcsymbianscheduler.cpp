@@ -203,7 +203,7 @@ int silc_poll(SilcSchedule schedule, void *context)
     at_timeout += (TTimeIntervalMicroSeconds32)(2100 * 1000 * 1000);
     timeout -= (2100 * 1000);
   }
-  at_timeout += (TTimeIntervalMicroSeconds32)timeout;
+  at_timeout += (TTimeIntervalMicroSeconds32)(timeout * 1000);
 
   /* Schedule the timeout */
   if (internal->timer->IsActive())
