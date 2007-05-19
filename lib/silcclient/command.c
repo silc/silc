@@ -2199,7 +2199,7 @@ typedef struct {
 
 /* Ask passphrase callback */
 
-static void silc_client_command_oper_cb(unsigned char *data,
+static void silc_client_command_oper_cb(const unsigned char *data,
 					SilcUInt32 data_len, void *context)
 {
   SilcClientCommandContext cmd = context;

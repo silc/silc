@@ -2683,7 +2683,7 @@ typedef struct {
   void *context;
 } *GetAuthMethod;
 
-static void silc_get_auth_ask_passphrase(unsigned char *passphrase,
+static void silc_get_auth_ask_passphrase(const unsigned char *passphrase,
 					 SilcUInt32 passphrase_len,
 					 void *context)
 {

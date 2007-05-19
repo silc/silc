@@ -401,7 +401,7 @@ struct SilcChannelPrivateKeyStruct {
  *
  * SYNOPSIS
  *
- *    typedef void (*SilcAskPassphrase)(unsigned char *passphrase,
+ *    typedef void (*SilcAskPassphrase)(const unsigned char *passphrase,
  *			                SilcUInt32 passphrase_len,
  *			                void *context);
  *
@@ -414,7 +414,7 @@ struct SilcChannelPrivateKeyStruct {
  *    encoded, and if it is not then library will attempt to encode it.
  *
  ***/
-typedef void (*SilcAskPassphrase)(unsigned char *passphrase,
+typedef void (*SilcAskPassphrase)(const unsigned char *passphrase,
 				  SilcUInt32 passphrase_len,
 				  void *context);
 
@@ -439,7 +439,7 @@ typedef void (*SilcVerifyPublicKey)(SilcBool success, void *context);
  *
  *    typedef void (*SilcGetAuthMeth)(SilcBool success,
  *                                    SilcAuthMethod auth_meth,
- *                                    void *auth, SilcUInt32 auth_len,
+ *                                    const void *auth, SilcUInt32 auth_len,
  *                                    void *context);
  *
  * DESCRIPTION
@@ -461,7 +461,7 @@ typedef void (*SilcVerifyPublicKey)(SilcBool success, void *context);
  *
  ***/
 typedef void (*SilcGetAuthMeth)(SilcAuthMethod auth_meth,
-				void *auth, SilcUInt32 auth_len,
+				const void *auth, SilcUInt32 auth_len,
 				void *context);
 
 /****d* silcclient/SilcClientAPI/SilcClientMessageType
