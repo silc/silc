@@ -75,7 +75,7 @@ lib/silcclient, The Client Library	***PARTLY DONE****
 
  o Connection auth request. (***DONE)
 
- o Password auth test, public key auth test. (***TESTING NEEDED)
+ o Password auth test, public key auth test. (***DONE)
 
  o Starting key exchange directly, rewrite. (***DONE)
 

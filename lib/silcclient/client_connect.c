@@ -280,14 +280,18 @@ static void silc_client_rekey_completion(SilcSKE ske,
 /* Callback called by application to return authentication data */
 
 static void silc_client_connect_auth_method(SilcAuthMethod auth_meth,
-					    void *auth, SilcUInt32 auth_len,
+					    const void *auth,
+					    SilcUInt32 auth_len,
 					    void *context)
 {
   SilcFSMThread fsm = context;
   SilcClientConnection conn = silc_fsm_get_context(fsm);
 
   conn->internal->params.auth_method = auth_meth;
-  conn->internal->params.auth = auth;
+  if (auth_meth == SILC_AUTH_PASSWORD)
+    conn->internal->params.auth = silc_memdup(auth, auth_len);
+  else
+    conn->internal->params.auth = (void *)auth;
   conn->internal->params.auth_len = auth_len;
 
   SILC_FSM_CALL_CONTINUE(fsm);
@@ -675,6 +679,13 @@ SILC_FSM_STATE(silc_client_st_connected)
 
   silc_ske_free(conn->internal->ske);
   conn->internal->ske = NULL;
+
+  if (!conn->internal->params.auth_set &&
+      conn->internal->params.auth_method == SILC_AUTH_PASSWORD &&
+      conn->internal->params.auth) {
+    silc_free(conn->internal->params.auth);
+    conn->internal->params.auth = NULL;
+  }
 
   if (conn->internal->disconnected) {
     /** Disconnected */
