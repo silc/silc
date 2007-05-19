@@ -565,7 +565,8 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
   /* Passphrase authentication */
   if (passphrase && passphrase_len) {
     SILC_LOG_DEBUG(("Passphrase authentication"));
-    if (!memcmp(auth_data, passphrase, passphrase_len)) {
+    if (!auth_data || payload_len != passphrase_len ||
+	memcmp(auth_data, passphrase, passphrase_len)) {
       /** Authentication failed */
       silc_fsm_next(fsm, silc_connauth_st_responder_failure);
       return SILC_FSM_CONTINUE;
@@ -575,6 +576,12 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
     SilcSKRFind find;
 
     SILC_LOG_DEBUG(("Digital signature authentication"));
+
+    if (!auth_data) {
+      /** Authentication failed */
+      silc_fsm_next(fsm, silc_connauth_st_responder_failure);
+      return SILC_FSM_CONTINUE;
+    }
 
     connauth->auth_data = silc_memdup(auth_data, payload_len);
     connauth->auth_data_len = payload_len;
