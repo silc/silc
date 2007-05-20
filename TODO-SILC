@@ -1,0 +1,86 @@
+SILC Protocol
+=============
+
+Possible SILC protocol and specification document changes.  All of these
+are tentative and doesn't mean that any of them would be done at any
+point.
+
+ o Full rework of the documents as requested by RFC Editor.  The plan
+   is to create only two documents:
+
+   silc-architecture-xx.txt
+   silc-specification-xx.txt
+
+ o Add acknowlegments section to specification documents.
+   
+ o Group Diffie-Hellman protocol for establishig key with two or more
+   users on a channel.
+
+ o Extend the Channel ID port to be actually a counter, allowing the
+   2^32 channels per cell, instead of 2^16 like now.  The port with
+   compliant implementation would always be 706, and it could be used
+   as a counter, starting from 706... For interop, with old code.
+
+ o In SKE with UDP/IP responder doesn't have to do retransmissions.
+   Initiator will retransmit its packet.  Initiator can be considered
+   the one that actually WANTs to establish the keys.  So no need for
+   responder to retransmit.  Define this clearly in the specs.
+
+ o Dynamic server and router connections, ala Jabber.  SILC has allowed 
+   this from the beginning.  It should be written out clearly in the
+   specs.  Connection would be created with nick strings (which are of
+   format nick@server).
+
+ o Counter block send/receive IV 64 bits instead of 32 bits, and the
+   value itself is used as 64-bit MSB ordered counter, which must
+   be reset before the packet sequence counter wraps.  It's basically
+   a counter which is initially set to a random value. (***DONE)
+
+ o Nickname to NEW_CLIENT packet. (***DONE)
+
+ o Add Source and Destination ID in message MAC computation to fully
+   associate the Message Payload with the true sender and the true
+   recipient of the message.  This will fix some security issues that
+   currently exists.  It is currently possible in some specific set of 
+   conditions to mount a replay attack using Message Payload.  This change
+   will remove the possibility of these attacks.
+
+   After including Source and Destination ID in message MAC, ONLY replay
+   attack possible is the following and with ONLY following conditions:
+
+   1. the attacker is able to record encrypted Message Payloads and has
+      the ability to replay them.
+   2. the message payload is encrypted with static private message key
+   3. the original sender of the message is not anymore in the network,
+      has changed nickname, has detached and resumed, or has reconnected
+      to other server.
+   4. the original receiver of the message is still in the network, has
+      not changed nickname, has not detached and resumed, and has not  
+      reconnected to any other server, or, some other user has the same
+      client ID.
+   5. the attacker is able to get the same client ID as the original   
+      sender.
+   6. the original receiver still has the static key set for the same  
+      remote client ID (for original sender's client ID).
+
+   All this is possible to happen though likelyhood is quite small.  It
+   does illustrate how inappropriate the use of static keys is. (***DONE)
+
+ o The SILC public key identifier separator is ', ' not ','.  The
+   whitespace is mandatory. (***DONE)
+   
+ o Definition of EAP as new authentication method for connection auth
+   protocol (RFC 3748).
+
+ o Count limit to LIST command?
+
+ o Strict announces if Channel ID is different than on router?  To not
+   allow any modes, topic, etc changes from server if the ID was wrong
+   initially?  Meaning: riding with netsplits not possible since the
+   channel created during split will not enforce is modes to the
+   router.  Or more liberal solution, like now?  Read emails on
+   silc-users.  (This is very old issue)
+
+ o The time values in STATS is 32-bits.  After 2038 it's over 32-bits.
+
+ o Consider for future authenticated encryption modes.
