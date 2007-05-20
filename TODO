@@ -1,493 +1,323 @@
-TODO for 1.2 And Beyond
-=======================
+TODO for 1.1
+============
 
 NOTE: Any item that doesn't have (***DONE) in it, isn't done yet.  The
 (***TESTING NEEDED) means that the item has been done but not yet properly
 tested.
 
-NOTE: A TODO entry does not mean that it is ever going to be done.  Some 
-of the entries may be just ideas, good, bad or ugly.  If you want to work 
-on some of the TODO entries simply let us know about it by dropping a note 
-to silc-devel mailing list or appear on 'silc' channel on SILCNet.
 
-
-General
-=======
-
- o Create apps/tutorial containing various Toolkit API tutorials.
-
- o The Toolkit split.  The Toolkit is to be splitted in parts.  How many
-   parts and what the parts are isn't decided yet.  Each part is a separate
-   software package.  Current thinking is of the following:
-
-   SILC Toolkit			SILC protocol, client and server library
-   SILC Runtime Toolkit		runtime library
-   SILC Crypto Toolkit		crypto, asn1, math, skr, pgp, etc.
-
-   The rationale for this is of course that other than SILC projects
-   might like to use the various libraries SILC Toolkit provides, but
-   naturally they don't want the bloat of SILC protocol related stuff.
-
-   The Runtime library in SILC Toolkit is a general purpose runtime library,
-   like Glib and APR are.  The runtime library is to be developed further
-   to provide alternative to Glib and APR.
-
-   The Crypto library in SILC Toolkit is a general purpose crypto library
-   providing pretty nice APIs compared to many other crypto libraries,
-   especially OpenSSL.  The Crypto library is to be developed further
-   to include support for OpenPGP, X.509 and SSH2.
-
-
-lib/silccore
-============
-
- o SILC_PACKET_FLAG_ACK support.  Implement ACK packet and packet payload
-   to silcpacket.c.
-
- o All payload encoding routines should take SilcStack as argument.
-
- o All payload test routines into lib/silccore/tests/.
-
-
-lib/silcclient, The Client Library
-==================================
-
- o peer-to-peer private messages
-
- o Private message key request notification to application.  See XXX in
-   client_prvmsg.c.
-
- o in JOIN notify handle resolving that timedout.  Currently the user is
-   never joined the channel if this happens.  What to do if message is
-   received from user that hasn't been resolved/joined?
-
- o Message ACKing support.
-
- o in /cmode and /cumode with +r, maybe the public key and private key
-   could be just some "string", which would then match to "string.pub" and
-   "string.prv".
-
-
-Runtime library, lib/silcutil/
-==============================
-
- o Fix universal time decoding (doesn't accept all formats) in silctime.c.
-
- o Add functions to manipulate environment variables.
-
-   SilcBool silc_setenv(const char *variable, const char *value);
-   const char *silc_getenv(const char *variable);
-   SilcBool silc_clearenv(const char *variable);
-
- o Add functions to loading shared/dynamic object symbols (replaces the
-   SIM library (lib/silcsim) and introduces generic library).
-
-   SilcDll silc_dll_load(const char *object_path, SilcDllFlags flags);
-   void silc_dll_close(SilcDll dll);
-   void *silc_dll_getsym(SilcDll dll, const char *symbol);
-   const char *silc_dll_error(SilcDll dll);
-
- o Add directory opening/traversing functions
-
- o silc_getopt routines
-
- o silc_hash_table_replace -> silc_hash_table_set.  Retain support for
-   silc_hash_table_replace as macro.
-
- o The SILC Event signals.  Asynchronous events that can be created,
-   connected to and signalled.  Either own event routines or glued into
-   SilcSchedule:
-
-   SilcTask silc_schedule_task_add_event(SilcSchedule schedule,
-					 const char *event, ...);
-   SilcBool silc_schedule_event_connect(SilcSchedule schedule,
-					const char *event,
-					SilcTaskCallback event_callback,
-					void *context);
-   SilcBool silc_schedule_event_signal(SilcSchedule schedule,
-				       const char *event, ...);
-
-   Example:
-     silc_schedule_task_add_event(schedule, "connected",
-                                  SILC_PARAM_UI32_INT,
-                                  SILC_PARAM_BUFFER,
-                                  SILC_PARAM_END);
-     silc_schedule_event_connect(schedule, "connected", connected_cb, ctx);
-     silc_schedule_event_signal(schedule, "connected", integer, buf,
-                                 SILC_PARAM_END);
-     SILC_TASK_CALLBACK(connected_cb)
-     {
-       FooCtx ctx = context;
-       va_list args;
-       SilcUInt32 integer;
-       SilcBuffer buf;
- 
-       va_start(args, context);
-       integer = va_arg(args, SilcUInt32);
-       buf = va_arg(args, SilcBuffer);
-       va_end(args);
-       ...
-     }
-
-   Problems: Events would be SilcSchedule specific, and would not work on 
-   multi-thread/multi-scheduler system.  The events should be copyable 
-   between schedulers.
-
- o Structured log messages to Log API.  Allows machine readable log
-   messages.  Would allow sending of any kind of data in a log message.
-
- o Base64 to an own API
-
- o Timer API
-
- o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
-   SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
-   in separately.
-
- o silc_stringprep to non-allocating version.
-
- o SilcStack aware SilcHashTable.
-
- o SilcStack aware SilcDList.
-
- o Compression routines are missing.  The protocol supports packet
-   compression thus it must be implemented.  SILC Zip API must be
-   defined.
-
- (o Generic SilcStatus or SilcResult that includes all possible status and 
-    error conditions, including those of SILC protocol.  Though, the SILC
-    protocol related status (currently in silcstatus.h) cannot be in 
-    runtime library) maybe
-
- (o Thread pool) maybe
-
- (o SILC specific socket creation/closing routines to silcnet.h, wrappers
-  to all send(), recv(), sendto() etc.  Bad thing is that we'd have to
-  define all socket options, sockaddrs, etc.) maybe
-
- (o mmap) maybe
-
-
-lib/silcutil/symbian/
-=====================
-
- o Something needs to be thought to the logging globals as well,
-   like silc_debug etc.  They won't work on EPOC.  Perhaps logging
-   and debugging is to be disabled on EPOC.  The logging currently works
-   by it cannot be controlled, same with debugging.
-
-
-SFTP Library, lib/silcsftp/
+apps/silcd, The SILC Server	****PARTLY DONE****
 ===========================
 
- o Read prefetch (read-ahead, reading ahead of time).  Maybe if this can
-   be done easily.
+ o Port all code to use SILC Toolkit 1.1 APIs.
+
+ o Fix/test GETKEY.
+
+ o Fix/test MOTD.
+
+ o Remove protocol.[ch].  (***DONE)
+
+ o Rewrite connecting accepting. (***TESTING NEEDED)
+
+ o Rewrite async connecting. (***TESTING NEEDED)
+
+ o Connecting from SILC router to SILC server.
+
+ o Rewrite rehash, HUP.
+
+ o Heartbeat-keepalive.
+
+ o Test backup router resuming protocol.
+
+ o Check all packet receive routines that they call silc_packet_free.
+
+ o Add Web statistics module using lib/silchttp.  Give out server
+   statistics. (***DONE)
 
 
-SKR Library, lib/silcskr/
+SILC Client	****PARTLY DONE****
+===========
+
+ o Porting to new Toolkit API and new Client Library API (***DONE)
+
+ o Improve help files, especially /cmode, /cumode and /key. (***DONE)
+
+
+lib/silcclient, The Client Library	***PARTLY DONE****
+==================================
+
+ o silcclient.h clean up and API rewrites. (***DONE)
+
+ o silcclient_entry.h finishing, all entry relates APIs to this header.
+   (***DONE)
+
+ o SilcChannelEntry, SilcServerEntry, SilcChannelUser, allocating,
+   freeing, finding, etc. rewrite.  Also making them reference counted for
+   multi threads use. (***DONE)
+
+ o Rewrite silc_client_get_clients_by_channel.
+
+ o Rewrite client side WHOIS command (for whois -details). (***DONE)
+
+ o Finish all the missing SILC packet processings, rewrites. (***DONE)
+
+ o The client_notify.c rewrite. (***DONE)
+
+ o Resuming to client_register.c (remove client_resume.c) (***DONE)
+
+ o Rekey rewrite. (***DONE)
+
+ o Remove protocol.[ch]. (***DONE)
+
+ o File transfer rewrite. (***DONE)
+
+ o File transfer API documentation. (***DONE)
+
+ o Connection auth request. (***DONE)
+
+ o Password auth test, public key auth test. (***DONE)
+
+ o Starting key exchange directly, rewrite. (***DONE)
+
+ o Channel messages, channel private keys, channel entires, channel
+   search, etc. rewrite. (***TESTING NEEDED)
+
+ o For many APIs leave the hash context allocations to the caller instead
+   of using client->sha1hash and client->md5hash, or some kind of thread
+   safe (no locking) concept. (***DONE)
+
+ o Key agreement rewrite. (***TESTING NEEDED)
+
+ o Connecting to remote client (***DONE)
+
+ o Private message waiting API (in threads) (***TESING NEEDED)
+
+ o client_attrs.c, attributes rewrite. (***TESTING NEEDED)
+
+ o No SilcBuffer lists back to application in command_reply operations.
+   Convert them all to real lists and/or structures for easier use.
+   (***DONE)
+
+ o Nickname formatting rewrite. (***TESTING NEEDED)
+
+ o UDP connections. (***TESTING NEEDED)
+
+
+lib/silcsftp			****DONE****
+============
+
+ o Porting to use the new util library. (***DONE)
+
+
+lib/silccore/silcpacket.[ch]	****PARTLY DONE****
+============================
+
+ o SilcPacketEngine. (***DONE)
+
+ o New SILC Packet API. (***DONE)
+
+ o Implement silc_packet_engine_stop and silc_packet_stream_destroy. (***DONE)
+
+ o IV Included flag support, UDP transport support (***TESTING NEEDED)
+
+
+lib/silccore/silcid.[ch]	****DONE****
+========================
+
+ o Add silc_id_str2id to accept the destination buffer as argument
+   and thus not require any memory allocation.  Same will happen
+   with silc_id_payload_* functions. (***DONE)
+
+ o silc_id_str2id, silc_id2str to non-allocating routines. (***DONE)
+
+
+lib/silcskr	****DONE****
+===========
+
+ o Removing key from the repository is not possible currently.  It should
+   be. (***DONE)
+
+
+lib/silcske/silcske.[ch] 	***PARTLY DONE****
+========================
+
+ o Responder rekey (***TESTING NEEDED)
+
+ o IV Included flag support in SKE (***DONE)
+
+ o UDP transport changes; retransmission support by using exponential
+   backoff algorithm. (***DONE)
+
+ o SilcConnAuth header file documentation. (***DONE)
+
+
+lib/silccrypt			****PARTLY DONE****
+=============
+
+ o Implement PKCS #1 sign/verify with hash OID. (***TESTING NEEDED)
+
+ o Implement SILC Public Key Version 2 handling in sign/verify.  Implement
+   Version (V) identifier (***DONE)
+
+ o SILC PKCS (silcpkcs.h) reorganizing when other PK supports added.
+   Move the SILC Public Key routines away from the crypto library into
+   the core library (silccore).  silc_pkcs_public/private_key_* routines
+   to silc_public/private_key_* routines.  The silc_public_key_* routines
+   should also automatically handle SILC Public Keys, and other keys
+   and certificates as well.  Add fe. silcpk.h into silccore.  It should
+   also include the Public Key Payload encoding and decoding routines.
+   (***DONE)
+
+ o Assembler AES (***DONE)
+
+
+lib/silcutil			****PARTLY DONE****
+============
+
+ o The regex code from lib/contrib might compile fine on all platforms.
+   No need to make it silcutil/unix/ specific.  Add them to generic
+   silcutil.c. (***TESTNG NEEDED)
+
+ o Silc FD Stream to WIN32 (lib/silcutil/silcfdstream.h) (***TESTING NEEDED)
+
+ o bool -> SilcBool (***DONE)
+
+
+lib/silcutil/silcbuffer.h	****DONE****
 =========================
 
- o Add fingerprint as search constraint.
-
- o Add OpenPGP support.  Adding, removing, fetching PGP keys.  (Keyring
-   support?)
-
- o Add support for importing public keys from a directory and/or from a
-   file.  Add support for exporting the repository (different formats for
-   different key types?).
-
- o Change the entire silc_skr_find API.  Remove SilcSKRFind and just simply
-   add the find constraints as variable argument list to silc_skr_find, eg:
-
-  silc_skr_find(skr, schedule, callback, context,
-		SILC_SKR_FIND_PUBLIC_KEY, public_key,
-		SILC_SKR_FIND_COUNTRY, "FI",
-		SILC_SKR_FIND_USAGE, SILC_SKR_USAGE_AUTH,
-		SILC_SKR_FIND_END);
-
-   NULL argument would be ignored and skipped.
-
- o Add OR logical rule in addition of the current default AND, eg:
-
-  // Found key(s) MUST have this public key AND this country.
-  silc_skr_find(skr, schedule, callback, context,
-		SILC_SKR_FIND_RULE_AND,
-		SILC_SKR_FIND_PUBLIC_KEY, public_key,
-		SILC_SKR_FIND_COUNTRY, "FI",
-		SILC_SKR_FIND_END);
-
-  // Found key(s) MUST have this public key OR this key context
-  silc_skr_find(skr, schedule, callback, context,
-		SILC_SKR_FIND_RULE_OR,
-		SILC_SKR_FIND_PUBLIC_KEY, public_key,
-		SILC_SKR_FIND_CONTEXT, key_context,
-		SILC_SKR_FIND_END);
+ o Remove the `truelen' field from SilcBuffer as it is entirely
+   redundant since we can get the true length of the buffer by
+   doing buffer->end - buffer->header.  Add silc_buffer_truelen
+   macro instead.  Consider also removing `len' field too since
+   it effectively is buffer->tail - buffer->data, and adding
+   silc_buffer_len macro can do the same.  These would save
+   totally 8 bytes of memory per buffer. (***DONE)
 
 
-Crypto Library, lib/silccrypt/
-==============================
+lib/silcutil/silcbuffmt.[ch]	****DONE****
+============================
 
- o Add fingerprint to SilcSILCPublicKey and retrieval to silcpk.h, and
-   possibly to silcpkcs.h.
+ o SilcStack aware silc_buffer_unformat (***DONE)
 
-   /* Return fingerprint of the `public_key'.  Returns also the algorithm
-      that has been used to make the fingerprint. */
-   const unsigned char *
-   silc_pkcs_get_fingerprint(SilcPublicKey public_key,
-			     const char **hash_algorithm,
-			     SilcUInt32 *fingerprint_len);
+ o SilcStack aware silc_buffer_format (***DONE)
 
- o Change SILC PKCS API to asynchronous, so that accelerators can be used.
-   All PKCS routines should now take callbacks as argument and they should
-   be delivered to SilcPKCSObject and SilcPKCSAlgorithm too.
+ o silc_buffer_format reallocates automatically (***DONE)
 
-   /* Signature computation callback */
-   typedef void (*SilcPKCSSignCb)(SilcBool success,
-				  const unsigned char *signature,
-				  SilcUInt32 signature_len,
-				  void *context);
-
-   /* Signature verification callback */
-   typedef void (*SilcPKCSVerifyCb)(SilcBool success, void *context);
-
-   /* Encryption callback */
-   typedef void (*SilcPKCSEncryptCb)(SilcBool success,
-				     const unsigned char *encrypted,
-				     SilcUInt32 encrypted_len,
-				     void *context);
-
-   /* Decryption callback */
-   typedef void (*SilcPKCSDecryptCb)(SilcBool success,
-				     const unsigned char *decrypted,
-				     SilcUInt32 decrypted_len,
-				     void *context);
-
-   Either add new _async functions or add the callbacks to existing API
-   and if the callback is NULL then the API is not async and if provided
-   it may be async.  For example;
-
-   SilcBool silc_pkcs_sign(SilcPrivateKey private_key,
-			   unsigned char *src, SilcUInt32 src_len,
-			   unsigned char *dst, SilcUInt32 dst_size,
-			   SilcUInt32 *dst_len,
-			   SilcBool compute_hash, SilcHash hash,
-			   SilcPKCSSignCb async_sign,
-			   void *async_sign_context);
-
-   (if this is done then there's no reason why the buffers in the 
-    callbacks cannot be the ones user gives here) or allow only async:
-
-   SilcBool silc_pkcs_sign(SilcPrivateKey private_key,
-			   unsigned char *src, SilcUInt32 src_len,
-			   SilcBool compute_hash, SilcHash hash,
-			   SilcPKCSSignCb async_sign,
-			   void *async_sign_context);
-
-   or add new:
-
-   SilcBool silc_pkcs_sign_async(SilcPrivateKey private_key,
-			         unsigned char *src, SilcUInt32 src_len,
-			         SilcBool compute_hash, SilcHash hash,
-			         SilcPKCSSignCb async_sign,
-			         void *async_sign_context);
-
- o Change PKCS Algorithm API to take SilcPKCSAlgorithm as argument to
-   encrypt, decrypt, sign and verify functions.  We may need to for exmaple
-   check the alg->hash, supported hash functions.  Maybe deliver it also
-   to all other functions in SilcPKCSAlgorithm to be consistent.
-
- o Add DSS support.  Take implementation from Tom or make it yourself.
-
- o Implement the defined SilcDH API.  The definition is in
-   lib/silccrypt/silcdh.h.
-
- o All cipher, hash, hmac etc. allocation routines should take their name
-   in as const char * not const unsigned char *.
-
- o ECDSA and ECDH
+ o SILC_STR_OFFSET (***DONE)
 
 
-SILC Accelerator Library
-========================
+lib/silcutil/silcstack.[ch]	****DONE****
+===========================
 
- o SILC Accelerator API.  Provides generic way to use different kind of
-   accelerators.  Basically implements SILC PKCS API so that SilcPublicKey
-   and SilcPrivateKey can be used but they call the accelerators.
-
-   Something in the lines of (preliminary):
-
-   /* Register accelerator to system */
-   SilcBool silc_acc_register(const SilcAccelerator acc);
-
-   /* Unregister accelerator */
-   SilcBool silc_acc_unregister(const SilcAccelerator acc);
-
-   /* Find existing accelerator.  `name' is accelerators name and
-      `params' is optional accelerator specific parameters. */
-   SilcAccelerator silc_acc_find(const char *name, const char *params);
-
-   /* Return accelerator's displayable name */
-   const char *silc_ac_get_display_name(SilcAccelerator acc);
-
-   /* Accelerate `public_key'.  Return accelerated public key. */
-   SilcPublicKey silc_acc_public_key(SilcAccelerator acc,
-			 	     SilcPublicKey public_key);
-
-   /* Accelerate `private_key'.  Returns accelerated private key. */
-   SilcPrivateKey silc_acc_private_key(SilcAccelerator acc,
-				       SilcPrivateKey private_key);
-
-   /* Return the underlaying public key */
-   SilcPublicKey silc_acc_get_public_key(SilcAccelerator acc,
-					 SilcPublicKey public_key);
-
-   /* Return the underlaying private key */
-   SilcPrivateKey silc_acc_get_private_key(SilcAccelerator acc,
-					   SilcPrivateKey private_key);
-
-   typedef struct SilcAcceleratorObject {
-     const char *name;				/* Accelerator's name */
-     const char *display_name;			/* Displayable name */
-     SilcAcceleratorType type;			/* Accelerator type */
-     union {
-       struct {
-	 SilcPKCSObject *pkcs;			/* PKCS, may be NULL */
-	 SilcPKCSAlgorithm *algorithm;		/* Accelerator */
-       } pkcs;
-
-       struct {
-
-       } cipher;
-     } u;
-   } *SilcAccelerator, SilcAcceleratorStruct;
-
-   SilcPublicKey->SilcSILCPublicKey->RsaPublicKey accelerated as:
-   SilcPublicKey->SilcSILCPublicKey->SilcAcceleratorSoftware->RsaPublicKey or
-   SilcPublicKey->SilcSILCPublicKey->SilcAcceleratorPublicKey->
-     SilcAcceleratorSoftware->RsaPublicKey 
-
-   The former one if u.pkcs.pkcs == NULL.
-
- o Implement software accelerator.  It is a thread pool system where the
-   public key and private key operations are executed in threads.
-
-   This implements SilcPKCSAlgorithm (and SilcPKCSObject if needed) that 
-   implements the thread acclerated system.
-
- (o Symmetric key cryptosystem acceleration?  They are always sycnhronouos
-   even with hardware acceleration so the crypto API shouldn't require
-   changes.) maybe
+ o Data stack implementation (***DONE)
 
 
-lib/silcmath
+lib/silcutil/silcstream.[ch]	****DONE****
+============================
+
+ o Add abstract SilcStream. (***DONE)
+
+
+lib/silcutil/silcsocketstream.[ch]	****PARTY DONE****
+==================================
+
+ o Add SilcSocketStream (***DONE)
+
+ o Add SilcSocketStream for WIN32 (***TESTING NEEDED)
+
+ o Test QoS after the changes made to socket stream
+
+
+lib/silcutil/silcschedule*.[ch]		****PARTLY DONE****
+===============================
+
+ o Scheduler can be optimized for FD tasks by changing the fd_queue
+   to SilcHashTable instead of using linked list.  We need to do
+   one-to-one mapping of FD to task and hash table is more efficient
+   for this usage.
+
+   Also redefine the silc_select to perhaps return a separate
+   structure of the events that actually occurred, instead of
+   returning the events in the fd_list which is then traversed
+   in the generic code to find the changed events.  This can be
+   made faster by having own struct which includes only the
+   changed events, thus the tarversing is faster since the whole
+   fd_list is not traversed anymore (it is still traversed in the
+   silc_select but at least it removes one extra tarversing later
+   for the same list).
+
+   Other task queues should be changed to use SilcList.  (***DONE)
+
+ o Add SILC scheduler's internal routines into a table of implementation
+   function pointers, that the generic code then takes as extern from
+   implementation.  These are the silc_schedule_internal_* routines.
+   (***DONE)
+
+ o Change SILC_TASK_CALLBACK to non-static, and remove the macro
+   SILC_TASK_CALLBACK_GLOBAL. (***DONE)
+
+ o SILC Schedule API changes to WIN32. (***TESTING NEEDED)
+
+
+lib/silcutil/silcasync.[ch]	****DONE****
+===========================
+
+ o Add SilcAsyncOperation to utility library.  Any function that takes
+   callback as an argument must/should return SilcAsyncOperation.
+   (***DONE)
+
+
+lib/silcutil/silctime.[ch]	****DONE****
+===========================
+
+ o SilcTime. (***DONE)
+
+ o system time, universal, generalized. (***DONE)
+
+
+lib/silcutil/silcfsm.[ch]	****DONE****
+=========================
+
+ o SILC Finite State Machine API.  Replaces SILC Protocol API (***DONE)
+
+
+lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****PARTLY DONE****
+===============================================
+
+ o Add UDP interface (***DONE)
+
+ o Add UDP interface for WIN32 (***TESTING NEEDED)
+
+ o New network interfaces (***DONE)
+
+
+lib/silcmath			****PARTLY DONE****
 ============
 
- o Import TFM.  Talk to Tom to add the missing functions.  Use TFM in
-   client and client library, but TMA in server, due to the significantly
-   increased memory consumption with TFM, and the rare need for public
-   key operations in server.
+ o Test on x86_64.
 
-   We want TFM's speed but not TFM's memory requirements.  Talk to Tom
-   about making the TFM mp dynamic just as it is in LTM.
-
- o The SILC MP API function must start returning indication of success
-   and failure of the operation.
-
- o Do SilcStack support for silc_mp_init, silc_mp_init_size and other
-   any other MP function (including utility ones) that may allocate
-   memory.
-
- o All utility functions should be made non-allocating ones.
+ o Change LTM and TFM function names when importing to SILC tree to avoid
+   rare linking problems on system that has same named symbols already in
+   the system. (***DONE)
 
 
-SILC XML Library, lib/silcxml/
-==============================
+lib/silcutil/symbian/		****PARTLY DONE****
+=====================
 
- o SILC XML API (wrapper to expat).  The SILC XML API should follow and 
-   resemble Simple API for XML (SAX).
+  o lib/silcutil/symbian routines missing or not completed.
+    (****TESTING NEEDED)
 
-
-lib/silcske/silcske.[ch]
-========================
-
- o Ratelimit to UDP/IP transport for incoming packets.
+  o Something needs to be thought to the logging globals as well,
+    like silc_debug etc.  They won't work on EPOC.  Perhaps logging
+    and debugging is to be disabled on EPOC.
 
 
-lib/silcasn1
+lib/silcasn1			****DONE****
 ============
 
- o Negative integer encoding is missing, add it.
+ o ASN.1 library (***DONE)
 
- o SILC_ASN1_CHOICE should perhaps return an index what choice in the
-   choice list was found.  Currently it is left for caller to figure out
-   which choice was found.
+ o Header documentation missing. (***DONE)
 
- o SILC_ASN1_NULL in decoding should return SilcBool whether or not
-   the NULL was present.  It's important when it's SILC_ASN1_OPTIONAL
-   and we need to know whether it was present or not.
-
-
-lib/silcpgp
-===========
-
- o OpenPGP certificate support, allowing the use of PGP public keys
-   in SILC.
-
-
-lib/silcssh
-===========
-
- o SSH2 public key/private key support, allowing the use of SSH2 keys
-   in SILC.  RFC 4716.
-
-
-lib/silcpkix
-============
-
- o PKIX implementation
-
-
-lib/silcserver
-==============
-
- o (Re)write commands/command replys.
-
- o (Re)write notify handling.
-
- o The SERVER_SIGNOFF notify handing is not optimal, because it'll
-   cause sending of multiple SIGNOFF notify's instead of the one
-   SERVER_SIGNOFF notify that the server received.  This should be
-   optimized so that the only SERVER_SIGNOFF is sent and not
-   SIGNOFF of notify at all (using SIGNOFF takes the idea about
-   SERVER_SIGNOFF away entirely).
-
- o Another SERVER_SIGNOFF opt/bugfix:  Currently the signoff is
-   sent to a client if it is on same channel as the client that
-   signoffed.  However, the entire SERVER_SIGNOFF list is sent to
-   the client, ie. it may receive clients that was not on the
-   same channel.  This is actually against the specs.  It must be
-   done per channel.  It shouldn't receive the whole list just
-   because one client happened to be on same channel.
-
- o Add reference counters to all Silc*Entry structures
-
- o SERVICEs support (plugin, SIM)
-
- o If client's public key is saved in the server (and doing public key
-   authentication) then the hostname and the username information could
-   be taken from the public key.  Should be a configuration option!
-
- o Add a timeout to handling incoming JOIN commands.  It should be
-   enforced that JOIN command is executed only once in a second or two
-   seconds.  Now it is possible to accept n incoming JOIN commands
-   and process them without any timeouts.  THis must be employed because
-   each JOIN command will create and distribute the new channel key
-   to everybody on the channel.
-
- o Related to above.  If multiple JOINs are received in sequence perhaps
-   new key should be created only once, if the JOINs are handeled at the same
-   time.  Now we create multiple keys and never end up using them because
-   many JOINs are processed at the same time in sequence.  Only the last
-   key ends up being used.
-
- o The CMODE cipher & hmac change problem (#101).
+ o Some string encodings missing (copy/paste matter). (***DONE)
