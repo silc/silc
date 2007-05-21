@@ -80,7 +80,8 @@ Runtime library, lib/silcutil/
    SilcBool silc_clearenv(const char *variable);
 
  o Add functions to loading shared/dynamic object symbols (replaces the
-   SIM library (lib/silcsim) and introduces generic library).
+   SIM library (lib/silcsim) and introduces generic library).  Add this
+   to lib/silcutil/silcdll.[ch].
 
    SilcDll silc_dll_load(const char *object_path, SilcDllFlags flags);
    void silc_dll_close(SilcDll dll);
@@ -133,6 +134,9 @@ Runtime library, lib/silcutil/
    multi-thread/multi-scheduler system.  The events should be copyable 
    between schedulers.
 
+ o If the event signals are added, the SILC_PARAM_* stuff needs to be
+   moved from silcbuffmt.h to silctypes.h or something similar.
+
  o Structured log messages to Log API.  Allows machine readable log
    messages.  Would allow sending of any kind of data in a log message.
 
@@ -150,7 +154,7 @@ Runtime library, lib/silcutil/
 
  o SilcStack aware SilcDList.
 
- o Thread pool API.
+ o Thread pool API.  Add this to lib/silcutil/silcthread.[ch].
 
    typedef void (*SilcThreadPoolFunc)(SilcSchedule schedule,
 				      void *context);
@@ -350,12 +354,14 @@ Crypto Library, lib/silccrypt/
  o Add DSS support.  Take implementation from Tom or make it yourself.
 
  o Implement the defined SilcDH API.  The definition is in
-   lib/silccrypt/silcdh.h.
+   lib/silccrypt/silcdh.h.  Make sure it is asynchronous so that it can
+   be accelerated.  Also take into account that it could use elliptic
+   curves.
+
+ o ECDSA and ECDH
 
  o All cipher, hash, hmac etc. allocation routines should take their name
    in as const char * not const unsigned char *.
-
- o ECDSA and ECDH
 
 
 SILC Accelerator Library
@@ -373,9 +379,11 @@ SILC Accelerator Library
    /* Unregister accelerator */
    SilcBool silc_acc_unregister(const SilcAccelerator acc);
 
-   /* Find existing accelerator.  `name' is accelerators name and
-      `params' is optional accelerator specific parameters. */
-   SilcAccelerator silc_acc_find(const char *name, const char *params);
+   /* Find existing accelerator.  `name' is accelerator's name.  Varags
+      are optional accelerator specific parameteres. */
+   SilcAccelerator silc_acc_find(const char *name, ...);
+
+     silc_acc_find("softacc", "min_threads", 2, "max_threads", 8, NULL);
 
    /* Return accelerator's displayable name */
    const char *silc_ac_get_display_name(SilcAccelerator acc);
@@ -396,21 +404,28 @@ SILC Accelerator Library
    SilcPrivateKey silc_acc_get_private_key(SilcAccelerator acc,
 					   SilcPrivateKey private_key);
 
+   typedef enum {
+     SILC_ACCELERATOR_PKCS,
+     SILC_ACCELERATOR_DH,
+     SILC_ACCELERATOR_CIPHER,
+     SILC_ACCELERATOR_HASH
+   } SilcAcceleratorType;
+
    typedef struct SilcAcceleratorObject {
-     const char *name;				/* Accelerator's name */
-     const char *display_name;			/* Displayable name */
-     SilcAcceleratorType type;			/* Accelerator type */
+     const char *name;			/* Accelerator's name */
+     const char *display_name;		/* Displayable name */
      union {
        struct {
-	 SilcPKCSObject *pkcs;			/* Accelerator PKCS*/
-	 SilcPKCSAlgorithm *algorithm;		/* Accelerator Alg, may be 
-						   NULL */
+	 SilcPKCSObject *pkcs;		/* Accelerator PKCS*/
+	 SilcPKCSAlgorithm *algorithm;	/* Accelerator Alg, may be NULL */
        } pkcs;
 
-       struct {
-
-       } cipher;
+       SilcDHObject *dh;
+       SilcCipherObject *cipher;
+       SilcHashObject *hash;
      } u;
+
+     SilcAcceleratorType type;		/* Accelerator type */
    } *SilcAccelerator, SilcAcceleratorStruct;
 
    SilcPublicKey->SilcSILCPublicKey->RsaPublicKey accelerated as:
