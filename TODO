@@ -200,6 +200,9 @@ Runtime library, lib/silcutil/
       specified to silc_thread_pool_alloc always remains. */
    void silc_thread_pool_stop_free_threads(SilcThreadPool tp);
 
+ o Fast mutex implementation.  Fast rwlock implementation.  Mutex and
+   rwlock implementation using atomic operations.
+
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Zip API must be
    defined.
@@ -399,8 +402,9 @@ SILC Accelerator Library
      SilcAcceleratorType type;			/* Accelerator type */
      union {
        struct {
-	 SilcPKCSObject *pkcs;			/* PKCS, may be NULL */
-	 SilcPKCSAlgorithm *algorithm;		/* Accelerator */
+	 SilcPKCSObject *pkcs;			/* Accelerator PKCS*/
+	 SilcPKCSAlgorithm *algorithm;		/* Accelerator Alg, may be 
+						   NULL */
        } pkcs;
 
        struct {
@@ -410,11 +414,11 @@ SILC Accelerator Library
    } *SilcAccelerator, SilcAcceleratorStruct;
 
    SilcPublicKey->SilcSILCPublicKey->RsaPublicKey accelerated as:
-   SilcPublicKey->SilcSILCPublicKey->SilcAcceleratorSoftware->RsaPublicKey or
-   SilcPublicKey->SilcSILCPublicKey->SilcAcceleratorPublicKey->
-     SilcAcceleratorSoftware->RsaPublicKey 
+   SilcPublicKey->SilcAcceleratorSoftware->SilcSILCPublicKey->RsaPublicKey or
+   SilcPublicKey->SilcAcceleratorPublicKey->SilcAcceleratorSoftware->
+     SilcSILCPublicKey->RsaPublicKey
 
-   The former one if u.pkcs.pkcs == NULL.
+   The former one if u.pkcs.algorithm == NULL.
 
  o Implement software accelerator.  It is a thread pool system where the
    public key and private key operations are executed in threads.
