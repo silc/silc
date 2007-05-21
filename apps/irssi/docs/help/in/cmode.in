@@ -127,37 +127,35 @@ Examples:
   or simply /CMODE * +f if you are already using the new keypair.
 
   Here's how to transfer founder rights to different user using
-  temporary keypair:
+  temporary keypair.  First, create temporary keypair:
 
-    Create temporary keypair:
+    # silc -C
 
-     # silc -C
+  Become founder on your channel:
 
-    Become founder on your channel:
+    /CUMODE * +f mynick
 
-     /CUMODE * +f mynick
+  Set the temporary keypair on the channel and then send the key
+  pair to your friend with /FILE command or with encrypted Email:
 
-    Set the temporary keypair on the channel and then send the key
-    pair to your friend with /FILE command or with encrypted Email:
+    /CMODE * +f /path/to/temp/pubkey /path/to/temp/privkey
+    (/FILE send /path/to/temp/keypair.tgz yourfriend)
 
-     /CMODE * +f /path/to/temp/pubkey /path/to/temp/privkey
-     (/FILE send /path/to/temp/keypair.tgz yourfriend)
+  Tell your friend to give the following command to become founder:
 
-    Tell your friend to give the following command to become founder:
+    /CUMODE * +f yourfriend /path/to/temp/pubkey /path/to/temp/privkey
 
-     /CUMODE * +f yourfriend /path/to/temp/pubkey /path/to/temp/privkey
+  Your friend then sets his own keypair on the channel:
 
-    Your friend then sets his own keypair on the channel:
+    /CMODE * +f
 
-     /CMODE * +f
-
-    After this the temporary keypair can be removed and your friend has
-    become the founder of the channel.  This way the founder rights can
-    be transferred without ever revealing your own keypair.  When your
-    friend becomes the founder your founder rights will be removed by
-    the server automatically.  It is also possible to continue using the
-    temporary keypair, thus sharing founder rights with two or more
-    users.  Note that it is possible for only one user at a time to
-    have founder mode on the channel even if they share the keypair.
+  After this the temporary keypair can be removed and your friend has
+  become the founder of the channel.  This way the founder rights can
+  be transferred without ever revealing your own keypair.  When your
+  friend becomes the founder your founder rights will be removed by
+  the server automatically.  It is also possible to continue using the
+  temporary keypair, thus sharing founder rights with two or more
+  users.  Note that it is possible for only one user at a time to
+  have founder mode on the channel even if they share the keypair.
 
 See also: CUMODE, UMODE, JOIN, KEY
