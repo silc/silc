@@ -137,9 +137,10 @@ Examples:
       /CUMODE * +f mynick
 
     Set the temporary keypair on the channel and then send the key
-    pair to your friend with for example encrypted Email:
+    pair to your friend with /FILE command or with encrypted Email:
 
       /CMODE * +f /path/to/temp/pubkey /path/to/temp/privkey
+      (/FILE send /path/to/temp/keypair.tgz yourfriend)
 
     Tell your friend to give the following command to become founder:
 
