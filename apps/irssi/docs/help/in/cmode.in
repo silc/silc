@@ -1,14 +1,14 @@
 
 @SYNTAX:cmode@
 
-This command is used to manage the modes of the channel.  Most
-of the modes require special privileges, such as channel operator
-or channel founder privileges to work.  The mode is added by
-adding + before the option(s) and removed by adding - before the
-option(s).  The (*) mark below means that only founder may set/unset
-that mode.  Other modes both channel operator and founder may manage.
+ This command is used to manage the modes of the channel.  Most
+ of the modes require special privileges, such as channel operator
+ or channel founder privileges to work.  The mode is added by
+ adding + before the option(s) and removed by adding - before the
+ option(s).  The (*) mark below means that only founder may set/unset
+ that mode.  Other modes both channel operator and founder may manage.
 
-The following modes are available:
+ The following modes are available:
 
     p               Set/unset channel as private channel.  Private
                     channels are shown with LIST command with an
@@ -89,21 +89,22 @@ The following modes are available:
                     arguments the current channel public key list is
                     displayed.
 
-Multiple modes can be set/unset at once if the modes does not
-require any arguments.  If mode requires an argument then only
-one mode can be set at once.
+ Multiple modes can be set/unset at once if the modes does not
+ require any arguments.  If mode requires an argument then only
+ one mode can be set at once.
 
-When the +k (private channel key mode) mode is set the channel's
-default cipher and HMAC are not used.  The private key (see /HELP KEY
-for help how to set the private channel key) defines the cipher and HMAC
-for the channel while +k mode is set.  Also the +c and +h modes are
-ignored when private channel key mode is set.
+ When the +k (private channel key mode) mode is set the channel's
+ default cipher and HMAC are not used.  The private key (see /HELP KEY
+ for help how to set the private channel key) defines the cipher and
+ HMAC for the channel while +k mode is set.  Also the +c and +h modes
+ are ignored when private channel key mode is set.
 
 Examples:
 
   Set the channel a permanent (persistent).  The channel won't be
   deleted when last user leaves the channel.  When you as the founder
-  leave the channel you will be able to reclaim the founder rights later.
+  leave the channel you will be able to reclaim the founder rights
+   later.
 
     /CMODE * +f
 
@@ -130,33 +131,33 @@ Examples:
 
     Create temporary keypair:
 
-      # silc -C
+     # silc -C
 
     Become founder on your channel:
 
-      /CUMODE * +f mynick
+     /CUMODE * +f mynick
 
     Set the temporary keypair on the channel and then send the key
     pair to your friend with /FILE command or with encrypted Email:
 
-      /CMODE * +f /path/to/temp/pubkey /path/to/temp/privkey
-      (/FILE send /path/to/temp/keypair.tgz yourfriend)
+     /CMODE * +f /path/to/temp/pubkey /path/to/temp/privkey
+     (/FILE send /path/to/temp/keypair.tgz yourfriend)
 
     Tell your friend to give the following command to become founder:
 
-      /CUMODE * +f yourfriend /path/to/temp/pubkey /path/to/temp/privkey
+     /CUMODE * +f yourfriend /path/to/temp/pubkey /path/to/temp/privkey
 
     Your friend then sets his own keypair on the channel:
 
-      /CMODE * +f
+     /CMODE * +f
 
     After this the temporary keypair can be removed and your friend has
     become the founder of the channel.  This way the founder rights can
     be transferred without ever revealing your own keypair.  When your
     friend becomes the founder your founder rights will be removed by
     the server automatically.  It is also possible to continue using the
-    temporary keypair, thus sharing founder rights with two or more users.
-    Note that it is possible for only one user at a time to have founder
-    mode on the channel even if they share the keypair.
+    temporary keypair, thus sharing founder rights with two or more
+    users.  Note that it is possible for only one user at a time to
+    have founder mode on the channel even if they share the keypair.
 
 See also: CUMODE, UMODE, JOIN, KEY

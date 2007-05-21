@@ -1,12 +1,12 @@
 
 @SYNTAX:cumode@
 
-This command is used to manage the users modes on the channel.
-Most of the modes require that the user which changes some
-other user's mode must be channel founder or channel operator.  The
-mode is added by adding + before the option(s) and removed by
-adding - before the option(s).  The following channel user modes
-are available:
+ This command is used to manage the users modes on the channel.
+ Most of the modes require that the user which changes some
+ other user's mode must be channel founder or channel operator.
+ The mode is added by adding + before the option(s) and removed
+ by adding - before the option(s).  The following channel user
+ modes are available:
 
     a <nickname>[@<server>]
 
