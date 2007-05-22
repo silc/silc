@@ -16,12 +16,13 @@ silc_DEPENDENCIES = 		\
 	@PERL_LINK_LIBS@ 	\
 	@PERL_FE_LINK_LIBS@
 
-LIBS = $(SILC_COMMON_LIBS)
 silc_LDADD = \
 	@COMMON_LIBS@ \
-	-lsilcclient \
 	@PERL_LINK_LIBS@ \
 	@PERL_FE_LINK_LIBS@ \
+	$(SILC_COMMON_LDFLAGS) \
+	-lsilcclient \
+	$(SILC_COMMON_LIBS) \
 	@PERL_LINK_FLAGS@ \
 	@PROG_LIBS@	\
 	@TEXTUI_LIBS@

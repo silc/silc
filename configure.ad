@@ -185,40 +185,6 @@ AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid sched_yield)
 AC_CHECK_FUNCS(setgroups initgroups nl_langinfo nanosleep tzset)
 AC_CHECK_FUNCS(strchr snprintf strstr strcpy strncpy memcpy memset memmove)
 
-#ifdef SILC_DIST_SIM
-# SIM support checking
-# XXX These needs to be changed as more supported platforms appear.
-# XXX This probably needs to be made platform dependant check.
-#
-sim_support=false
-AC_MSG_CHECKING(for SIM support)
-AC_MSG_RESULT()
-AC_CHECK_HEADERS(dlfcn.h,
-  [
-    AC_CHECK_LIB(dl, dlopen,
-      [
-        AC_DEFINE([SILC_SIM], [], [HAVE_SIM])
-        sim_support=true
-        LIBS="$LIBS -ldl"
-      ],
-      [
-        AC_CHECK_LIB(c, dlopen,
-          [
-            AC_DEFINE([SILC_SIM], [], [HAVE_SIM])
-            sim_support=true
-          ])
-      ])
-   ])
-
-AM_CONDITIONAL(SILC_SIM, test x$sim_support = xtrue)
-if test x$sim_support = xtrue; then
-  AC_MSG_RESULT(Enabled SIM support.)
-  __SILC_HAVE_SIM="#define __SILC_HAVE_SIM 1"
-else
-  AC_MSG_RESULT(No SIM support found.)
-fi
-#endif SILC_DIST_SIM
-
 # lib/contrib conditionals
 #
 AC_CHECK_HEADER(regex.h,
@@ -612,7 +578,9 @@ if test -n "$with_silc_includes" || test -n "$with_silc_libs"; then
   if test "$ac_silc_libs" != "no"; then
     compile_libs=false
     LIBSUBDIR=
-    LIBS="$LIBS -L$ac_silc_libs"
+    LDFLAGS="-L$ac_silc_libs $LDFLAGS"
+  else
+    LDFLAGS="-L\$(silc_top_srcdir)/lib $LDFLAGS"
   fi
 
   # Check libs to link against
@@ -629,9 +597,9 @@ if test -n "$with_silc_includes" || test -n "$with_silc_libs"; then
 
 else
   # pkg-config check
-  PKG_CHECK_MODULES(SILC, silc, compile_libs=false, compile_libs=true)
+  PKG_CHECK_MODULES(SILC, [silc >= 1.1], compile_libs=false, compile_libs=true)
 #ifdef SILC_DIST_CLIENTLIB
-  PKG_CHECK_MODULES(SILCCLIENT, silcclient, compile_libs=false, compile_libs=true)
+  PKG_CHECK_MODULES(SILCCLIENT, [silcclient >= 1.1], compile_libs=false, compile_libs=true)
 #endif SILC_DIST_CLIENTLIB
 #ifdef SILC_DIST_SERVERLIB
   PKG_CHECK_MODULES(SILCSERVER, silcserver, compile_libs=false, compile_libs=true)
@@ -639,21 +607,57 @@ else
 
   if test x$compile_libs = xfalse; then
     LIBSUBDIR=
-    LIBS="$LIBS $SILC_LIBS"
+    LIBS="$SILC_LIBS $LIBS"
     CFLAGS="$CFLAGS $SILC_CFLAGS"
 #ifdef SILC_DIST_CLIENTLIB
-    LIBS="$LIBS $SILCCLIENT_LIBS"
+    LIBS="$SILCCLIENT_LIBS $LIBS"
     CFLAGS="$CFLAGS $SILCCLIENT_CFLAGS"
 #endif SILC_DIST_CLIENTLIB
 #ifdef SILC_DIST_SERVERLIB
     LIBS="$LIBS $SILCSERVER_LIBS"
     CFLAGS="$CFLAGS $SILCSERVER_CFLAGS"
 #endif SILC_DIST_SERVERLIB
+  else
+    LDFLAGS="-L\$(silc_top_srcdir)/lib $LDFLAGS"
   fi
 fi
+#else SILC_DIST_TOOLKIT
+LDFLAGS="-L\$(silc_top_srcdir)/lib $LDFLAGS"
 #endif SILC_DIST_TOOLKIT
 
-AC_SUBST(LIBSUBDIR)
+#ifdef SILC_DIST_SIM
+# SIM support checking
+# XXX These needs to be changed as more supported platforms appear.
+# XXX This probably needs to be made platform dependant check.
+#
+sim_support=false
+AC_MSG_CHECKING(for SIM support)
+AC_MSG_RESULT()
+AC_CHECK_HEADERS(dlfcn.h,
+  [
+    AC_CHECK_LIB(dl, dlopen,
+      [
+        AC_DEFINE([SILC_SIM], [], [HAVE_SIM])
+        sim_support=true
+        LIBS="$LIBS -ldl"
+      ],
+      [
+        AC_CHECK_LIB(c, dlopen,
+          [
+            AC_DEFINE([SILC_SIM], [], [HAVE_SIM])
+            sim_support=true
+          ])
+      ])
+   ])
+
+AM_CONDITIONAL(SILC_SIM, test x$sim_support = xtrue)
+if test x$sim_support = xtrue; then
+  AC_MSG_RESULT(Enabled SIM support.)
+  __SILC_HAVE_SIM="#define __SILC_HAVE_SIM 1"
+else
+  AC_MSG_RESULT(No SIM support found.)
+fi
+#endif SILC_DIST_SIM
 
 # SOCKS4 support checking
 #
@@ -1230,7 +1234,9 @@ AD_INCLUDE_CONFIGURE
 #
 # Substitutions
 #
+AC_SUBST(LIBSUBDIR)
 AC_SUBST(SILC_TOP_SRCDIR)
+AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
 AC_SUBST(SILC_LIB_INCLUDES)
 AC_SUBST(__SILC_HAVE_PTHREAD)
