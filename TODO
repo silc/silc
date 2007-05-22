@@ -137,6 +137,22 @@ Runtime library, lib/silcutil/
  o If the event signals are added, the SILC_PARAM_* stuff needs to be
    moved from silcbuffmt.h to silctypes.h or something similar.
 
+ o In case the SILC Events are done we shall create a new concept of
+   parent and child SilcSchedule's.  When new SilcSchedule is created a
+   parent can be associated to it.  This association could be done either
+   directly by the parent or by any other children.  This way the signals
+   would in effect be global and would reach all children schedulers.
+
+   This relationship would be associative only.  The schedulers are still
+   independent and run independently from each other.   All schedulers
+   would be linked and could be accessed from any of the schedulers.
+   It should be possible to retrieve the parent and enumate all children
+   from any of the schedulers.
+
+   SilcSchedule silc_schedule_init(int max_tasks, void *app_context,
+				   SilcSchedule parent);
+   SilcSchedule silc_schedule_get_parent(SilcSchedule schedule);
+
  o Structured log messages to Log API.  Allows machine readable log
    messages.  Would allow sending of any kind of data in a log message.
 
@@ -195,14 +211,14 @@ Runtime library, lib/silcutil/
 					 SilcUInt32 max_threads);
 
    /* Returns the amount of maximum size the pool can grow. */
-   SilcUInt32 silc_thread_pool_get_max_threads(SilcThreadPool tp);
+   SilcUInt32 silc_thread_pool_num_max_threads(SilcThreadPool tp);
 
    /* Returns the amount of free threads in the pool currently. */
-   SilcUInt32 silc_thread_pool_get_free_threads(SilcThreadPool tp);
+   SilcUInt32 silc_thread_pool_num_free_threads(SilcThreadPool tp);
 
    /* Stops all free and started threads.  The minumum amount of threads
       specified to silc_thread_pool_alloc always remains. */
-   void silc_thread_pool_stop_free_threads(SilcThreadPool tp);
+   void silc_thread_pool_purge(SilcThreadPool tp);
 
  o Fast mutex implementation.  Fast rwlock implementation.  Mutex and
    rwlock implementation using atomic operations.
@@ -375,7 +391,7 @@ SILC Accelerator Library
 
    /* Register accelerator to system.  Initializes the accelerator. */
       Varargs are optional accelerator specific init parameteres. */
-   SilcBool silc_acc_register(const SilcAccelerator acc, ...);
+   SilcBool silc_acc_register(SilcAccelerator acc, ...);
 
      silc_acc_register(softacc, "min_threads", 2, "max_threads", 16, NULL);
 
