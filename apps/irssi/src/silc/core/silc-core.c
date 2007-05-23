@@ -51,6 +51,7 @@ static int init_failed = 0;
 #endif
 
 static int idletag = -1;
+static int running = 0;
 
 /* SILC Client */
 SilcClient silc_client = NULL;
@@ -561,6 +562,7 @@ silc_stopped(SilcClient client, void *context)
 static void
 silc_running(SilcClient client, void *context)
 {
+  running = 1;
   SILC_LOG_DEBUG(("Client library is running"));
 }
 
@@ -791,11 +793,12 @@ void silc_core_deinit(void)
   if (idletag != -1)
     g_source_remove(idletag);
 
-  int stopped = 0;
-  silc_client_stop(silc_client, silc_stopped, &stopped);
-
-  while (!stopped)
-    silc_client_run_one(silc_client);
+  if (running) {
+    int stopped = 0;
+    silc_client_stop(silc_client, silc_stopped, &stopped);
+    while (!stopped)
+      silc_client_run_one(silc_client);
+  }
 
   if (opt_hostname)
     silc_free(opt_hostname);
