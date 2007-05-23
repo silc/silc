@@ -843,10 +843,13 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       if (silc_client_on_channel(channel, client_entry2)) {
 	silc_snprintf(buf, sizeof(buf), "%s", client_entry2->nickname);
 	silc_client_nickname_format(client, conn, client_entry2, TRUE);
-	if (!silc_utf8_strcasecmp(buf, client_entry2->nickname))
+	if (!silc_utf8_strcasecmp(buf, client_entry2->nickname)) {
+	  nicklist_rename_unique(SERVER(server), client_entry2, buf,
+				 client_entry2, client_entry2->nickname);
 	  printformat_module("fe-common/silc", server, channel->channel_name,
 			     MSGLEVEL_CRAP, SILCTXT_CHANNEL_USER_APPEARS,
 			     buf, client_entry2->nickname);
+	}
       }
       silc_client_list_free(client, conn, clients);
       silc_free(name);
@@ -899,10 +902,13 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       if (silc_client_on_channel(channel, client_entry2)) {
 	silc_snprintf(buf, sizeof(buf), "%s", client_entry2->nickname);
 	silc_client_nickname_format(client, conn, client_entry2, TRUE);
-	if (!silc_utf8_strcasecmp(buf, client_entry2->nickname))
+	if (!silc_utf8_strcasecmp(buf, client_entry2->nickname)) {
+	  nicklist_rename_unique(SERVER(server), client_entry2, buf,
+				 client_entry2, client_entry2->nickname);
 	  printformat_module("fe-common/silc", server, channel->channel_name,
 			     MSGLEVEL_CRAP, SILCTXT_CHANNEL_USER_APPEARS,
 			     buf, client_entry2->nickname);
+	}
       }
       silc_client_list_free(client, conn, clients);
       silc_free(name);
