@@ -1,8 +1,8 @@
 /*
 
-  mybot.c 
+  mybot.c
 
-  Author: Pekka Riikonen <priikone@silcnet.org>, November 2002
+  Author: Pekka Riikonen <priikone@silcnet.org>, November 2002, 2007
   This code is Public Domain.
 
   MyBot
@@ -19,24 +19,6 @@
   gcc -o mybot mybot.c -I/usr/local/silc/include -L/usr/local/silc/lib \
       -lsilc -lsilcclient -lpthread -ldl
 
-  The MyBot works as follows (logicly):
-
-  main -> mybot_start -> silc_client_connect_to_server
-                v
-          silc_client_run (message loop...)
-                v
-          silc_verify_public_key
-                v
-          silc_get_auth_method
-                v
-          silc_connected -> silc_client_command_call (JOIN)
-                v
-          silc_command_reply -> silc_send_channel_message ("hello")
-                v
-          message loop...
-                v
-  main <- mybot_start
-
 */
 
 #include "silc.h"		/* Mandatory include for SILC applications */
@@ -44,19 +26,84 @@
 
 SilcClientOperations ops;
 
+static void silc_running(SilcClient client, void *application);
+static void silc_stopped(SilcClient client, void *context);
+
 /******* MyBot code **********************************************************/
 
 /* This is context for our MyBot client */
 typedef struct {
   SilcClient client;		/* The actual SILC Client */
   SilcClientConnection conn;	/* Connection to the server */
+  SilcPublicKey public_key;     /* My public key */
+  SilcPrivateKey private_key;   /* My private key */
 } *MyBot;
+
+/* Connect callback called after connected to remote server. */
+
+static void
+silc_connected(SilcClient client, SilcClientConnection conn,
+	       SilcClientConnectionStatus status,
+	       SilcStatus error, const char *message,
+	       void *context)
+{
+  MyBot mybot = client->application;
+
+  if (status == SILC_CLIENT_CONN_DISCONNECTED) {
+    SILC_LOG_DEBUG(("Disconnected %s", message ? message : ""));
+    silc_client_stop(client, silc_stopped, mybot);
+    return;
+  }
+
+  if (status != SILC_CLIENT_CONN_SUCCESS &&
+      status != SILC_CLIENT_CONN_SUCCESS_RESUME) {
+    SILC_LOG_DEBUG(("Error connecting to server %d", status));
+    silc_client_stop(client, silc_stopped, mybot);
+    return;
+  }
+
+  fprintf(stdout, "\nMyBot: Connected to server\n\n");
+
+  /* Now that we have connected to server, let's join a channel named
+     "mybot". */
+  silc_client_command_call(client, conn, "JOIN mybot");
+
+  /* Save the connection context */
+  mybot->conn = conn;
+}
+
+/* Running callback given to silc_client_init called to indicate that the
+   Client Library is running.  After this Client API functions can be
+   called. */
+
+static void silc_running(SilcClient client, void *application)
+{
+  MyBot mybot = application;
+
+  SILC_LOG_DEBUG(("Client is running"));
+
+  /* Connect to server.  The silc_connected callback will be called after
+     the connection is established or if an error occurs during connecting. */
+  silc_client_connect_to_server(mybot->client, NULL,
+				mybot->public_key, mybot->private_key,
+				"silc.silcnet.org", 706,
+				silc_connected, mybot);
+}
+
+/* Client stopped callback given to silc_client_stop.  Called to indicate
+   that Client Library is stopped. */
+
+static void silc_stopped(SilcClient client, void *context)
+{
+  SILC_LOG_DEBUG(("Client stopped"));
+}
 
 /* Start the MyBot, by creating the SILC Client entity by using the
    SILC Client Library API. */
 int mybot_start(void)
 {
   MyBot mybot;
+  SilcClientParams params;
 
   /* Allocate the MyBot structure */
   mybot = silc_calloc(1, sizeof(*mybot));
@@ -65,59 +112,35 @@ int mybot_start(void)
     return 1;
   }
 
-  /* Allocate our SILC Client which is the MyBot.  The arguments to the
-     function are:
-
-     ops           - our client operations that the library requires
-     param         - parameters, but we don't have any so we pass NULL,
-     application   - our application, ie. the MyBot of course!
-     version       - silc version, provided by the library if we put NULL
-  */
-  mybot->client = silc_client_alloc(&ops, NULL, mybot, NULL);
+  memset(&params, 0, sizeof(params));
+  params.threads = TRUE;
+  mybot->client = silc_client_alloc(&ops, &params, mybot, NULL);
   if (!mybot->client) {
     perror("Could not allocate SILC Client");
     return 1;
   }
 
-  /* Now fill the allocated client with mandatory parameters the library
-     requires: username, hostname and "real name". */
-  mybot->client->username = silc_get_username();
-  mybot->client->hostname = silc_net_localhost();
-  mybot->client->realname = strdup("I am the MyBot");
-
   /* Now we initialize the client. */
-  if (!silc_client_init(mybot->client)) {
+  if (!silc_client_init(mybot->client, silc_get_username(),
+			silc_net_localhost(), "I am the MyBot",
+			silc_running, mybot)) {
     perror("Could not init client");
     return 1;
   }
 
-  /* Then we load our public key from the file.  The library requires
-     the key pair loaded before the client is started.  The SILC Toolkit
-     provides nice routines to do just that so we don't have to worry
-     about much.
-
-     Oh, and if the key pair doesn't exist, we create one here
-     automatically, and save them to files for future. */
   if (!silc_load_key_pair("mybot.pub", "mybot.prv", "",
-			  &mybot->client->pkcs,
-			  &mybot->client->public_key,
-			  &mybot->client->private_key)) {
+			  &mybot->public_key,
+			  &mybot->private_key)) {
     /* The keys don't exist.  Let's generate us a key pair then!  There's
        nice ready routine for that too.  Let's do 2048 bit RSA key pair. */
     fprintf(stdout, "MyBot: Key pair does not exist, generating it.\n");
     if (!silc_create_key_pair("rsa", 2048, "mybot.pub", "mybot.prv", NULL, "",
-			      &mybot->client->pkcs,
-			      &mybot->client->public_key,
-			      &mybot->client->private_key, FALSE)) {
+			      &mybot->public_key,
+			      &mybot->private_key, FALSE)) {
       perror("Could not generated key pair");
       return 1;
     }
   }
-
-  /* Start connecting to server.  This is asynchronous connecting so the
-     connection is actually created later after we run the client. */
-  silc_client_connect_to_server(mybot->client, NULL, 706,
-				"silc.silcnet.org", mybot);
 
   /* And, then we are ready to go.  Since we are really simple client we
      don't have user interface and we don't have to deal with message loops
@@ -181,7 +204,7 @@ silc_channel_message(SilcClient client, SilcClientConnection conn,
 
 
 /* Private message to the client. The `sender' is the sender of the
-   message. The message is `message'and maybe NULL.  The `flags'  
+   message. The message is `message'and maybe NULL.  The `flags'
    indicates message flags  and it is used to determine how the message
    can be interpreted (like it may tell the message is multimedia
    message). */
@@ -252,8 +275,8 @@ silc_notify(SilcClient client, SilcClientConnection conn,
 
 static void
 silc_command(SilcClient client, SilcClientConnection conn,
-	     SilcClientCommandContext cmd_context, bool success,
-	     SilcCommand command, SilcStatus status)
+	     SilcBool success, SilcCommand command, SilcStatus status,
+	     SilcUInt32 argc, unsigned char **argv)
 {
   /* If error occurred in client library with our command, print the error */
   if (status != SILC_STATUS_OK)
@@ -282,91 +305,43 @@ silc_command(SilcClient client, SilcClientConnection conn,
 
 static void
 silc_command_reply(SilcClient client, SilcClientConnection conn,
-		   SilcCommandPayload cmd_payload, bool success,
-		   SilcCommand command, SilcStatus status, ...)
+		   SilcCommand command, SilcStatus status,
+		   SilcStatus error, va_list ap)
 {
-  va_list va;
-
   /* If error occurred in client library with our command, print the error */
   if (status != SILC_STATUS_OK)
     fprintf(stderr, "MyBot: COMMAND REPLY %s: %s\n",
 	    silc_get_command_name(command),
 	    silc_get_status_message(status));
 
-  va_start(va, status);
-
-  /* Check for successful JOIN */
+  /* Check for successful JOIN.  See
+     http://silcnet.org/docs/toolkit/command_reply_args.html for the
+     different arguments the client library returns. */
   if (command == SILC_COMMAND_JOIN) {
     SilcChannelEntry channel;
+    SilcHash sha1hash;
 
-    (void)va_arg(va, SilcClientEntry);
-    channel = va_arg(va, SilcChannelEntry);
+    (void)va_arg(ap, SilcClientEntry);
+    channel = va_arg(ap, SilcChannelEntry);
 
     fprintf(stdout, "MyBot: Joined '%s' channel\n", channel->channel_name);
 
     /* Now send the "hello" to the channel */
-    silc_client_send_channel_message(client, conn, channel, NULL, 0,
-				     "hello", strlen("hello"), FALSE);
+    silc_client_send_channel_message(client, conn, channel, NULL, 0, NULL,
+				     "hello", strlen("hello"));
     fprintf(stdout, "MyBot: Sent 'hello' to channel\n");
 
-    /* Now send digitally signed "hello" to the channel */
+    /* Now send digitally signed "hello" to the channel.  We have to allocate
+       hash function for the signature process. */
+    silc_hash_alloc("sha1", &sha1hash);
     silc_client_send_channel_message(client, conn, channel, NULL,
-				     SILC_MESSAGE_FLAG_SIGNED,
-				     "hello, with signature", 
-				     strlen("hello, with signature"), FALSE);
+				     SILC_MESSAGE_FLAG_SIGNED, sha1hash,
+				     "hello, with signature",
+				     strlen("hello, with signature"));
+    silc_hash_free(sha1hash);
     fprintf(stdout, "MyBot: Sent 'hello, with signature' to channel\n");
   }
-
-  va_end(va);
 }
-
-
-/* Called to indicate that connection was either successfully established
-   or connecting failed.  This is also the first time application receives
-   the SilcClientConnection objecet which it should save somewhere.
-   If the `success' is FALSE the application must always call the function
-   silc_client_close_connection. */
-
-static void
-silc_connected(SilcClient client, SilcClientConnection conn,
-	       SilcClientConnectionStatus status)
-{
-  MyBot mybot = client->application;
-  SilcBuffer idp;
-
-  if (status == SILC_CLIENT_CONN_ERROR) {
-    fprintf(stderr, "MyBot: Could not connect to server\n");
-    silc_client_close_connection(client, conn);
-    return;
-  }
-
-  fprintf(stdout, "MyBot: Connected to server.\n");
-
-  /* Save the connection context */
-  mybot->conn = conn;
-
-  /* Now that we are connected, join to mybot channel with JOIN command. */
-  silc_client_command_call(client, conn, "JOIN mybot");
-}
-
-
-/* Called to indicate that connection was disconnected to the server.
-   The `status' may tell the reason of the disconnection, and if the
-   `message' is non-NULL it may include the disconnection message
-   received from server. */
-
-static void
-silc_disconnected(SilcClient client, SilcClientConnection conn,
-		  SilcStatus status, const char *message)
-{
-  MyBot mybot = client->application;
-
-  /* We got disconnected from server */
-  mybot->conn = NULL;
-  fprintf(stdout, "MyBot: %s:%s\n", silc_get_status_message(status),
-	  message);
-}
-
 
 /* Find authentication method and authentication data by hostname and
    port. The hostname may be IP address as well. When the authentication
@@ -377,13 +352,14 @@ silc_disconnected(SilcClient client, SilcClientConnection conn,
 static void
 silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 		     char *hostname, SilcUInt16 port,
+		     SilcAuthMethod auth_method,
 		     SilcGetAuthMeth completion,
 		     void *context)
 {
   /* MyBot assumes that there is no authentication requirement in the
      server and sends nothing as authentication.  We just reply with
      TRUE, meaning we know what is the authentication method. :). */
-  completion(TRUE, SILC_AUTH_NONE, NULL, 0, context);
+  completion(SILC_AUTH_NONE, NULL, 0, context);
 }
 
 
@@ -395,14 +371,12 @@ silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 
 static void
 silc_verify_public_key(SilcClient client, SilcClientConnection conn,
-		       SilcSocketType conn_type, unsigned char *pk,
-		       SilcUInt32 pk_len, SilcSKEPKType pk_type,
+		       SilcConnectionType conn_type,
+	 	       SilcPublicKey public_key,
 		       SilcVerifyPublicKey completion, void *context)
 {
-  /* MyBot is also very trusting, so we just accept the public key
-     we get here.  Of course, we would have to verify the authenticity
-     of the public key but our bot is too simple for that.  We just
-     reply with TRUE, meaning "yeah, we trust it". :) */
+  fprintf(stdout, "MyBot: server's public key\n");
+  silc_show_public_key(public_key);
   completion(TRUE, context);
 }
 
@@ -422,26 +396,6 @@ silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
 }
 
 
-/* Notifies application that failure packet was received.  This is called
-   if there is some protocol active in the client.  The `protocol' is the
-   protocol context.  The `failure' is opaque pointer to the failure
-   indication.  Note, that the `failure' is protocol dependant and
-   application must explicitly cast it to correct type.  Usually `failure'
-   is 32 bit failure type (see protocol specs for all protocol failure
-   types). */
-
-static void
-silc_failure(SilcClient client, SilcClientConnection conn,
-	     SilcProtocol protocol, void *failure)
-{
-  /* Well, something bad must have happened during connecting to the
-     server since we got here.  Let's just print that something failed.
-     The "failure" would include more information but let's not bother
-     with that now. */
-  fprintf(stderr, "MyBot: Connecting failed (protocol failure)\n");
-}
-
-
 /* Asks whether the user would like to perform the key agreement protocol.
    This is called after we have received an key agreement packet or an
    reply to our key agreement packet. This returns TRUE if the user wants
@@ -450,15 +404,13 @@ silc_failure(SilcClient client, SilcClientConnection conn,
    silc_client_perform_key_agreement). If TRUE is returned also the
    `completion' and `context' arguments must be set by the application. */
 
-static bool
+static void
 silc_key_agreement(SilcClient client, SilcClientConnection conn,
 		   SilcClientEntry client_entry, const char *hostname,
-		   SilcUInt16 port, SilcKeyAgreementCallback *completion,
-		   void **context)
+		   SilcUInt16 protocol, SilcUInt16 port)
 {
   /* MyBot does not support incoming key agreement protocols, it's too
      simple for that. */
-  return FALSE;
 }
 
 
@@ -478,30 +430,6 @@ silc_ftp(SilcClient client, SilcClientConnection conn,
 }
 
 
-/* Delivers SILC session detachment data indicated by `detach_data' to the
-   application.  If application has issued SILC_COMMAND_DETACH command
-   the client session in the SILC network is not quit.  The client remains
-   in the network but is detached.  The detachment data may be used later
-   to resume the session in the SILC Network.  The appliation is
-   responsible of saving the `detach_data', to for example in a file.
-
-   The detachment data can be given as argument to the functions
-   silc_client_connect_to_server, or silc_client_add_connection when
-   creating connection to remote server, inside SilcClientConnectionParams
-   structure.  If it is provided the client library will attempt to resume
-   the session in the network.  After the connection is created
-   successfully, the application is responsible of setting the user
-   interface for user into the same state it was before detaching (showing
-   same channels, channel modes, etc).  It can do this by fetching the
-   information (like joined channels) from the client library. */
-
-static void
-silc_detach(SilcClient client, SilcClientConnection conn,
-	    const unsigned char *detach_data, SilcUInt32 detach_data_len)
-{
-  /* Oh, and MyBot does not support session detaching either. */
-}
-
 /* Our client operations for the MyBot.  This structure is filled with
    functions and given as argument to the silc_client_alloc function.
    Even though our little bot does not need all these functions we must
@@ -515,19 +443,15 @@ SilcClientOperations ops = {
   silc_notify,
   silc_command,
   silc_command_reply,
-  silc_connected,
-  silc_disconnected,
   silc_get_auth_method,
   silc_verify_public_key,
   silc_ask_passphrase,
-  silc_failure,
   silc_key_agreement,
-  silc_ftp,
-  silc_detach
+  silc_ftp
 };
 
 int main(int argc, char **argv)
 {
-  /* Start the bot */
+  /* Start mybot */
   return mybot_start();
 }
