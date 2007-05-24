@@ -306,7 +306,7 @@ static inline SilcBool silc_packet_stream_read(SilcPacketStream ps,
     inbuf = silc_dlist_get(ps->sc->inbufs);
     if (!inbuf) {
       /* Allocate new data input buffer */
-      inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 61);
+      inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 65);
       if (!inbuf) {
         silc_mutex_unlock(ps->lock);
         return FALSE;
@@ -716,7 +716,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
     ps->sc->schedule = schedule;
 
     /* Allocate data input buffer */
-    inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 61);
+    inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 65);
     if (!inbuf) {
       silc_free(ps->sc);
       ps->sc = NULL;
