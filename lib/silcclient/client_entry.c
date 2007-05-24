@@ -1622,9 +1622,10 @@ SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
 				 SilcChannelEntry channel)
 {
   SilcIDCacheEntry id_cache;
-  SilcBool ret;
+  SilcBool ret = TRUE;
   SilcCipher key;
   SilcHmac hmac;
+  char *namec;
 
   if (!channel)
     return FALSE;
@@ -1636,10 +1637,12 @@ SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
 
   silc_mutex_lock(conn->internal->lock);
   if (silc_idcache_find_by_context(conn->internal->channel_cache, channel,
-				   &id_cache))
-    silc_free(id_cache->name);
-  ret = silc_idcache_del_by_context(conn->internal->channel_cache,
-				    channel, NULL);
+				   &id_cache)) {
+    namec = id_cache->name;
+    ret = silc_idcache_del_by_context(conn->internal->channel_cache,
+				      channel, NULL);
+    silc_free(namec);
+  }
   silc_mutex_unlock(conn->internal->lock);
 
   if (!ret)
@@ -2029,7 +2032,8 @@ SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
 				SilcServerEntry server)
 {
   SilcIDCacheEntry id_cache;
-  SilcBool ret;
+  SilcBool ret = TRUE;
+  char *namec;
 
   if (!server)
     return FALSE;
@@ -2041,10 +2045,12 @@ SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
 
   silc_mutex_lock(conn->internal->lock);
   if (silc_idcache_find_by_context(conn->internal->server_cache, server,
-				   &id_cache))
-    silc_free(id_cache->name);
-  ret = silc_idcache_del_by_context(conn->internal->server_cache,
-				    server, NULL);
+				   &id_cache)) {
+    namec = id_cache->name;
+    ret = silc_idcache_del_by_context(conn->internal->server_cache,
+				      server, NULL);
+    silc_free(namec);
+  }
   silc_mutex_unlock(conn->internal->lock);
 
   silc_free(server->server_name);

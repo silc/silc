@@ -1099,6 +1099,12 @@ void silc_client_stop(SilcClient client, SilcClientStopped stopped,
 {
   SILC_LOG_DEBUG(("Stopping client"));
 
+  if (!silc_fsm_is_started(&client->internal->fsm)) {
+    SILC_LOG_WARNING(("Attempting to stop client library before it has been "
+		      "started (silc_client_init not called)"));
+    return;
+  }
+
   client->internal->running = (SilcClientRunning)stopped;
   client->internal->running_context = context;
 
