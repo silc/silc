@@ -271,7 +271,7 @@ SilcBool silc_schedule_internal_schedule_fd(SilcSchedule schedule,
 
   SILC_LOG_DEBUG(("Scheduling fd %lu, mask %x", task->fd, event_mask));
 
-  event.events = 0;
+  memset(&event, 0, sizeof(event));
   if (event_mask & SILC_TASK_READ)
     event.events |= (EPOLLIN | EPOLLPRI);
   if (event_mask & SILC_TASK_WRITE)
