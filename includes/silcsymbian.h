@@ -4,16 +4,16 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2006 Pekka Riikonen
+  Copyright (C) 2002 - 2007 Pekka Riikonen
 
-  The contents of this file are subject to one of the Licenses specified 
-  in the COPYING file;  You may not use this file except in compliance 
-  with the License.
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; version 2 of the License.
 
-  The software distributed under the License is distributed on an "AS IS"
-  basis, in the hope that it will be useful, but WITHOUT WARRANTY OF ANY
-  KIND, either expressed or implied.  See the COPYING file for more
-  information.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
 */
 /* Native Symbian specific includes and definitions. */
