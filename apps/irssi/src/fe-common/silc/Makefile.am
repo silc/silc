@@ -76,3 +76,8 @@ clean-local:
 
 libfe_common_silc.a: libfe_common_silc.la
 	cp .libs/libfe_common_silc.a .
+
+if SILCPLUGIN
+install-data-hook: libfe_common_silc.la
+	-cp $(moduledir)/libfe_common_silc.so $(moduledir)/libfe_silc.so
+endif
