@@ -132,7 +132,11 @@ Runtime library, lib/silcutil/
 
    Problems: Events would be SilcSchedule specific, and would not work on 
    multi-thread/multi-scheduler system.  The events should be copyable 
-   between schedulers.
+   between schedulers.  Another problem is the signal delivery.  Do we
+   deliver them synchronously possibly from any thread to any other thread
+   or do we deliver them through the target schedulers.  If we use the
+   schedulers then signalling would be asynchronous (data must be 
+   duplicated and later freed) which is not very nice.
 
  o If the event signals are added, the SILC_PARAM_* stuff needs to be
    moved from silcbuffmt.h to silctypes.h or something similar.
@@ -152,6 +156,10 @@ Runtime library, lib/silcutil/
    SilcSchedule silc_schedule_init(int max_tasks, void *app_context,
 				   SilcSchedule parent);
    SilcSchedule silc_schedule_get_parent(SilcSchedule schedule);
+
+ o Additional scheduler changes: optimize silc_schedule_wakeup.  Wakeup 
+   only if the scheduler is actually waiting something.  If it is 
+   delivering tasks wakeup is not needed.
 
  o Structured log messages to Log API.  Allows machine readable log
    messages.  Would allow sending of any kind of data in a log message.
@@ -431,6 +439,7 @@ SILC Accelerator Library
      const SilcDHObject *dh;		/* Accelerated Diffie-Hellmans */
      const SilcCipherObject *cipher;	/* Accelerated ciphers */
      const SilcHashObject *hash;	/* Accelerated hashes */
+     const SilcHmacObject *hmac;	/* Accelerated HMACs */
      const SilcRngObject *rng;		/* Accelerated RNG's */
    } *SilcAccelerator, SilcAcceleratorStruct;
 
@@ -492,8 +501,14 @@ lib/silcmath
 SILC XML Library, lib/silcxml/
 ==============================
 
- o SILC XML API (wrapper to expat).  The SILC XML API should follow and 
-   resemble Simple API for XML (SAX).
+ o SILC XML API (wrapper to expat).  Look at the expat API and simplify
+   it.  The SILC XML API should have at most 8-10 API functions.  It should 
+   be possible to create full XML parser with only one function.  And, it 
+   should be possible to have a function that is able to parse an entire
+   XML document.  It should also have a parser function to be able to
+   parse a stream of XML data (SilcStream).  It MUST NOT have operations
+   that require multiple function calls to be able to execute that one
+   operation (like creating parser).
 
 
 lib/silcske/silcske.[ch]
