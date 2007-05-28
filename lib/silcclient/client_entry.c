@@ -1125,7 +1125,8 @@ SilcClientEntry silc_client_nickname_format(SilcClient client,
   }
 
   /* Is the requested client formatted already */
-  if (!silc_utf8_strcasecmp(client_entry->nickname, 
+  if (client_entry->nickname_normalized &&
+      !silc_utf8_strcasecmp(client_entry->nickname,
 			    client_entry->nickname_normalized))
     formatted = TRUE;
 
@@ -1142,7 +1143,7 @@ SilcClientEntry silc_client_nickname_format(SilcClient client,
       unformatted = entry;
       break;
     }
-  }  
+  }
 
   /* If there are no other unformatted clients and the requested client is
      unformatted, just return it. */
@@ -1151,7 +1152,7 @@ SilcClientEntry silc_client_nickname_format(SilcClient client,
     return client_entry;
   }
 
-  /* If priority formatting then the requested client will get the 
+  /* If priority formatting then the requested client will get the
      unformatted nickname, and the unformatted client will get a new
      formatted nickname. */
   if (priority) {
@@ -1161,7 +1162,7 @@ SilcClientEntry silc_client_nickname_format(SilcClient client,
 				      &cp))
         return NULL;
 
-      silc_snprintf(client_entry->nickname, sizeof(client_entry->nickname), 
+      silc_snprintf(client_entry->nickname, sizeof(client_entry->nickname),
 		    cp);
       silc_free(cp);
     }
