@@ -79,5 +79,5 @@ libfe_common_silc.a: libfe_common_silc.la
 
 if SILCPLUGIN
 install-data-hook: libfe_common_silc.la
-	-cp $(moduledir)/libfe_common_silc.so $(moduledir)/libfe_silc.so
+	-ln -s libfe_common_silc.so $(moduledir)/libfe_silc.so
 endif
