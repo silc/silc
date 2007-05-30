@@ -47,27 +47,6 @@ make DESTDIR=$RPM_BUILD_ROOT install
 chmod 0755 ${RPM_BUILD_ROOT}%{_libdir}/lib*
 chmod 0755 ${RPM_BUILD_ROOT}%{_libdir}/silc/modules/*.so
 
-# Move toolkit reference manual to root
-mv doc/toolkit toolkit
-
-# Remove files we don't want in the packages
-rm -rf \
-$RPM_BUILD_ROOT%{_sysconfdir}/silcalgs.conf \
-$RPM_BUILD_ROOT%{_sysconfdir}/silcd.conf \
-$RPM_BUILD_ROOT%{_docdir}/%{name}-%{version}/INSTALL \
-$RPM_BUILD_ROOT%{_docdir}/%{name}-%{version}/README \
-$RPM_BUILD_ROOT%{_docdir}/%{name}-%{version}/README.MACOSX \
-$RPM_BUILD_ROOT%{_docdir}/%{name}-%{version}/README.WIN32 \
-$RPM_BUILD_ROOT%{_docdir}/%{name}-%{version}/README.PLUGIN \
-$RPM_BUILD_ROOT%{_docdir}/%{name}-%{version}/README.SYMBIAN \
-$RPM_BUILD_ROOT%{_docdir}/%{name}-%{version}/TODO \
-$RPM_BUILD_ROOT%{_docdir}/%{name}-%{version}/example_silc.conf \
-$RPM_BUILD_ROOT%{_docdir}/%{name}-%{version}/example_silcd.conf \
-$RPM_BUILD_ROOT%{_docdir}/%{name}-%{version}/examples/ \
-$RPM_BUILD_ROOT%{_docdir}/%{name}-%{version}/CHANGES \
-$RPM_BUILD_ROOT%{_docdir}/%{name}-%{version}/tutorial \
-$RPM_BUILD_ROOT%{_mandir}
-
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -87,8 +66,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %defattr(0644, root, root, 0755)
-%doc CHANGES COPYING GPL BSD
-%doc --parents toolkit
+%doc CHANGES COPYING GPL BSD doc/toolkit
 %{_libdir}/libsilc.so
 %{_libdir}/libsilc.*a
 %{_libdir}/libsilcclient.so
@@ -100,7 +78,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Wed May 30 2007 Pekka Riikonen <priikone@silcnet.org>
-- Rewrote .spec for SILC Toolkit 1.1
+- Rewrote .spec for SILC Toolkit 1.1.  Obsoletes libsilc.  Renamed to
+  silc-toolkit.
 
 * Tue Sep 1 2004 Toni Willberg <toniw@iki.fi>
 - 0.9.12-0.fdr.6 - Had to remove smp_mflags because build fails with them
