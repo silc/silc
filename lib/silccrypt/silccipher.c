@@ -60,12 +60,6 @@ const SilcCipherObject silc_default_ciphers[] =
 		      SILC_CIPHER_MODE_CBC),
   SILC_CIPHER_API_DEF("twofish-128-cbc", twofish_cbc, 128, 16, 16,
 		      SILC_CIPHER_MODE_CBC),
-  SILC_CIPHER_API_DEF("cast-256-cbc", cast_cbc, 256, 16, 16,
-		      SILC_CIPHER_MODE_CBC),
-  SILC_CIPHER_API_DEF("cast-192-cbc", cast_cbc, 192, 16, 16,
-		      SILC_CIPHER_MODE_CBC),
-  SILC_CIPHER_API_DEF("cast-128-cbc", cast_cbc, 128, 16, 16,
-		      SILC_CIPHER_MODE_CBC),
 #ifdef SILC_DEBUG
   SILC_CIPHER_API_DEF("none", none, 0, 0, 0, 0),
 #endif /* SILC_DEBUG */
