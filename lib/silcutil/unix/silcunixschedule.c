@@ -316,7 +316,7 @@ SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
 
   SILC_LOG_DEBUG(("Wokeup"));
 
-  read(internal->wakeup_pipe[0], &c, 1);
+  (void)read(internal->wakeup_pipe[0], &c, 1);
 }
 
 #endif /* SILC_THREADS */
@@ -444,7 +444,7 @@ void silc_schedule_internal_wakeup(SilcSchedule schedule, void *context)
 
   SILC_LOG_DEBUG(("Wakeup"));
 
-  write(internal->wakeup_pipe[1], "!", 1);
+  (void)write(internal->wakeup_pipe[1], "!", 1);
 #endif
 }
 
