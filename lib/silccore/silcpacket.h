@@ -913,7 +913,7 @@ SilcBool silc_packet_set_ids(SilcPacketStream stream,
 			     SilcIdType src_id_type, const void *src_id,
 			     SilcIdType dst_id_type, const void *dst_id);
 
-/****f* silccore/SilcPacketAPI/silc_packet_set_ids
+/****f* silccore/SilcPacketAPI/silc_packet_get_ids
  *
  * SYNOPSIS
  *
@@ -1063,7 +1063,7 @@ SilcBool silc_packet_send_va_ext(SilcPacketStream stream,
 				 SilcIdType dst_id_type, void *dst_id,
 				 SilcCipher cipher, SilcHmac hmac, ...);
 
-/****f* silccore/SilcPacketAPI/silc_packet_wait
+/****f* silccore/SilcPacketAPI/silc_packet_wait_init
  *
  * SYNOPSIS
  *
