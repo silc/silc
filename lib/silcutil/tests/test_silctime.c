@@ -22,6 +22,7 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("day       : %d", curtime.day));
   SILC_LOG_DEBUG(("hour      : %d", curtime.hour));
   SILC_LOG_DEBUG(("minute    : %d", curtime.minute));
+  SILC_LOG_DEBUG(("second    : %d", curtime.second));
   SILC_LOG_DEBUG(("msecond   : %d", curtime.msecond));
   SILC_LOG_DEBUG(("utc_hour  : %d", curtime.utc_hour));
   SILC_LOG_DEBUG(("utc_min   : %d", curtime.utc_minute));

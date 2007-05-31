@@ -108,6 +108,7 @@ SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time)
   struct tm *t;
   unsigned int msec = 0;
   time_t timeval;
+  SilcInt32 ctz = 0;
 
   if (!ret_time)
     return TRUE;
@@ -139,32 +140,24 @@ SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time)
 #else
 #if defined(HAVE_TIMEZONE)
   ret_time->utc_east   = timezone < 0 ? 1 : 0;
+  ctz = timezone;
+  if (ret_time->dst)
+    ctz -= 3600;
 #elif defined(HAVE_TM_GMTOFF)
   ret_time->utc_east   = t->tm_gmtoff > 0 ? 1 : 0;
+  ctz = -t->tm_gmtoff;
 #elif defined(HAVE___TM_GMTOFF)
   ret_time->utc_east   = t->__tm_gmtoff > 0 ? 1 : 0;
+  ctz = -t->__tm_gmtoff;
 #elif defined(HAVE___TM_GMTOFF__)
   ret_time->utc_east   = t->__tm_gmtoff__ > 0 ? 1 : 0;
+  ctz = -t->__tm_gmtoff__;
 #endif /* HAVE_TIMEZONE */
 
-#if defined(HAVE_TIMEZONE)
-  ret_time->utc_hour   = (ret_time->utc_east ? (-(timezone)) / 3600 :
-			  timezone / 3600);
-  if (ret_time->dst)
-    ret_time->utc_hour++;
-  ret_time->utc_minute = (ret_time->utc_east ? (-(timezone)) % 3600 :
-			  timezone % 3600);
-#elif defined(HAVE_GMTIME)
-  t = gmtime(&timeval);
-  if (t) {
-    ret_time->utc_hour   = (ret_time->utc_east
-			    ? ret_time->hour - t->tm_hour
-			    : ret_time->hour + t->tm_hour);
-    ret_time->utc_minute = (ret_time->utc_east
-			    ? ret_time->minute - t->tm_min
-			    : ret_time->minute + t->tm_min);
-  }
-#endif /* HAVE_TIMEZONE */
+  ret_time->utc_hour   = (ret_time->utc_east ? (-(ctz)) / 3600 : ctz / 3600);
+  ret_time->utc_minute = (ret_time->utc_east ? (-(ctz)) % 3600 : ctz % 3600);
+  if (ret_time->utc_minute)
+    ret_time->utc_minute /= 60;
 #endif /* SILC_WIN32 */
 
   return TRUE;
