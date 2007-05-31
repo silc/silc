@@ -69,7 +69,8 @@ SilcInt64 silc_time_msec(void)
 {
   struct timeval curtime;
   silc_gettimeofday(&curtime);
-  return (curtime.tv_sec * 1000) + (curtime.tv_usec / 1000);
+  return (curtime.tv_sec * (SilcUInt64)1000) +
+    (curtime.tv_usec / (SilcUInt64)1000);
 }
 
 /* Return time since Epoch in microseconds */
@@ -78,7 +79,7 @@ SilcInt64 silc_time_usec(void)
 {
   struct timeval curtime;
   silc_gettimeofday(&curtime);
-  return (curtime.tv_sec * 1000000) + curtime.tv_usec;
+  return (curtime.tv_sec * (SilcUInt64)1000000) + curtime.tv_usec;
 }
 
 /* Returns time as string */
@@ -104,7 +105,7 @@ const char *silc_time_string(SilcInt64 time_val)
 
 SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time)
 {
-  struct tm *time;
+  struct tm *t;
   unsigned int msec = 0;
   time_t timeval;
 
@@ -117,17 +118,18 @@ SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time)
   msec = (SilcUInt64)time_val % (SilcUInt64)1000;
   timeval = (time_t)((SilcUInt64)time_val / (SilcUInt64)1000);
 
-  time = localtime(&timeval);
-  if (!time)
+  t = localtime(&timeval);
+  if (!t)
     return FALSE;
 
   memset(ret_time, 0, sizeof(*ret_time));
-  if (!silc_time_fill(ret_time, time->tm_year + 1900, time->tm_mon + 1,
-		      time->tm_mday, time->tm_hour, time->tm_min,
-		      time->tm_sec, msec))
+  if (!silc_time_fill(ret_time, t->tm_year + 1900, t->tm_mon + 1,
+		      t->tm_mday, t->tm_hour, t->tm_min,
+		      t->tm_sec, msec))
     return FALSE;
 
-  ret_time->dst        = time->tm_isdst ? 1 : 0;
+  ret_time->dst        = t->tm_isdst ? 1 : 0;
+
 #ifdef SILC_WIN32
   ret_time->utc_east   = _timezone < 0 ? 1 : 0;
   ret_time->utc_hour   = (ret_time->utc_east ? (-(_timezone)) / 3600 :
@@ -135,13 +137,34 @@ SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time)
   ret_time->utc_minute = (ret_time->utc_east ? (-(_timezone)) % 3600 :
 			  _timezone % 3600);
 #else
-#if defined(HAVE_TZSET)
+#if defined(HAVE_TIMEZONE)
   ret_time->utc_east   = timezone < 0 ? 1 : 0;
+#elif defined(HAVE_TM_GMTOFF)
+  ret_time->utc_east   = t->tm_gmtoff > 0 ? 1 : 0;
+#elif defined(HAVE___TM_GMTOFF)
+  ret_time->utc_east   = t->__tm_gmtoff > 0 ? 1 : 0;
+#elif defined(HAVE___TM_GMTOFF__)
+  ret_time->utc_east   = t->__tm_gmtoff__ > 0 ? 1 : 0;
+#endif /* HAVE_TIMEZONE */
+
+#if defined(HAVE_TIMEZONE)
   ret_time->utc_hour   = (ret_time->utc_east ? (-(timezone)) / 3600 :
 			  timezone / 3600);
+  if (ret_time->dst)
+    ret_time->utc_hour++;
   ret_time->utc_minute = (ret_time->utc_east ? (-(timezone)) % 3600 :
 			  timezone % 3600);
-#endif /* HAVE_TZSET */
+#elif defined(HAVE_GMTIME)
+  t = gmtime(&timeval);
+  if (t) {
+    ret_time->utc_hour   = (ret_time->utc_east
+			    ? ret_time->hour - t->tm_hour
+			    : ret_time->hour + t->tm_hour);
+    ret_time->utc_minute = (ret_time->utc_east
+			    ? ret_time->minute - t->tm_min
+			    : ret_time->minute + t->tm_min);
+  }
+#endif /* HAVE_TIMEZONE */
 #endif /* SILC_WIN32 */
 
   return TRUE;

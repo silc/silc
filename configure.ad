@@ -182,7 +182,7 @@ AC_CHECK_FUNCS(poll select listen bind shutdown close connect setsockopt)
 AC_CHECK_FUNCS(setrlimit time ctime utime gettimeofday getrusage)
 AC_CHECK_FUNCS(chmod fcntl stat fstat getenv putenv strerror)
 AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid sched_yield)
-AC_CHECK_FUNCS(setgroups initgroups nl_langinfo nanosleep tzset)
+AC_CHECK_FUNCS(setgroups initgroups nl_langinfo nanosleep gmtime)
 AC_CHECK_FUNCS(strchr snprintf strstr strcpy strncpy memcpy memset memmove)
 
 # lib/contrib conditionals
@@ -1161,6 +1161,77 @@ if test x$has_threads = xtrue; then
   AC_DEFINE([SILC_THREADS], [], [HAVE_THREAD])
   __SILC_HAVE_PTHREAD="#define __SILC_HAVE_PTHREAD 1"
 fi
+
+#
+# Check for timezone and tm_gmtoff for timezone information
+#
+AC_MSG_CHECKING(whether system has timezone)
+AC_RUN_IFELSE(
+  [
+    #include <stdio.h>
+    #include <time.h>
+    int main()
+    {
+      timezone = 0;
+      return 0;
+    }
+  ],
+  [ AC_MSG_RESULT(yes)
+    AC_DEFINE([HAVE_TIMEZONE], [], [HAVE_TIMEZONE]) ],
+  [ AC_MSG_RESULT(no) ],
+  [ AC_MSG_RESULT(no) ]
+)
+AC_MSG_CHECKING(whether system has tm_gmtoff)
+AC_RUN_IFELSE(
+  [
+    #include <stdio.h>
+    #include <time.h>
+    int main()
+    {
+      struct tm tm;
+      tm.tm_gmtoff = 0;
+      return 0;
+    }
+  ],
+  [ AC_MSG_RESULT(yes)
+    AC_DEFINE([HAVE_TM_GMTOFF], [], [HAVE_TM_GMTOFF]) ],
+  [ AC_MSG_RESULT(no) ],
+  [ AC_MSG_RESULT(no) ]
+)
+AC_MSG_CHECKING(whether system has __tm_gmtoff)
+AC_RUN_IFELSE(
+  [
+    #include <stdio.h>
+    #include <time.h>
+    int main()
+    {
+      struct tm tm;
+      tm.__tm_gmtoff = 0;
+      return 0;
+    }
+  ],
+  [ AC_MSG_RESULT(yes)
+    AC_DEFINE([HAVE___TM_GMTOFF], [], [HAVE___TM_GMTOFF]) ],
+  [ AC_MSG_RESULT(no) ],
+  [ AC_MSG_RESULT(no) ]
+)
+AC_MSG_CHECKING(whether system has __tm_gmtoff__)
+AC_RUN_IFELSE(
+  [
+    #include <stdio.h>
+    #include <time.h>
+    int main()
+    {
+      struct tm tm;
+      tm.__tm_gmtoff__ = 0;
+      return 0;
+    }
+  ],
+  [ AC_MSG_RESULT(yes)
+    AC_DEFINE([HAVE___TM_GMTOFF__], [], [HAVE___TM_GMTOFF__]) ],
+  [ AC_MSG_RESULT(no) ],
+  [ AC_MSG_RESULT(no) ]
+)
 
 # Native WIN32 compilation under cygwin
 #
