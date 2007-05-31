@@ -156,9 +156,10 @@ SilcBool silc_time_value(SilcInt64 time_val, SilcTime ret_time)
 
   ret_time->utc_hour   = (ret_time->utc_east ? (-(ctz)) / 3600 : ctz / 3600);
   ret_time->utc_minute = (ret_time->utc_east ? (-(ctz)) % 3600 : ctz % 3600);
+#endif /* SILC_WIN32 */
+
   if (ret_time->utc_minute)
     ret_time->utc_minute /= 60;
-#endif /* SILC_WIN32 */
 
   return TRUE;
 }
