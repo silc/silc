@@ -19,5 +19,5 @@ exclude README.* ltmain.sh
 
 noprocess apps/autodist/doc/* apps/autodist/tests/*
 
-post-process-dist-hook distdir/post-process-dist
+post-process-dist-hook distdir/autodist-post-process-dist
 post-dist-hook distdir/post-dist
