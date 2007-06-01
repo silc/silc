@@ -1,7 +1,7 @@
 Summary: SILC Toolkit
 Name: silc-toolkit
 Version: SILC_VERSION
-Release: 0.fc6
+Release: SILC_RELEASE
 License: GPL/BSD dual licensed
 Group: System Environment/Libraries
 URL: http://silcnet.org/

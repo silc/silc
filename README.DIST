@@ -29,6 +29,14 @@ major.minor.build, for example 0.9.10.  Example:
 This prepares 'client' distribution of version 0.9.15.  The package will 
 have the version 0.9.15 automatically.
 
+NOTE: Those distribution that have RPM spec files you should specify the 
+RPM release version to autodist also by doing the following:
+
+	autodist toolkit 1.1.2 0.fc7
+
+where the "0.fc7" will become the RPM release version.  If you omit the 
+release version the default currently is "0.fc7".
+
 
 Configuring and compiling the distribution
 ==========================================

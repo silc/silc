@@ -13,6 +13,11 @@ if test -d $distdir; then
   rm -rf `find $distdir -name Makefile`
 fi
 
-sed -e "s/AUTODIST_VERSION/$dist_version/" apps/autodist/autodist.spec.in \
-  > $distdir/autodist.spec
+release=$5
+if test -z $release; then
+  release="0.fc7"
+fi
+
+sed -e "s/AUTODIST_VERSION/$dist_version/" -e "s/AUTODIST_RELEASE/$release/" \
+  apps/autodist/autodist.spec.in > $distdir/autodist.spec
 

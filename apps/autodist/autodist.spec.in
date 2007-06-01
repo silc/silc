@@ -38,14 +38,6 @@ rm -f $RPM_BUILD_ROOT/%{_datadir}/autodist/COPYING
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%post
-/sbin/install-info %{_infodir}/autodist.info %{_infodir}/dir || :
-
-%prerun
-if [ "$1" = 0 ]; then
-    /sbin/install-info --del %{_infodir}/autodist.info %{_infodir}/dir || :
-fi
-
 %files
 %defattr(-, root, root, -)
 %{_bindir}/*
