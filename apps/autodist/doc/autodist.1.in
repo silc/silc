@@ -3,7 +3,7 @@
 Autodist \- Source distribution management system
 .SH SYNOPSIS
 .B autodist
-[options] [distribution] [version]
+[options] [distribution] [version] [params]
 .PP
 .SH DESCRIPTION
 .PP

@@ -821,9 +821,11 @@ Zero or more 'pre-hook' directives may be set for distribution.  The
 'pre-hook' hook will be run immediately after invoking Autodist to start
 preparing the source tree for configuration and compilation (@pxref{Preparing source tree, , , , }).
 
-The scripts will get three (3) command line arguments when Autodist
-executes the script: distribution name, distribution version and package
-name of distribution.  The script may use these arguments if it needs them.
+The scripts will get at least three (3) command line arguments when 
+Autodist executes the script: distribution name, distribution version and 
+package name of distribution.  The script may use these arguments if it 
+needs them.  If user passed any extra parameters to autodist in the 
+command line they will also be passed to the script as last arguments.
 
 
 @section Directive: post-hook <filename> [...]
@@ -836,9 +838,11 @@ Zero or more 'post-hook' directives may be set for distribution.  The
 preparing the source three for configuration and compilation (@pxref{Preparing source tree, , , , }).  The Autodist will exit after it has run the
 'post-hook' scripts.
 
-The scripts will get three (3) command line arguments when Autodist
-executes the script: distribution name, distribution version and package
-name of distribution.  The script may use these arguments if it needs them.
+The scripts will get at least three (3) command line arguments when 
+Autodist executes the script: distribution name, distribution version and 
+package name of distribution.  The script may use these arguments if it 
+needs them.  If user passed any extra parameters to autodist in the 
+command line they will also be passed to the script as last arguments.
 
 
 @section Directive: pre-process-dist-hook <filename> [...]
@@ -851,10 +855,12 @@ directives may be set for distribution.  The 'pre-process-dist-hook' hook
 will be run immediately after the Autodist has created the distribution
 directory but has not yet started any distribution processing.
 
-The scripts will get four (4) command line arguments when Autodist
-executes the script: distribution name, distribution version, package
-name of distribution and destination distribution directory name.  The
-script may use these arguments if it needs them.
+The scripts will get at least four (4) command line arguments when 
+Autodist executes the script: distribution name, distribution version, 
+package name of distribution and destination distribution directory name.  
+The script may use these arguments if it needs them.  If user passed any 
+extra parameters to autodist in the command line they will also be passed 
+to the script as last arguments.
 
 
 @section Directive: post-process-dist-hook <filename> [...]
@@ -868,10 +874,12 @@ defined in one 'post-process-dist-hook' directive.  Zero or more
 has finished processing the destination distribution directory but has not
 yet created the distribution package.
 
-The scripts will get four (4) command line arguments when Autodist
-executes the script: distribution name, distribution version, package
-name of distribution and destination distribution directory name.  The
-script may use these arguments if it needs them.
+The scripts will get at least four (4) command line arguments when 
+Autodist executes the script: distribution name, distribution version, 
+package name of distribution and destination distribution directory name.  
+The script may use these arguments if it needs them.  If user passed any 
+extra parameters to autodist in the command line they will also be passed 
+to the script as last arguments.
 
 
 @section Directive: pre-dist-hook <filename> [...]
@@ -884,10 +892,12 @@ distribution.  The 'pre-dist-hook' hook will be run immediately after
 the Autodist has started distribution creation, but has not yet created
 the distribution directory.  This hook is run before 'pre-process-dist-hook'.
 
-The scripts will get four (4) command line arguments when Autodist
-executes the script: distribution name, distribution version, package
-name of distribution and destination distribution directory name.  The
-script may use these arguments if it needs them.
+The scripts will get at least four (4) command line arguments when 
+Autodist executes the script: distribution name, distribution version, 
+package name of distribution and destination distribution directory name. 
+The script may use these arguments if it needs them.  If user passed any 
+extra parameters to autodist in the command line they will also be passed 
+to the script as last arguments.
 
 
 @section Directive: post-dist-hook <filename> [...]
@@ -900,10 +910,12 @@ be set for distribution.  The 'post-dist-hook' hook will be run
 immediately after the Autodist has finished creating the distribution
 package.  This is the last hook Autodist runs.
 
-The scripts will get four (4) command line arguments when Autodist
-executes the script: distribution name, distribution version, package
-name of distribution and destination distribution directory name.  The
-script may use these arguments if it needs them.
+The scripts will get at least four (4) command line arguments when 
+Autodist executes the script: distribution name, distribution version, 
+package name of distribution and destination distribution directory name. 
+The script may use these arguments if it needs them.  If user passed any 
+extra parameters to autodist in the command line they will also be passed 
+to the script as last arguments.
 
 
 @section Running hooks
@@ -1654,6 +1666,7 @@ include doc/nomad
 define _DIST_NOMAD
 define _DIST_NOMAD_LIB
 undef _DIST_CRYPTO
+pre-dist-hook nomad-pre-dist-hook
 @end example
 
 @example
@@ -1767,11 +1780,18 @@ Then you continue with libfoozbar and Nomad:
 autodist libfoozbar 1.0.5
 makedist
 
-autodist nomad 2.0
+Nomad has also an RPM .spec file that you have written and a pre-dist-hook 
+that will replace the RPM release version with sed tool with the one you 
+give as extra parameter to autodist:
+
+autodist nomad 2.0 0.fc7
 makedist
 @end example
 
-The end results are: 'libfoozbar-1.0.5.tar.gz' and 'nomad-2.0.tar.gz'.
+The end results are: 'libfoozbar-1.0.5.tar.gz' and 'nomad-2.0.tar.gz', and 
+the RPM will have a release version '0.fc7' when you compile the RPM.  Any 
+extra parameter that you pass to autodist will be delivered to your hook 
+scripts.
 
 @page
 @contents

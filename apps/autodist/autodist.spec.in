@@ -1,7 +1,7 @@
 Summary: Source distribution management system
 Name: autodist
 Version: AUTODIST_VERSION
-Release: 0.fc7
+Release: AUTODIST_RELEASE
 License: BSD
 Group: Development/Tools
 URL: http://silcnet.org/software/developers/autodist/
