@@ -437,8 +437,7 @@ typedef void (*SilcVerifyPublicKey)(SilcBool success, void *context);
  *
  * SYNOPSIS
  *
- *    typedef void (*SilcGetAuthMeth)(SilcBool success,
- *                                    SilcAuthMethod auth_meth,
+ *    typedef void (*SilcGetAuthMeth)(SilcAuthMethod auth_meth,
  *                                    const void *auth, SilcUInt32 auth_len,
  *                                    void *context);
  *

@@ -442,46 +442,6 @@ SilcDList silc_client_get_clients_local(SilcClient client,
 					const char *nickname,
 					SilcBool return_all);
 
-/****f* silcclient/SilcClientAPI/silc_client_get_clients_by_channel
- *
- * SYNOPSIS
- *
- *    void silc_client_get_clients_by_channel(SilcClient client,
- *                                            SilcClientConnection conn,
- *                                            SilcChannelEntry channel,
- *                                            SilcGetClientCallback completion,
- *                                            void *context);
- *
- * DESCRIPTION
- *
- *    Gets client entries by the channel indicated by `channel'. Thus,
- *    it resovles the users currently on that channel. If all users are
- *    already resolved this returns the users from the channel. If the
- *    users are resolved only partially this resolves the complete user
- *    information. If no users are resolved on this channel at all, this
- *    calls USERS command to resolve all users on the channel. The `completion'
- *    will be called after the entries are available. When server returns
- *    the client information it will be cached and can be accessed locally
- *    at a later time.
- *
- *    This function can be used for example in SILC_COMMAND_JOIN command
- *    reply handling in application to resolve users on that channel.  It
- *    also can be used after calling silc_client_get_channel_resolve to
- *    resolve users on that channel.
- *
- * NOTES
- *
- *    The resolving is done with WHOIS command.  For this reason this
- *    command may take a long time because it resolves detailed user
- *    information.
- *
- ***/
-void silc_client_get_clients_by_channel(SilcClient client,
-					SilcClientConnection conn,
-					SilcChannelEntry channel,
-					SilcGetClientCallback completion,
-					void *context);
-
 /****f* silcclient/SilcClientAPI/silc_client_get_client_by_id
  *
  * SYNOPSIS
