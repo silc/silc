@@ -8,6 +8,8 @@ URL: http://silcnet.org/software/developers/autodist/
 Source0: http://silcnet.org/download/autodist/sources/autodist-%{version}.tar.bz2
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Requires: autoconf >= 2.58
+Requires: automake >= 1.9
 
 %description
 The Autodist is a source distribution management system that allows
