@@ -14,6 +14,7 @@ inherit server
 inherit toolkit
 
 define SILC_DIST_INPLACE
+define SILC_DIST_SIM
 
 # SFTP is undefined in server, so force it here
 define SILC_DIST_SFTP

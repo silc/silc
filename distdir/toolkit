@@ -16,6 +16,7 @@ license-header distdir/GPL-header distdir/TOOLKIT-header
 define SILC_DIST_TOOLKIT
 define SILC_DIST_CLIENTLIB
 define SILC_DIST_HTTP
+define SILC_DIST_SIM
 
 # Includes
 include README.CVS
