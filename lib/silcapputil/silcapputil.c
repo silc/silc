@@ -265,6 +265,8 @@ SilcBool silc_load_key_pair(const char *pub_filename,
   if (!silc_pkcs_load_private_key(prv_filename,
 				  (const unsigned char *)pass, strlen(pass),
 				  return_private_key)) {
+    silc_pkcs_public_key_free(*return_public_key);
+    *return_public_key = NULL;
     memset(pass, 0, strlen(pass));
     silc_free(pass);
     return FALSE;

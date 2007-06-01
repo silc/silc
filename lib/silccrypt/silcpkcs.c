@@ -693,6 +693,7 @@ SilcBool silc_pkcs_load_public_key(const char *filename,
 
   silc_free(data);
   silc_free(public_key);
+  *ret_public_key = NULL;
   return FALSE;
 }
 
@@ -778,6 +779,7 @@ SilcBool silc_pkcs_load_private_key(const char *filename,
 
   silc_free(data);
   silc_free(private_key);
+  *ret_private_key = NULL;
   return FALSE;
 }
 
