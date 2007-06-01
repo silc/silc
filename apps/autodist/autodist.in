@@ -1182,6 +1182,15 @@ ad_parse_distribution()
     ad_fatal "Distribution '$1' is not declared"
   fi
 
+  # Get and enforce prereq version
+  prereq=`sed 's/^[ 	]*//' < $distdir/$1 | grep -v "^#" \
+    | grep "prereq " | cut -d' ' -f2- | sort | uniq`
+  if test '!' -z $prereq; then
+    if [[ $ver < $prereq ]]; then
+      ad_fatal "Autodist $prereq or newer is required for distribution $1"
+    fi
+  fi
+
   # Get inherited
   inhs=`sed 's/^[ 	]*//' < $distdir/$1 | grep -v "^#" \
     | grep "inherit " | cut -d' ' -f2 | sort | uniq`

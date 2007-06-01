@@ -579,6 +579,20 @@ Note that, the current header must match exactly the header used in
 files.  Otherwise the replacement will not be complete.
 
 
+@section Directive: prereq <version>
+
+The 'prereq' may be used to enforce the Autodist version.  If the Autodist 
+version used to process the distribution is older than the version 
+specified with 'prereq' the Autodist will fail.
+
+Example:
+@example
+prereq 1.3.2
+@end example
+
+Will require Autodist 1.3.2 or newer for this distribution.
+
+
 @section Directive: inherit <distfile>
 
 The Autodist provides inheritance of distributions.  The 'inherit'
