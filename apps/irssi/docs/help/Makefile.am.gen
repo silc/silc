@@ -5,8 +5,8 @@ helpdir = $(datadir)/irssi/help/silc
 SILCHELP = silc
 ED =
 else
-helpdir = $(datadir)/irssi/help
-SILCHELP = 
+helpdir = $(datadir)/silc/help
+SILCHELP =
 ED = silc
 endif
 

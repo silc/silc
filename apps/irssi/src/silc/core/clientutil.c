@@ -52,7 +52,7 @@ void silc_client_print_list(char *list)
   int i=0;
 
   items = g_strsplit(list, ",", -1);
-  
+
   while (items[i] != NULL)
     printformat_module("fe-common/silc", NULL, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_CONFIG_LIST,
@@ -430,7 +430,7 @@ void change_private_key_passphrase(const char *answer, CREATE_KEY_REC *rec)
 			    ENTRY_REDIRECT_FLAG_HIDDEN, rec);
     return;
   }
-  
+
   if ((rec->passphrase == NULL) && (answer) && (*answer != '\0')) {
     rec->passphrase = g_strdup(answer);
     keyboard_entry_redirect((SIGNAL_FUNC) change_private_key_passphrase,
@@ -454,7 +454,7 @@ void change_private_key_passphrase(const char *answer, CREATE_KEY_REC *rec)
   }
 
   if (silc_change_private_key_passphrase(rec->file, rec->old,
-				     (rec->passphrase == NULL ? 
+				     (rec->passphrase == NULL ?
 				      "" : rec->passphrase)) == TRUE)
     printformat_module("fe-common/silc", NULL, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_CONFIG_PASSCHANGE);

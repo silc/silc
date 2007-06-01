@@ -826,7 +826,9 @@ void silc_core_deinit(void)
 
   chat_protocol_unregister("SILC");
 
-  silc_pkcs_public_key_free(irssi_pubkey);
-  silc_pkcs_private_key_free(irssi_privkey);
+  if (irssi_pubkey)
+    silc_pkcs_public_key_free(irssi_pubkey);
+  if (irssi_privkey)
+    silc_pkcs_private_key_free(irssi_privkey);
   silc_client_free(silc_client);
 }
