@@ -497,54 +497,20 @@ AC_SUBST(FIX_SHA1)
 
 # Default installation destination
 #
-#ifdef SILC_DIST_AUTODIST
 AC_PREFIX_DEFAULT(/usr/local)
-#else !SILC_DIST_AUTODIST
-AC_PREFIX_DEFAULT(/usr/local/silc)
-#endif SILC_DIST_AUTODIST
 if test "x$prefix" != xNONE; then
   silc_prefix="$prefix"
 else
   silc_prefix="$ac_default_prefix"
+  prefix="$silc_prefix"
 fi
 
 #ifndef SILC_DIST_AUTODIST
-# etc directory
-#
-if test "x$sysconfdir" != 'x${prefix}/etc'; then
-  ETCDIR="$sysconfdir"
-else
-  ETCDIR="$silc_prefix/etc"
-fi
-
-AC_ARG_WITH(etcdir,
-  [[  --with-etcdir=DIR       directory for system files [/etc/silc]]],
-  [
-    case "$withval" in
-      no|yes)
-        ;;
-      *)
-        ETCDIR="$withval"
-        ;;
-    esac
-  ])
+ETCDIR=`eval echo $sysconfdir`;ETCDIR=`eval echo $ETCDIR`
 AC_SUBST(ETCDIR)
 AC_DEFINE_UNQUOTED([SILC_ETCDIR], "$ETCDIR", [SILC_ETCDIR])
 
-# doc directory
-#
-DOCDIR="$silc_prefix/doc"
-AC_ARG_WITH(docdir,
-  [[  --with-docdir=DIR       directory for SILC documentation [PREFIX/doc]]],
-  [
-    case "$withval" in
-      no|yes)
-        ;;
-      *)
-        DOCDIR="$withval"
-        ;;
-    esac
-  ])
+DOCDIR=`eval echo $docdir`;DOCDIR=`eval echo $DOCDIR`
 AC_SUBST(DOCDIR)
 AC_DEFINE_UNQUOTED([SILC_DOCDIR], "$DOCDIR", [SILC_DOCDIR])
 #endif SILC_DIST_AUTODIST

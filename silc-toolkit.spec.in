@@ -19,7 +19,8 @@ Epoch: 0
 %description
 SILC Toolkit providing SILC Protocol Core Library, SILC Client Library,
 runtime library and many other libraries.  SILC Toolkit enables SILC
-application development.
+application development.  SILC (Secure Internet Live Conferencing) is a
+secure conferencing protocol.
 
 %package devel
 Group: Development/Libraries

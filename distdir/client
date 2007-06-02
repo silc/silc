@@ -1,6 +1,7 @@
 name Client
 package silc-client
 bug-report silc-devel@lists.silcnet.org
+prereq 1.3.2
 
 inherit common
 define SILC_DIST_CLIENT
