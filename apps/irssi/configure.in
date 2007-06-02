@@ -878,7 +878,6 @@ docs/help/Makefile
 docs/help/in/Makefile
 irssi-version.h
 stamp.h
-irssi.spec
 irssi-config)
 
 dnl ** for building from objdir

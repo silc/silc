@@ -4,7 +4,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2005 Pekka Riikonen
+#  Copyright (C) 2005 - 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -30,9 +30,9 @@ IRSSI_SUBDIR=irssi
 
 # help directory
 #
-HELPDIR="$silc_prefix/help"
+HELPDIR="$datadir/silc/help"
 AC_ARG_WITH(helpdir,
-  [[  --with-helpdir=DIR      directory for SILC Client help files [PREFIX/help]]],
+  [[  --with-helpdir=DIR      directory for SILC Client help files [DATADIR/silc/help]]],
   [
     case "$withval" in
       no|yes)

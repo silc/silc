@@ -35,8 +35,7 @@ EXTRA_DIST = \
 	curses.m4 \
 	README \
 	file2header.sh \
-	irssi.spec \
-	irssi.spec.in \
+	silc-client.spec \
 	$(conffile) \
 	$(theme_DATA) \
 	irssi-config.in \
