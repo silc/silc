@@ -678,7 +678,7 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
  *    Resolves entry for channel by the channel name from the server.
  *    The resolving is done with IDENTIFY command. Note that users on
  *    the channel are not resolved at the same time. Use for example
- *    silc_client_get_clients_by_channel to resolve all users on a channel.
+ *    USERS command to resolve all users on a channel.
  *
  ***/
 void silc_client_get_channel_resolve(SilcClient client,
@@ -734,8 +734,7 @@ SilcChannelEntry silc_client_get_channel_by_id(SilcClient client,
  *    a pending command to it, if needed.  Returns 0 on error.
  *
  *    Note that users on the channel are not resolved at the same time.
- *    Use for example silc_client_get_clients_by_channel to resolve all
- *    users on a channel.
+ *    Use for example USERS command to resolve all users on a channel.
  *
  ***/
 SilcUInt16

@@ -340,7 +340,7 @@ static SilcUInt16 silc_client_get_clients_i(SilcClient client,
 
   /* Parse server name from the nickname if set */
   if (silc_parse_userfqdn(nickname, nick, sizeof(nick),
-			  serv, sizeof(serv) == 2))
+			  serv, sizeof(serv)) == 2)
     server = (const char *)serv;
   nickname = (const char *)nick;
 
