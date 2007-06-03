@@ -19,59 +19,65 @@ give command:
 
 	autodist <name> <version>
 
-Where the <name> is the distribution name.  It is one of the distributions 
-that was defined in distdir/ directory.  The <version> is the version of 
-the distribution that will be prepared.  The version format is 
+Where the <name> is the distribution name.  It is one of the distributions
+that was defined in distdir/ directory.  The <version> is the version of
+the distribution that will be prepared.  The version format is
 major.minor.build, for example 0.9.10.  Example:
 
 	autodist client 0.9.15
 
-This prepares 'client' distribution of version 0.9.15.  The package will 
+This prepares 'client' distribution of version 0.9.15.  The package will
 have the version 0.9.15 automatically.
 
-NOTE: Those distribution that have RPM spec files you should specify the 
+NOTE: Those distribution that have RPM spec files you should specify the
 RPM release version to autodist also by doing the following:
 
 	autodist toolkit 1.1.2 0.fc7
 
-where the "0.fc7" will become the RPM release version.  If you omit the 
+where the "0.fc7" will become the RPM release version.  If you omit the
 release version the default currently is "0.fc7".
 
 
 Configuring and compiling the distribution
 ==========================================
 
-When you prepare the distribution for releasing you should configure the 
-distribution without any specific configuration options, hence just give 
+When you prepare the distribution for releasing you should configure the
+distribution without any specific configuration options, hence just give
 the command:
 
 	./configure
+
+NOTE:  If you have SILC Toolkit installed to your system you must use
+the following command to configure the distribution, so that the Toolkit
+from the system is not used:
+
+	PKG_CONFIG=. ./configure
 
 To compile the distribution, give command:
 
 	make
 
-If you want you can clear the environment first with make clean command, 
+If you want you can clear the environment first with make clean command,
 but this is not necessary.
 
 
 Packaging the distribution
 ==========================
 
-After the distribution is prepared, configured and compiled it can be 
+After the distribution is prepared, configured and compiled it can be
 packaged with the following commands:
 
 	make -C doc dist-hook
 	makedist --bzip2
 
-The 'makedist --bzip2' creates the default 'tar.gz' and 'tar.bz2' 
+The 'makedist --bzip2' creates the default 'tar.gz' and 'tar.bz2'
 distribution.
 
-NOTE:  Before giving this command, make sure that you do not have any of 
+NOTE:  Before giving this command, make sure that you do not have any of
 the tests in the SILC source tree compiled.  If they are the binaries
-will be included in the distribution which is not allowed.  The tests are 
+will be included in the distribution which is not allowed.  The tests are
 always located in the tests/ directory, for example lib/silccore/tests/.
-The tests are not compiled by default, but if you compiled them by 
+The tests are not compiled by default, but if you compiled them by
 yourself make sure you make clean them before creating the distribution.
 
 NOTE:  Same thing must be assured for silcer/ and tutorial/ sub
@@ -79,8 +85,8 @@ directories.  Make sure they are not compiled and does not include any
 extra files.  If you haven't compiled them after the CVS checkout, they do
 not include any extra files.
 
-NOTE for 'toolkit' distribution:  Running ./configure for toolkit 
-distribution is not necessary.  Toolkit is packaged simply by giving 
+NOTE for 'toolkit' distribution:  Running ./configure for toolkit
+distribution is not necessary.  Toolkit is packaged simply by giving
 command:
 
 	makedist
@@ -89,19 +95,19 @@ command:
 Before releasing the distribution
 =================================
 
-Before releasing the distribution the created distribution must be tagged 
-in the CVS so that it can be checkout at a later time, if needed.  The tag 
+Before releasing the distribution the created distribution must be tagged
+in the CVS so that it can be checkout at a later time, if needed.  The tag
 format is as follows:
 
 	silc_<name>_<version>
 
-Where <name> is the distribution name and <version> is the version of the 
-distribution in following format: major_minor_build, for example 0_9_10.  
+Where <name> is the distribution name and <version> is the version of the
+distribution in following format: major_minor_build, for example 0_9_10.
 Example:
 
 	silc_client_0_9_15
 
-To tag the distribution go to the root of the SILC CVS source tree and 
+To tag the distribution go to the root of the SILC CVS source tree and
 give, for example, command:
 
 	cvs tag silc_client_0_9_15
