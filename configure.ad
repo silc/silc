@@ -293,6 +293,23 @@ AC_ARG_ENABLE(debug,
     AC_MSG_RESULT(no)
   ])
 
+# Disable all compiler optimizations
+#
+AC_MSG_CHECKING(whether to enable compiler optimizations)
+want_cc_optimizations=true
+AC_ARG_ENABLE(optimizations,
+  [  --disable-optimizations do not use any compiler optimizations],
+  [
+    AC_MSG_RESULT(no)
+    AC_DEFINE([SILC_NO_CC_OPTIMIZATIONS], [], [SILC_NO_CC_OPTIMIZATIONS])
+    want_cc_optimizations=false
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    want_cc_optimizations=true
+  ])
+AM_CONDITIONAL(SILC_NO_CC_OPTIMIZATIONS, test x$want_cc_optimizations = xfalse)
+
 # Disable all assembler optimizations
 #
 AC_MSG_CHECKING(whether to enable assembler optimizations)
@@ -439,9 +456,9 @@ fi
 if test "$GCC"; then
   # GCC specific options
   if test "x$summary_debug" = "xyes"; then
-    SILC_ADD_CFLAGS(-g -O)
+    SILC_ADD_CFLAGS(-g)
   else
-    SILC_ADD_CFLAGS(-g -O2)
+    SILC_ADD_CFLAGS(-g)
   fi
   SILC_ADD_CFLAGS(-Wall -finline-functions)
   SILC_ADD_CFLAGS(-Wno-pointer-sign)
@@ -449,20 +466,43 @@ else
   # Other compilers
   case "$target" in
     alpha*-dec-osf*)
-      SILC_ADD_CFLAGS(-g3 -O2, SILC_ADD_CFLAGS(-g3 -O, SILC_ADD_CFLAGS(-O)))
+      SILC_ADD_CFLAGS(-g3)
       ;;
     mips*-sgi-irix*)
-      SILC_ADD_CFLAGS(-g3 -O2, SILC_ADD_CFLAGS(-g3 -O, SILC_ADD_CFLAGS(-O)))
+      SILC_ADD_CFLAGS(-g3)
       ;;
     *)
       SILC_ADD_CFLAGS(-g)
-      SILC_ADD_CFLAGS(-O2, SILC_ADD_CFLAGS(-O))
       ;;
   esac
 
   # Intel C++ Compiler needs -restrict
   if test "x$CC" = "xicc"; then
     SILC_ADD_CFLAGS(-restrict)
+  fi
+fi
+
+if test x$want_cc_optimizations = xtrue; then
+  if test "$GCC"; then
+    # GCC specific options
+    if test "x$summary_debug" = "xyes"; then
+      SILC_ADD_CFLAGS(-O)
+    else
+      SILC_ADD_CFLAGS(-O2)
+    fi
+  else
+    # Other compilers
+    case "$target" in
+      alpha*-dec-osf*)
+        SILC_ADD_CFLAGS(-O2, SILC_ADD_CFLAGS(-O))
+        ;;
+      mips*-sgi-irix*)
+        SILC_ADD_CFLAGS(-O2, SILC_ADD_CFLAGS(-O))
+        ;;
+      *)
+        SILC_ADD_CFLAGS(-O2, SILC_ADD_CFLAGS(-O))
+        ;;
+    esac
   fi
 fi
 

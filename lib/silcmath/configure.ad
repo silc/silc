@@ -4,7 +4,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2005 Pekka Riikonen
+#  Copyright (C) 2005 - 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -21,10 +21,12 @@ if test x$compile_libs = xtrue; then
 AC_MSG_NOTICE([configuring math library])
 
 #ifdef SILC_DIST_TMA
-SILC_ADD_CC_FLAGS(MATH, -O3, SILC_ADD_CC_FLAGS(MATH, -O2))
-SILC_ADD_CC_FLAGS(MATH, -funroll-all-loops)
+if test x$want_cc_optimizations = xtrue; then
+  SILC_ADD_CC_FLAGS(MATH, -O3, SILC_ADD_CC_FLAGS(MATH, -O2))
+  SILC_ADD_CC_FLAGS(MATH, -funroll-all-loops)
+fi
 if test x$enable_stack_trace != xyes; then
-SILC_ADD_CC_FLAGS(MATH, -fomit-frame-pointer)
+  SILC_ADD_CC_FLAGS(MATH, -fomit-frame-pointer)
 fi
 #endif SILC_DIST_TMA
 
@@ -36,20 +38,26 @@ case "$target" in
   alpha*-*-*)
     if test ! "$GCC"; then
       SILC_ADD_CC_FLAGS(MATH, -DTFM_NO_ASM)
-      SILC_ADD_CC_FLAGS(MATH, -O -Olimit 4000)
+      if test x$want_cc_optimizations = xtrue; then
+        SILC_ADD_CC_FLAGS(MATH, -O -Olimit 4000)
+      fi
       SILC_ADD_CC_FLAGS(MATH, -std1 -DOSF1)
     fi
     ;;
 
   sparcv9-*-* | sparc64-*-*)
-    SILC_ADD_CC_FLAGS(MATH, -O3, SILC_ADD_CC_FLAGS(MATH, -O2))
+    if test x$want_cc_optimizations = xtrue; then
+      SILC_ADD_CC_FLAGS(MATH, -O3, SILC_ADD_CC_FLAGS(MATH, -O2))
+    fi
     if test ! "$GCC"; then
       SILC_ADD_CC_FLAGS(MATH, -DTFM_NO_ASM)
     fi
     ;;
 
   ultrasparc*-*-*)
-    SILC_ADD_CC_FLAGS(MATH, -O3, SILC_ADD_CC_FLAGS(MATH, -O2))
+    if test x$want_cc_optimizations = xtrue; then
+      SILC_ADD_CC_FLAGS(MATH, -O3, SILC_ADD_CC_FLAGS(MATH, -O2))
+    fi
     if test ! "$GCC"; then
       SILC_ADD_CC_FLAGS(MATH, -DTFM_NO_ASM)
     fi
@@ -103,7 +111,9 @@ case "$target" in
     ;;
 
   *)
-    SILC_ADD_CC_FLAGS(MATH, -O3, SILC_ADD_CC_FLAGS(MATH, -O2))
+    if test x$want_cc_optimizations = xtrue; then
+      SILC_ADD_CC_FLAGS(MATH, -O3, SILC_ADD_CC_FLAGS(MATH, -O2))
+    fi
     if test x$enable_stack_trace != xyes; then
       SILC_ADD_CC_FLAGS(MATH, -fomit-frame-pointer)
     fi
