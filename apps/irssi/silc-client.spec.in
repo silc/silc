@@ -15,11 +15,6 @@ SILC (Secure Internet Live Conferencing) is a protocol which provides
 secure conferencing services on the Internet over insecure channel.
 SILC Client is used to connect to SILC server and SILC network.
 
-# Need this because the irssi's configure we run from silc-client
-# configure somehow installs some of the files to location where I don't
-# know how to reach them.
-%define _unpackaged_files_terminate_build 0
-
 %prep
 %setup -q
 
@@ -36,21 +31,22 @@ make -j4
 %install
 rm -rf $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT install
-rm -f $RPM_BUILD_ROOT/%{_libdir}/perl5/5.6.0/i386-linux/perllocal.pod
-rm -f $RPM_BUILD_ROOT/%{_datadir}/doc/silc-client
+rm -f $RPM_BUILD_ROOT/%{_libdir}/silc/perl5/*/perllocal.pod
+mv $RPM_BUILD_ROOT/%{_datadir}/doc/silc-client \
+  $RPM_BUILD_ROOT/%{_datadir}/doc/silc-client-%version
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
-%defattr (-,root,root,-)
+%defattr (755,root,root,755)
 %{_bindir}/*
 %{_libdir}/silc/perl5
+%defattr (644,root,root,755)
 %{_sysconfdir}/silc.conf
 %{_mandir}/man1/*
 %{_datadir}/silc
-%doc CHANGES COPYING CREDITS README README.PLUGIN TODO doc/FAQ
-%doc apps/irssi/docs/*.txt apps/irssi/docs/*.html
+%doc %{_datadir}/doc
 
 %changelog
 * Sun Jun  3 2007 - Pekka Riikonen <priikone@silcnet.org>

@@ -1,4 +1,4 @@
-AC_INIT(src)
+AC_INIT([SILC-Client], [0.8.11+], [silc-devel@lists.silcnet.org], [silc-client])
 
 # we don't want VERSION in our config.h
 if test -n "`grep '^#undef VERSION' config.h.in`"; then
@@ -7,7 +7,7 @@ if test -n "`grep '^#undef VERSION' config.h.in`"; then
 fi
 
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(SILC-Client, 0.8.11+)
+AM_INIT_AUTOMAKE
 
 AM_MAINTAINER_MODE
 
