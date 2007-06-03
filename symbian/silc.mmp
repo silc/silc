@@ -17,7 +17,7 @@ SOURCE silcasn1.c silcasn1_decode.c silcasn1_encode.c silcber.c
 SOURCEPATH ..\lib\silccore
 SOURCE silcargument.c silcattrs.c silcauth.c silcchannel.c silccommand.c silcid.c silcmessage.c silcnotify.c silcpacket.c silcpubkey.c silcstatus.c
 SOURCEPATH ..\lib\silccrypt
-SOURCE aes.c blowfish.c cast.c md5.c none.c rc5.c rsa.c sha1.c sha256.c silccipher.c silchash.c silchmac.c silcpk.c silcpkcs.c silcpkcs1.c silcrng.c twofish.c
+SOURCE aes.c blowfish.c md5.c none.c rsa.c sha1.c sha256.c silccipher.c silchash.c silchmac.c silcpk.c silcpkcs.c silcpkcs1.c silcrng.c twofish.c
 SOURCEPATH ..\lib\silchttp
 SOURCE silchttpserver.c
 SOURCEPATH ..\lib\silcmath

@@ -491,11 +491,6 @@ EXPORTS
 	silc_show_public_key @ 490 ;
 	silc_show_public_key_file @ 491 ;
 	silc_version_to_num @ 492 ;
-	silc_rc5_cbc_context_len @ 493 ;
-	silc_rc5_cbc_decrypt @ 494 ;
-	silc_rc5_cbc_encrypt @ 495 ;
-	silc_rc5_cbc_set_iv @ 496 ;
-	silc_rc5_cbc_set_key @ 497 ;
 	silc_sha256_context_len @ 498 ;
 	silc_sha256_final @ 499 ;
 	silc_sha256_init @ 500 ;
@@ -591,11 +586,6 @@ EXPORTS
 	silc_pkcs1_sign_no_oid @ 590 ;
 	silc_pkcs1_verify @ 591 ;
 	silc_pkcs1_verify_no_oid @ 592 ;
-	silc_cast_cbc_context_len @ 593 ;
-	silc_cast_cbc_decrypt @ 594 ;
-	silc_cast_cbc_encrypt @ 595 ;
-	silc_cast_cbc_set_iv @ 596 ;
-	silc_cast_cbc_set_key @ 597 ;
 	silc_cipher_alloc @ 598 ;
 	silc_cipher_decrypt @ 599 ;
 	silc_cipher_encrypt @ 600 ;

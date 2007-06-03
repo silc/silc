@@ -305,19 +305,11 @@ SOURCE=..\..\lib\silccrypt\blowfish.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silccrypt\cast.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\lib\silccrypt\md5.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\lib\silccrypt\none.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccrypt\rc5.c
 # End Source File
 # Begin Source File
 
@@ -753,14 +745,6 @@ SOURCE=..\..\lib\silccrypt\blowfish_internal.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silccrypt\cast.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccrypt\cast_internal.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\lib\silccrypt\ciphers.h
 # End Source File
 # Begin Source File
@@ -778,14 +762,6 @@ SOURCE=..\..\lib\silccrypt\md5_internal.h
 # Begin Source File
 
 SOURCE=..\..\lib\silccrypt\none.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccrypt\rc5.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccrypt\rc5_internal.h
 # End Source File
 # Begin Source File
 

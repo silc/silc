@@ -8,4 +8,3 @@ silcclient.mmp
 silcclient_static.mmp
 
 PRJ_TESTMMPFILES
-test_silcnet.mmp
