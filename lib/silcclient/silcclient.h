@@ -1309,9 +1309,12 @@ SilcChannelUser silc_client_on_channel(SilcChannelEntry channel,
  *    be the command name.  The variable argument list must be terminated
  *    with NULL.
  *
- *    Returns FALSE if the command is not known and TRUE after command.
- *    execution.  The `command' client operation callback will be called when
- *    the command is executed to indicate whether or not the command executed
+ *    Returns command identifier for this sent command.  It can be used
+ *    to additionally attach to the command reply using the function
+ *    silc_client_command_pending, if needed.  Returns 0 on error.
+ *
+ *    The `command' client operation callback will be called when the
+ *    command is executed to indicate whether or not the command executed
  *    successfully.
  *
  *    The `command_reply' client operation callbak will be called when reply
