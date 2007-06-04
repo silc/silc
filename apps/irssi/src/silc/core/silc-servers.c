@@ -470,9 +470,11 @@ static void sig_disconnected(SILC_SERVER_REC *server)
   }
 
   /* SILC closes the handle */
-  g_io_channel_unref(net_sendbuffer_handle(server->handle));
-  net_sendbuffer_destroy(server->handle, FALSE);
-  server->handle = NULL;
+  if (server->handle) {
+    g_io_channel_unref(net_sendbuffer_handle(server->handle));
+    net_sendbuffer_destroy(server->handle, FALSE);
+    server->handle = NULL;
+  }
 }
 
 SERVER_REC *silc_server_init_connect(SERVER_CONNECT_REC *conn)
