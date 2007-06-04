@@ -1,6 +1,6 @@
 include $(top_srcdir)/Makefile.defines.in
 
-moduledir = $(silc_modulesdir)
+moduledir = @SILC_IRSSIDIR@
 
 IRSSI_INCLUDE=../../..
 
@@ -79,5 +79,5 @@ libfe_common_silc.a: libfe_common_silc.la
 
 if SILCPLUGIN
 install-data-hook: libfe_common_silc.la
-	-ln -s libfe_common_silc.so $(moduledir)/libfe_silc.so
+	-ln -s libfe_common_silc.so $(DESTDIR)$(moduledir)/libfe_silc.so
 endif

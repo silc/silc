@@ -7,7 +7,7 @@ INCLUDES += \
 	-I$(top_srcdir)/src/core \
 	$(GLIB_CFLAGS) \
 	-DSYSCONFDIR=\""$(silc_etcdir)"\" \
-	-DMODULEDIR=\""$(silc_modulesdir)"\"
+	-DMODULEDIR=\""@SILC_IRSSIDIR@"\"
 
 libcore_a_SOURCES = \
 	args.c \

@@ -23,10 +23,11 @@ conffile = silc.conf
 
 if SILCPLUGIN
 themedir = $(datadir)/irssi/themes
+theme_DATA = plugin.theme
 else
 themedir = $(datadir)/silc/themes
-endif
 theme_DATA = default.theme plugin.theme
+endif
 
 noinst_HEADERS = irssi-version.h.in
 

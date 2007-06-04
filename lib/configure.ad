@@ -133,7 +133,7 @@ AC_CHECK_FUNC(epoll_wait,
     )
   ])
 
-MODULESDIR="$silc_prefix/modules"
+MODULESDIR="$silc_prefix/lib/modules"
 #ifdef SILC_DIST_SIM
 # SIM modules directory
 #
