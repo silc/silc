@@ -794,7 +794,7 @@ void silc_core_deinit(void)
     g_source_remove(idletag);
 
   if (running) {
-    int stopped = 0;
+    volatile int stopped = 0;
     silc_client_stop(silc_client, silc_stopped, &stopped);
     while (!stopped)
       silc_client_run_one(silc_client);
