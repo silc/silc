@@ -72,19 +72,22 @@ SilcDList silc_client_get_clients_local_ext(SilcClient client,
   SilcList list;
   SilcDList clients;
   SilcClientEntry entry;
-  char *nicknamec, *parsed = NULL, *format = NULL;
+  char nick[128 + 1], *nicknamec, *parsed = NULL, *format = NULL;
 
   if (!client || !conn || !nickname)
     return NULL;
 
+  /* Get nickname from nickname@server string */
+  silc_parse_userfqdn(nickname, nick, sizeof(nick), NULL, 0);
+
   /* Parse nickname in case it is formatted */
-  if (!silc_client_nickname_parse(client, conn, (char *)nickname, &parsed))
+  if (!silc_client_nickname_parse(client, conn, (char *)nick, &parsed))
     return NULL;
 
   if (!get_all && parsed)
-    format = (char *)nickname;
+    format = (char *)nick;
   if (!parsed) {
-    parsed = silc_memdup(nickname, strlen(nickname));
+    parsed = silc_memdup(nick, strlen(nick));
     if (!parsed)
       return NULL;
   }
