@@ -1352,37 +1352,19 @@ SilcBool silc_packet_get_ids(SilcPacketStream stream,
 			     SilcBool *src_id_set, SilcID *src_id,
 			     SilcBool *dst_id_set, SilcID *dst_id)
 {
-  if (src_id && stream->src_id) {
-    (*src_id).type = stream->src_id_type;
-    switch (stream->src_id_type) {
-    case SILC_ID_CLIENT:
-      (*src_id).u.client_id = *(SilcClientID *)stream->src_id;
-      break;
-    case SILC_ID_SERVER:
-      (*src_id).u.server_id = *(SilcServerID *)stream->src_id;
-      break;
-    case SILC_ID_CHANNEL:
-      (*src_id).u.channel_id = *(SilcChannelID *)stream->src_id;
-      break;
-    }
-  }
+  if (src_id && stream->src_id)
+    if (!silc_id_str2id2(stream->src_id, stream->src_id_len,
+			 stream->src_id_type, src_id))
+      return FALSE;
+
   if (stream->src_id && src_id_set)
     *src_id_set = TRUE;
 
-  if (dst_id && stream->dst_id) {
-    (*dst_id).type = stream->dst_id_type;
-    switch (stream->dst_id_type) {
-    case SILC_ID_CLIENT:
-      (*dst_id).u.client_id = *(SilcClientID *)stream->dst_id;
-      break;
-    case SILC_ID_SERVER:
-      (*dst_id).u.server_id = *(SilcServerID *)stream->dst_id;
-      break;
-    case SILC_ID_CHANNEL:
-      (*dst_id).u.channel_id = *(SilcChannelID *)stream->dst_id;
-      break;
-    }
-  }
+  if (dst_id && stream->dst_id)
+    if (!silc_id_str2id2(stream->dst_id, stream->dst_id_len,
+			 stream->dst_id_type, dst_id))
+      return FALSE;
+
   if (stream->dst_id && dst_id_set)
     *dst_id_set = TRUE;
 
