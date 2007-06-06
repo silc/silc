@@ -50,7 +50,6 @@ static int opt_bits = 0;
 static int init_failed = 0;
 #endif
 
-static int idletag = -1;
 static int running = 0;
 
 /* SILC Client */
@@ -77,10 +76,66 @@ void silc_lag_deinit(void);
 void silc_core_deinit(void);
 #endif
 
-static int my_silc_scheduler(void)
+static gboolean my_silc_scheduler(gpointer data)
 {
+  SILC_LOG_DEBUG(("Timeout"));
   silc_client_run_one(silc_client);
-  return 1;
+  return FALSE;
+}
+
+static gboolean my_silc_scheduler_fd(GIOChannel *source,
+                                     GIOCondition condition,
+                                     gpointer data)
+{
+  SILC_LOG_DEBUG(("I/O event, %d", SILC_PTR_TO_32(data)));
+  silc_client_run_one(silc_client);
+  return TRUE;
+}
+
+static void scheduler_notify_cb(SilcSchedule schedule,
+				SilcBool added, SilcTask task,
+				SilcBool fd_task, SilcUInt32 fd,
+				SilcTaskEvent event,
+				long seconds, long useconds,
+				void *context)
+{
+  if (added) {
+    if (fd_task) {
+      /* Add fd */
+      GIOChannel *ch;
+      guint e = 0;
+
+      SILC_LOG_DEBUG(("Add fd %d, events %d", fd, event));
+      g_source_remove_by_user_data(SILC_32_TO_PTR(fd));
+
+      if (event & SILC_TASK_READ)
+	e |= G_IO_IN;
+      if (event & SILC_TASK_WRITE)
+	e |= G_IO_OUT;
+
+      if (e) {
+	ch = g_io_channel_unix_new(fd);
+	g_io_add_watch(ch, e, my_silc_scheduler_fd, SILC_32_TO_PTR(fd));
+      }
+    } else {
+      /* Add timeout */
+      guint t;
+
+      /* Zero timeouts are delievered always immediately, as per
+	 SilcSchedule API documentation, no need to add them to glib. */
+      if (!seconds && !useconds)
+	return;
+
+      t = (seconds * 1000) + (useconds / 1000),
+      SILC_LOG_DEBUG(("interval %d msec", t));
+      g_timeout_add(t, my_silc_scheduler, NULL);
+    }
+  } else {
+    if (fd_task) {
+      /* Remove fd */
+      g_source_remove_by_user_data(SILC_32_TO_PTR(fd));
+    }
+  }
 }
 
 static CHATNET_REC *create_chatnet(void)
@@ -604,6 +659,8 @@ static void sig_init_finished(void)
     return;
   }
 
+  silc_schedule_set_notify(silc_client->schedule, scheduler_notify_cb, NULL);
+
   silc_log_set_callback(SILC_LOG_INFO, silc_log_misc, NULL);
   silc_log_set_callback(SILC_LOG_WARNING, silc_log_misc, NULL);
   silc_log_set_callback(SILC_LOG_ERROR, silc_log_misc, NULL);
@@ -611,8 +668,8 @@ static void sig_init_finished(void)
 
   silc_hash_alloc("sha1", &sha1hash);
 
-  /* register SILC scheduler */
-  idletag = g_timeout_add(5, (GSourceFunc) my_silc_scheduler, NULL);
+  /* Run SILC scheduler */
+  my_silc_scheduler(NULL);
 }
 
 /* Init SILC. Called from src/fe-text/silc.c */
@@ -790,12 +847,9 @@ void silc_core_init(void)
 
 void silc_core_deinit(void)
 {
-  if (idletag != -1)
-    g_source_remove(idletag);
-
   if (running) {
     volatile int stopped = 0;
-    silc_client_stop(silc_client, silc_stopped, &stopped);
+    silc_client_stop(silc_client, silc_stopped, (void *)&stopped);
     while (!stopped)
       silc_client_run_one(silc_client);
   }

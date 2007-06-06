@@ -275,6 +275,7 @@ static void silc_connect_cb(SilcClient client,
 			    void *context)
 {
   SILC_SERVER_REC *server = context;
+  FtpSession ftp;
   char *file;
 
   SILC_LOG_DEBUG(("Connection callback %p, status %d, error %d, message %s",
@@ -347,6 +348,12 @@ static void silc_connect_cb(SilcClient client,
 	       "Server closed connection: %s (%d) %s",
 	       silc_get_status_message(error), error,
 	       message ? message : "");
+
+    /* Close FTP sessions */
+    silc_dlist_start(server->ftp_sessions);
+    while ((ftp = silc_dlist_get(server->ftp_sessions)))
+      silc_client_file_close(client, conn, ftp->session_id);
+    silc_dlist_uninit(server->ftp_sessions);
 
     if (server->conn)
       server->conn->context = NULL;
@@ -453,8 +460,6 @@ static void sig_disconnected(SILC_SERVER_REC *server)
 {
   if (!IS_SILC_SERVER(server))
     return;
-
-  silc_dlist_uninit(server->ftp_sessions);
 
   if (server->conn) {
     /* Close connection */
