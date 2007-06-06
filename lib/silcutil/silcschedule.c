@@ -473,6 +473,11 @@ static SilcBool silc_schedule_iterate(SilcSchedule schedule, int timeout_usecs)
       /* There is some data available now */
       SILC_LOG_DEBUG(("Running fd tasks"));
       silc_schedule_dispatch_fd(schedule);
+
+      /* If timeout was very short, dispatch also timeout tasks */
+      if (schedule->has_timeout && schedule->timeout.tv_sec == 0 &&
+	  schedule->timeout.tv_usec < 50000)
+	silc_schedule_dispatch_timeout(schedule, FALSE);
       continue;
 
     } else {
@@ -543,6 +548,15 @@ void *silc_schedule_get_context(SilcSchedule schedule)
   return schedule->app_context;
 }
 
+/* Set notify callback */
+
+void silc_schedule_set_notify(SilcSchedule schedule,
+			      SilcTaskNotifyCb notify, void *context)
+{
+  schedule->notify = notify;
+  schedule->notify_context = context;
+}
+
 /* Add new task to the scheduler */
 
 SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
@@ -607,6 +621,11 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 
     task = (SilcTask)ttask;
 
+    /* Call notify callback */
+    if (schedule->notify)
+      schedule->notify(schedule, TRUE, task, FALSE, 0, 0, seconds, useconds,
+		       schedule->notify_context);
+
   } else if (silc_likely(type == SILC_TASK_FD)) {
     SilcTaskFd ftask;
 
@@ -660,6 +679,11 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 
     task = (SilcTask)ftask;
 
+    /* Call notify callback */
+    if (schedule->notify)
+      schedule->notify(schedule, TRUE, task, TRUE, ftask->fd,
+		       SILC_TASK_READ, 0, 0, schedule->notify_context);
+
   } else if (silc_unlikely(type == SILC_TASK_SIGNAL)) {
     SILC_SCHEDULE_UNLOCK(schedule);
     schedule_ops.signal_register(schedule, schedule->internal, fd,
@@ -694,15 +718,27 @@ SilcBool silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
 
     /* Delete from fd queue */
     silc_hash_table_list(schedule->fd_queue, &htl);
-    while (silc_hash_table_get(&htl, NULL, (void *)&task))
+    while (silc_hash_table_get(&htl, NULL, (void *)&task)) {
       task->valid = FALSE;
+
+      /* Call notify callback */
+      if (schedule->notify)
+	schedule->notify(schedule, FALSE, task, TRUE,
+			 ((SilcTaskFd)task)->fd, 0, 0, 0,
+			 schedule->notify_context);
+    }
     silc_hash_table_list_reset(&htl);
 
     /* Delete from timeout queue */
     silc_list_start(schedule->timeout_queue);
-    while ((task = (SilcTask)silc_list_get(schedule->timeout_queue))
-	   != SILC_LIST_END)
+    while ((task = (SilcTask)silc_list_get(schedule->timeout_queue))) {
       task->valid = FALSE;
+
+      /* Call notify callback */
+      if (schedule->notify)
+	schedule->notify(schedule, FALSE, task, FALSE, 0, 0, 0, 0,
+			 schedule->notify_context);
+    }
 
     SILC_SCHEDULE_UNLOCK(schedule);
     return TRUE;
@@ -711,6 +747,11 @@ SilcBool silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
   SILC_LOG_DEBUG(("Unregistering task %p", task));
   SILC_SCHEDULE_LOCK(schedule);
   task->valid = FALSE;
+
+  /* Call notify callback */
+  if (schedule->notify)
+    schedule->notify(schedule, FALSE, task, !task->type, 0, 0, 0, 0,
+		     schedule->notify_context);
   SILC_SCHEDULE_UNLOCK(schedule);
 
   return TRUE;
@@ -733,6 +774,11 @@ SilcBool silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd)
 				       (void *)&task))) {
     SILC_LOG_DEBUG(("Deleting task %p", task));
     task->valid = FALSE;
+
+    /* Call notify callback */
+    if (schedule->notify)
+      schedule->notify(schedule, FALSE, task, TRUE, fd, 0, 0, 0,
+		       schedule->notify_context);
     ret = TRUE;
   }
 
@@ -766,6 +812,12 @@ SilcBool silc_schedule_task_del_by_callback(SilcSchedule schedule,
   while (silc_hash_table_get(&htl, NULL, (void *)&task)) {
     if (task->callback == callback) {
       task->valid = FALSE;
+
+      /* Call notify callback */
+      if (schedule->notify)
+	schedule->notify(schedule, FALSE, task, TRUE,
+			 ((SilcTaskFd)task)->fd, 0, 0, 0,
+			 schedule->notify_context);
       ret = TRUE;
     }
   }
@@ -777,6 +829,11 @@ SilcBool silc_schedule_task_del_by_callback(SilcSchedule schedule,
   while ((task = (SilcTask)silc_list_get(list))) {
     if (task->callback == callback) {
       task->valid = FALSE;
+
+      /* Call notify callback */
+      if (schedule->notify)
+	schedule->notify(schedule, FALSE, task, FALSE, 0, 0, 0, 0,
+			 schedule->notify_context);
       ret = TRUE;
     }
   }
@@ -805,6 +862,12 @@ SilcBool silc_schedule_task_del_by_context(SilcSchedule schedule,
   while (silc_hash_table_get(&htl, NULL, (void *)&task)) {
     if (task->context == context) {
       task->valid = FALSE;
+
+      /* Call notify callback */
+      if (schedule->notify)
+	schedule->notify(schedule, FALSE, task, TRUE,
+			 ((SilcTaskFd)task)->fd, 0, 0, 0,
+			 schedule->notify_context);
       ret = TRUE;
     }
   }
@@ -815,8 +878,13 @@ SilcBool silc_schedule_task_del_by_context(SilcSchedule schedule,
   silc_list_start(list);
   while ((task = (SilcTask)silc_list_get(list))) {
     if (task->context == context) {
-      ret = TRUE;
       task->valid = FALSE;
+
+      /* Call notify callback */
+      if (schedule->notify)
+	schedule->notify(schedule, FALSE, task, FALSE, 0, 0, 0, 0,
+			 schedule->notify_context);
+      ret = TRUE;
     }
   }
 
@@ -849,6 +917,11 @@ SilcBool silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
   while ((task = (SilcTask)silc_list_get(list))) {
     if (task->callback == callback && task->context == context) {
       task->valid = FALSE;
+
+      /* Call notify callback */
+      if (schedule->notify)
+	schedule->notify(schedule, FALSE, task, FALSE, 0, 0, 0, 0,
+			 schedule->notify_context);
       ret = TRUE;
     }
   }
@@ -883,6 +956,12 @@ SilcBool silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
       task->revents = mask;
       silc_schedule_dispatch_fd(schedule);
     }
+
+    /* Call notify callback */
+    if (schedule->notify)
+      schedule->notify(schedule, TRUE, (SilcTask)task,
+		       TRUE, task->fd, mask, 0, 0,
+		       schedule->notify_context);
   }
 
   SILC_SCHEDULE_UNLOCK(schedule);

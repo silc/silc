@@ -319,6 +319,23 @@ SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
   (void)read(internal->wakeup_pipe[0], &c, 1);
 }
 
+SILC_TASK_CALLBACK(silc_schedule_wakeup_init)
+{
+  SilcUnixScheduler internal = schedule->internal;
+
+  internal->wakeup_task =
+    silc_schedule_task_add(schedule, internal->wakeup_pipe[0],
+			   silc_schedule_wakeup_cb, internal,
+			   0, 0, SILC_TASK_FD);
+  if (!internal->wakeup_task) {
+    SILC_LOG_WARNING(("Could not add a wakeup task, threads won't work"));
+    close(internal->wakeup_pipe[0]);
+    return;
+  }
+  silc_schedule_internal_schedule_fd(schedule, internal,
+				     (SilcTaskFd)internal->wakeup_task,
+				     SILC_TASK_READ);
+}
 #endif /* SILC_THREADS */
 
 /* Initializes the platform specific scheduler.  This for example initializes
@@ -376,20 +393,8 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
     return NULL;
   }
 
-  internal->wakeup_task =
-    silc_schedule_task_add(schedule, internal->wakeup_pipe[0],
-			   silc_schedule_wakeup_cb, internal,
-			   0, 0, SILC_TASK_FD);
-  if (!internal->wakeup_task) {
-    SILC_LOG_ERROR(("Could not add a wakeup task, threads won't work"));
-    close(internal->wakeup_pipe[0]);
-    close(internal->wakeup_pipe[1]);
-    silc_free(internal);
-    return NULL;
-  }
-  silc_schedule_internal_schedule_fd(schedule, internal,
-				     (SilcTaskFd)internal->wakeup_task,
-				     SILC_TASK_READ);
+  silc_schedule_task_add_timeout(schedule, silc_schedule_wakeup_init,
+				 internal, 0, 0);
 #endif /* SILC_THREADS */
 
   internal->app_context = app_context;

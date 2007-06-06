@@ -13,6 +13,15 @@ typedef void (*Callback)(void *context);
 
 SilcSchedule schedule;
 
+void notify_cb(SilcSchedule schedule, SilcBool added, SilcTask task,
+	       SilcBool fd_task, SilcUInt32 fd, long sec, long usec,
+	       void *context)
+{
+  SILC_LOG_DEBUG(("Notify cb, %s %s task, fd %d, sec %d usec %d",
+		  added ? "added" : "deleted", fd_task ? "fd" :"timeout",
+		  fd, sec, usec));
+}
+
 SILC_TASK_CALLBACK(foo)
 {
 
@@ -92,6 +101,7 @@ int main(int argc, char **argv)
   schedule = silc_schedule_init(NUM_FTASK, NULL);
   if (!schedule)
     goto err;
+  silc_schedule_set_notify(schedule, notify_cb, NULL);
 
   silc_schedule_task_add_signal(schedule, SIGINT, interrupt, NULL);
 
