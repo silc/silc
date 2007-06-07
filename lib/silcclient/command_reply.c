@@ -221,7 +221,7 @@ SILC_FSM_STATE(silc_client_command_reply_wait)
   /** Wait for command reply */
   silc_fsm_set_state_context(fsm, NULL);
   silc_fsm_next_later(fsm, silc_client_command_reply_timeout,
-		      cmd->cmd != SILC_COMMAND_PING ? 25 : 60, 0);
+		      cmd->cmd != SILC_COMMAND_PING ? 40 : 60, 0);
   return SILC_FSM_WAIT;
 }
 

@@ -73,12 +73,13 @@ SilcDList silc_client_get_clients_local_ext(SilcClient client,
   SilcDList clients;
   SilcClientEntry entry;
   char nick[128 + 1], *nicknamec, *parsed = NULL, *format = NULL;
+  char server[256 + 1];
 
   if (!client || !conn || !nickname)
     return NULL;
 
   /* Get nickname from nickname@server string */
-  silc_parse_userfqdn(nickname, nick, sizeof(nick), NULL, 0);
+  silc_parse_userfqdn(nickname, nick, sizeof(nick), server, sizeof(server));
 
   /* Parse nickname in case it is formatted */
   if (!silc_client_nickname_parse(client, conn, (char *)nick, &parsed))
@@ -136,6 +137,14 @@ SilcDList silc_client_get_clients_local_ext(SilcClient client,
     /* Check multiple cache entries for exact match */
     while ((id_cache = silc_list_get(list))) {
       entry = id_cache->context;
+
+      /* If server was provided, find entries that either have no server
+	 set or have the same server.  Ignore those that have different
+	 server. */
+      if (server[0] && entry->server &&
+	  !silc_utf8_strcasecmp(entry->server, server))
+	continue;
+
       if (silc_utf8_strcasecmp(entry->nickname,
 			       format ? format : parsed) &&
 	  (!get_valid || entry->internal.valid)) {
