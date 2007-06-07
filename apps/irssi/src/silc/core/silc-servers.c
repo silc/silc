@@ -102,9 +102,14 @@ static void silc_send_msg_clients(SilcClient client,
   clients = silc_client_get_clients_local(silc_client, server->conn,
 					  rec->nick, FALSE);
   if (!clients) {
-    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
-	      "%s: There is no such client (did you mean %s?)", rec->nick,
-	      target->nickname);
+    if (strchr(rec->nick, '@') && target->server)
+      printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
+		"%s: There is no such client (did you mean %s@%s?)", rec->nick,
+		target->nickname, target->server);
+    else
+      printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
+		"%s: There is no such client (did you mean %s?)", rec->nick,
+		target->nickname);
     goto out;
   }
 

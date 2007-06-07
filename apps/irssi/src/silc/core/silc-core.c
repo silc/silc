@@ -109,13 +109,14 @@ static void scheduler_notify_cb(SilcSchedule schedule,
       g_source_remove_by_user_data(SILC_32_TO_PTR(fd));
 
       if (event & SILC_TASK_READ)
-	e |= G_IO_IN;
+        e |= (G_IO_IN | G_IO_PRI | G_IO_HUP | G_IO_ERR);
       if (event & SILC_TASK_WRITE)
-	e |= G_IO_OUT;
+        e |= (G_IO_OUT | G_IO_HUP | G_IO_ERR | G_IO_NVAL);
 
       if (e) {
 	ch = g_io_channel_unix_new(fd);
 	g_io_add_watch(ch, e, my_silc_scheduler_fd, SILC_32_TO_PTR(fd));
+	g_io_channel_unref(ch);
       }
     } else {
       /* Add timeout */
@@ -126,7 +127,7 @@ static void scheduler_notify_cb(SilcSchedule schedule,
       if (!seconds && !useconds)
 	return;
 
-      t = (seconds * 1000) + (useconds / 1000),
+      t = (seconds * 1000) + (useconds / 1000);
       SILC_LOG_DEBUG(("interval %d msec", t));
       g_timeout_add(t, my_silc_scheduler, NULL);
     }
