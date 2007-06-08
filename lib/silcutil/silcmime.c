@@ -214,7 +214,7 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
     if (!strchr(field, ';'))
       goto err;
     memset(b, 0, sizeof(b));
-    len = strchr(field, ';') - value;
+    len = (unsigned int)(strchr(field, ';') - value);
     if (len > sizeof(b) - 1)
       goto err;
     strncpy(b, value, len);
