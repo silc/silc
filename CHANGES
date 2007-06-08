@@ -1,3 +1,11 @@
+Fri Jun  8 23:32:33 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed SKE timeout double free crash.  Affected file is
+	  lib/silcske/silcske.c.
+
+	* Fixed MIME multipart decoding buffer overflow.  Affected file
+	  is lib/silcutil/silcmime.c.  Thanks to Matt Miller for patch.
+
 Fri Jun  8 18:39:34 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed connection auth protocol timeout crash.  Affected
