@@ -198,6 +198,7 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
   if (field && strstr(field, "multipart")) {
     char b[1024];
     SilcMime p;
+    unsigned int len;
 
     mime->multiparts = silc_dlist_init();
     if (!mime->multiparts)
@@ -213,7 +214,10 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
     if (!strchr(field, ';'))
       goto err;
     memset(b, 0, sizeof(b));
-    strncat(b, value, strchr(field, ';') - value);
+    len = strchr(field, ';') - value;
+    if (len > sizeof(b) - 1)
+      goto err;
+    strncpy(b, value, len);
     if (strchr(b, '"'))
       *strchr(b, '"') = '\0';
     mime->multitype = silc_memdup(b, strlen(b));
