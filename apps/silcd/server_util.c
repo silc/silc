@@ -162,15 +162,17 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
 
   if (server_signoff) {
     idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
-    argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
-    argv_lens = silc_realloc(argv_lens,  sizeof(*argv_lens) * (argc + 1));
-    argv_types = silc_realloc(argv_types, sizeof(*argv_types) * (argc + 1));
-    argv[argc] = silc_calloc(silc_buffer_len(idp), sizeof(*argv[0]));
-    memcpy(argv[argc], idp->data, silc_buffer_len(idp));
-    argv_lens[argc] = silc_buffer_len(idp);
-    argv_types[argc] = argc + 1;
-    argc++;
-    silc_buffer_free(idp);
+    if (idp) {
+      argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
+      argv_lens = silc_realloc(argv_lens,  sizeof(*argv_lens) * (argc + 1));
+      argv_types = silc_realloc(argv_types, sizeof(*argv_types) * (argc + 1));
+      argv[argc] = silc_calloc(silc_buffer_len(idp), sizeof(*argv[0]));
+      memcpy(argv[argc], idp->data, silc_buffer_len(idp));
+      argv_lens[argc] = silc_buffer_len(idp);
+      argv_types[argc] = argc + 1;
+      argc++;
+      silc_buffer_free(idp);
+    }
   }
 
   if (silc_idcache_get_all(server->local_list->clients, &list)) {
@@ -189,17 +191,19 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
 
       if (server_signoff) {
 	idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-	argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
-	argv_lens = silc_realloc(argv_lens, sizeof(*argv_lens) *
-				 (argc + 1));
-	argv_types = silc_realloc(argv_types, sizeof(*argv_types) *
-				  (argc + 1));
-	argv[argc] = silc_calloc(silc_buffer_len(idp), sizeof(*argv[0]));
-	memcpy(argv[argc], idp->data, silc_buffer_len(idp));
-	argv_lens[argc] = silc_buffer_len(idp);
-	argv_types[argc] = argc + 1;
-	argc++;
-	silc_buffer_free(idp);
+	if (idp) {
+	  argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
+	  argv_lens = silc_realloc(argv_lens, sizeof(*argv_lens) *
+				   (argc + 1));
+	  argv_types = silc_realloc(argv_types, sizeof(*argv_types) *
+				    (argc + 1));
+	  argv[argc] = silc_calloc(silc_buffer_len(idp), sizeof(*argv[0]));
+	  memcpy(argv[argc], idp->data, silc_buffer_len(idp));
+	  argv_lens[argc] = silc_buffer_len(idp);
+	  argv_types[argc] = argc + 1;
+	  argc++;
+	  silc_buffer_free(idp);
+	}
       }
 
       /* Update statistics */

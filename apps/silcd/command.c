@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -599,7 +599,7 @@ SILC_SERVER_CMD_FUNC(whois)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_WHOIS, cmd, 1, 256);
-  silc_server_query_command(cmd->server, SILC_COMMAND_WHOIS, cmd);
+  silc_server_query_command(cmd->server, SILC_COMMAND_WHOIS, cmd, NULL);
   silc_server_command_free(cmd);
 }
 
@@ -609,7 +609,7 @@ SILC_SERVER_CMD_FUNC(whowas)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_WHOWAS, cmd, 1, 2);
-  silc_server_query_command(cmd->server, SILC_COMMAND_WHOWAS, cmd);
+  silc_server_query_command(cmd->server, SILC_COMMAND_WHOWAS, cmd, NULL);
   silc_server_command_free(cmd);
 }
 
@@ -619,7 +619,7 @@ SILC_SERVER_CMD_FUNC(identify)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_IDENTIFY, cmd, 1, 256);
-  silc_server_query_command(cmd->server, SILC_COMMAND_IDENTIFY, cmd);
+  silc_server_query_command(cmd->server, SILC_COMMAND_IDENTIFY, cmd, NULL);
   silc_server_command_free(cmd);
 }
 
@@ -1325,9 +1325,8 @@ SILC_TASK_CALLBACK(silc_server_command_quit_cb)
   if (client) {
     /* Free all client specific data, such as client entry and entires
        on channels this client may be on. */
-    silc_server_free_client_data(server, q->sock, client,
-			         TRUE, q->signoff);
-    silc_packet_set_context(q->sock, NULL);
+    silc_server_free_sock_user_data(server, q->sock, q->signoff);
+    silc_server_close_connection(server, q->sock);
   }
 
   silc_packet_stream_unref(q->sock);
@@ -1438,7 +1437,7 @@ SILC_SERVER_CMD_FUNC(kill)
   comment = silc_argument_get_arg_type(cmd->args, 2, &tmp_len2);
   if (comment && tmp_len2 > 128) {
     tmp_len2 = 128;
-    comment[127] = '\0';
+    comment[tmp_len2 - 1] = '\0';
   }
 
   /* If authentication data is provided then verify that killing is
@@ -2295,6 +2294,37 @@ static void silc_server_command_join_channel(SilcServer server,
 /* Server side of command JOIN. Joins client into requested channel. If
    the channel does not exist it will be created. */
 
+/* Ways of creating channel with dynamic connections:
+
+   1. If channels are not local (no local_channels in silcd.conf) then
+      /join silc, will create connection to default router if it is
+      specified in the silcd.conf.  If it isn't, it creates local channel.
+
+   2. If channels are not local then /join silc@silcnet.org, will create
+      connection to default if it is specified in the silcd.conf and if it
+      isn't or join fails it creates connection to silcnet.org and sends
+      the JOIN command to that server/router.
+
+   3. If channels are local (local_channels set in silcd.conf) then
+      /join silc, will create local channel.  No connections are created
+      to anywhere.
+
+   4. If channels are local then /join silc@silcnet.org will create
+      connection to default router if it is specified in the silcd.conf and
+      if it isn't, or join fails it creates connection to silcnet.org and
+      send the JOIN command to that server/router.
+
+   5. If we create connection to a remote that already has a channel that
+      we also have as a local channel, should we merge those channels?
+      Should I announce my local channels when I connect to router?  Should
+      I keep local channels local, unless I say /join localch@silcnet.org
+      in which case the local channel 'localch' becomes global?
+
+   6. After we have connection established to router, depending on the
+      local_channels setting /join silc will join locally or globally.
+      /join silc@silcnet.org would always join globally.
+*/
+
 SILC_SERVER_CMD_FUNC(join)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
@@ -2303,6 +2333,7 @@ SILC_SERVER_CMD_FUNC(join)
   unsigned char *auth, *cauth;
   SilcUInt32 tmp_len, auth_len, cauth_len;
   char *tmp, *channel_name, *channel_namec = NULL, *cipher, *hmac;
+  char parsed[256 + 1], serv[256 + 1];
   SilcChannelEntry channel;
   SilcUInt32 umode = 0;
   SilcBool created = FALSE, create_key = TRUE;
@@ -2321,15 +2352,19 @@ SILC_SERVER_CMD_FUNC(join)
 
   /* Truncate over long channel names */
   if (tmp_len > 256) {
-    tmp[tmp_len - 1] = '\0';
     tmp_len = 256;
+    tmp[tmp_len - 1] = '\0';
   }
-  channel_name = tmp;
+
+  /* Parse server name from the channel name */
+  silc_parse_userfqdn(channel_name, parsed, sizeof(parsed), serv,
+		      sizeof(serv));
+  channel_name = parsed;
 
   /* Check for valid channel name.  This is cached, the original is saved
      in the channel context. */
-  channel_namec = silc_channel_name_check(tmp, tmp_len, SILC_STRING_UTF8, 256,
-					  NULL);
+  channel_namec = silc_channel_name_check(channel_name, strlen(channel_name),
+					  SILC_STRING_UTF8, 256, NULL);
   if (!channel_namec) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					  SILC_STATUS_ERR_BAD_CHANNEL, 0);
@@ -4152,12 +4187,12 @@ SILC_SERVER_CMD_FUNC(watch)
   }
 
   if (add_nick && add_nick_len > 128) {
-    add_nick[128] = '\0';
     add_nick_len = 128;
+    add_nick[add_nick_len - 1] = '\0';
   }
   if (del_nick && del_nick_len > 128) {
-    del_nick[128] = '\0';
     del_nick_len = 128;
+    del_nick[del_nick_len - 1] = '\0';
   }
 
   /* Add new nickname to be watched in our cell */
@@ -5138,7 +5173,7 @@ SILC_SERVER_CMD_FUNC(connect)
     SILC_GET32_MSB(port, tmp);
 
   /* Create the connection. It is done with timeout and is async. */
-  silc_server_create_connection(server, FALSE, host, port, NULL, NULL);
+  silc_server_create_connection(server, FALSE, FALSE, host, port, NULL, NULL);
 
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CONNECT,

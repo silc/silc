@@ -338,6 +338,12 @@ SILC_CONFIG_CALLBACK(fetch_generic)
     }
     config->httpd_port = (SilcUInt16)port;
   }
+  else if (!strcmp(name, "open_server")) {
+    config->open_server = *(SilcBool *)val;
+  }
+  else if (!strcmp(name, "local_channels")) {
+    config->local_channels = *(SilcBool *)val;
+  }
   else
     return SILC_CONFIG_EINTERNAL;
 
@@ -581,6 +587,11 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
     SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigServerInfoInterface);
     CONFIG_IS_DOUBLE(tmp->server_ip);
     tmp->server_ip = strdup((char *) val);
+  }
+  else if (!strcmp(name, "public_ip")) {
+    SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigServerInfoInterface);
+    CONFIG_IS_DOUBLE(tmp->public_ip);
+    tmp->public_ip = strdup((char *) val);
   }
   else if (!strcmp(name, "port")) {
     int port = *(int *)val;
@@ -1157,6 +1168,9 @@ SILC_CONFIG_CALLBACK(fetch_router)
   else if (!strcmp(name, "backuplocal")) {
     tmp->backup_local = *(SilcBool *)val;
   }
+  else if (!strcmp(name, "dynamic_connection")) {
+    tmp->dynamic_connection = *(SilcBool *)val;
+  }
   else
     return SILC_CONFIG_EINTERNAL;
 
@@ -1203,6 +1217,8 @@ static const SilcConfigTable table_general[] = {
   { "http_server",    		SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
   { "http_server_ip",  		SILC_CONFIG_ARG_STRE,	fetch_generic,	NULL },
   { "http_server_port",		SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "open_server",    		SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
+  { "local_channels",	        SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -1236,6 +1252,7 @@ static const SilcConfigTable table_pkcs[] = {
 
 static const SilcConfigTable table_serverinfo_c[] = {
   { "ip",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "public_ip",	SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
   { "port",		SILC_CONFIG_ARG_INT,	fetch_serverinfo, NULL},
   { 0, 0, 0, 0 }
 };
@@ -1344,6 +1361,7 @@ static const SilcConfigTable table_routerconn[] = {
   { "backuphost",	SILC_CONFIG_ARG_STRE,	fetch_router,	NULL },
   { "backupport",	SILC_CONFIG_ARG_INT,	fetch_router,	NULL },
   { "backuplocal",	SILC_CONFIG_ARG_TOGGLE,	fetch_router,	NULL },
+  { "dynamic_connection",	SILC_CONFIG_ARG_TOGGLE,	fetch_router,	NULL },
   { 0, 0, 0, 0 }
 };
 

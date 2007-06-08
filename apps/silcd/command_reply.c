@@ -261,9 +261,10 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
       return FALSE;
     }
 
-    /* Remove the old cache entry  */
-    silc_idcache_del_by_context(global ? server->global_list->clients :
-				server->local_list->clients, client, NULL);
+    /* Update entry */
+    silc_idcache_update_by_context(global ? server->global_list->clients :
+				   server->local_list->clients, client, NULL,
+				   nickname, TRUE);
 
     silc_free(client->nickname);
     silc_free(client->username);
@@ -277,11 +278,6 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     client->mode = mode;
     client->data.status |= SILC_IDLIST_STATUS_RESOLVED;
     client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
-
-    /* Create new cache entry */
-    silc_idcache_add(global ? server->global_list->clients :
-		     server->local_list->clients, nickname, client->id,
-		     client);
   }
 
   /* Save channel list if it was sent to us */

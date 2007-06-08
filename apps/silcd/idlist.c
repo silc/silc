@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -60,23 +60,6 @@ void silc_idlist_del_data(void *entry)
 
   idata->hash = NULL;
   idata->public_key = NULL;
-}
-
-/* Purges ID cache */
-
-SILC_TASK_CALLBACK(silc_idlist_purge)
-{
-  SilcServer server = app_context;
-  SilcIDListPurge i = (SilcIDListPurge)context;
-
-  SILC_LOG_DEBUG(("Purging cache"));
-
-#if 0
-  /* XXX */
-  silc_idcache_purge(i->cache);
-  silc_schedule_task_add_timeout(server->schedule, silc_idlist_purge, i,
-				 i->timeout, 0);
-#endif
 }
 
 /******************************************************************************
@@ -380,7 +363,7 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
 
 int silc_idlist_del_client(SilcIDList id_list, SilcClientEntry entry)
 {
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Delete client %p", entry));
 
   if (entry) {
     /* Delete client, destructor will free data */
@@ -459,7 +442,8 @@ int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
    is returned to `clients_count'. Caller must free the returned table.
    The 'nickname' must be normalized already. */
 
-int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
+int silc_idlist_get_clients_by_hash(SilcIDList id_list,
+				    char *nickname, char *server,
 				    SilcHash md5hash,
 				    SilcClientEntry **clients,
 				    SilcUInt32 *clients_count)
@@ -468,6 +452,7 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
   SilcIDCacheEntry id_cache = NULL;
   unsigned char hash[SILC_HASH_MAXLEN];
   SilcClientID client_id;
+  SilcClientEntry client_entry;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -480,6 +465,21 @@ int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
   memset(&client_id, 0, sizeof(client_id));
   memcpy(&client_id.hash, hash, sizeof(client_id.hash));
   if (!silc_idcache_find_by_id(id_list->clients, &client_id, &list))
+    return FALSE;
+
+  /* If server is specified, narrow the search with it. */
+  if (server) {
+    silc_list_start(list);
+    while ((id_cache = silc_list_get(list))) {
+      client_entry = id_cache->context;
+      if (!client_entry->servername)
+	continue;
+      if (!silc_utf8_strcasecmp(client_entry->servername, server))
+	silc_list_del(list, id_cache);
+    }
+  }
+
+  if (!silc_list_count(list))
     return FALSE;
 
   *clients = silc_realloc(*clients,

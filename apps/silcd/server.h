@@ -146,6 +146,7 @@ void silc_server_stop(SilcServer server);
 void silc_server_start_key_exchange(SilcServerConnection sconn);
 void silc_server_create_connection(SilcServer server,
 				   SilcBool reconnect,
+				   SilcBool dynamic,
 				   const char *remote_host, SilcUInt32 port,
 				   SilcServerConnectCallback callback,
 				   void *context);
