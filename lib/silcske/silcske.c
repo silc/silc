@@ -2550,9 +2550,14 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_done)
 			 &hmac_send, NULL, NULL)) {
     /** Cannot get keys */
     ske->status = SILC_SKE_STATUS_ERROR;
+    ske->prop->cipher = NULL;
+    ske->prop->hmac = NULL;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
   }
+
+  ske->prop->cipher = NULL;
+  ske->prop->hmac = NULL;
 
   /* Set the new keys into use.  This will also send REKEY_DONE packet.  Any
      packet sent after this call will be protected with the new keys. */
@@ -2561,6 +2566,8 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_done)
     /** Cannot set keys */
     SILC_LOG_DEBUG(("Cannot set new keys, error sending REKEY_DONE"));
     ske->status = SILC_SKE_STATUS_ERROR;
+    silc_cipher_free(send_key);
+    silc_hmac_free(hmac_send);
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
   }
@@ -2597,6 +2604,8 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_end)
 			 NULL, &hmac_receive, NULL)) {
     /** Cannot get keys */
     ske->status = SILC_SKE_STATUS_ERROR;
+    ske->prop->cipher = NULL;
+    ske->prop->hmac = NULL;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
   }
@@ -2608,6 +2617,8 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_end)
     /** Cannot set keys */
     SILC_LOG_DEBUG(("Cannot set new keys"));
     ske->status = SILC_SKE_STATUS_ERROR;
+    silc_cipher_free(receive_key);
+    silc_hmac_free(hmac_receive);
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
   }
@@ -2619,6 +2630,8 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_end)
   if (!rekey) {
     /** No memory */
     ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
+    ske->prop->cipher = NULL;
+    ske->prop->hmac = NULL;
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
   }
@@ -2695,7 +2708,6 @@ SILC_FSM_STATE(silc_ske_st_rekey_responder_wait)
   /* Add rekey exchange timeout */
   silc_schedule_task_add_timeout(ske->schedule, silc_ske_timeout,
 				 ske, 30, 0);
-
 
   silc_fsm_next(fsm, silc_ske_st_rekey_responder_start);
 
@@ -2812,9 +2824,14 @@ SILC_FSM_STATE(silc_ske_st_rekey_responder_done)
 			 &hmac_send, NULL, NULL)) {
     /** Cannot get keys */
     ske->status = SILC_SKE_STATUS_ERROR;
+    ske->prop->cipher = NULL;
+    ske->prop->hmac = NULL;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
     return SILC_FSM_CONTINUE;
   }
+
+  ske->prop->cipher = NULL;
+  ske->prop->hmac = NULL;
 
   /* Set the new keys into use.  This will also send REKEY_DONE packet.  Any
      packet sent after this call will be protected with the new keys. */
@@ -2823,6 +2840,8 @@ SILC_FSM_STATE(silc_ske_st_rekey_responder_done)
     /** Cannot set keys */
     SILC_LOG_DEBUG(("Cannot set new keys, error sending REKEY_DONE"));
     ske->status = SILC_SKE_STATUS_ERROR;
+    silc_cipher_free(send_key);
+    silc_hmac_free(hmac_send);
     silc_fsm_next(fsm, silc_ske_st_responder_error);
     return SILC_FSM_CONTINUE;
   }
@@ -2859,6 +2878,8 @@ SILC_FSM_STATE(silc_ske_st_rekey_responder_end)
 			 NULL, &hmac_receive, NULL)) {
     /** Cannot get keys */
     ske->status = SILC_SKE_STATUS_ERROR;
+    ske->prop->cipher = NULL;
+    ske->prop->hmac = NULL;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
     return SILC_FSM_CONTINUE;
   }
@@ -2870,6 +2891,10 @@ SILC_FSM_STATE(silc_ske_st_rekey_responder_end)
     /** Cannot set keys */
     SILC_LOG_DEBUG(("Cannot set new keys"));
     ske->status = SILC_SKE_STATUS_ERROR;
+    ske->prop->cipher = NULL;
+    ske->prop->hmac = NULL;
+    silc_cipher_free(receive_key);
+    silc_hmac_free(hmac_receive);
     silc_fsm_next(fsm, silc_ske_st_responder_error);
     return SILC_FSM_CONTINUE;
   }
@@ -2881,6 +2906,8 @@ SILC_FSM_STATE(silc_ske_st_rekey_responder_end)
   if (!rekey) {
     /** No memory */
     ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
+    ske->prop->cipher = NULL;
+    ske->prop->hmac = NULL;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
     return SILC_FSM_CONTINUE;
   }
