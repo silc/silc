@@ -28,6 +28,6 @@ SUBDIRS = 	\
 	@IRSSI_SUBDIR@ \
 #endif SILC_DIST_CLIENT
 #ifdef SILC_DIST_INPLACE
-	silcstress
+#	silcstress
 #endif SILC_DIST_INPLACE
 

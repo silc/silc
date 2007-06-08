@@ -11,6 +11,11 @@ apps/silcd, The SILC Server	****PARTLY DONE****
 
  o Port all code to use SILC Toolkit 1.1 APIs.
 
+ o Dynamic connection support for INFO and MOTD commands.
+
+ o Dynamic connection support for JOIN command.  Accept channel name
+   strings of format channel@server.
+
  o Fix/test GETKEY.
 
  o Fix/test MOTD.
