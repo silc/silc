@@ -513,8 +513,9 @@ void silc_log_output_debug(char *file, const char *function,
 #ifdef SILC_SYMBIAN
   silc_symbian_debug(function, line, string);
 #else
-  fprintf(stderr, "%02d:%02d.%d %s:%d: %s\n", curtime.minute, curtime.second,
-	  curtime.msecond, function, line, string);
+  fprintf(stderr, "%02d:%02d:%02d %s:%d: %s\n", curtime.hour,
+	  curtime.minute, curtime.second, function, line,
+	  string);
   fflush(stderr);
 #endif /* SILC_SYMBIAN */
 
