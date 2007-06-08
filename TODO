@@ -5,9 +5,9 @@ NOTE: Any item that doesn't have (***DONE) in it, isn't done yet.  The
 (***TESTING NEEDED) means that the item has been done but not yet properly
 tested.
 
-NOTE: A TODO entry does not mean that it is ever going to be done.  Some 
-of the entries may be just ideas, good, bad or ugly.  If you want to work 
-on some of the TODO entries simply let us know about it by dropping a note 
+NOTE: A TODO entry does not mean that it is ever going to be done.  Some
+of the entries may be just ideas, good, bad or ugly.  If you want to work
+on some of the TODO entries simply let us know about it by dropping a note
 to silc-devel mailing list or appear on 'silc' channel on SILCNet.
 
 
@@ -52,6 +52,9 @@ lib/silccore
 lib/silcclient, The Client Library
 ==================================
 
+ o Giving WHOIS for nick that doesn't exist should remove any same
+   named entries from the client cache.
+
  o peer-to-peer private messages
 
  o Private message key request notification to application.  See XXX in
@@ -66,6 +69,10 @@ lib/silcclient, The Client Library
  o in /cmode and /cumode with +r, maybe the public key and private key
    could be just some "string", which would then match to "string.pub" and
    "string.prv".
+
+ o If the SILC Events (see below) are implemented, perhaps client library
+   should provide events so that application developer has a choice of
+   developing the SILC app with callbacks or with events.
 
 
 Runtime library, lib/silcutil/
@@ -122,7 +129,7 @@ Runtime library, lib/silcutil/
        va_list args;
        SilcUInt32 integer;
        SilcBuffer buf;
- 
+
        va_start(args, context);
        integer = va_arg(args, SilcUInt32);
        buf = va_arg(args, SilcBuffer);
@@ -130,12 +137,12 @@ Runtime library, lib/silcutil/
        ...
      }
 
-   Problems: Events would be SilcSchedule specific, and would not work on 
-   multi-thread/multi-scheduler system.  The events should be copyable 
+   Problems: Events would be SilcSchedule specific, and would not work on
+   multi-thread/multi-scheduler system.  The events should be copyable
    between schedulers.  Another problem is the signal delivery.  Do we
    deliver them synchronously possibly from any thread to any other thread
    or do we deliver them through the target schedulers.  If we use the
-   schedulers then signalling would be asynchronous (data must be 
+   schedulers then signalling would be asynchronous (data must be
    duplicated and later freed) which is not very nice.
 
  o If the event signals are added, the SILC_PARAM_* stuff needs to be
@@ -157,8 +164,8 @@ Runtime library, lib/silcutil/
 				   SilcSchedule parent);
    SilcSchedule silc_schedule_get_parent(SilcSchedule schedule);
 
- o Additional scheduler changes: optimize silc_schedule_wakeup.  Wakeup 
-   only if the scheduler is actually waiting something.  If it is 
+ o Additional scheduler changes: optimize silc_schedule_wakeup.  Wakeup
+   only if the scheduler is actually waiting something.  If it is
    delivering tasks wakeup is not needed.
 
  o Structured log messages to Log API.  Allows machine readable log
@@ -235,9 +242,9 @@ Runtime library, lib/silcutil/
    compression thus it must be implemented.  SILC Zip API must be
    defined.
 
- (o Generic SilcStatus or SilcResult that includes all possible status and 
+ (o Generic SilcStatus or SilcResult that includes all possible status and
     error conditions, including those of SILC protocol.  Though, the SILC
-    protocol related status (currently in silcstatus.h) cannot be in 
+    protocol related status (currently in silcstatus.h) cannot be in
     runtime library) maybe
 
  (o SILC specific socket creation/closing routines to silcnet.h, wrappers
@@ -302,9 +309,13 @@ SKR Library, lib/silcskr/
 		SILC_SKR_FIND_CONTEXT, key_context,
 		SILC_SKR_FIND_END);
 
+ o SilcStack to SKR API.
+
 
 Crypto Library, lib/silccrypt/
 ==============================
+
+ o SilcStack to APIs.
 
  o Add fingerprint to SilcSILCPublicKey and retrieval to silcpk.h, and
    possibly to silcpkcs.h.
@@ -353,7 +364,7 @@ Crypto Library, lib/silccrypt/
 			   SilcPKCSSignCb async_sign,
 			   void *async_sign_context);
 
-   (if this is done then there's no reason why the buffers in the 
+   (if this is done then there's no reason why the buffers in the
     callbacks cannot be the ones user gives here) or allow only async:
 
    SilcBool silc_pkcs_sign(SilcPrivateKey private_key,
@@ -502,8 +513,8 @@ SILC XML Library, lib/silcxml/
 ==============================
 
  o SILC XML API (wrapper to expat).  Look at the expat API and simplify
-   it.  The SILC XML API should have at most 8-10 API functions.  It should 
-   be possible to create full XML parser with only one function.  And, it 
+   it.  The SILC XML API should have at most 8-10 API functions.  It should
+   be possible to create full XML parser with only one function.  And, it
    should be possible to have a function that is able to parse an entire
    XML document.  It should also have a parser function to be able to
    parse a stream of XML data (SilcStream).  It MUST NOT have operations
@@ -551,12 +562,61 @@ lib/silcpkix
  o PKIX implementation
 
 
+apps/silcd
+==========
+
+ o Deprecate the old server.  Write interface for the new lib/silcserver
+   server library.  The interface should work on Unix/Linux systems.
+
+ o Consider deprecating also the old config file format and use XML
+   istead.  This should require SILC XML API implementation first.
+
+ o The configuration must support dynamic router and server connections.
+   The silcd must work without specifying any servers or routers to
+   connect to.
+
+ o The configuration must support specifying whether the server is
+   SILC Server or SILC Router.  This should not be deduced from the
+   configuration as it was in < 1.2.
+
+ o The configuration must support specifying the ciphers and hmacs and
+   their order so that user can specify which algorithms take preference.
+
+
 lib/silcserver
 ==============
 
- o (Re)write commands/command replys.
+ o Rewrite the entire server.  Deprecate apps/silcd as the main server
+   implementation and create lib/silcserver/.  It is a platform
+   independent server library.  The apps/silcd will merely provide a
+   a simple interface for the library.
 
- o (Re)write notify handling.
+ o Write the SILC Server library extensively using SILC FSM.
+
+ o Server library must support multiple networks.  This means that one
+   server must be able to create multiple connections that each reach
+   different SILC network.  This means also that all cache's etc. must
+   be either connection-specific or network-specific.
+
+ o Library must support dynamic router and server connections.  This means
+   that connections are create only when they are needed, like when someone
+   says JOIN foo@foo.bar.com or WHOIS foobar@silcnet.org.
+
+ o Library must support server-to-server connections even though protocol
+   prohibits that.  The responder of the connection should automatically
+   act as a router.  The two servers create an own, isolated, SILC network.
+   To be used specifically with dynamic connections.
+
+ o Library must support multiple threads and must be entirely thread safe.
+
+ o Library must have support for SERVICE command.
+
+ o The server must be able to run behind NAT device.  This means that 
+   Server ID must be based on public IP instead of private IP.
+
+ o Reference count all Silc*Entry structures.
+
+ Some issues that must be kept in mind from 1.0 and 1.1 silcd's:
 
  o The SERVER_SIGNOFF notify handing is not optimal, because it'll
    cause sending of multiple SIGNOFF notify's instead of the one
@@ -572,10 +632,6 @@ lib/silcserver
    same channel.  This is actually against the specs.  It must be
    done per channel.  It shouldn't receive the whole list just
    because one client happened to be on same channel.
-
- o Add reference counters to all Silc*Entry structures
-
- o SERVICEs support (plugin, SIM)
 
  o If client's public key is saved in the server (and doing public key
    authentication) then the hostname and the username information could
@@ -593,5 +649,3 @@ lib/silcserver
    time.  Now we create multiple keys and never end up using them because
    many JOINs are processed at the same time in sequence.  Only the last
    key ends up being used.
-
- o The CMODE cipher & hmac change problem (#101).
