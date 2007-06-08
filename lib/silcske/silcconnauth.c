@@ -357,7 +357,8 @@ SILC_FSM_STATE(silc_connauth_st_initiator_result)
     SILC_LOG_DEBUG(("Authentication successful"));
     connauth->success = TRUE;
   } else {
-    SILC_LOG_DEBUG(("Authentication failed"));
+    SILC_LOG_DEBUG(("Authentication failed, packet %s received",
+		    silc_get_packet_name(connauth->packet->type)));
     connauth->success = FALSE;
   }
   silc_packet_free(connauth->packet);
@@ -486,7 +487,8 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
 
   if (connauth->aborted) {
     /** Aborted */
-    silc_packet_free(connauth->packet);
+    if (connauth->packet)
+      silc_packet_free(connauth->packet);
     silc_fsm_next(fsm, silc_connauth_st_responder_failure);
     return SILC_FSM_CONTINUE;
   }
