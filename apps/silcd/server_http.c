@@ -141,6 +141,9 @@ static void silc_server_http_callback(SilcHttpServer httpd,
 
 void silc_server_http_init(SilcServer server)
 {
+  if (!server->config->httpd_ip)
+    return;
+
   /* Allocate HTTP server */
   server->httpd = silc_http_server_alloc(server->config->httpd_ip,
 					 server->config->httpd_port,
