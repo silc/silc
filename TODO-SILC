@@ -11,6 +11,9 @@ point.
    silc-architecture-xx.txt
    silc-specification-xx.txt
 
+ o Make @ reserved character in channel names.  Accept channel@server
+   names in all commands and notify types.
+
  o Add acknowlegments section to specification documents.
    
  o Group Diffie-Hellman protocol for establishig key with two or more
