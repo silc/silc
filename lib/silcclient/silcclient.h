@@ -665,13 +665,16 @@ typedef struct SilcClientParamsStruct {
      %H  full hostname - the full hostname of the client
 
      Example format strings: "%n#%a"     (fe. nick#2, nick#3)
-                             "%n@%h%a"   (fe. nick@host, nick@host2)
-                             "%a!%n@%h"  (fe. nick@host, 2!nick@host)
+                             "%n#%h%a"   (fe. nick#host, nick#host2)
+                             "%a!%n#%h"  (fe. nick#host, 2!nick#host)
 
      Note that there must always be some separator characters around '%n'
      format.  It is not possible to put format characters before or after
      '%n' without separators (such ash '#').  Also note that the separator
      character should be a character that cannot be part of normal nickname.
+     Note that, using '@' as a separator is not recommended as the nickname
+     string may contain it to separate a server name from the nickname (eg.
+     nickname@silcnet.org).
   */
   char nickname_format[32];
 
@@ -682,6 +685,21 @@ typedef struct SilcClientParamsStruct {
      already saved in the cache. It is recommended to leave this to FALSE
      value. */
   SilcBool nickname_force_format;
+
+  /* If this is set to TRUE then all nickname strings returned by the library
+     and stored by the library are in the format of 'nickname@server', eg.
+     nickname@silcnet.org.  If this is FALSE then the server name of the
+     nickname is available only from the SilcClientEntry structure.  When this
+     is TRUE the server name is still parsed to SilcClientEntry. */
+  SilcBool full_nicknames;
+
+  /* If this is set to TRUE then all channel name strings returned by the
+     library and stored by the library are in the format of 'channel@server',
+     eg. silc@silcnet.org.  If this is FALSE then the server name of the
+     channel is available only from the SilcChannelEntry structure.  When this
+     is TRUE the server name is still parsed to SilcChannelEntry.  Note that,
+     not all SILC server versions return such channel name strings. */
+  SilcBool full_channel_names;
 
   /* If this is set to TRUE, the silcclient library will not register and
      deregister the cipher, pkcs, hash and hmac algorithms. The application

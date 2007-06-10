@@ -677,7 +677,8 @@ SILC_FSM_STATE(silc_client_command_reply_identify)
     }
 
     /* Notify application */
-    silc_client_command_callback(cmd, channel_entry, name, info);
+    silc_client_command_callback(cmd, channel_entry,
+				 channel_entry->channel_name, info);
     silc_client_unref_channel(client, conn, channel_entry);
     break;
   }
@@ -800,7 +801,8 @@ SILC_FSM_STATE(silc_client_command_reply_list)
   }
 
   /* Notify application */
-  silc_client_command_callback(cmd, channel_entry, name, topic, usercount);
+  silc_client_command_callback(cmd, channel_entry, channel_entry->channel_name,
+			       topic, usercount);
 
  out:
   silc_client_unref_channel(client, conn, channel_entry);
@@ -1302,7 +1304,7 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   silc_hash_table_list(channel->user_list, &htl);
 
   /* Notify application */
-  silc_client_command_callback(cmd, channel_name, channel, mode, &htl,
+  silc_client_command_callback(cmd, channel->channel_name, channel, mode, &htl,
 			       topic, cipher, hmac, channel->founder_key,
 			       channel->channel_pubkeys, channel->user_limit);
 

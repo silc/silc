@@ -1,3 +1,15 @@
+Sun Jun 10 17:32:15 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for channel@server channel name strings to
+	  client library (SILC protocol version 1.3 change).  Affected
+	  files are lib/silcclient/silcclient_entry.h, client_entry.c.
+
+	* Added full_nicknames and full_channel_names settings to
+	  SilcClientParams that can be used to specify whether client
+	  library returns full nickname and channel name strings.
+	  Full strings are nick@server and channel@server.  Affected
+	  file is lib/silcclient/client_entry.c and command.c.
+
 Sat Jun  9 19:43:25 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed unix connecting failure to return error code correctly.

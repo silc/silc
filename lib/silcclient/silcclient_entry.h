@@ -78,7 +78,7 @@
  * SOURCE
  */
 struct SilcClientEntryStruct {
-  char nickname[128 + 1];	     /* Nickname */
+  char nickname[256 + 1];	     /* Nickname */
   char username[128 + 1];	     /* Username */
   char hostname[256 + 1];	     /* Hostname */
   char server  [256 + 1];	     /* SILC server name */
@@ -124,6 +124,7 @@ struct SilcClientEntryStruct {
  */
 struct SilcChannelEntryStruct {
   char *channel_name;		     /* Channel name */
+  char server[256 + 1];		     /* SILC server name */
   char *topic;			     /* Current topic, may be NULL */
   SilcPublicKey founder_key;	     /* Founder key, may be NULL */
   SilcDList channel_pubkeys;	     /* Channel public keys, may be NULL */

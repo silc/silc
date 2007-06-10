@@ -781,7 +781,7 @@ SilcClientEntry silc_client_add_client(SilcClient client,
 				       SilcUInt32 mode)
 {
   SilcClientEntry client_entry;
-  char *nick = NULL;
+  char *nick = NULL, parsed[128 + 1];
 
   SILC_LOG_DEBUG(("Adding new client entry"));
 
@@ -795,14 +795,21 @@ SilcClientEntry silc_client_add_client(SilcClient client,
   client_entry->id = *id;
   client_entry->mode = mode;
   client_entry->realname = userinfo ? strdup(userinfo) : NULL;
-  silc_parse_userfqdn(nickname, client_entry->nickname,
-		      sizeof(client_entry->nickname),
-		      client_entry->server,
-		      sizeof(client_entry->server));
+
+  silc_parse_userfqdn(nickname, parsed, sizeof(parsed),
+		      client_entry->server, sizeof(client_entry->server));
+  if (nickname && client->internal->params->full_nicknames)
+    silc_snprintf(client_entry->nickname, sizeof(client_entry->nickname),
+		  nickname);
+  else if (nickname)
+    silc_snprintf(client_entry->nickname, sizeof(client_entry->nickname),
+		  parsed);
+
   silc_parse_userfqdn(username, client_entry->username,
 		      sizeof(client_entry->username),
 		      client_entry->hostname,
 		      sizeof(client_entry->hostname));
+
   client_entry->channels = silc_hash_table_alloc(1, silc_hash_ptr, NULL, NULL,
 						 NULL, NULL, NULL, TRUE);
   if (!client_entry->channels) {
@@ -813,8 +820,7 @@ SilcClientEntry silc_client_add_client(SilcClient client,
 
   /* Normalize nickname */
   if (client_entry->nickname[0]) {
-    nick = silc_identifier_check(client_entry->nickname,
-				 strlen(client_entry->nickname),
+    nick = silc_identifier_check(parsed, strlen(parsed),
 				 SILC_STRING_UTF8, 128, NULL);
     if (!nick) {
       silc_free(client_entry->realname);
@@ -864,7 +870,7 @@ void silc_client_update_client(SilcClient client,
 			       const char *userinfo,
 			       SilcUInt32 mode)
 {
-  char *nick = NULL;
+  char *nick = NULL, parsed[128 + 1];
 
   SILC_LOG_DEBUG(("Update client entry"));
 
@@ -872,20 +878,25 @@ void silc_client_update_client(SilcClient client,
 
   if (!client_entry->realname && userinfo)
     client_entry->realname = strdup(userinfo);
+
   if ((!client_entry->username[0] || !client_entry->hostname[0]) && username)
     silc_parse_userfqdn(username, client_entry->username,
 			sizeof(client_entry->username),
 			client_entry->hostname,
 			sizeof(client_entry->username));
+
   if (!client_entry->nickname[0] && nickname) {
-    silc_parse_userfqdn(nickname, client_entry->nickname,
-			sizeof(client_entry->nickname),
-			client_entry->server,
-			sizeof(client_entry->server));
+    silc_parse_userfqdn(nickname, parsed, sizeof(parsed),
+			client_entry->server, sizeof(client_entry->server));
+    if (client->internal->params->full_nicknames)
+      silc_snprintf(client_entry->nickname, sizeof(client_entry->nickname),
+		    nickname);
+    else
+      silc_snprintf(client_entry->nickname, sizeof(client_entry->nickname),
+		    parsed);
 
     /* Normalize nickname */
-    nick = silc_identifier_check(client_entry->nickname,
-				 strlen(client_entry->nickname),
+    nick = silc_identifier_check(parsed, strlen(parsed),
 				 SILC_STRING_UTF8, 128, NULL);
     if (!nick) {
       silc_rwlock_unlock(client_entry->internal.lock);
@@ -1357,32 +1368,66 @@ SilcChannelEntry silc_client_get_channel(SilcClient client,
 					 SilcClientConnection conn,
 					 char *channel)
 {
+  SilcList list;
   SilcIDCacheEntry id_cache;
-  SilcChannelEntry entry;
+  SilcChannelEntry entry = NULL;
+  char chname[256 + 1], server[256 + 1];
 
   if (!client || !conn || !channel)
     return NULL;
 
   SILC_LOG_DEBUG(("Find channel %s", channel));
 
+  /* Parse server name from channel name */
+  silc_parse_userfqdn(channel, chname, sizeof(chname), server, sizeof(server));
+
   /* Normalize name for search */
-  channel = silc_channel_name_check(channel, strlen(channel), SILC_STRING_UTF8,
+  channel = silc_channel_name_check(chname, strlen(chname), SILC_STRING_UTF8,
 				    256, NULL);
   if (!channel)
     return NULL;
 
   silc_mutex_lock(conn->internal->lock);
 
-  if (!silc_idcache_find_by_name_one(conn->internal->channel_cache, channel,
-				     &id_cache)) {
+  if (!silc_idcache_find_by_name(conn->internal->channel_cache, channel,
+				 &list)) {
     silc_mutex_unlock(conn->internal->lock);
     silc_free(channel);
     return NULL;
   }
 
-  SILC_LOG_DEBUG(("Found"));
+  /* If server name was specified with channel name, find the correct
+     channel entry with the server name.  There can only be one channel
+     with same name on same server. */
+  silc_list_start(list);
+  if (server[0]) {
+    while ((id_cache = silc_list_get(list))) {
+      entry = id_cache->context;
+      if (!entry->server[0])
+	continue;
+      if (silc_utf8_strcasecmp(entry->server, server))
+	break;
+    }
+  } else {
+    /* Get first channel without server name specified or one with our
+       current server connection name */
+    while ((id_cache = silc_list_get(list))) {
+      entry = id_cache->context;
+      if (!entry->server[0])
+	break;
+      if (silc_utf8_strcasecmp(entry->server, conn->remote_host))
+	break;
+    }
+  }
 
-  entry = id_cache->context;
+  if (!id_cache) {
+    silc_mutex_unlock(conn->internal->lock);
+    silc_free(channel);
+    return NULL;
+  }
+
+  SILC_LOG_DEBUG(("Found channel %s%s%s", entry->channel_name,
+		  entry->server[0] ? "@" : "", entry->server));
 
   /* Reference */
   silc_client_ref_channel(client, conn, entry);
@@ -1571,9 +1616,9 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
 					 SilcChannelID *channel_id)
 {
   SilcChannelEntry channel;
-  char *channel_namec;
+  char *channel_namec, name[256 + 1];
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Adding channel %s", channel_name));
 
   channel = silc_calloc(1, sizeof(*channel));
   if (!channel)
@@ -1584,8 +1629,16 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   channel->id = *channel_id;
   channel->mode = mode;
 
-  channel->channel_name = strdup(channel_name);
+  silc_parse_userfqdn(channel_name, name, sizeof(name),
+		      channel->server, sizeof(channel->server));
+  if (client->internal->params->full_channel_names)
+    channel->channel_name = strdup(channel_name);
+  else
+    channel->channel_name = strdup(name);
+
   if (!channel->channel_name) {
+    silc_rwlock_free(channel->internal.lock);
+    silc_atomic_uninit16(&channel->internal.refcnt);
     silc_free(channel);
     return NULL;
   }
@@ -1593,15 +1646,19 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   channel->user_list = silc_hash_table_alloc(1, silc_hash_ptr, NULL, NULL,
 					     NULL, NULL, NULL, TRUE);
   if (!channel->user_list) {
+    silc_rwlock_free(channel->internal.lock);
+    silc_atomic_uninit16(&channel->internal.refcnt);
     silc_free(channel->channel_name);
     silc_free(channel);
     return NULL;
   }
 
   /* Normalize channel name */
-  channel_namec = silc_channel_name_check(channel_name, strlen(channel_name),
+  channel_namec = silc_channel_name_check(name, strlen(name),
 					  SILC_STRING_UTF8, 256, NULL);
   if (!channel_namec) {
+    silc_rwlock_free(channel->internal.lock);
+    silc_atomic_uninit16(&channel->internal.refcnt);
     silc_free(channel->channel_name);
     silc_hash_table_free(channel->user_list);
     silc_free(channel);
@@ -1613,6 +1670,8 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   /* Add channel to cache, the normalized channel name is saved to cache */
   if (!silc_idcache_add(conn->internal->channel_cache, channel_namec,
 			&channel->id, channel)) {
+    silc_rwlock_free(channel->internal.lock);
+    silc_atomic_uninit16(&channel->internal.refcnt);
     silc_free(channel_namec);
     silc_free(channel->channel_name);
     silc_hash_table_free(channel->user_list);
