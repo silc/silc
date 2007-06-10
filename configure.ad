@@ -605,7 +605,7 @@ else
   # pkg-config check
   PKG_CHECK_MODULES(SILC, [silc >= 1.1], compile_libs=false, compile_libs=true)
 #ifdef SILC_DIST_CLIENTLIB
-  PKG_CHECK_MODULES(SILCCLIENT, [silcclient >= 1.1], compile_libs=false, compile_libs=true)
+  PKG_CHECK_MODULES(SILCCLIENT, [silcclient >= 1.1.1], compile_libs=false, compile_libs=true)
 #endif SILC_DIST_CLIENTLIB
 #ifdef SILC_DIST_SERVERLIB
   PKG_CHECK_MODULES(SILCSERVER, silcserver, compile_libs=false, compile_libs=true)

@@ -88,8 +88,8 @@ LIBSILC_REVISION=0		# prev = 0
 LIBSILC_AGE=0			# prev = 0
 
 # libsilcclient versions
-LIBSILCCLIENT_CURRENT=1		# prev = 1
-LIBSILCCLIENT_REVISION=1	# prev = 0
+LIBSILCCLIENT_CURRENT=2		# prev = 1
+LIBSILCCLIENT_REVISION=0	# prev = 0
 LIBSILCCLIENT_AGE=0		# prev = 0
 
 # libsilcserver versions

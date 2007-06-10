@@ -775,6 +775,7 @@ void silc_core_init(void)
   /* Initialize client parameters */
   memset(&params, 0, sizeof(params));
   strcat(params.nickname_format, settings_get_str("nickname_format"));
+  params.full_channel_names = TRUE;
 
   /* Allocate SILC client */
   silc_client = silc_client_alloc(&ops, &params, NULL, silc_version_string);
