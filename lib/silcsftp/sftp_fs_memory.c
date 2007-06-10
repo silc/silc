@@ -58,7 +58,7 @@ typedef struct {
 /* Generates absolute path from relative path that may include '.' and '..'
    in the path. */
 
-static char *mem_expand_path(MemFSEntry root, const char *path)
+static char *memfs_expand_path(MemFSEntry root, const char *path)
 {
   if (!strstr(path, "./") && !strstr(path, "../") &&
       !strstr(path, "/..") && !strstr(path, "/."))
@@ -70,8 +70,8 @@ static char *mem_expand_path(MemFSEntry root, const char *path)
 
 /* Add `entry' to directory `dir'. */
 
-static SilcBool mem_add_entry(MemFSEntry dir, MemFSEntry entry,
-			      SilcBool check_perm)
+static SilcBool memfs_add_entry(MemFSEntry dir, MemFSEntry entry,
+				SilcBool check_perm)
 {
   int i;
 
@@ -115,7 +115,7 @@ static SilcBool mem_add_entry(MemFSEntry dir, MemFSEntry entry,
 
 /* Removes entry `entry' and all entries under it recursively. */
 
-static SilcBool mem_del_entry(MemFSEntry entry, SilcBool check_perm)
+static SilcBool memfs_del_entry(MemFSEntry entry, SilcBool check_perm)
 {
   int i;
 
@@ -129,7 +129,7 @@ static SilcBool mem_del_entry(MemFSEntry entry, SilcBool check_perm)
   /* Delete all entries recursively under this entry */
   for (i = 0; i < entry->entry_count; i++) {
     if (entry->entry[i]) {
-      if (!mem_del_entry(entry->entry[i], FALSE))
+      if (!memfs_del_entry(entry->entry[i], FALSE))
 	return FALSE;
     }
   }
@@ -153,8 +153,8 @@ static SilcBool mem_del_entry(MemFSEntry entry, SilcBool check_perm)
 /* Finds first occurence of entry named `name' under the directory `dir'.
    This does not check subdirectories recursively. */
 
-static MemFSEntry mem_find_entry(MemFSEntry dir, const char *name,
-				 SilcUInt32 name_len)
+static MemFSEntry memfs_find_entry(MemFSEntry dir, const char *name,
+				   SilcUInt32 name_len)
 {
   int i;
 
@@ -172,13 +172,13 @@ static MemFSEntry mem_find_entry(MemFSEntry dir, const char *name,
 /* Finds the entry by the `path' which may include full path or
    relative path. */
 
-static MemFSEntry mem_find_entry_path(MemFSEntry dir, const char *p)
+static MemFSEntry memfs_find_entry_path(MemFSEntry dir, const char *p)
 {
   MemFSEntry entry = NULL;
   int len;
   char *path, *cp;
 
-  cp = path = mem_expand_path(dir, p);
+  cp = path = memfs_expand_path(dir, p);
 
   if (strlen(cp) == 1 && cp[0] == '/')
     return dir;
@@ -187,7 +187,7 @@ static MemFSEntry mem_find_entry_path(MemFSEntry dir, const char *p)
     cp++;
   len = strcspn(cp, DIR_SEPARATOR);
   while (cp && len) {
-    entry = mem_find_entry(dir, cp, len);
+    entry = memfs_find_entry(dir, cp, len);
     if (!entry) {
       silc_free(cp);
       return NULL;
@@ -207,8 +207,8 @@ static MemFSEntry mem_find_entry_path(MemFSEntry dir, const char *p)
 /* Deletes entry by the name `name' from the directory `dir'. This does
    not check subdirectories recursively. */
 
-static SilcBool mem_del_entry_name(MemFSEntry dir, const char *name,
-				   SilcUInt32 name_len, SilcBool check_perm)
+static SilcBool memfs_del_entry_name(MemFSEntry dir, const char *name,
+				     SilcUInt32 name_len, SilcBool check_perm)
 {
   MemFSEntry entry;
 
@@ -216,17 +216,17 @@ static SilcBool mem_del_entry_name(MemFSEntry dir, const char *name,
   if (check_perm)
     return FALSE;
 
-  entry = mem_find_entry(dir, name, name_len);
+  entry = memfs_find_entry(dir, name, name_len);
 
   if (entry)
-    return mem_del_entry(entry, check_perm);
+    return memfs_del_entry(entry, check_perm);
 
   return FALSE;
 }
 
 /* Create new handle and add it to the list of open handles. */
 
-static MemFSFileHandle mem_create_handle(MemFS fs, int fd, MemFSEntry entry)
+static MemFSFileHandle memfs_create_handle(MemFS fs, int fd, MemFSEntry entry)
 {
   MemFSFileHandle handle;
   int i;
@@ -275,7 +275,7 @@ static MemFSFileHandle mem_create_handle(MemFS fs, int fd, MemFSEntry entry)
 
 /* Deletes the handle and remove it from the open handle list. */
 
-static SilcBool mem_del_handle(MemFS fs, MemFSFileHandle handle)
+static SilcBool memfs_del_handle(MemFS fs, MemFSFileHandle handle)
 {
   if (handle->handle > fs->handles_count)
     return FALSE;
@@ -296,7 +296,7 @@ static SilcBool mem_del_handle(MemFS fs, MemFSFileHandle handle)
 
 /* Find handle by handle index. */
 
-static MemFSFileHandle mem_find_handle(MemFS fs, SilcUInt32 handle)
+static MemFSFileHandle memfs_find_handle(MemFS fs, SilcUInt32 handle)
 {
   if (handle > fs->handles_count)
     return NULL;
@@ -393,7 +393,7 @@ void *silc_sftp_fs_memory_add_dir(SilcSFTPFilesystem fs, void *dir,
     return NULL;
   }
 
-  if (!mem_add_entry(dir ? dir : memfs->root, entry, FALSE)) {
+  if (!memfs_add_entry(dir ? dir : memfs->root, entry, FALSE)) {
     silc_free(entry->name);
     silc_free(entry);
     return NULL;
@@ -415,10 +415,10 @@ SilcBool silc_sftp_fs_memory_del_dir(SilcSFTPFilesystem fs, void *dir)
   SilcBool ret;
 
   if (dir)
-    return mem_del_entry(dir, FALSE);
+    return memfs_del_entry(dir, FALSE);
 
   /* Remove from root */
-  ret = mem_del_entry(memfs->root, FALSE);
+  ret = memfs_del_entry(memfs->root, FALSE);
 
   memfs->root = silc_calloc(1, sizeof(*memfs->root));
   if (!memfs->root)
@@ -467,7 +467,7 @@ SilcBool silc_sftp_fs_memory_add_file(SilcSFTPFilesystem fs, void *dir,
     return FALSE;
   }
 
-  return mem_add_entry(dir ? dir : memfs->root, entry, FALSE);
+  return memfs_add_entry(dir ? dir : memfs->root, entry, FALSE);
 }
 
 /* Removes a file indicated by the `filename' from the directory
@@ -481,13 +481,13 @@ SilcBool silc_sftp_fs_memory_del_file(SilcSFTPFilesystem fs, void *dir,
   if (!filename)
     return FALSE;
 
-  return mem_del_entry_name(dir ? dir : memfs->root, filename,
+  return memfs_del_entry_name(dir ? dir : memfs->root, filename,
 			    strlen(filename), FALSE);
 }
 
-SilcSFTPHandle mem_get_handle(void *context, SilcSFTP sftp,
-			      const unsigned char *data,
-			      SilcUInt32 data_len)
+SilcSFTPHandle memfs_get_handle(void *context, SilcSFTP sftp,
+				const unsigned char *data,
+				SilcUInt32 data_len)
 {
   MemFS fs = (MemFS)context;
   SilcUInt32 handle;
@@ -496,12 +496,12 @@ SilcSFTPHandle mem_get_handle(void *context, SilcSFTP sftp,
     return NULL;
 
   SILC_GET32_MSB(handle, data);
-  return (SilcSFTPHandle)mem_find_handle(fs, handle);
+  return (SilcSFTPHandle)memfs_find_handle(fs, handle);
 }
 
-unsigned char *mem_encode_handle(void *context, SilcSFTP sftp,
-				 SilcSFTPHandle handle,
-				 SilcUInt32 *handle_len)
+unsigned char *memfs_encode_handle(void *context, SilcSFTP sftp,
+				   SilcSFTPHandle handle,
+				   SilcUInt32 *handle_len)
 {
   unsigned char *data;
   MemFSFileHandle h = (MemFSFileHandle)handle;
@@ -515,12 +515,12 @@ unsigned char *mem_encode_handle(void *context, SilcSFTP sftp,
   return data;
 }
 
-void mem_open(void *context, SilcSFTP sftp,
-	      const char *filename,
-	      SilcSFTPFileOperation pflags,
-	      SilcSFTPAttributes attrs,
-	      SilcSFTPHandleCallback callback,
-	      void *callback_context)
+void memfs_open(void *context, SilcSFTP sftp,
+		const char *filename,
+		SilcSFTPFileOperation pflags,
+		SilcSFTPAttributes attrs,
+		SilcSFTPHandleCallback callback,
+		void *callback_context)
 {
   MemFS fs = (MemFS)context;
   MemFSEntry entry;
@@ -534,7 +534,7 @@ void mem_open(void *context, SilcSFTP sftp,
   }
 
   /* Find such file */
-  entry = mem_find_entry_path(fs->root, filename);
+  entry = memfs_find_entry_path(fs->root, filename);
   if (!entry) {
     (*callback)(sftp, SILC_SFTP_STATUS_NO_SUCH_FILE, NULL, callback_context);
     return;
@@ -580,7 +580,7 @@ void mem_open(void *context, SilcSFTP sftp,
   }
 
   /* File opened, return handle */
-  handle = mem_create_handle(fs, fd, entry);
+  handle = memfs_create_handle(fs, fd, entry);
   if (handle)
     (*callback)(sftp, SILC_SFTP_STATUS_OK, (SilcSFTPHandle)handle,
 		callback_context);
@@ -589,10 +589,10 @@ void mem_open(void *context, SilcSFTP sftp,
 		callback_context);
 }
 
-void mem_close(void *context, SilcSFTP sftp,
-	       SilcSFTPHandle handle,
-	       SilcSFTPStatusCallback callback,
-	       void *callback_context)
+void memfs_close(void *context, SilcSFTP sftp,
+		 SilcSFTPHandle handle,
+		 SilcSFTPStatusCallback callback,
+		 void *callback_context)
 {
   MemFS fs = (MemFS)context;
   MemFSFileHandle h = (MemFSFileHandle)handle;
@@ -607,16 +607,16 @@ void mem_close(void *context, SilcSFTP sftp,
     }
   }
 
-  mem_del_handle(fs, h);
+  memfs_del_handle(fs, h);
   (*callback)(sftp, SILC_SFTP_STATUS_OK, NULL, NULL, callback_context);
 }
 
-void mem_read(void *context, SilcSFTP sftp,
-	      SilcSFTPHandle handle,
-	      SilcUInt64 offset,
-	      SilcUInt32 len,
-	      SilcSFTPDataCallback callback,
-	      void *callback_context)
+void memfs_read(void *context, SilcSFTP sftp,
+		SilcSFTPHandle handle,
+		SilcUInt64 offset,
+		SilcUInt32 len,
+		SilcSFTPDataCallback callback,
+		void *callback_context)
 {
   MemFSFileHandle h = (MemFSFileHandle)handle;
   unsigned char data[63488];
@@ -649,13 +649,13 @@ void mem_read(void *context, SilcSFTP sftp,
 	      ret, callback_context);
 }
 
-void mem_write(void *context, SilcSFTP sftp,
-	       SilcSFTPHandle handle,
-	       SilcUInt64 offset,
-	       const unsigned char *data,
-	       SilcUInt32 data_len,
-	       SilcSFTPStatusCallback callback,
-	       void *callback_context)
+void memfs_write(void *context, SilcSFTP sftp,
+		 SilcSFTPHandle handle,
+		 SilcUInt64 offset,
+		 const unsigned char *data,
+		 SilcUInt32 data_len,
+		 SilcSFTPStatusCallback callback,
+		 void *callback_context)
 {
   MemFSFileHandle h = (MemFSFileHandle)handle;
   int ret;
@@ -673,52 +673,52 @@ void mem_write(void *context, SilcSFTP sftp,
   (*callback)(sftp, SILC_SFTP_STATUS_OK, NULL, NULL, callback_context);
 }
 
-void mem_remove(void *context, SilcSFTP sftp,
-		const char *filename,
-		SilcSFTPStatusCallback callback,
-		void *callback_context)
+void memfs_remove(void *context, SilcSFTP sftp,
+		  const char *filename,
+		  SilcSFTPStatusCallback callback,
+		  void *callback_context)
 {
   /* Remove is not supported */
   (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
-void mem_rename(void *context, SilcSFTP sftp,
-		const char *oldname,
-		const char *newname,
-		SilcSFTPStatusCallback callback,
-		void *callback_context)
+void memfs_rename(void *context, SilcSFTP sftp,
+		  const char *oldname,
+		  const char *newname,
+		  SilcSFTPStatusCallback callback,
+		  void *callback_context)
 {
   /* Rename is not supported */
   (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
-void mem_mkdir(void *context, SilcSFTP sftp,
-	       const char *path,
-	       SilcSFTPAttributes attrs,
-	       SilcSFTPStatusCallback callback,
-	       void *callback_context)
+void memfs_mkdir(void *context, SilcSFTP sftp,
+		 const char *path,
+		 SilcSFTPAttributes attrs,
+		 SilcSFTPStatusCallback callback,
+		 void *callback_context)
 {
   /* Mkdir is not supported */
   (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
-void mem_rmdir(void *context, SilcSFTP sftp,
-	       const char *path,
-	       SilcSFTPStatusCallback callback,
-	       void *callback_context)
+void memfs_rmdir(void *context, SilcSFTP sftp,
+		 const char *path,
+		 SilcSFTPStatusCallback callback,
+		 void *callback_context)
 {
   /* Rmdir is not supported */
   (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
-void mem_opendir(void *context, SilcSFTP sftp,
-		 const char *path,
-		 SilcSFTPHandleCallback callback,
-		 void *callback_context)
+void memfs_opendir(void *context, SilcSFTP sftp,
+		   const char *path,
+		   SilcSFTPHandleCallback callback,
+		   void *callback_context)
 {
   MemFS fs = (MemFS)context;
   MemFSEntry entry;
@@ -728,7 +728,7 @@ void mem_opendir(void *context, SilcSFTP sftp,
     path = (const char *)DIR_SEPARATOR;
 
   /* Find such directory */
-  entry = mem_find_entry_path(fs->root, path);
+  entry = memfs_find_entry_path(fs->root, path);
   if (!entry) {
     (*callback)(sftp, SILC_SFTP_STATUS_NO_SUCH_FILE, NULL, callback_context);
     return;
@@ -747,7 +747,7 @@ void mem_opendir(void *context, SilcSFTP sftp,
   }
 
   /* Directory opened, return handle */
-  handle = mem_create_handle(fs, 0, entry);
+  handle = memfs_create_handle(fs, 0, entry);
   if (handle)
     (*callback)(sftp, SILC_SFTP_STATUS_OK, (SilcSFTPHandle)handle,
 		callback_context);
@@ -756,10 +756,10 @@ void mem_opendir(void *context, SilcSFTP sftp,
 		callback_context);
 }
 
-void mem_readdir(void *context, SilcSFTP sftp,
-		 SilcSFTPHandle handle,
-		 SilcSFTPNameCallback callback,
-		 void *callback_context)
+void memfs_readdir(void *context, SilcSFTP sftp,
+		   SilcSFTPHandle handle,
+		   SilcSFTPNameCallback callback,
+		   void *callback_context)
 {
   MemFSFileHandle h = (MemFSFileHandle)handle;
   MemFSEntry entry;
@@ -867,10 +867,10 @@ void mem_readdir(void *context, SilcSFTP sftp,
   silc_sftp_name_free(name);
 }
 
-void mem_stat(void *context, SilcSFTP sftp,
-	      const char *path,
-	      SilcSFTPAttrCallback callback,
-	      void *callback_context)
+void memfs_stat(void *context, SilcSFTP sftp,
+		const char *path,
+		SilcSFTPAttrCallback callback,
+		void *callback_context)
 {
   MemFS fs = (MemFS)context;
   MemFSEntry entry;
@@ -882,7 +882,7 @@ void mem_stat(void *context, SilcSFTP sftp,
     path = (const char *)DIR_SEPARATOR;
 
   /* Find such directory */
-  entry = mem_find_entry_path(fs->root, path);
+  entry = memfs_find_entry_path(fs->root, path);
   if (!entry) {
     (*callback)(sftp, SILC_SFTP_STATUS_NO_SUCH_FILE, NULL, callback_context);
     return;
@@ -921,10 +921,10 @@ void mem_stat(void *context, SilcSFTP sftp,
   silc_sftp_attr_free(attrs);
 }
 
-void mem_lstat(void *context, SilcSFTP sftp,
-	       const char *path,
-	       SilcSFTPAttrCallback callback,
-	       void *callback_context)
+void memfs_lstat(void *context, SilcSFTP sftp,
+		 const char *path,
+		 SilcSFTPAttrCallback callback,
+		 void *callback_context)
 {
   MemFS fs = (MemFS)context;
   MemFSEntry entry;
@@ -936,7 +936,7 @@ void mem_lstat(void *context, SilcSFTP sftp,
     path = (const char *)DIR_SEPARATOR;
 
   /* Find such directory */
-  entry = mem_find_entry_path(fs->root, path);
+  entry = memfs_find_entry_path(fs->root, path);
   if (!entry) {
     (*callback)(sftp, SILC_SFTP_STATUS_NO_SUCH_FILE, NULL, callback_context);
     return;
@@ -983,10 +983,10 @@ void mem_lstat(void *context, SilcSFTP sftp,
   silc_sftp_attr_free(attrs);
 }
 
-void mem_fstat(void *context, SilcSFTP sftp,
-	       SilcSFTPHandle handle,
-	       SilcSFTPAttrCallback callback,
-	       void *callback_context)
+void memfs_fstat(void *context, SilcSFTP sftp,
+		 SilcSFTPHandle handle,
+		 SilcSFTPAttrCallback callback,
+		 void *callback_context)
 {
   MemFSFileHandle h = (MemFSFileHandle)handle;
   SilcSFTPAttributes attrs;
@@ -1026,53 +1026,53 @@ void mem_fstat(void *context, SilcSFTP sftp,
   silc_sftp_attr_free(attrs);
 }
 
-void mem_setstat(void *context, SilcSFTP sftp,
-		 const char *path,
-		 SilcSFTPAttributes attrs,
-		 SilcSFTPStatusCallback callback,
-		 void *callback_context)
+void memfs_setstat(void *context, SilcSFTP sftp,
+		   const char *path,
+		   SilcSFTPAttributes attrs,
+		   SilcSFTPStatusCallback callback,
+		   void *callback_context)
 {
   /* Setstat is not supported */
   (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
-void mem_fsetstat(void *context, SilcSFTP sftp,
-		  SilcSFTPHandle handle,
-		  SilcSFTPAttributes attrs,
-		  SilcSFTPStatusCallback callback,
-		  void *callback_context)
+void memfs_fsetstat(void *context, SilcSFTP sftp,
+		    SilcSFTPHandle handle,
+		    SilcSFTPAttributes attrs,
+		    SilcSFTPStatusCallback callback,
+		    void *callback_context)
 {
   /* Fsetstat is not supported */
   (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
-void mem_readlink(void *context, SilcSFTP sftp,
-		  const char *path,
-		  SilcSFTPNameCallback callback,
-		  void *callback_context)
+void memfs_readlink(void *context, SilcSFTP sftp,
+		    const char *path,
+		    SilcSFTPNameCallback callback,
+		    void *callback_context)
 {
   /* Readlink is not supported */
   (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL,
 	      callback_context);
 }
 
-void mem_symlink(void *context, SilcSFTP sftp,
-		 const char *linkpath,
-		 const char *targetpath,
-		 SilcSFTPStatusCallback callback,
-		 void *callback_context)
+void memfs_symlink(void *context, SilcSFTP sftp,
+		   const char *linkpath,
+		   const char *targetpath,
+		   SilcSFTPStatusCallback callback,
+		   void *callback_context)
 {
   /* Symlink is not supported */
   (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, NULL,
 	      callback_context);
 }
 
-void mem_realpath(void *context, SilcSFTP sftp,
-		  const char *path,
-		  SilcSFTPNameCallback callback,
-		  void *callback_context)
+void memfs_realpath(void *context, SilcSFTP sftp,
+		    const char *path,
+		    SilcSFTPNameCallback callback,
+		    void *callback_context)
 {
   MemFS fs = (MemFS)context;
   char *realpath;
@@ -1081,7 +1081,7 @@ void mem_realpath(void *context, SilcSFTP sftp,
   if (!path || !strlen(path))
     path = (const char *)DIR_SEPARATOR;
 
-  realpath = mem_expand_path(fs->root, path);
+  realpath = memfs_expand_path(fs->root, path);
   if (!realpath)
     goto fail;
 
@@ -1115,12 +1115,12 @@ void mem_realpath(void *context, SilcSFTP sftp,
   (*callback)(sftp, SILC_SFTP_STATUS_FAILURE, NULL, callback_context);
 }
 
-void mem_extended(void *context, SilcSFTP sftp,
-		  const char *request,
-		  const unsigned char *data,
-		  SilcUInt32 data_len,
-		  SilcSFTPExtendedCallback callback,
-		  void *callback_context)
+void memfs_extended(void *context, SilcSFTP sftp,
+		    const char *request,
+		    const unsigned char *data,
+		    SilcUInt32 data_len,
+		    SilcSFTPExtendedCallback callback,
+		    void *callback_context)
 {
   /* Extended is not supported */
   (*callback)(sftp, SILC_SFTP_STATUS_OP_UNSUPPORTED, NULL, 0,
@@ -1128,25 +1128,25 @@ void mem_extended(void *context, SilcSFTP sftp,
 }
 
 const struct SilcSFTPFilesystemOpsStruct silc_sftp_fs_memory = {
-  mem_get_handle,
-  mem_encode_handle,
-  mem_open,
-  mem_close,
-  mem_read,
-  mem_write,
-  mem_remove,
-  mem_rename,
-  mem_mkdir,
-  mem_rmdir,
-  mem_opendir,
-  mem_readdir,
-  mem_stat,
-  mem_lstat,
-  mem_fstat,
-  mem_setstat,
-  mem_fsetstat,
-  mem_readlink,
-  mem_symlink,
-  mem_realpath,
-  mem_extended
+  memfs_get_handle,
+  memfs_encode_handle,
+  memfs_open,
+  memfs_close,
+  memfs_read,
+  memfs_write,
+  memfs_remove,
+  memfs_rename,
+  memfs_mkdir,
+  memfs_rmdir,
+  memfs_opendir,
+  memfs_readdir,
+  memfs_stat,
+  memfs_lstat,
+  memfs_fstat,
+  memfs_setstat,
+  memfs_fsetstat,
+  memfs_readlink,
+  memfs_symlink,
+  memfs_realpath,
+  memfs_extended
 };
