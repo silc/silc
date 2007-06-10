@@ -628,20 +628,20 @@ SILC_FSM_STATE(silc_net_connect_st_connected)
     }
 
 #if defined(ECONNREFUSED)
-    if (errno == ECONNREFUSED)
+    if (opt == ECONNREFUSED)
       conn->status = SILC_NET_CONNECTION_REFUSED;
 #endif /* ECONNREFUSED */
 #if defined(ETIMEDOUT)
-    if (errno == ETIMEDOUT)
+    if (opt == ETIMEDOUT)
       conn->status = SILC_NET_CONNECTION_TIMEOUT;
 #endif /* ETIMEDOUT */
 #if defined(ENETUNREACH)
-    if (errno == ENETUNREACH)
+    if (opt == ENETUNREACH)
       conn->status = SILC_NET_HOST_UNREACHABLE;
 #endif /* ENETUNREACH */
 
     /** Connecting failed */
-    SILC_LOG_DEBUG(("Connecting failed"));
+    SILC_LOG_DEBUG(("Connecting failed, error %s", strerror(opt)));
     silc_fsm_next(fsm, silc_net_connect_st_finish);
     return SILC_FSM_CONTINUE;
   }
