@@ -182,7 +182,7 @@ typedef struct {
   SilcBool httpd;
   char *httpd_ip;
   SilcUInt16 httpd_port;
-  SilcBool open_server;
+  SilcBool dynamic_server;
   SilcBool local_channels;
 
   /* Other configuration sections */

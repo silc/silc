@@ -338,8 +338,8 @@ SILC_CONFIG_CALLBACK(fetch_generic)
     }
     config->httpd_port = (SilcUInt16)port;
   }
-  else if (!strcmp(name, "open_server")) {
-    config->open_server = *(SilcBool *)val;
+  else if (!strcmp(name, "dynamic_server")) {
+    config->dynamic_server = *(SilcBool *)val;
   }
   else if (!strcmp(name, "local_channels")) {
     config->local_channels = *(SilcBool *)val;
@@ -1217,7 +1217,7 @@ static const SilcConfigTable table_general[] = {
   { "http_server",    		SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
   { "http_server_ip",  		SILC_CONFIG_ARG_STRE,	fetch_generic,	NULL },
   { "http_server_port",		SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
-  { "open_server",    		SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
+  { "dynamic_server",  		SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
   { "local_channels",	        SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
   { 0, 0, 0, 0 }
 };
