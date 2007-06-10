@@ -2637,7 +2637,8 @@ static void silc_server_new_id_real(SilcServer server,
 	 global list. Cell wide information however is kept in the local
 	 list. */
       entry = silc_idlist_add_client(id_list, NULL, NULL, NULL,
-				     &id, router, NULL);
+				     silc_id_dup(&id, SILC_ID_CLIENT),
+				     router, NULL);
       if (!entry) {
 	SILC_LOG_ERROR(("Could not add new client to the ID Cache"));
 

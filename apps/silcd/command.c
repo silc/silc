@@ -2294,36 +2294,37 @@ static void silc_server_command_join_channel(SilcServer server,
 /* Server side of command JOIN. Joins client into requested channel. If
    the channel does not exist it will be created. */
 
-/* Ways of creating channel with dynamic connections:
+void silc_server_command_join_connected(SilcServer server,
+					SilcServerEntry server_entry,
+					void *context)
+{
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
 
-   1. If channels are not local (no local_channels in silcd.conf) then
-      /join silc, will create connection to default router if it is
-      specified in the silcd.conf.  If it isn't, it creates local channel.
+  if (!server_entry) {
+    SilcUInt32 tmp_len;
+    unsigned char *tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+    char serv[256 + 1];
 
-   2. If channels are not local then /join silc@silcnet.org, will create
-      connection to default if it is specified in the silcd.conf and if it
-      isn't or join fails it creates connection to silcnet.org and sends
-      the JOIN command to that server/router.
+    SILC_LOG_DEBUG(("Connecting to router failed"));
+    silc_parse_userfqdn(tmp, NULL, 0, serv, sizeof(serv));
 
-   3. If channels are local (local_channels set in silcd.conf) then
-      /join silc, will create local channel.  No connections are created
-      to anywhere.
+    if (serv[0]) {
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_JOIN,
+					   SILC_STATUS_ERR_NO_SUCH_SERVER, 0,
+					   2, serv, strlen(serv));
+    } else {
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_JOIN,
+					   SILC_STATUS_ERR_NO_SUCH_CHANNEL, 0,
+					   2, tmp, tmp_len);
+    }
+    silc_server_command_free(cmd);
+    return;
+  }
 
-   4. If channels are local then /join silc@silcnet.org will create
-      connection to default router if it is specified in the silcd.conf and
-      if it isn't, or join fails it creates connection to silcnet.org and
-      send the JOIN command to that server/router.
-
-   5. If we create connection to a remote that already has a channel that
-      we also have as a local channel, should we merge those channels?
-      Should I announce my local channels when I connect to router?  Should
-      I keep local channels local, unless I say /join localch@silcnet.org
-      in which case the local channel 'localch' becomes global?
-
-   6. After we have connection established to router, depending on the
-      local_channels setting /join silc will join locally or globally.
-      /join silc@silcnet.org would always join globally.
-*/
+  /* Reprocess command */
+  SILC_LOG_DEBUG(("Reprocess JOIN after connecting to router"));
+  silc_server_command_join(cmd, NULL);
+}
 
 SILC_SERVER_CMD_FUNC(join)
 {
@@ -2357,9 +2358,48 @@ SILC_SERVER_CMD_FUNC(join)
   }
 
   /* Parse server name from the channel name */
-  silc_parse_userfqdn(channel_name, parsed, sizeof(parsed), serv,
+  silc_parse_userfqdn(tmp, parsed, sizeof(parsed), serv,
 		      sizeof(serv));
   channel_name = parsed;
+
+  /* If server name is not specified but local channels is FALSE then the
+     channel will be global, based on our router name. */
+  if (!serv[0] && !server->config->local_channels) {
+    if (!server->standalone) {
+      silc_snprintf(serv, sizeof(serv), server->router->server_name);
+    } else {
+      SilcServerConfigRouter *router;
+      router = silc_server_config_get_primary_router(server);
+      if (router) {
+	/* Create connection to primary router */
+	SILC_LOG_DEBUG(("Create dynamic connection to primary router %s:%d",
+			router->host, router->port));
+	silc_server_create_connection(server, FALSE, TRUE,
+				      router->host, router->port,
+				      silc_server_command_join_connected, cmd);
+	return;
+      }
+    }
+  }
+
+  /* If server name is ours, ignore it. */
+  if (serv[0] && silc_utf8_strcasecmp(serv, server->server_name))
+    memset(serv, 0, sizeof(serv));
+
+  /* Create connection */
+  if (serv[0] && server->standalone) {
+    SilcServerConfigRouter *router;
+    router = silc_server_config_get_primary_router(server);
+    if (router) {
+      /* Create connection to primary router */
+      SILC_LOG_DEBUG(("Create dynamic connection to primary router %s:%d",
+		      router->host, router->port));
+      silc_server_create_connection(server, FALSE, TRUE,
+				    router->host, router->port,
+				    silc_server_command_join_connected, cmd);
+      return;
+    }
+  }
 
   /* Check for valid channel name.  This is cached, the original is saved
      in the channel context. */

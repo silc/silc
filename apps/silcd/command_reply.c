@@ -1199,7 +1199,8 @@ SILC_SERVER_CMD_REPLY_FUNC(join)
     silc_hmac_free(hmac);
   silc_server_command_reply_free(cmd);
 
-  silc_pkcs_public_key_free(founder_key);
+  if (founder_key)
+    silc_pkcs_public_key_free(founder_key);
   if (client_id_list)
     silc_buffer_free(client_id_list);
   if (client_mode_list)

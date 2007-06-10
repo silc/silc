@@ -79,6 +79,9 @@ static SilcBool silc_server_packet_receive(SilcPacketEngine engine,
   SilcServer server = callback_context;
   SilcIDListData idata = stream_context;
 
+  if (!idata)
+    return FALSE;
+
   /* Packets we do not handle */
   switch (packet->type) {
   case SILC_PACKET_HEARTBEAT:
@@ -211,6 +214,33 @@ static void silc_server_packet_eos(SilcPacketEngine engine,
   silc_server_close_connection(server, stream);
 }
 
+SILC_TASK_CALLBACK(silc_server_packet_error_timeout)
+{
+  SilcServer server = app_context;
+  SilcPacketStream stream = context;
+  SilcIDListData idata = silc_packet_get_context(stream);
+
+  if (!idata)
+    return;
+
+  if (server->router_conn && server->router_conn->sock == stream &&
+      !server->router && server->standalone) {
+    silc_server_create_connections(server);
+  } else {
+    /* If backup disconnected then mark that resuming will not be allowed */
+     if (server->server_type == SILC_ROUTER && !server->backup_router &&
+         idata->conn_type == SILC_CONN_SERVER) {
+      SilcServerEntry server_entry = (SilcServerEntry)idata;
+      if (server_entry->server_type == SILC_BACKUP_ROUTER)
+        server->backup_closed = TRUE;
+    }
+
+    silc_server_free_sock_user_data(server, stream, NULL);
+  }
+
+  silc_server_close_connection(server, stream);
+}
+
 /* Packet engine callback to indicate error */
 
 static void silc_server_packet_error(SilcPacketEngine engine,
@@ -235,22 +265,9 @@ static void silc_server_packet_error(SilcPacketEngine engine,
 		  SILC_CONNTYPE_STRING(idata->conn_type),
 		  silc_packet_error_string(error)));
 
-  if (server->router_conn && server->router_conn->sock == stream &&
-      !server->router && server->standalone) {
-    silc_server_create_connections(server);
-  } else {
-    /* If backup disconnected then mark that resuming will not be allowed */
-     if (server->server_type == SILC_ROUTER && !server->backup_router &&
-         idata->conn_type == SILC_CONN_SERVER) {
-      SilcServerEntry server_entry = (SilcServerEntry)idata;
-      if (server_entry->server_type == SILC_BACKUP_ROUTER)
-        server->backup_closed = TRUE;
-    }
-
-    silc_server_free_sock_user_data(server, stream, NULL);
-  }
-
-  silc_server_close_connection(server, stream);
+  silc_schedule_task_add_timeout(server->schedule,
+				 silc_server_packet_error_timeout,
+				 stream, 0, 0);
 }
 
 /* Packet stream callbacks */
@@ -1539,6 +1556,17 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 	  silc_server_backup_add(server, server->id_entry, sock->ip,
 				 sconn->remote_port, TRUE);
 #endif /* 0 */
+      } else {
+	/* We already have primary router.  Disconnect this connection */
+	SILC_LOG_DEBUG(("We already have primary router, disconnect"));
+	silc_idlist_del_server(server->global_list, id_entry);
+	silc_server_disconnect_remote(server, sconn->sock,
+				      SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
+	if (sconn->callback)
+	  (*sconn->callback)(server, NULL, sconn->callback_context);
+	silc_server_connection_free(sconn);
+	silc_free(entry);
+	return;
       }
     } else {
       /* Add this server to be our backup router */
@@ -2084,7 +2112,13 @@ silc_server_accept_get_auth(SilcConnAuth connauth,
 
   /* Remote end is server */
   if (conn_type == SILC_CONN_SERVER) {
-    SilcServerConfigServer *sconfig = entry->sconfig.ref_ptr;
+    SilcServerConfigServer *sconfig;
+
+    /* If we are normal server, don't accept the connection */
+    if (server->server_type == SILC_SERVER)
+      return FALSE;
+
+    sconfig = entry->sconfig.ref_ptr;
     if (!sconfig)
       return FALSE;
 
@@ -2965,6 +2999,9 @@ void silc_server_free_client_data(SilcServer server,
   SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
   silc_schedule_task_del_by_context(server->schedule, client);
 
+  if (client->data.sconn)
+    silc_server_connection_free(client->data.sconn);
+
   /* We will not delete the client entry right away. We will take it
      into history (for WHOWAS command) for 5 minutes, unless we're
      shutting down server. */
@@ -3019,8 +3056,6 @@ void silc_server_free_sock_user_data(SilcServer server,
       SilcClientEntry client_entry = (SilcClientEntry)idata;
       silc_server_free_client_data(server, sock, client_entry, TRUE,
 				   signoff_message);
-      if (idata->sconn)
-	silc_server_connection_free(idata->sconn);
       silc_packet_set_context(sock, NULL);
       break;
     }
@@ -3182,6 +3217,9 @@ void silc_server_free_sock_user_data(SilcServer server,
       }
       server->backup_noswitch = FALSE;
 
+      if (idata->sconn)
+	silc_server_connection_free(idata->sconn);
+
       /* Free the server entry */
       silc_server_backup_del(server, user_data);
       silc_server_backup_replaced_del(server, user_data);
@@ -3212,8 +3250,6 @@ void silc_server_free_sock_user_data(SilcServer server,
 				      backup_router->connection);
       }
 
-      if (idata->sconn)
-	silc_server_connection_free(idata->sconn);
       silc_packet_set_context(sock, NULL);
       break;
     }
