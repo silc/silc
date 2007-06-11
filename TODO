@@ -614,6 +614,16 @@ lib/silcserver
  o The server must be able to run behind NAT device.  This means that 
    Server ID must be based on public IP instead of private IP.
 
+ o The following data must be in per-connection context: client id cache, 
+   server id cache, channel id cache, all statistics must be 
+   per-connection.
+
+ o The following data must be in per-thread context: command context
+   freelist/pool, pending commands, random number generator.
+
+ o Do inccoming packet processing in an own FSM thread in the 
+   server-threads FSM.  Same as in client library.
+
  o Reference count all Silc*Entry structures.
 
  Some issues that must be kept in mind from 1.0 and 1.1 silcd's:
