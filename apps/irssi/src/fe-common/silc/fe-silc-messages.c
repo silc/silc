@@ -120,7 +120,6 @@ static void sig_signed_message_public(SERVER_REC * server, const char *msg,
   }
 
   g_free_not_null(freemsg);
-  g_free_not_null(color);
 }
 
 static void sig_signed_message_own_public(SERVER_REC * server,
