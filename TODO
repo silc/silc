@@ -245,15 +245,13 @@ Runtime library, lib/silcutil/
    defined.
 
  o Add new functions to SilcStack API in lib/silcutil/silcstack.[ch].  Add
-   silc_stack_[set|get]_byte_alignment and
-   silc_stack_[set|get]_address_alignment.  The _byte_alignment defines the
-   default alignment when allocating aligned memory for structures etc.
-   The _address_alignment defines the default alignment for memory 
-   addresses SilcStack routines return.  Usefull when needing special 
-   aligned addresses for example for hardware devices (such as crypto 
-   accelerators).  In 1.1 both are unsigned long, but in 1.2 both can be 
-   user defined.  Move also the low level silc_stack_malloc and 
-   silc_stack_realloc from silcstack_i.h to silcstack.h.
+   silc_stack_[set|get]_alignment.  It defines the default alignment used
+   when allocating memory from stack.  It can be used to specify special
+   alignments too when needed (such as for hardware devices like crypto
+   accelerators).  Move also the low level silc_stack_malloc and
+   silc_stack_realloc from silcstack_i.h to silcstack.h.  Remove the
+   _ua unaligned memory allocation routines.  Remove unaligned memory
+   allocation possibility.
 
  (o Generic SilcStatus or SilcResult that includes all possible status and
     error conditions, including those of SILC protocol.  Though, the SILC
