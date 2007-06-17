@@ -977,7 +977,7 @@ SilcBuffer silc_buffer_salloc(SilcStack stack, SilcUInt32 len)
     return NULL;
 
   /* Allocate the actual data area */
-  sb->head = (unsigned char *)silc_smalloc_ua(stack, len);
+  sb->head = (unsigned char *)silc_smalloc(stack, len);
   if (silc_unlikely(!sb->head))
     return NULL;
 
@@ -1054,12 +1054,12 @@ SilcBuffer silc_buffer_srealloc(SilcStack stack,
 
   hlen = silc_buffer_headlen(sb);
   dlen = silc_buffer_len(sb);
-  h = (unsigned char *)silc_srealloc_ua(stack, silc_buffer_truelen(sb),
-					sb->head, newsize);
+  h = (unsigned char *)silc_srealloc(stack, silc_buffer_truelen(sb),
+				     sb->head, newsize);
   if (!h) {
     /* Do slow and stack wasting realloc.  The old sb->head is lost and
        is freed eventually. */
-    h = (unsigned char *)silc_smalloc_ua(stack, newsize);
+    h = (unsigned char *)silc_smalloc(stack, newsize);
     if (silc_unlikely(!h))
       return NULL;
     memcpy(h, sb->head, silc_buffer_truelen(sb));

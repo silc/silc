@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2006 Pekka Riikonen
+  Copyright (C) 2003 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@
  *
  * The data stack is not thread-safe.  If the same stack context must be
  * used in multithreaded environment concurrency control must be employed.
+ * Each thread should allocate their own SilcStack.
  *
  ***/
 
@@ -81,11 +82,11 @@ typedef struct SilcStackStruct *SilcStack;
  *    Static stack frame context that optionally can be used as stack
  *    frame in SilcStack.  By default silc_stack_push use pre-allocated
  *    stack frame (or allocates new one if all frames are reserved), but
- *    user may also use staticly allocated SilcStackFrame instead.  This
+ *    user may also use statically allocated SilcStackFrame instead.  This
  *    is recommended when using SilcStack in recursive routine and the
  *    recursion may become deep.  Using static frame assures that during
  *    recursion frames never run out and silc_stack_push never allocates
- *    any memory.  In other normal usage staticly allocated SilcStackFrame
+ *    any memory.  In other normal usage statically allocated SilcStackFrame
  *    is not needed, unless performance is critical.
  *
  ***/
@@ -142,10 +143,10 @@ void silc_stack_free(SilcStack stack);
  *    If this returns zero (0) the system is out of memory.
  *
  *    If the `frame' is non-NULL then that SilcStackFrame is used as
- *    stack frame.  Usually `frame' is set to NULL by user.  Staticly
+ *    stack frame.  Usually `frame' is set to NULL by user.  Statically
  *    allocated SilcStackFrame should be used when using silc_stack_push
  *    in recursive function and the recursion may become deep.  In this
- *    case using staticly allocated SilcStackFrame is recommended since
+ *    case using statically allocated SilcStackFrame is recommended since
  *    it assures that frames never run out and silc_stack_push never
  *    allocates any memory.  If your routine is not recursive then
  *    setting `frame' to NULL is recommended, unless performance is
@@ -169,8 +170,8 @@ void silc_stack_free(SilcStack stack);
  *    silc_foo_parse_packet(packet, stack);
  *    silc_stack_pop(stack);
  *
- *    Another example with recursion and using staticly allocated
- *    SilcStackFrame.  After popping the staticly allocated frame can
+ *    Another example with recursion and using statically allocated
+ *    SilcStackFrame.  After popping the statically allocated frame can
  *    be reused if necessary.
  *
  *    void silc_foo_this_function(SilcStack stack)
