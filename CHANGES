@@ -1,3 +1,9 @@
+Sun Jun 17 20:08:26 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
+
+	* Rewrite signed public message handling, adopting the new
+	  hilight interface.  Affected file is
+	  apps/irssi/src/fe-common/silc/fe-silc-messages.c
+
 Thu Jun 14 21:15:31 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
 
 	* Fix off by one error when loading modules.  Affected file is

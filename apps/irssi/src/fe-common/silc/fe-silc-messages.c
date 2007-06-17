@@ -57,6 +57,7 @@ static void sig_signed_message_public(SERVER_REC * server, const char *msg,
   const char *nickmode, *printnick;
   int for_me, print_channel, level;
   char *color, *freemsg = NULL;
+  HILIGHT_REC *hilight;
 
   /* NOTE: this may return NULL if some channel is just closed with
      /WINDOW CLOSE and server still sends the few last messages */
@@ -66,9 +67,9 @@ static void sig_signed_message_public(SERVER_REC * server, const char *msg,
 
   for_me = !settings_get_bool("hilight_nick_matches") ? FALSE :
       nick_match_msg(chanrec, msg, server->nick);
-  color = for_me ? NULL :
-    (char *)hilight_match_nick(server, target, nick, address, MSGLEVEL_PUBLIC,
-			       msg);
+  hilight = for_me ? NULL :
+	  hilight_match_nick(server, target, nick, address, MSGLEVEL_PUBLIC, msg);
+  color = (hilight == NULL) ? NULL : hilight_get_color(hilight);
 
   print_channel = chanrec == NULL ||
       !window_item_is_active((WI_ITEM_REC *) chanrec);
@@ -77,7 +78,7 @@ static void sig_signed_message_public(SERVER_REC * server, const char *msg,
     print_channel = TRUE;
 
   level = MSGLEVEL_PUBLIC;
-  if (for_me || color != NULL)
+  if (for_me)
     level |= MSGLEVEL_HILIGHT;
 
   if (settings_get_bool("emphasis"))
@@ -91,35 +92,35 @@ static void sig_signed_message_public(SERVER_REC * server, const char *msg,
   if (printnick == NULL)
     printnick = nick;
 
-  if (!print_channel) {
-    /* message to active channel in window */
-    if (color != NULL) {
-      /* highlighted nick */
-      printformat_module("fe-common/silc", server, target,
-			 level, VERIFIED_MSG(verified, SILCTXT_PUBMSG_HILIGHT),
-			 color, printnick, msg, nickmode);
-    } else {
-      printformat_module("fe-common/silc", server, target, level,
-			 for_me ? VERIFIED_MSG(verified, SILCTXT_PUBMSG_ME) :
-			 	  VERIFIED_MSG(verified,SILCTXT_PUBMSG),
-			 printnick, msg, nickmode);
-    }
-  } else {
-    /* message to not existing/active channel */
-    if (color != NULL) {
-      /* highlighted nick */
-      printformat_module("fe-common/silc", server, target, level,
+  if (color != NULL) {
+    /* highlighted nick */
+    TEXT_DEST_REC dest;
+    format_create_dest(&dest, server, target, level, NULL);
+    hilight_update_text_dest(&dest,hilight);
+    if (!print_channel) /* message to active channel in windpw */
+      printformat_module_dest("fe-common/silc", &dest, 
+      		 VERIFIED_MSG(verified, SILCTXT_PUBMSG_HILIGHT),
+      		 color, printnick, msg, nickmode);
+    else /* message to not existing/active channel */
+      printformat_module_dest("fe-common/silc", &dest,
 			 VERIFIED_MSG(verified, SILCTXT_PUBMSG_HILIGHT_CHANNEL),
 			 color, printnick, target, msg, nickmode);
-    } else {
+
+  } else {
+    if (!print_channel)
+      printformat_module("fe-common/silc", server, target, level,
+      		 for_me ? VERIFIED_MSG(verified, SILCTXT_PUBMSG_ME) :
+      		 	  VERIFIED_MSG(verified,SILCTXT_PUBMSG),
+      		 printnick, msg, nickmode);
+    else
       printformat_module("fe-common/silc", server, target, level,
 			 for_me ? VERIFIED_MSG(verified, SILCTXT_PUBMSG_ME_CHANNEL) :
 			 VERIFIED_MSG(verified, SILCTXT_PUBMSG_CHANNEL),
 			 printnick, target, msg, nickmode);
-    }
   }
 
   g_free_not_null(freemsg);
+  g_free_not_null(color);
 }
 
 static void sig_signed_message_own_public(SERVER_REC * server,
