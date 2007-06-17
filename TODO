@@ -46,6 +46,8 @@ lib/silccore
 
  o All payload encoding routines should take SilcStack as argument.
 
+ o Remove SilcCommandCb from silccommand.h.
+
  o All payload test routines into lib/silccore/tests/.
 
 
@@ -241,6 +243,16 @@ Runtime library, lib/silcutil/
  o Compression routines are missing.  The protocol supports packet
    compression thus it must be implemented.  SILC Zip API must be
    defined.
+
+ o Add new functions to SilcStack API in lib/silcutil/silcstack.[ch].  Add
+   silc_stack_[set|get]_byte_alignment and
+   silc_stack_[set|get]_address_alignment.  The _byte_alignment defines the
+   default alignment when allocating aligned memory for structures etc.
+   The address_alignment defines the default (default is 0) alignment for
+   memory addresses SilcStack routines return.  Usefull when needing 
+   aligned addresses for example for hardware devices (such as crypto
+   accelerators).  Move also the low level silc_stack_malloc and 
+   silc_stack_realloc from silcstack_i.h to silcstack.h.
 
  (o Generic SilcStatus or SilcResult that includes all possible status and
     error conditions, including those of SILC protocol.  Though, the SILC
