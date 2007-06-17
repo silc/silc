@@ -248,10 +248,11 @@ Runtime library, lib/silcutil/
    silc_stack_[set|get]_byte_alignment and
    silc_stack_[set|get]_address_alignment.  The _byte_alignment defines the
    default alignment when allocating aligned memory for structures etc.
-   The address_alignment defines the default (default is 0) alignment for
-   memory addresses SilcStack routines return.  Usefull when needing 
-   aligned addresses for example for hardware devices (such as crypto
-   accelerators).  Move also the low level silc_stack_malloc and 
+   The _address_alignment defines the default alignment for memory 
+   addresses SilcStack routines return.  Usefull when needing special 
+   aligned addresses for example for hardware devices (such as crypto 
+   accelerators).  In 1.1 both are unsigned long, but in 1.2 both can be 
+   user defined.  Move also the low level silc_stack_malloc and 
    silc_stack_realloc from silcstack_i.h to silcstack.h.
 
  (o Generic SilcStatus or SilcResult that includes all possible status and
