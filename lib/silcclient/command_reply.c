@@ -127,7 +127,7 @@ static void silc_client_command_process_error(SilcClientCommandContext cmd,
   if (cmd->error == SILC_STATUS_ERR_NO_SUCH_CHANNEL_ID) {
     SilcChannelEntry channel;
 
-    /* Remove unknown client entry from cache */
+    /* Remove unknown channel entry from cache */
     if (!silc_argument_get_decoded(args, 2, SILC_ARGUMENT_ID, &id, NULL))
       return;
 
@@ -143,7 +143,7 @@ static void silc_client_command_process_error(SilcClientCommandContext cmd,
   if (cmd->error == SILC_STATUS_ERR_NO_SUCH_SERVER_ID) {
     SilcServerEntry server_entry;
 
-    /* Remove unknown client entry from cache */
+    /* Remove unknown server entry from cache */
     if (!silc_argument_get_decoded(args, 2, SILC_ARGUMENT_ID, &id, NULL))
       return;
 
@@ -733,6 +733,7 @@ SILC_FSM_STATE(silc_client_command_reply_nick)
   if (!silc_client_change_nickname(client, conn, conn->local_entry,
 				   nick, &id.u.client_id, idp, idp_len)) {
     ERROR_CALLBACK(SILC_STATUS_ERR_BAD_NICKNAME);
+    silc_rwlock_unlock(conn->local_entry->internal.lock);
     goto out;
   }
 
@@ -1946,6 +1947,8 @@ SILC_FSM_STATE(silc_client_command_reply_users)
       goto out;
     }
   }
+
+  silc_rwlock_unlock(channel->internal.lock);
 
   /* Notify application */
   silc_hash_table_list(channel->user_list, &htl);
