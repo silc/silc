@@ -144,8 +144,7 @@ void silc_mutex_lock(SilcMutex mutex)
 {
 #ifdef SILC_THREADS
   if (mutex) {
-    if (pthread_mutex_lock(&mutex->mutex))
-      SILC_ASSERT(FALSE);
+    SILC_VERIFY(pthread_mutex_lock(&mutex->mutex) == 0);
     mutex->locked = TRUE;
   }
 #endif /* SILC_THREADS */
@@ -155,8 +154,7 @@ void silc_mutex_unlock(SilcMutex mutex)
 {
 #ifdef SILC_THREADS
   if (mutex) {
-    if (pthread_mutex_unlock(&mutex->mutex))
-      SILC_ASSERT(FALSE);
+    SILC_VERIFY(pthread_mutex_unlock(&mutex->mutex) == 0);
     mutex->locked = FALSE;
   }
 #endif /* SILC_THREADS */
@@ -166,7 +164,7 @@ void silc_mutex_assert_locked(SilcMutex mutex)
 {
 #ifdef SILC_THREADS
   if (mutex)
-    SILC_ASSERT(mutex->locked);
+    SILC_VERIFY(mutex->locked);
 #endif /* SILC_THREADS */
 }
 
@@ -216,7 +214,7 @@ void silc_rwlock_wrlock(SilcRwLock rwlock)
 {
 #ifdef SILC_THREADS
   if (rwlock)
-    pthread_rwlock_wrlock(&rwlock->rwlock);
+    SILC_VERIFY(pthread_rwlock_wrlock(&rwlock->rwlock) == 0);
 #endif /* SILC_THREADS */
 }
 
@@ -224,7 +222,7 @@ void silc_rwlock_unlock(SilcRwLock rwlock)
 {
 #ifdef SILC_THREADS
   if (rwlock)
-    pthread_rwlock_unlock(&rwlock->rwlock);
+    SILC_VERIFY(pthread_rwlock_unlock(&rwlock->rwlock) == 0);
 #endif /* SILC_THREADS */
 }
 

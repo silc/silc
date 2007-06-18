@@ -190,7 +190,7 @@ void silc_rwlock_free(SilcRwLock rwlock);
  *    is locked by a writer the current thread will block until the other
  *    thread has issued silc_rwlock_unlock for the `rwlock'.  This function
  *    may be called multiple times to acquire the read lock.  There must be
- *    same amount of silc_rwlock_unlock calls.  If `rwlock' is NULL this
+ *    same number of silc_rwlock_unlock calls.  If `rwlock' is NULL this
  *    function has no effect.
  *
  ***/
@@ -207,7 +207,9 @@ void silc_rwlock_rdlock(SilcRwLock rwlock);
  *    Acquires write lock of the read/write lock `rwlock'.  If the `rwlock'
  *    is locked by a writer or a reader the current thread will block until
  *    the other thread(s) have issued silc_rwlock_unlock for the `rwlock'.
- *    If `rwlock' is NULL this function has no effect.
+ *    A thread may acquire the write lock only once.  A deadlock may occur
+ *    if thread attempts to acquire the write lock when it has already done
+ *    so.  If `rwlock' is NULL this function has no effect.
  *
  ***/
 void silc_rwlock_wrlock(SilcRwLock rwlock);
