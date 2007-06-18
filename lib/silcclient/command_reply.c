@@ -131,7 +131,7 @@ void silc_client_command_reply_process(SilcClient client,
       /* No specific identifier for command reply, call first one found */
       (*reply)(ctx, NULL);
     else
-      silc_free(ctx);
+      silc_client_command_reply_free(ctx);
   }
 }
 
@@ -155,6 +155,8 @@ void silc_client_command_reply_free(SilcClientCommandReplyContext cmd)
   SILC_LOG_DEBUG(("Command reply context %p refcnt %d->%d", cmd,
 		  cmd->users + 1, cmd->users));
   if (cmd->users < 1) {
+    if (cmd->callbacks)
+      silc_free(cmd->callbacks);
     silc_command_payload_free(cmd->payload);
     silc_free(cmd);
   }
@@ -934,7 +936,7 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
 {
   SilcClientCommandReplyContext cmd = (SilcClientCommandReplyContext)context;
   SilcClientConnection conn = (SilcClientConnection)cmd->sock->user_data;
-  void *id;
+  void *id = NULL;
   int i;
   time_t diff, curtime;
 
@@ -972,12 +974,12 @@ SILC_CLIENT_CMD_REPLY_FUNC(ping)
     }
   }
 
-  silc_free(id);
-
   /* Notify application */
   COMMAND_REPLY((SILC_ARGS));
 
  out:
+  if (id)
+    silc_free(id);
   SILC_CLIENT_PENDING_EXEC(cmd, SILC_COMMAND_PING);
   silc_client_command_reply_free(cmd);
 }

@@ -1418,6 +1418,7 @@ void silc_client_packet_send(SilcClient client,
   const SilcBufferStruct packet;
   int block_len;
   SilcUInt32 sequence = 0;
+  int src_id_allocated = FALSE;
 
   if (!sock)
     return;
@@ -1461,6 +1462,7 @@ void silc_client_packet_send(SilcClient client,
   } else {
     packetdata.src_id = silc_calloc(SILC_ID_CLIENT_LEN, sizeof(unsigned char));
     packetdata.src_id_len = SILC_ID_CLIENT_LEN;
+    src_id_allocated = TRUE;
   }
   packetdata.src_id_type = SILC_ID_CLIENT;
   if (dst_id) {
@@ -1486,7 +1488,7 @@ void silc_client_packet_send(SilcClient client,
   if (!silc_packet_assemble(&packetdata, client->rng, cipher, hmac, sock,
                             data, data_len, (const SilcBuffer)&packet)) {
     SILC_LOG_ERROR(("Error assembling packet"));
-    return;
+    goto out;
   }
 
   /* Encrypt the packet */
@@ -1499,6 +1501,12 @@ void silc_client_packet_send(SilcClient client,
 
   /* Now actually send the packet */
   silc_client_packet_send_real(client, sock, force_send);
+
+ out:
+  if (src_id_allocated && packetdata.src_id)
+    silc_free(packetdata.src_id);
+  if (packetdata.dst_id)
+    silc_free(packetdata.dst_id);
 }
 
 /* Packet sending routine for application.  This is the only routine that
