@@ -400,10 +400,23 @@ const char *silc_packet_error_string(SilcPacketError error);
  * DESCRIPTION
  *
  *    Returns list of packet streams added to the packet engine.  The caller
- *    must free the list with silc_dlist_uninit.
+ *    must free the list with silc_packet_engine_free_streams_list.
  *
  ***/
 SilcDList silc_packet_engine_get_streams(SilcPacketEngine engine);
+
+/****f* silccore/SilcPacketAPI/silc_packet_engine_free_streams_list
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_engine_free_streams_list(SilcDList streams);
+ *
+ * DESCRIPTION
+ *
+ *    Free's the streams list returned by silc_packet_engine_get_streams.
+ *
+ ***/
+void silc_packet_engine_free_streams_list(SilcDList streams);
 
 /****f* silccore/SilcPacketAPI/silc_packet_stream_create
  *

@@ -638,7 +638,7 @@ static const char *packet_error[] = {
 const char *silc_packet_error_string(SilcPacketError error)
 {
   if (error < SILC_PACKET_ERR_READ || error > SILC_PACKET_ERR_NO_MEMORY)
-    return "";
+    return "<invalid error code>";
   return packet_error[error];
 }
 
@@ -655,11 +655,26 @@ SilcDList silc_packet_engine_get_streams(SilcPacketEngine engine)
 
   silc_mutex_lock(engine->lock);
   silc_list_start(engine->streams);
-  while ((ps = silc_list_get(engine->streams)))
+  while ((ps = silc_list_get(engine->streams))) {
+    silc_packet_stream_ref(ps);
     silc_dlist_add(list, ps);
+  }
   silc_mutex_unlock(engine->lock);
 
   return list;
+}
+
+/* Free list returned by silc_packet_engine_get_streams */
+
+void silc_packet_engine_free_streams_list(SilcDList streams)
+{
+  SilcPacketStream ps;
+
+  silc_dlist_start(streams);
+  while ((ps = silc_dlist_get(streams)))
+    silc_packet_stream_unref(ps);
+
+  silc_dlist_uninit(streams);
 }
 
 /* Create new packet stream */
