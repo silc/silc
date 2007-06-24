@@ -1,7 +1,5 @@
 Sun Jun 24 14:43:21 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
 
-	* SILC Client 1.1.1
-
 	* Fix configure output for with-plugin.  Affected file is
 	  apps/irssi/configure.ad
 
