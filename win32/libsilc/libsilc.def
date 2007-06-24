@@ -854,4 +854,6 @@ EXPORTS
 	silc_vcard_free @ 872 ;
 	silc_utf8_c2w @ 873 ;
 	silc_utf8_w2c @ 874 ;
+	silc_packet_engine_free_streams_list @ 875 ;
+	silc_schedule_set_notify @ 876 ;
 
