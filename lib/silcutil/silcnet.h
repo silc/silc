@@ -118,7 +118,7 @@ typedef void (*SilcNetCallback)(SilcNetStatus status,
  *
  *    This function creates TCP listener.  This is used to create network
  *    listener for incoming connections, and `callback' will be called
- *    everytime new connection is received.  If `local_ip_addr' is NULL any
+ *    everytime new connection is received.  If `local_ip_addr' is NULL 'any'
  *    address is used.  If provided it can be used bind the listener to
  *    `local_ip_count' many IP addresses provided in `local_ip_addr' table.
  *    On success returns the SilcNetListener context, or NULL on error.

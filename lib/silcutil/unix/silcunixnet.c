@@ -164,8 +164,8 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
 
   /* Bind to local addresses */
   for (i = 0; i < local_ip_count; i++) {
-    SILC_LOG_DEBUG(("Binding to local address %s",
-		    local_ip_addr ? local_ip_addr[i] : ipany));
+    SILC_LOG_DEBUG(("Binding to local address %s:%d",
+		    local_ip_addr ? local_ip_addr[i] : ipany, port));
 
     /* Set sockaddr for server */
     if (!silc_net_set_sockaddr(&server,
