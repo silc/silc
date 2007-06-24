@@ -3,10 +3,6 @@ Mon Jun 18 22:21:37 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
 	* Fix memory leaks reported by Matt Day.  Affected files are
 	  lib/silcclient/command_reply.c, lib/silcclient/client.c
 
-	* Rewrite signed public message handling, adopting the new
-	  hilight interface.  Affected file is
-	  apps/irssi/src/fe-common/silc/fe-silc-messages.c
-
 Sat Apr 28 21:19:45 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* Do not check for too new protocol version in during SKE,
