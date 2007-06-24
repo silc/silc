@@ -51,16 +51,16 @@ typedef struct {
 
 #if defined(SILC_DEBUG)
 static const char *find_name[] = {
-  "PKCS TYPE",
-  "USERNAME",
-  "HOST",
-  "REALNAME",
-  "EMAIL",
-  "ORG",
-  "COUNTRY",
+  "PKCS TYPE ",
+  "USERNAME  ",
+  "HOST      ",
+  "REALNAME  ",
+  "EMAIL     ",
+  "ORG       ",
+  "COUNTRY   ",
   "PUBLIC KEY",
-  "CONTEXT",
-  "USAGE",
+  "CONTEXT   ",
+  "USAGE     ",
   NULL
 };
 #endif /* SILC_DEBUG */
@@ -78,7 +78,7 @@ static void silc_skr_type_string(SilcSKRFindType type, void *data,
   case SILC_SKR_FIND_PKCS_TYPE:
   case SILC_SKR_FIND_USAGE:
     silc_snprintf(retbuf, retbuf_size, "[%s] [%d]", find_name[type],
-	     (int)SILC_PTR_TO_32(data));
+		  (int)SILC_PTR_TO_32(data));
     break;
 
   case SILC_SKR_FIND_PUBLIC_KEY:
@@ -88,7 +88,7 @@ static void silc_skr_type_string(SilcSKRFindType type, void *data,
 
   default:
     silc_snprintf(retbuf, retbuf_size, "[%s] [%s]", find_name[type],
-	     (char *)data);
+		  (char *)data);
   }
 }
 #endif /* SILC_DEBUG */
@@ -271,6 +271,13 @@ static SilcBool silc_skr_add_entry(SilcSKR skr, SilcSKRFindType type,
 {
   SilcSKREntry entry;
 
+#if defined(SILC_DEBUG)
+  char tmp[256];
+  memset(tmp, 0, sizeof(tmp));
+  silc_skr_type_string(type, type_data, tmp, sizeof(tmp) - 1);
+  SILC_LOG_DEBUG(("Search constraint %s", tmp));
+#endif /* SILC_DEBUG */
+
   entry = silc_calloc(1, sizeof(*entry));
   if (!entry)
     return FALSE;
@@ -363,12 +370,16 @@ static SilcSKRStatus silc_skr_add_silc(SilcSKR skr,
   SilcSKRStatus status = SILC_SKR_ERROR;
   SilcPublicKeyIdentifier ident;
   SilcSILCPublicKey silc_pubkey;
+#if defined(SILC_DEBUG)
+  char tmp[256];
+#endif /* SILC_DEBUG */
 
   /* Get the SILC public key */
   silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
   ident = &silc_pubkey->identifier;
 
-  SILC_LOG_DEBUG(("Adding SILC public key [%s]", ident->username));
+  SILC_LOG_DEBUG(("Adding SILC public key %p [%s], context %p",
+		  public_key, ident->username, key_context));
 
   silc_mutex_lock(skr->lock);
 
@@ -390,6 +401,12 @@ static SilcSKRStatus silc_skr_add_silc(SilcSKR skr,
   key->key.usage = usage;
   key->key.key = public_key;
   key->key.key_context = key_context;
+
+#if defined(SILC_DEBUG)
+  silc_skr_type_string(SILC_SKR_FIND_USAGE, SILC_32_TO_PTR(usage),
+		       tmp, sizeof(tmp) - 1);
+  SILC_LOG_DEBUG((" Search constraint %s", tmp));
+#endif /* SILC_DEBUG */
 
   /* Add key specifics */
 
@@ -854,6 +871,8 @@ SilcBool silc_skr_find_set_public_key(SilcSKRFind find,
 
 SilcBool silc_skr_find_set_context(SilcSKRFind find, void *context)
 {
+  if (!context)
+    return TRUE;
   return silc_hash_table_add(find->constr,
 			     SILC_32_TO_PTR(SILC_SKR_FIND_CONTEXT), context);
 }
@@ -882,6 +901,9 @@ SilcAsyncOperation silc_skr_find(SilcSKR skr, SilcSchedule schedule,
   SilcHashTableList htl;
   SilcDList list, results = NULL;
   void *type, *ctx, *usage = NULL;
+#if defined(SILC_DEBUG)
+  char tmp[256];
+#endif /* SILC_DEBUG */
 
   SILC_LOG_DEBUG(("Finding key from repository"));
 
@@ -894,20 +916,27 @@ SilcAsyncOperation silc_skr_find(SilcSKR skr, SilcSchedule schedule,
   silc_hash_table_find(find->constr, SILC_32_TO_PTR(SILC_SKR_FIND_USAGE),
 		       NULL, &usage);
 
+#if defined(SILC_DEBUG)
+  if (usage) {
+    memset(tmp, 0, sizeof(tmp));
+    silc_skr_type_string(SILC_SKR_FIND_USAGE, usage, tmp, sizeof(tmp) - 1);
+    SILC_LOG_DEBUG(("Finding key by %s", tmp));
+  }
+#endif /* SILC_DEBUG */
+
   silc_hash_table_list(find->constr, &htl);
   while (silc_hash_table_get(&htl, &type, &ctx)) {
 
+    /* SILC_SKR_FIND_USAGE is handled separately while searching the keys. */
+    if ((SilcSKRFindType)SILC_32_TO_PTR(type) == SILC_SKR_FIND_USAGE)
+      continue;
+
 #if defined(SILC_DEBUG)
-    char tmp[256];
     memset(tmp, 0, sizeof(tmp));
     silc_skr_type_string((SilcSKRFindType)SILC_32_TO_PTR(type),
 			 ctx, tmp, sizeof(tmp) - 1);
     SILC_LOG_DEBUG(("Finding key by %s", tmp));
 #endif /* SILC_DEBUG */
-
-    /* SILC_SKR_FIND_USAGE is handled separately while searching the keys. */
-    if ((SilcSKRFindType)SILC_32_TO_PTR(type) == SILC_SKR_FIND_USAGE)
-      continue;
 
     /* Find entries by this search constraint */
     if (!silc_skr_find_entry(skr, &status,
