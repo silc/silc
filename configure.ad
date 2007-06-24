@@ -33,6 +33,10 @@ AC_PATH_PROG(sedpath, sed)
 # Put here any platform specific stuff
 #
 case "$target" in
+  *-*-linux*)
+    check_threads=true
+    CFLAGS=`echo $CFLAGS -D_GNU_SOURCE`
+    ;;
   *-*-freebsd*)
     check_threads=true
     ;;

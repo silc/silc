@@ -110,7 +110,7 @@ EXTRA_DIST = 			\
 #ifdef SILC_DIST_TOOLKIT
 	toolkit			\
 	CodingStyle 		\
-	draft-riikonen*.txt
+	draft-riikonen*.txt	\
 	silcalgs.conf		\
 #endif SILC_DIST_TOOLKIT
 	FAQ
