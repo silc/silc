@@ -39,7 +39,7 @@ Toolkit enables SILC application development.
 %configure --libdir=%{_libdir} \
            --includedir=%{_includedir}/silc \
            --with-simdir=%{_libdir}/silc/modules \
-           --with-docdir=%{_docdir}/%{name}-%{version}
+           --docdir=%{_docdir}/%{name}-%{version}
 make -j4
 
 %install
