@@ -95,8 +95,26 @@ __SILC_HAVE_SIM=""
 __SILC_ENABLE_DEBUG=""
 
 #ifdef SILC_DIST_TOOLKIT
-toolkitver=`echo $VERSION | sed 's/\./_/g'`
-__SILC_PACKAGE_VERSION="#define __SILC_TOOLKIT_$toolkitver 1"
+toolkitver=`echo $VERSION | sed 's/\./ /g'`
+maj=0
+min=0
+bld=0
+for v in $toolkitver
+do
+  if test $maj -eq 0; then
+    maj=$v
+    continue
+  fi
+  if test $min -eq 0; then
+    min=$v
+    continue
+  fi
+  if test $bld -eq 0; then
+    bld=$v
+    continue
+  fi
+done
+__SILC_PACKAGE_VERSION="#define __SILC_TOOLKIT_VERSION SILC_VERSION($maj,$min,$bld)"
 #endif SILC_DIST_TOOLKIT
 
 AC_PROG_RANLIB

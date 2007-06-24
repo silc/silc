@@ -65,7 +65,6 @@ extern "C" {
 @__SILC_HAVE_PTHREAD@
 @__SILC_HAVE_SIM@
 @__SILC_ENABLE_DEBUG@
-@__SILC_PACKAGE_VERSION@
 
 #if defined(HAVE_SILCDEFS_H)
 /* Automatically generated configuration header */
