@@ -7,7 +7,7 @@ Group: System Environment/Libraries
 URL: http://silcnet.org/
 Source0: silc-toolkit-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildRequires: libtool pkgconfig
+BuildRequires: pkgconfig
 Obsoletes: libsilc
 Obsoletes: libsilc-devel
 Obsoletes: libsilc-doc
