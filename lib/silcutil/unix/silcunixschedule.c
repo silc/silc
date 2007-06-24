@@ -459,6 +459,8 @@ static void silc_schedule_internal_sighandler(int signal)
 {
   int i;
 
+  SILC_LOG_DEBUG(("Start"));
+
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (signal_call[i].sig == signal) {
       signal_call[i].call = TRUE;
@@ -548,11 +550,13 @@ void silc_schedule_internal_signals_call(SilcSchedule schedule, void *context)
         signal_call[i].callback) {
       SILC_LOG_DEBUG(("Calling signal %d callback",
 		      signal_call[i].sig));
+      silc_schedule_internal_signals_unblock(schedule, context);
       signal_call[i].callback(schedule, internal->app_context,
 			      SILC_TASK_INTERRUPT,
 			      signal_call[i].sig,
 			      signal_call[i].context);
       signal_call[i].call = FALSE;
+      silc_schedule_internal_signals_block(schedule, context);
     }
   }
 
