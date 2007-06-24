@@ -162,6 +162,9 @@ struct SilcServerEntryStruct {
 
   /* Connection data */
   void *connection;
+
+  void *backup_proto;
+  unsigned int backup  : 1;	/* Set when executing backup protocol */
 };
 
 /*

@@ -308,10 +308,12 @@ void silc_server_query_connected(SilcServer server,
 
   if (!server_entry) {
     /* Connecting failed */
+    SilcConnectionType type = (server->server_type == SILC_ROUTER ?
+			       SILC_CONN_SERVER : SILC_CONN_ROUTER);
 
     if (query->dynamic_prim /* && @serv != prim.host.name */ &&
 	!silc_server_num_sockets_by_remote(server, query->nick_server,
-					   query->nick_server, 706)) {
+					   query->nick_server, 706, type)) {
       /* Connection attempt to primary router failed, now try to the one
 	 specified in nick@server. */
       silc_server_create_connection(server, FALSE, TRUE, query->nick_server,
@@ -388,12 +390,14 @@ void silc_server_query_send_router_reply(void *context, void *reply)
   /* Check if router sent error reply */
   if (cmdr && !silc_command_get_status(cmdr->payload, NULL, NULL)) {
     SilcBuffer buffer;
+    SilcConnectionType type = (server->server_type == SILC_ROUTER ?
+			       SILC_CONN_SERVER : SILC_CONN_ROUTER);
 
     /* If this was nick@server query, retry to @serv if the primary router
        returned error. */
     if (query->nick_server[0] && !query->dynamic_retry &&
 	!silc_server_num_sockets_by_remote(server, query->nick_server,
-					   query->nick_server, 1334)) {
+					   query->nick_server, 1334, type)) {
       SILC_LOG_DEBUG(("Retry query by connecting to %s:%d",
 		      query->nick_server, 706));
       silc_server_create_connection(server, FALSE, TRUE, query->nick_server,
@@ -737,6 +741,8 @@ SilcBool silc_server_query_parse(SilcServer server, SilcServerQuery query,
 	/* If primary router is specified, use that.  Otherwise connect
 	   to the server in nick@server string. */
 	SilcServerConfigRouter *router;
+	SilcConnectionType type = (server->server_type == SILC_ROUTER ?
+				   SILC_CONN_SERVER : SILC_CONN_ROUTER);
 
 	router = silc_server_config_get_primary_router(server);
 	if (router && server->standalone) {
@@ -751,7 +757,7 @@ SilcBool silc_server_query_parse(SilcServer server, SilcServerQuery query,
 	} else if (!silc_server_num_sockets_by_remote(server,
 						      query->nick_server,
 						      query->nick_server,
-						      706)) {
+						      706, type)) {
 	  /* Create connection and handle the query after connection */
 	  SILC_LOG_DEBUG(("Create dynamic connection to %s:%d",
 			  query->nick_server, 706));

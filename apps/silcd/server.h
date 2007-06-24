@@ -120,11 +120,6 @@ do {									\
   silc_free(__fmt__);							\
 } while(0)
 
-/* Check whether rekey protocol is active */
-#define SILC_SERVER_IS_REKEY(sock)					\
-  (sock->protocol && sock->protocol->protocol && 			\
-   sock->protocol->protocol->type == SILC_PROTOCOL_SERVER_REKEY)
-
 /* Output a message to stderr or to the appropriate log facility wether
    we are in the background or not. */
 #define SILC_SERVER_LOG_INFO(fmt)					\

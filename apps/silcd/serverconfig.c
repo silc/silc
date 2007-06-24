@@ -150,7 +150,7 @@ static SilcBool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
     SilcPublicKey public_key;
     SilcSKR skr = *auth_data;
     SilcSKRFind find;
-    SilcSKRStatus status;
+    SilcSKRStatus status = SILC_SKR_NOT_FOUND;
 
     if (!silc_pkcs_load_public_key(p, &public_key)) {
       SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
@@ -161,19 +161,20 @@ static SilcBool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
     find = silc_skr_find_alloc();
     silc_skr_find_set_public_key(find, public_key);
     silc_skr_find_set_usage(find, usage);
-    silc_skr_find_set_context(find, key_context ? key_context : (void *)usage);
+    if (!key_context)
+      silc_skr_find_set_context(find, SILC_32_TO_PTR(usage));
     silc_skr_find(skr, NULL, find, my_find_callback, &status);
-    if (status == SILC_SKR_ALREADY_EXIST) {
+    if (status == SILC_SKR_OK) {
+      /* Already added, ignore error */
       silc_pkcs_public_key_free(public_key);
-      SILC_SERVER_LOG_WARNING(("Warning: public key file \"%s\" already "
-			       "configured, ignoring this key", p));
-      return TRUE; /* non fatal error */
+      return TRUE;
     }
 
     /* Add the public key to repository */
-    if (silc_skr_add_public_key(skr, public_key, usage,
-				key_context ? key_context : (void *)usage,
-				NULL) != SILC_SKR_OK) {
+    status = silc_skr_add_public_key(skr, public_key, usage,
+				     key_context ? key_context :
+				     (void *)usage, NULL);
+    if (status != SILC_SKR_OK) {
       SILC_SERVER_LOG_ERROR(("Error while adding public key \"%s\"", p));
       return FALSE;
     }

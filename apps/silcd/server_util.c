@@ -1056,9 +1056,12 @@ silc_server_find_socket_by_host(SilcServer server,
 SilcUInt32 silc_server_num_sockets_by_remote(SilcServer server,
 					     const char *ip,
 					     const char *hostname,
-					     SilcUInt16 port)
+					     SilcUInt16 port,
+					     SilcConnectionType type)
 {
   SilcServerConnection conn;
+  SilcIDListData idata;
+  SilcConnectionType t = SILC_CONN_UNKNOWN;
   int count = 0;
 
   if (!ip && !hostname)
@@ -1066,9 +1069,14 @@ SilcUInt32 silc_server_num_sockets_by_remote(SilcServer server,
 
   silc_dlist_start(server->conns);
   while ((conn = silc_dlist_get(server->conns))) {
+    if (conn->sock) {
+      idata = silc_packet_get_context(conn->sock);
+      if (idata)
+	t = idata->conn_type;
+    }
     if (((ip && !strcmp(conn->remote_host, ip)) ||
 	 (hostname && !strcmp(conn->remote_host, hostname))) &&
-	conn->remote_port == port)
+	conn->remote_port == port && t == type)
       count++;
   }
 

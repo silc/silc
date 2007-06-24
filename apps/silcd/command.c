@@ -2362,12 +2362,34 @@ SILC_SERVER_CMD_FUNC(join)
 		      sizeof(serv));
   channel_name = parsed;
 
-  /* If server name is not specified but local channels is FALSE then the
-     channel will be global, based on our router name. */
-  if (!serv[0] && !server->config->local_channels) {
-    if (!server->standalone) {
-      silc_snprintf(serv, sizeof(serv), server->router->server_name);
-    } else {
+  if (server->config->dynamic_server) {
+    /* If server name is not specified but local channels is FALSE then the
+       channel will be global, based on our router name. */
+    if (!serv[0] && !server->config->local_channels) {
+      if (!server->standalone) {
+	silc_snprintf(serv, sizeof(serv), server->router->server_name);
+      } else {
+	SilcServerConfigRouter *router;
+	router = silc_server_config_get_primary_router(server);
+	if (router) {
+	  /* Create connection to primary router */
+	  SILC_LOG_DEBUG(("Create dynamic connection to primary router %s:%d",
+			  router->host, router->port));
+	  silc_server_create_connection(server, FALSE, TRUE,
+				        router->host, router->port,
+				        silc_server_command_join_connected,
+					cmd);
+	  return;
+      	}
+      }
+    }
+
+    /* If server name is ours, ignore it. */
+    if (serv[0] && silc_utf8_strcasecmp(serv, server->server_name))
+      memset(serv, 0, sizeof(serv));
+
+    /* Create connection */
+    if (serv[0] && server->standalone) {
       SilcServerConfigRouter *router;
       router = silc_server_config_get_primary_router(server);
       if (router) {
@@ -2379,25 +2401,6 @@ SILC_SERVER_CMD_FUNC(join)
 				      silc_server_command_join_connected, cmd);
 	return;
       }
-    }
-  }
-
-  /* If server name is ours, ignore it. */
-  if (serv[0] && silc_utf8_strcasecmp(serv, server->server_name))
-    memset(serv, 0, sizeof(serv));
-
-  /* Create connection */
-  if (serv[0] && server->standalone) {
-    SilcServerConfigRouter *router;
-    router = silc_server_config_get_primary_router(server);
-    if (router) {
-      /* Create connection to primary router */
-      SILC_LOG_DEBUG(("Create dynamic connection to primary router %s:%d",
-		      router->host, router->port));
-      silc_server_create_connection(server, FALSE, TRUE,
-				    router->host, router->port,
-				    silc_server_command_join_connected, cmd);
-      return;
     }
   }
 
