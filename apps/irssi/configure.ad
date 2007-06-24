@@ -67,7 +67,7 @@ AC_ARG_WITH(silc-plugin,
         AC_MSG_RESULT(yes)
        ;;
     esac
-  ])
+  ],[AC_MSG_RESULT(no)])
 
 AC_CONFIG_SUBDIRS(apps/irssi)
 AC_CONFIG_FILES(
