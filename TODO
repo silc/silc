@@ -253,6 +253,26 @@ Runtime library, lib/silcutil/
    _ua unaligned memory allocation routines.  Remove unaligned memory
    allocation possibility.
 
+ o Add '%@' format to silc_snprintf functions.  It marks for external
+   rendering function of following type:
+
+     /* Snprintf rendering function.  The `data' is rendered into a string
+        and allocated string is returned.  If NULL is returned the
+        rendering is skipped and ignored.  If the returned string does
+	not fit to the destination buffer it may be truncated. */
+     typedef char *(*SilcSnprintfRender)(void *data);
+
+   It can work like following:
+
+   char *id_renderer(void *data)
+   {
+     char tmp[32];
+     id_to_str(tmp, sizeof(tmp), (SilcID *)data);
+     return strdup(tmp);
+   }
+
+   silc_snprintf(buf, sizeof(buf), "Client ID %@", id_renderer, client_id);
+
  (o Generic SilcStatus or SilcResult that includes all possible status and
     error conditions, including those of SILC protocol.  Though, the SILC
     protocol related status (currently in silcstatus.h) cannot be in
