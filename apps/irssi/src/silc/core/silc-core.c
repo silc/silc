@@ -122,11 +122,6 @@ static void scheduler_notify_cb(SilcSchedule schedule,
       /* Add timeout */
       guint t;
 
-      /* Zero timeouts are delievered always immediately, as per
-	 SilcSchedule API documentation, no need to add them to glib. */
-      if (!seconds && !useconds)
-	return;
-
       t = (seconds * 1000) + (useconds / 1000);
       SILC_LOG_DEBUG(("interval %d msec", t));
       g_timeout_add(t, my_silc_scheduler, NULL);
