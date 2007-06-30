@@ -1884,6 +1884,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase1)
   SilcSKEStatus status;
   SilcSKEStartPayload remote_payload = NULL;
   SilcBuffer packet_buf = &ske->packet->buffer;
+  SilcID id;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -1896,6 +1897,19 @@ SILC_FSM_STATE(silc_ske_st_responder_phase1)
     ske->status = status;
     silc_fsm_next(fsm, silc_ske_st_responder_error);
     return SILC_FSM_CONTINUE;
+  }
+
+  /* Get remote ID and set it to stream */
+  if (ske->packet->src_id_len) {
+    silc_id_str2id(ske->packet->src_id, ske->packet->src_id_len,
+		   ske->packet->src_id_type,
+		   (ske->packet->src_id_type == SILC_ID_SERVER ?
+		    (void *)&id.u.server_id : (void *)&id.u.client_id),
+		   (ske->packet->src_id_type == SILC_ID_SERVER ?
+		    sizeof(id.u.server_id) : sizeof(id.u.client_id)));
+    silc_packet_set_ids(ske->stream, 0, NULL, ske->packet->src_id_type,
+			(ske->packet->src_id_type == SILC_ID_SERVER ?
+			 (void *)&id.u.server_id : (void *)&id.u.client_id));
   }
 
   /* Take a copy of the payload buffer for future use. It is used to
