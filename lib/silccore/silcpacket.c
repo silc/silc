@@ -306,7 +306,7 @@ static inline SilcBool silc_packet_stream_read(SilcPacketStream ps,
     inbuf = silc_dlist_get(ps->sc->inbufs);
     if (!inbuf) {
       /* Allocate new data input buffer */
-      inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 61);
+      inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 65);
       if (!inbuf) {
         silc_mutex_unlock(ps->lock);
         return FALSE;
@@ -638,7 +638,7 @@ static const char *packet_error[] = {
 const char *silc_packet_error_string(SilcPacketError error)
 {
   if (error < SILC_PACKET_ERR_READ || error > SILC_PACKET_ERR_NO_MEMORY)
-    return "";
+    return "<invalid error code>";
   return packet_error[error];
 }
 
@@ -655,11 +655,26 @@ SilcDList silc_packet_engine_get_streams(SilcPacketEngine engine)
 
   silc_mutex_lock(engine->lock);
   silc_list_start(engine->streams);
-  while ((ps = silc_list_get(engine->streams)))
+  while ((ps = silc_list_get(engine->streams))) {
+    silc_packet_stream_ref(ps);
     silc_dlist_add(list, ps);
+  }
   silc_mutex_unlock(engine->lock);
 
   return list;
+}
+
+/* Free list returned by silc_packet_engine_get_streams */
+
+void silc_packet_engine_free_streams_list(SilcDList streams)
+{
+  SilcPacketStream ps;
+
+  silc_dlist_start(streams);
+  while ((ps = silc_dlist_get(streams)))
+    silc_packet_stream_unref(ps);
+
+  silc_dlist_uninit(streams);
 }
 
 /* Create new packet stream */
@@ -716,7 +731,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
     ps->sc->schedule = schedule;
 
     /* Allocate data input buffer */
-    inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 61);
+    inbuf = silc_buffer_alloc(SILC_PACKET_DEFAULT_SIZE * 65);
     if (!inbuf) {
       silc_free(ps->sc);
       ps->sc = NULL;
@@ -1307,11 +1322,11 @@ SilcBool silc_packet_set_ids(SilcPacketStream stream,
   if (!src_id && !dst_id)
     return FALSE;
 
-  SILC_LOG_DEBUG(("Setting new IDs to packet stream"));
-
   silc_mutex_lock(stream->lock);
 
   if (src_id) {
+    SILC_LOG_DEBUG(("Setting source ID to packet stream %p", stream));
+
     silc_free(stream->src_id);
     if (!silc_id_id2str(src_id, src_id_type, tmp, sizeof(tmp), &len)) {
       silc_mutex_unlock(stream->lock);
@@ -1327,6 +1342,8 @@ SilcBool silc_packet_set_ids(SilcPacketStream stream,
   }
 
   if (dst_id) {
+    SILC_LOG_DEBUG(("Setting destination ID to packet stream %p", stream));
+
     silc_free(stream->dst_id);
     if (!silc_id_id2str(dst_id, dst_id_type, tmp, sizeof(tmp), &len)) {
       silc_mutex_unlock(stream->lock);
@@ -1352,37 +1369,19 @@ SilcBool silc_packet_get_ids(SilcPacketStream stream,
 			     SilcBool *src_id_set, SilcID *src_id,
 			     SilcBool *dst_id_set, SilcID *dst_id)
 {
-  if (src_id && stream->src_id) {
-    (*src_id).type = stream->src_id_type;
-    switch (stream->src_id_type) {
-    case SILC_ID_CLIENT:
-      (*src_id).u.client_id = *(SilcClientID *)stream->src_id;
-      break;
-    case SILC_ID_SERVER:
-      (*src_id).u.server_id = *(SilcServerID *)stream->src_id;
-      break;
-    case SILC_ID_CHANNEL:
-      (*src_id).u.channel_id = *(SilcChannelID *)stream->src_id;
-      break;
-    }
-  }
+  if (src_id && stream->src_id)
+    if (!silc_id_str2id2(stream->src_id, stream->src_id_len,
+			 stream->src_id_type, src_id))
+      return FALSE;
+
   if (stream->src_id && src_id_set)
     *src_id_set = TRUE;
 
-  if (dst_id && stream->dst_id) {
-    (*dst_id).type = stream->dst_id_type;
-    switch (stream->dst_id_type) {
-    case SILC_ID_CLIENT:
-      (*dst_id).u.client_id = *(SilcClientID *)stream->dst_id;
-      break;
-    case SILC_ID_SERVER:
-      (*dst_id).u.server_id = *(SilcServerID *)stream->dst_id;
-      break;
-    case SILC_ID_CHANNEL:
-      (*dst_id).u.channel_id = *(SilcChannelID *)stream->dst_id;
-      break;
-    }
-  }
+  if (dst_id && stream->dst_id)
+    if (!silc_id_str2id2(stream->dst_id, stream->dst_id_len,
+			 stream->dst_id_type, dst_id))
+      return FALSE;
+
   if (stream->dst_id && dst_id_set)
     *dst_id_set = TRUE;
 
@@ -1973,8 +1972,8 @@ static inline SilcBool silc_packet_parse(SilcPacket packet)
 		   silc_buffer_len(buffer)), buffer->head,
 		   silc_buffer_headlen(buffer) + silc_buffer_len(buffer));
 
-  SILC_LOG_DEBUG(("Incoming packet type: %d (%s)", packet->type,
-		  silc_get_packet_name(packet->type)));
+  SILC_LOG_DEBUG(("Incoming packet type: %d (%s), flags %d", packet->type,
+		  silc_get_packet_name(packet->type), packet->flags));
 
   return TRUE;
 }

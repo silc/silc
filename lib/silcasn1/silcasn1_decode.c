@@ -230,7 +230,7 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
     ret = FALSE;						\
     goto fail;							\
   }								\
-  *s = silc_smalloc_ua(stack1, *s_len + 1);			\
+  *s = silc_smalloc(stack1, *s_len + 1);			\
   if (*s) {							\
     silc_utf8_encode(rdata, rdata_len, (enc), *s, *s_len);	\
     (*s)[*s_len] = '\0';					\

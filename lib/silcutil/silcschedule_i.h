@@ -74,6 +74,8 @@ typedef struct SilcTaskFdStruct {
 struct SilcScheduleStruct {
   void *internal;
   void *app_context;		   /* Application specific context */
+  SilcTaskNotifyCb notify;	   /* Notify callback */
+  void *notify_context;		   /* Notify context */
   SilcHashTable fd_queue;	   /* FD task queue */
   SilcList fd_dispatch;		   /* Dispatched FDs */
   SilcList timeout_queue;	   /* Timeout queue */
@@ -106,7 +108,8 @@ typedef struct {
      the wakeup mechanism of the scheduler.  In multi-threaded environment
      the scheduler needs to be wakenup when tasks are added or removed from
      the task queues.  Returns context to the platform specific scheduler.
-     If this returns NULL the scheduler initialization will fail. */
+     If this returns NULL the scheduler initialization will fail.  Do not
+     add FD tasks inside function.  Timeout tasks can be added. */
   void *(*init)(SilcSchedule schedule, void *app_context);
 
   /* Uninitializes the platform specific scheduler context. */

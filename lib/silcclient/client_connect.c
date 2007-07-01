@@ -789,9 +789,8 @@ SILC_FSM_STATE(silc_client_st_rekey)
 
   /* Allocate SKE */
   conn->internal->ske =
-    silc_ske_alloc(client->rng, conn->internal->schedule,
-		   conn->internal->params.repository,
-		   conn->public_key, conn->private_key, fsm);
+    silc_ske_alloc(client->rng, conn->internal->schedule, NULL,
+		   conn->public_key, NULL, fsm);
   if (!conn->internal->ske)
     return SILC_FSM_FINISH;
 

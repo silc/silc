@@ -162,6 +162,9 @@ struct SilcServerEntryStruct {
 
   /* Connection data */
   void *connection;
+
+  void *backup_proto;
+  unsigned int backup  : 1;	/* Set when executing backup protocol */
 };
 
 /*
@@ -543,6 +546,7 @@ struct SilcIDListStruct {
 typedef struct {
   /* Generic data structure. DO NOT add anything before this! */
   SilcIDListDataStruct data;
+  SilcAsyncOperation op;
   SilcServerConfigRef cconfig;
   SilcServerConfigRef sconfig;
   SilcServerConfigRef rconfig;
@@ -588,7 +592,8 @@ int silc_idlist_get_clients_by_nickname(SilcIDList id_list, char *nickname,
 					char *server,
 					SilcClientEntry **clients,
 					SilcUInt32 *clients_count);
-int silc_idlist_get_clients_by_hash(SilcIDList id_list, char *nickname,
+int silc_idlist_get_clients_by_hash(SilcIDList id_list,
+				    char *nickname, char *server,
 				    SilcHash md5hash,
 				    SilcClientEntry **clients,
 				    SilcUInt32 *clients_count);

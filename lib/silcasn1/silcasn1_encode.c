@@ -38,7 +38,7 @@
     goto fail;								\
   }									\
   silc_stack_push(asn1->stack2, &frame);				\
-  s = silc_smalloc_ua(stack2, s_len + 1);				\
+  s = silc_smalloc(stack2, s_len + 1);					\
   if (s) {								\
     silc_utf8_decode(d, d_len, (enc), s, s_len);			\
     s[s_len] = '\0';							\

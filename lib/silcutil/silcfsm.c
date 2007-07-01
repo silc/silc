@@ -317,10 +317,6 @@ void silc_fsm_finish(void *fsm)
 
   SILC_ASSERT(!f->finished);
 
-  /* Machine must not have active threads */
-  if (!f->thread && silc_atomic_get_int32(&f->u.m.threads))
-    assert(silc_atomic_get_int32(&f->u.m.threads) == 0);
-
   f->started = FALSE;
   f->finished = TRUE;
 
@@ -484,6 +480,9 @@ SILC_TASK_CALLBACK(silc_fsm_finish_fsm)
       fsm->destructor(fsm, fsm->fsm_context, fsm->destructor_context);
 
   } else {
+    /* Machine must not have active threads */
+    assert(silc_atomic_get_int32(&fsm->u.m.threads) == 0);
+
     if (fsm->u.m.lock) {
       silc_mutex_free(fsm->u.m.lock);
       fsm->u.m.lock = NULL;

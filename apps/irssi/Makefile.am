@@ -23,10 +23,11 @@ conffile = silc.conf
 
 if SILCPLUGIN
 themedir = $(datadir)/irssi/themes
+theme_DATA = plugin.theme
 else
 themedir = $(datadir)/silc/themes
-endif
 theme_DATA = default.theme plugin.theme
+endif
 
 noinst_HEADERS = irssi-version.h.in
 
@@ -35,8 +36,7 @@ EXTRA_DIST = \
 	curses.m4 \
 	README \
 	file2header.sh \
-	irssi.spec \
-	irssi.spec.in \
+	silc-client.spec \
 	$(conffile) \
 	$(theme_DATA) \
 	irssi-config.in \

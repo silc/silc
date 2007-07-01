@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -599,7 +599,7 @@ SILC_SERVER_CMD_FUNC(whois)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_WHOIS, cmd, 1, 256);
-  silc_server_query_command(cmd->server, SILC_COMMAND_WHOIS, cmd);
+  silc_server_query_command(cmd->server, SILC_COMMAND_WHOIS, cmd, NULL);
   silc_server_command_free(cmd);
 }
 
@@ -609,7 +609,7 @@ SILC_SERVER_CMD_FUNC(whowas)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_WHOWAS, cmd, 1, 2);
-  silc_server_query_command(cmd->server, SILC_COMMAND_WHOWAS, cmd);
+  silc_server_query_command(cmd->server, SILC_COMMAND_WHOWAS, cmd, NULL);
   silc_server_command_free(cmd);
 }
 
@@ -619,7 +619,7 @@ SILC_SERVER_CMD_FUNC(identify)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_IDENTIFY, cmd, 1, 256);
-  silc_server_query_command(cmd->server, SILC_COMMAND_IDENTIFY, cmd);
+  silc_server_query_command(cmd->server, SILC_COMMAND_IDENTIFY, cmd, NULL);
   silc_server_command_free(cmd);
 }
 
@@ -1325,9 +1325,8 @@ SILC_TASK_CALLBACK(silc_server_command_quit_cb)
   if (client) {
     /* Free all client specific data, such as client entry and entires
        on channels this client may be on. */
-    silc_server_free_client_data(server, q->sock, client,
-			         TRUE, q->signoff);
-    silc_packet_set_context(q->sock, NULL);
+    silc_server_free_sock_user_data(server, q->sock, q->signoff);
+    silc_server_close_connection(server, q->sock);
   }
 
   silc_packet_stream_unref(q->sock);
@@ -1438,7 +1437,7 @@ SILC_SERVER_CMD_FUNC(kill)
   comment = silc_argument_get_arg_type(cmd->args, 2, &tmp_len2);
   if (comment && tmp_len2 > 128) {
     tmp_len2 = 128;
-    comment[127] = '\0';
+    comment[tmp_len2 - 1] = '\0';
   }
 
   /* If authentication data is provided then verify that killing is
@@ -2295,6 +2294,38 @@ static void silc_server_command_join_channel(SilcServer server,
 /* Server side of command JOIN. Joins client into requested channel. If
    the channel does not exist it will be created. */
 
+void silc_server_command_join_connected(SilcServer server,
+					SilcServerEntry server_entry,
+					void *context)
+{
+  SilcServerCommandContext cmd = (SilcServerCommandContext)context;
+
+  if (!server_entry) {
+    SilcUInt32 tmp_len;
+    unsigned char *tmp = silc_argument_get_arg_type(cmd->args, 1, &tmp_len);
+    char serv[256 + 1];
+
+    SILC_LOG_DEBUG(("Connecting to router failed"));
+    silc_parse_userfqdn(tmp, NULL, 0, serv, sizeof(serv));
+
+    if (serv[0]) {
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_JOIN,
+					   SILC_STATUS_ERR_NO_SUCH_SERVER, 0,
+					   2, serv, strlen(serv));
+    } else {
+      silc_server_command_send_status_data(cmd, SILC_COMMAND_JOIN,
+					   SILC_STATUS_ERR_NO_SUCH_CHANNEL, 0,
+					   2, tmp, tmp_len);
+    }
+    silc_server_command_free(cmd);
+    return;
+  }
+
+  /* Reprocess command */
+  SILC_LOG_DEBUG(("Reprocess JOIN after connecting to router"));
+  silc_server_command_join(cmd, NULL);
+}
+
 SILC_SERVER_CMD_FUNC(join)
 {
   SilcServerCommandContext cmd = (SilcServerCommandContext)context;
@@ -2303,6 +2334,7 @@ SILC_SERVER_CMD_FUNC(join)
   unsigned char *auth, *cauth;
   SilcUInt32 tmp_len, auth_len, cauth_len;
   char *tmp, *channel_name, *channel_namec = NULL, *cipher, *hmac;
+  char parsed[256 + 1], serv[256 + 1];
   SilcChannelEntry channel;
   SilcUInt32 umode = 0;
   SilcBool created = FALSE, create_key = TRUE;
@@ -2321,15 +2353,61 @@ SILC_SERVER_CMD_FUNC(join)
 
   /* Truncate over long channel names */
   if (tmp_len > 256) {
-    tmp[tmp_len - 1] = '\0';
     tmp_len = 256;
+    tmp[tmp_len - 1] = '\0';
   }
-  channel_name = tmp;
+
+  /* Parse server name from the channel name */
+  silc_parse_userfqdn(tmp, parsed, sizeof(parsed), serv,
+		      sizeof(serv));
+  channel_name = parsed;
+
+  if (server->config->dynamic_server) {
+    /* If server name is not specified but local channels is FALSE then the
+       channel will be global, based on our router name. */
+    if (!serv[0] && !server->config->local_channels) {
+      if (!server->standalone) {
+	silc_snprintf(serv, sizeof(serv), server->router->server_name);
+      } else {
+	SilcServerConfigRouter *router;
+	router = silc_server_config_get_primary_router(server);
+	if (router) {
+	  /* Create connection to primary router */
+	  SILC_LOG_DEBUG(("Create dynamic connection to primary router %s:%d",
+			  router->host, router->port));
+	  silc_server_create_connection(server, FALSE, TRUE,
+				        router->host, router->port,
+				        silc_server_command_join_connected,
+					cmd);
+	  return;
+      	}
+      }
+    }
+
+    /* If server name is ours, ignore it. */
+    if (serv[0] && silc_utf8_strcasecmp(serv, server->server_name))
+      memset(serv, 0, sizeof(serv));
+
+    /* Create connection */
+    if (serv[0] && server->standalone) {
+      SilcServerConfigRouter *router;
+      router = silc_server_config_get_primary_router(server);
+      if (router) {
+	/* Create connection to primary router */
+	SILC_LOG_DEBUG(("Create dynamic connection to primary router %s:%d",
+			router->host, router->port));
+	silc_server_create_connection(server, FALSE, TRUE,
+				      router->host, router->port,
+				      silc_server_command_join_connected, cmd);
+	return;
+      }
+    }
+  }
 
   /* Check for valid channel name.  This is cached, the original is saved
      in the channel context. */
-  channel_namec = silc_channel_name_check(tmp, tmp_len, SILC_STRING_UTF8, 256,
-					  NULL);
+  channel_namec = silc_channel_name_check(channel_name, strlen(channel_name),
+					  SILC_STRING_UTF8, 256, NULL);
   if (!channel_namec) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_JOIN,
 					  SILC_STATUS_ERR_BAD_CHANNEL, 0);
@@ -2387,10 +2465,22 @@ SILC_SERVER_CMD_FUNC(join)
 	  channel = silc_server_create_new_channel(server, server->id, cipher,
 						   hmac, channel_name, TRUE);
 	  if (!channel) {
-	    silc_server_command_send_status_data(
-				  cmd, SILC_COMMAND_JOIN,
-				  SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
-				  0, 2, cipher, strlen(cipher));
+	    if (cipher) {
+	      silc_server_command_send_status_data(
+				cmd, SILC_COMMAND_JOIN,
+				SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
+				0, 2, cipher, strlen(cipher));
+	    } else if (hmac) {
+	      silc_server_command_send_status_data(
+				cmd, SILC_COMMAND_JOIN,
+				SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
+				0, 2, hmac, strlen(hmac));
+	    } else {
+	      silc_server_command_send_status_reply(
+				cmd, SILC_COMMAND_JOIN,
+				SILC_STATUS_ERR_RESOURCE_LIMIT,
+				0);
+	    }
 	    goto out;
 	  }
 
@@ -2446,10 +2536,22 @@ SILC_SERVER_CMD_FUNC(join)
 	  channel = silc_server_create_new_channel(server, server->id, cipher,
 						   hmac, channel_name, TRUE);
 	  if (!channel) {
-	    silc_server_command_send_status_data(
-				       cmd, SILC_COMMAND_JOIN,
-				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0,
-				       2, cipher, strlen(cipher));
+	    if (cipher) {
+	      silc_server_command_send_status_data(
+				      cmd, SILC_COMMAND_JOIN,
+				      SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
+				      0, 2, cipher, strlen(cipher));
+	    } else if (hmac) {
+	      silc_server_command_send_status_data(
+				      cmd, SILC_COMMAND_JOIN,
+				      SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
+				      0, 2, hmac, strlen(hmac));
+	    } else {
+	      silc_server_command_send_status_reply(
+				      cmd, SILC_COMMAND_JOIN,
+				      SILC_STATUS_ERR_RESOURCE_LIMIT,
+				      0);
+	    }
 	    goto out;
 	  }
 
@@ -2479,10 +2581,22 @@ SILC_SERVER_CMD_FUNC(join)
 	channel = silc_server_create_new_channel(server, server->id, cipher,
 						 hmac, channel_name, TRUE);
 	if (!channel) {
-	  silc_server_command_send_status_data(
-				       cmd, SILC_COMMAND_JOIN,
-				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0,
-				       2, cipher, strlen(cipher));
+	  if (cipher) {
+	    silc_server_command_send_status_data(
+				      cmd, SILC_COMMAND_JOIN,
+				      SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
+				      0, 2, cipher, strlen(cipher));
+	  } else if (hmac) {
+	    silc_server_command_send_status_data(
+				      cmd, SILC_COMMAND_JOIN,
+				      SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
+				      0, 2, hmac, strlen(hmac));
+	  } else {
+	    silc_server_command_send_status_reply(
+				      cmd, SILC_COMMAND_JOIN,
+				      SILC_STATUS_ERR_RESOURCE_LIMIT,
+				      0);
+	  }
 	  goto out;
 	}
 
@@ -4152,12 +4266,12 @@ SILC_SERVER_CMD_FUNC(watch)
   }
 
   if (add_nick && add_nick_len > 128) {
-    add_nick[128] = '\0';
     add_nick_len = 128;
+    add_nick[add_nick_len - 1] = '\0';
   }
   if (del_nick && del_nick_len > 128) {
-    del_nick[128] = '\0';
     del_nick_len = 128;
+    del_nick[del_nick_len - 1] = '\0';
   }
 
   /* Add new nickname to be watched in our cell */
@@ -4386,7 +4500,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
   username = silc_identifier_check(username, tmp_len, SILC_STRING_UTF8, 128,
 				   &tmp_len);
   if (!username) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
 					  SILC_STATUS_ERR_BAD_USERNAME,
 					  0);
     goto out;
@@ -4435,7 +4549,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
   }
   if (!result) {
     /* Authentication failed */
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
 					  SILC_STATUS_ERR_AUTH_FAILED, 0);
     goto out;
   }
@@ -5138,7 +5252,7 @@ SILC_SERVER_CMD_FUNC(connect)
     SILC_GET32_MSB(port, tmp);
 
   /* Create the connection. It is done with timeout and is async. */
-  silc_server_create_connection(server, FALSE, host, port, NULL, NULL);
+  silc_server_create_connection(server, FALSE, FALSE, host, port, NULL, NULL);
 
   /* Send reply to the sender */
   silc_server_command_send_status_reply(cmd, SILC_COMMAND_PRIV_CONNECT,

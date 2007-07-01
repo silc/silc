@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -486,6 +486,8 @@ void silc_log_debug_hexdump(SilcBool enable)
 void silc_log_output_debug(char *file, const char *function,
 			   int line, char *string)
 {
+  SilcTimeStruct curtime;
+
 #ifndef SILC_SYMBIAN
   if (!silclog.debug)
     goto end;
@@ -501,6 +503,8 @@ void silc_log_output_debug(char *file, const char *function,
   }
 #endif /* !SILC_SYMBIAN */
 
+  silc_time_value(0, &curtime);
+
 #ifdef SILC_WIN32
   if (strrchr(function, '\\'))
     fprintf(stderr, "%s:%d: %s\n", strrchr(function, '\\') + 1, line, string);
@@ -509,10 +513,12 @@ void silc_log_output_debug(char *file, const char *function,
 #ifdef SILC_SYMBIAN
   silc_symbian_debug(function, line, string);
 #else
-  fprintf(stderr, "%s:%d: %s\n", function, line, string);
+  fprintf(stderr, "%02d:%02d:%02d %s:%d: %s\n", curtime.hour,
+	  curtime.minute, curtime.second, function, line,
+	  string);
   fflush(stderr);
 #endif /* SILC_SYMBIAN */
-  
+
  end:
   silc_free(string);
 }

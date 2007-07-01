@@ -115,7 +115,7 @@ typedef SilcUInt8 SilcPacketFlags;
 #define SILC_PACKET_FLAG_ACK              0x10    /* Acknowledge packet */
 
 /* Impelemntation specific flags */
-#define SILC_PACKET_FLAG_LONG_PAD         0x12    /* Use maximum padding */
+#define SILC_PACKET_FLAG_LONG_PAD         0x20    /* Use maximum padding */
 /***/
 
 /****s* silccore/SilcPacketAPI/SilcPacketEngine
@@ -400,10 +400,23 @@ const char *silc_packet_error_string(SilcPacketError error);
  * DESCRIPTION
  *
  *    Returns list of packet streams added to the packet engine.  The caller
- *    must free the list with silc_dlist_uninit.
+ *    must free the list with silc_packet_engine_free_streams_list.
  *
  ***/
 SilcDList silc_packet_engine_get_streams(SilcPacketEngine engine);
+
+/****f* silccore/SilcPacketAPI/silc_packet_engine_free_streams_list
+ *
+ * SYNOPSIS
+ *
+ *    void silc_packet_engine_free_streams_list(SilcDList streams);
+ *
+ * DESCRIPTION
+ *
+ *    Free's the streams list returned by silc_packet_engine_get_streams.
+ *
+ ***/
+void silc_packet_engine_free_streams_list(SilcDList streams);
 
 /****f* silccore/SilcPacketAPI/silc_packet_stream_create
  *
@@ -913,7 +926,7 @@ SilcBool silc_packet_set_ids(SilcPacketStream stream,
 			     SilcIdType src_id_type, const void *src_id,
 			     SilcIdType dst_id_type, const void *dst_id);
 
-/****f* silccore/SilcPacketAPI/silc_packet_set_ids
+/****f* silccore/SilcPacketAPI/silc_packet_get_ids
  *
  * SYNOPSIS
  *
@@ -1063,7 +1076,7 @@ SilcBool silc_packet_send_va_ext(SilcPacketStream stream,
 				 SilcIdType dst_id_type, void *dst_id,
 				 SilcCipher cipher, SilcHmac hmac, ...);
 
-/****f* silccore/SilcPacketAPI/silc_packet_wait
+/****f* silccore/SilcPacketAPI/silc_packet_wait_init
  *
  * SYNOPSIS
  *

@@ -45,7 +45,7 @@ Locking in packet engine
 Currently the engine lock is used only when the packet free list is accessed,
 or new stream is added or removed.  The packet free list, however, is
 accessed for all incoming packets.  Application free's the packet context so
-the lock must later be acquired be putting the unused packet context back
+the lock must later be acquired for putting the unused packet context back
 to the free list.  It might be possible to later put the packet free list to
 per-thread context.
 

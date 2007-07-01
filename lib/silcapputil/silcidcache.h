@@ -240,6 +240,24 @@ SilcBool silc_idcache_update_by_context(SilcIDCache cache, void *context,
 					void *new_id, char *new_name,
 					SilcBool free_old_name);
 
+/****f* silcapputil/SilcIDCacheAPI/silc_idcache_move
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_idcache_move(SilcIDCache from_cache, SilcIDCache to_cache,
+ *                               SilcIDCacheEntry entry);
+ *
+ * DESCRIPTION
+ *
+ *    Moves the ID cache entry indicated by `entry' from the `from_cache'
+ *    to `to_cache'.  After this returns TRUE the `entry' is available only
+ *    from the `to_cache'.  Return FALSE if `entry' is not in `from_cache'
+ *    or system is out of memory.
+ *
+ ***/
+SilcBool silc_idcache_move(SilcIDCache from_cache, SilcIDCache to_cache,
+			   SilcIDCacheEntry entry);
+
 /****f* silcapputil/SilcIDCacheAPI/silc_idcache_get_all
  *
  * SYNOPSIS

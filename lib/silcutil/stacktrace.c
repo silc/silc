@@ -152,6 +152,8 @@ void silc_st_free(void *ptr, const char *file, int line)
     st_blocks = stack->next;
 
   st_blocks_count--;
+
+  memset(stack, 'F', SILC_ST_GET_SIZE(stack->size));
   free(stack);
 }
 

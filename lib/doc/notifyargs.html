@@ -85,7 +85,7 @@ The 'message' argument may be NULL.
 Sent to the client if the user is invited on a channel. The 'channel
 argument may be NULL but the `channel_name' is always provided.
 </td>
-<td width="50%"><small>SilcClientChannel channel, char *channel_name,
+<td width="50%"><small>SilcChannelEntry channel, char *channel_name,
 SilcClientEntry inviter
 </td>
 </tr>
@@ -116,7 +116,7 @@ Sent when someone signoff the SILC network.  The 'signoff_message' may be
 NULL.  The `signoff_client' is the client signing off.  The `channel' is
 the channel where the client was joined.  The `channel' may be NULL.
 </td>
-<td width="50%"><small>SilcClientEntry signoff_client, char 
+<td width="50%"><small>SilcClientEntry signoff_client, char
 *signoff_message, SilcChannelEntry channel
 </td>
 </tr>

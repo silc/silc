@@ -1,6 +1,7 @@
 name SILC Autodist
 package autodist
 bug-report autodist-bugs@silcnet.org
+prereq 1.3.2
 
 license apps/autodist/COPYING
 license-header distdir/GPL-header distdir/BSD-header
@@ -19,5 +20,5 @@ exclude README.* ltmain.sh
 
 noprocess apps/autodist/doc/* apps/autodist/tests/*
 
-post-process-dist-hook distdir/post-process-dist
+post-process-dist-hook distdir/autodist-post-process-dist
 post-dist-hook distdir/post-dist

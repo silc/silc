@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -747,8 +747,8 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...)
       goto ok;
 
     slen = strlen(string);
-    d = silc_srealloc_ua(stack, len + 1, dst->head,
-			 sizeof(*dst->head) * (slen + len + 1));
+    d = silc_srealloc(stack, len + 1, dst->head,
+		      sizeof(*dst->head) * (slen + len + 1));
     if (silc_unlikely(!d))
       return -1;
     dst->head = d;

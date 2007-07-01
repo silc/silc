@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2005 Pekka Riikonen
+#  Copyright (C) 2000 - 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 if SILC_SIM
 noinst_LTLIBRARIES = libsilcsim.la
 else
-noinst_LTLIBRARIES = 
+noinst_LTLIBRARIES =
 endif
 
 libsilcsim_la_SOURCES = \
@@ -33,18 +33,17 @@ libsilcsim_la_SOURCES = \
 SIM_CIPHER_OBJS = \
         none.o \
         blowfish.o \
-        rc5.o \
         aes.o \
         rsa.o \
-        twofish.o \
-	cast.o
+        twofish.o
 
 #
 # SILC Hash Functions to be compiled as modules
 #
 SIM_HASH_OBJS = \
 	md5.o \
-	sha1.o
+	sha1.o \
+	sha256.o
 
 if SILC_SIM
 all: $(SIM_CIPHER_OBJS) $(SIM_HASH_OBJS)

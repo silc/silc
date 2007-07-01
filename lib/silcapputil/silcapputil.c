@@ -146,6 +146,12 @@ New pair of keys will be created.  Please, answer to following questions.\n\
     silc_free(def);
   }
 
+  if (!strstr(identifier, "UN=") || !strstr(identifier, "HN=")) {
+    fprintf(stderr, "Invalid public key identifier.  You must specify both "
+	    "UN and HN\n");
+    return FALSE;
+  }
+
   rng = silc_rng_alloc();
   silc_rng_init(rng);
   silc_rng_global_init(rng);
@@ -202,12 +208,14 @@ New pair of keys will be created.  Please, answer to following questions.\n\
     return FALSE;
 
   /* Save public key into file */
-  silc_pkcs_save_public_key(pkfile, public_key, SILC_PKCS_FILE_BASE64);
+  if (!silc_pkcs_save_public_key(pkfile, public_key, SILC_PKCS_FILE_BASE64))
+    return FALSE;
 
   /* Save private key into file */
-  silc_pkcs_save_private_key(prvfile, private_key,
-			     (const unsigned char *)pass, strlen(pass),
-			     SILC_PKCS_FILE_BIN, rng);
+  if (!silc_pkcs_save_private_key(prvfile, private_key,
+				  (const unsigned char *)pass, strlen(pass),
+				  SILC_PKCS_FILE_BIN, rng))
+    return FALSE;
 
   if (return_public_key)
     *return_public_key = public_key;
@@ -265,6 +273,8 @@ SilcBool silc_load_key_pair(const char *pub_filename,
   if (!silc_pkcs_load_private_key(prv_filename,
 				  (const unsigned char *)pass, strlen(pass),
 				  return_private_key)) {
+    silc_pkcs_public_key_free(*return_public_key);
+    *return_public_key = NULL;
     memset(pass, 0, strlen(pass));
     silc_free(pass);
     return FALSE;

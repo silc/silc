@@ -271,7 +271,7 @@ SilcBool silc_schedule_internal_schedule_fd(SilcSchedule schedule,
 
   SILC_LOG_DEBUG(("Scheduling fd %lu, mask %x", task->fd, event_mask));
 
-  event.events = 0;
+  memset(&event, 0, sizeof(event));
   if (event_mask & SILC_TASK_READ)
     event.events |= (EPOLLIN | EPOLLPRI);
   if (event_mask & SILC_TASK_WRITE)
@@ -316,9 +316,26 @@ SILC_TASK_CALLBACK(silc_schedule_wakeup_cb)
 
   SILC_LOG_DEBUG(("Wokeup"));
 
-  read(internal->wakeup_pipe[0], &c, 1);
+  (void)read(internal->wakeup_pipe[0], &c, 1);
 }
 
+SILC_TASK_CALLBACK(silc_schedule_wakeup_init)
+{
+  SilcUnixScheduler internal = schedule->internal;
+
+  internal->wakeup_task =
+    silc_schedule_task_add(schedule, internal->wakeup_pipe[0],
+			   silc_schedule_wakeup_cb, internal,
+			   0, 0, SILC_TASK_FD);
+  if (!internal->wakeup_task) {
+    SILC_LOG_WARNING(("Could not add a wakeup task, threads won't work"));
+    close(internal->wakeup_pipe[0]);
+    return;
+  }
+  silc_schedule_internal_schedule_fd(schedule, internal,
+				     (SilcTaskFd)internal->wakeup_task,
+				     SILC_TASK_READ);
+}
 #endif /* SILC_THREADS */
 
 /* Initializes the platform specific scheduler.  This for example initializes
@@ -376,20 +393,8 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
     return NULL;
   }
 
-  internal->wakeup_task =
-    silc_schedule_task_add(schedule, internal->wakeup_pipe[0],
-			   silc_schedule_wakeup_cb, internal,
-			   0, 0, SILC_TASK_FD);
-  if (!internal->wakeup_task) {
-    SILC_LOG_ERROR(("Could not add a wakeup task, threads won't work"));
-    close(internal->wakeup_pipe[0]);
-    close(internal->wakeup_pipe[1]);
-    silc_free(internal);
-    return NULL;
-  }
-  silc_schedule_internal_schedule_fd(schedule, internal,
-				     (SilcTaskFd)internal->wakeup_task,
-				     SILC_TASK_READ);
+  silc_schedule_task_add_timeout(schedule, silc_schedule_wakeup_init,
+				 internal, 0, 0);
 #endif /* SILC_THREADS */
 
   internal->app_context = app_context;
@@ -444,7 +449,7 @@ void silc_schedule_internal_wakeup(SilcSchedule schedule, void *context)
 
   SILC_LOG_DEBUG(("Wakeup"));
 
-  write(internal->wakeup_pipe[1], "!", 1);
+  (void)write(internal->wakeup_pipe[1], "!", 1);
 #endif
 }
 
@@ -453,6 +458,8 @@ void silc_schedule_internal_wakeup(SilcSchedule schedule, void *context)
 static void silc_schedule_internal_sighandler(int signal)
 {
   int i;
+
+  SILC_LOG_DEBUG(("Start"));
 
   for (i = 0; i < SIGNAL_COUNT; i++) {
     if (signal_call[i].sig == signal) {
@@ -543,11 +550,13 @@ void silc_schedule_internal_signals_call(SilcSchedule schedule, void *context)
         signal_call[i].callback) {
       SILC_LOG_DEBUG(("Calling signal %d callback",
 		      signal_call[i].sig));
+      silc_schedule_internal_signals_unblock(schedule, context);
       signal_call[i].callback(schedule, internal->app_context,
 			      SILC_TASK_INTERRUPT,
 			      signal_call[i].sig,
 			      signal_call[i].context);
       signal_call[i].call = FALSE;
+      silc_schedule_internal_signals_block(schedule, context);
     }
   }
 

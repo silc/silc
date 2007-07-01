@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2006 Pekka Riikonen
+#  Copyright (C) 2000 - 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@ endif
 
 libsilccrypt_la_SOURCES = 	\
 	none.c 			\
-	rc5.c 			\
 	md5.c 			\
 	$(SILC_AES_S)		\
 	rsa.c 			\
@@ -40,7 +39,6 @@ libsilccrypt_la_SOURCES = 	\
 	sha256.c 		\
 	twofish.c 		\
 	blowfish.c 		\
-	cast.c 			\
 	silccipher.c 		\
 	silchash.c 		\
 	silchmac.c 		\

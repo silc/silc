@@ -189,17 +189,19 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
 
       if (server_signoff) {
 	idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
-	argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
-	argv_lens = silc_realloc(argv_lens, sizeof(*argv_lens) *
-				 (argc + 1));
-	argv_types = silc_realloc(argv_types, sizeof(*argv_types) *
-				  (argc + 1));
-	argv[argc] = silc_calloc(silc_buffer_len(idp), sizeof(*argv[0]));
-	memcpy(argv[argc], idp->data, silc_buffer_len(idp));
-	argv_lens[argc] = silc_buffer_len(idp);
-	argv_types[argc] = argc + 1;
-	argc++;
-	silc_buffer_free(idp);
+	if (idp) {
+	  argv = silc_realloc(argv, sizeof(*argv) * (argc + 1));
+	  argv_lens = silc_realloc(argv_lens, sizeof(*argv_lens) *
+				   (argc + 1));
+	  argv_types = silc_realloc(argv_types, sizeof(*argv_types) *
+				    (argc + 1));
+	  argv[argc] = silc_calloc(silc_buffer_len(idp), sizeof(*argv[0]));
+	  memcpy(argv[argc], idp->data, silc_buffer_len(idp));
+	  argv_lens[argc] = silc_buffer_len(idp);
+	  argv_types[argc] = argc + 1;
+	  argc++;
+	  silc_buffer_free(idp);
+	}
       }
 
       /* Update statistics */
@@ -411,10 +413,8 @@ silc_server_update_clients_by_real_server(SilcServer server,
 	   since the server is local. */
 	if (!local) {
 	  SILC_LOG_DEBUG(("Moving client to local list"));
-	  silc_idcache_add(server->local_list->clients, client_cache->name,
-			   client_cache->id, client_cache->context);
-	  silc_idcache_del_by_context(server->global_list->clients, client,
-				      NULL);
+	  silc_idcache_move(server->global_list->clients,
+			    server->local_list->clients, client_cache);
 	}
 	server_entry = server_entry->router;
       } else {
@@ -423,20 +423,16 @@ silc_server_update_clients_by_real_server(SilcServer server,
 	   since the server is local. */
 	if (server_entry->server_type != SILC_BACKUP_ROUTER && !local) {
 	  SILC_LOG_DEBUG(("Moving client to local list"));
-	  silc_idcache_add(server->local_list->clients, client_cache->name,
-			   client_cache->id, client_cache->context);
-	  silc_idcache_del_by_context(server->global_list->clients, client,
-				      NULL);
+	  silc_idcache_move(server->global_list->clients,
+			    server->local_list->clients, client_cache);
 
 	} else if (server->server_type == SILC_BACKUP_ROUTER && local) {
 	  /* If we are backup router and this client is on local list, we
 	     must move it to global list, as it is not currently local to
 	     us (we are not primary). */
 	  SILC_LOG_DEBUG(("Moving client to global list"));
-	  silc_idcache_add(server->global_list->clients, client_cache->name,
-			   client_cache->id, client_cache->context);
-	  silc_idcache_del_by_context(server->local_list->clients, client,
-				      NULL);
+	  silc_idcache_move(server->local_list->clients,
+			    server->global_list->clients, client_cache);
 	}
       }
 
@@ -463,10 +459,8 @@ silc_server_update_clients_by_real_server(SilcServer server,
 	   since the server is global. */
 	if (local) {
 	  SILC_LOG_DEBUG(("Moving client to global list"));
-	  silc_idcache_add(server->global_list->clients, client_cache->name,
-			   client_cache->id, client_cache->context);
-	  silc_idcache_del_by_context(server->local_list->clients, client,
-				      NULL);
+	  silc_idcache_move(server->local_list->clients,
+			    server->global_list->clients, client_cache);
 	}
 	server_entry = server_entry->router;
       } else {
@@ -475,10 +469,8 @@ silc_server_update_clients_by_real_server(SilcServer server,
 	   since the server is global. */
 	if (server_entry->server_type != SILC_BACKUP_ROUTER && local) {
 	  SILC_LOG_DEBUG(("Moving client to global list"));
-	  silc_idcache_add(server->global_list->clients, client_cache->name,
-			   client_cache->id, client_cache->context);
-	  silc_idcache_del_by_context(server->local_list->clients, client,
-				      NULL);
+	  silc_idcache_move(server->local_list->clients,
+			    server->global_list->clients, client_cache);
 	}
       }
       return server_entry;
@@ -1052,19 +1044,29 @@ silc_server_find_socket_by_host(SilcServer server,
 SilcUInt32 silc_server_num_sockets_by_remote(SilcServer server,
 					     const char *ip,
 					     const char *hostname,
-					     SilcUInt16 port)
+					     SilcUInt16 port,
+					     SilcConnectionType type)
 {
   SilcServerConnection conn;
+  SilcIDListData idata;
+  SilcConnectionType t = SILC_CONN_UNKNOWN;
   int count = 0;
 
   if (!ip && !hostname)
     return 0;
 
+  SILC_LOG_DEBUG(("Num connections %d", silc_dlist_count(server->conns)));
+
   silc_dlist_start(server->conns);
   while ((conn = silc_dlist_get(server->conns))) {
+    if (conn->sock) {
+      idata = silc_packet_get_context(conn->sock);
+      if (idata)
+	t = idata->conn_type;
+    }
     if (((ip && !strcmp(conn->remote_host, ip)) ||
 	 (hostname && !strcmp(conn->remote_host, hostname))) &&
-	conn->remote_port == port)
+	conn->remote_port == port && t == type)
       count++;
   }
 
@@ -1221,6 +1223,7 @@ SilcBool silc_server_connection_allowed(SilcServer server,
 		  global->connections_max_per_host);
 
   if (max_hosts && conn_number >= max_hosts) {
+    SILC_LOG_DEBUG(("Server is full, %d >= %d", conn_number, max_hosts));
     SILC_LOG_INFO(("Server is full, closing %s (%s) connection",
 		   hostname, ip));
     silc_server_disconnect_remote(server, sock,
@@ -1230,6 +1233,8 @@ SilcBool silc_server_connection_allowed(SilcServer server,
   }
 
   if (num_sockets >= max_per_host) {
+    SILC_LOG_DEBUG(("Too many connections, %d >= %d", num_sockets,
+		    max_per_host));
     SILC_LOG_INFO(("Too many connections from %s (%s), closing connection",
 		   hostname, ip));
     silc_server_disconnect_remote(server, sock,
@@ -1985,7 +1990,7 @@ void silc_server_create_connections(SilcServer server)
   silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_connect_to_router);
   silc_schedule_task_add_timeout(server->schedule,
-				 silc_server_connect_to_router, server, 0, 1);
+				 silc_server_connect_to_router, server, 1, 0);
 }
 
 static void

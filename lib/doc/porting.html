@@ -7,6 +7,7 @@ to the new Toolkit version.
 
 <br />&nbsp;<br />
 <li><a href="#general">General</a><br />
+<li><a href="#platform">Platform changes</a>
 <li><a href="#client">Client library</a><br />
 <li><a href="#util">Utility library</a><br />
 <li><a href="#apputil">Application utility library</a>
@@ -15,7 +16,6 @@ to the new Toolkit version.
 <li><a href="#vcard">VCard library</a>
 <li><a href="#http">HTTP library</a>
 <li><a href="#asn1">ASN.1 library</a>
-<li><a href="#other">Other libraries</a>
 
 <br />&nbsp;<br />
 <h3><a name="general"></a>General changes</h3>
@@ -23,6 +23,15 @@ to the new Toolkit version.
 The main SILC Toolkit header file has changed its name from silcincludes.h
 to silc.h.  The first task in porting from 1.0 to 1.1 is to change these
 filenames in your source tree.
+
+
+<br />&nbsp;<br />
+<h3><a name="platform"></a>Platform changes</h3>
+
+The Windows support has been made better by improving the SILC scheduler
+and network routines.  Calling silc_net_win32_init and silc_net_win32_uninit
+is not needed anymore.  The network routines on Windows are enabled
+automatically.
 
 
 <br />&nbsp;<br />
@@ -38,7 +47,7 @@ but with Toolkit 1.1 it should be relatively straightforward.
 
 <h4>SilcClientOperations structure</h4>
 
-The SilcClientOperation structure has changed significantly.  It no longer
+The SilcClientOperations structure has changed significantly.  It no longer
 has `connected', `disconnected' and `failure' function pointers.  Instead a
 new SilcClientConnectCallback has been defined that is given as argument to
 functions like silc_client_connect_to_server, silc_client_connect_to_client
@@ -51,7 +60,7 @@ added, see the API for the details.
 
 <br />&nbsp;<br />
 Also the `detach' client operation function pointer has been removed.  Instead
-the detachment data is now simply delivered in the SILC_COMMNAD_DETACH
+the detachment data is now simply delivered in the SILC_COMMAND_DETACH
 command reply.
 
 <br />&nbsp;<br />
@@ -150,8 +159,8 @@ initially use in the SILC network.
 The functions silc_client_connect_to_server, silc_client_connect_to_client
 and silc_client_key_exchange can all be used to create new SILC session with
 a remote.  To connect SILC server use silc_client_connect_to_server.  You
-now give the SilcClientCnnectionParams as argument which includes the nickname
-user wants to use, you now can give the public key pair as argument that is
+now give the SilcClientConnectionParams as argument which includes the 
+nicknameuser wants to use, you now can give the public key pair as argument that is
 to be used in the connecting.  The new SilcClientConnectCallback will be
 called once the connection has been established and it delivers the
 SilcClientConection context to the application.  It will be later called
@@ -161,7 +170,7 @@ connecting, if necessary.  In the past canceling connection was not possible.
 
 <br />&nbsp;<br />
 <pre>
-SilcAsyncOperations op;
+SilcAsyncOperation op;
 SilcClientConnectionParams params;
 
 memset(&params, 0, sizeof(params));
@@ -206,8 +215,9 @@ silc_client_del_socket has been removed.  They are no longer needed.
 Just like in Toolkit 1.0 we now have SilcClientEntry to represent user,
 SilcChannelEntry to represent channel and SilcServerEntry to represent
 server.  In the past these structures and all API functions that dealt
-with them were in silcclient.h file.  They are now in silcclient_entry.h
-in Toolkit 1.1.
+with them were in <a href="silcclient.html">silcclient.h</a> file.  They
+are now in <a href="silcclient_entry.html">silcclient_entry.h</a> in
+Toolkit 1.1.
 
 <br />&nbsp;<br />
 As an general convention each of these new entries now are reference
@@ -421,25 +431,28 @@ nickname of a certain client entry.
 The Utility library (runtime library) has had several changes and has several
 new interfaces.  Some interfaces has also been removed or moved to some
 other library.  Removed interfaces rae: silcprotocol.h and silcsockconn.h.
-Moved interfaces are: silcapputil.h and silcvcard.h.
+Moved interfaces are: <a href="silcapputil.html">silcapputil.h</a> and
+<a href="silcvcard.html">silcvcard.h</a>.
 
 <h4>SILC Async Operation Interface</h4>
 
-A new asynchronous operation API (silcasync.h) has been added.  It can be
-used to control asynchronous operations, like to cancel them.  Many
-asynchronous routines in SILC Toolkit now return SilcAsyncOperation context
-so that the operation can be controlled by the caller.  It especiallly
-provides a generic way to cancel asynchronous operations which
-can be difficult.
+A new asynchronous operation API (<a href="silcasync.html">silcasync.h</a>)
+has been added.  It can be used to control asynchronous operations, like
+to cancel them.  Many asynchronous routines in SILC Toolkit now return
+SilcAsyncOperation context so that the operation can be controlled by the
+caller.  It especiallly provides a generic way to cancel asynchronous
+operations which can be difficult.
 
 <h4>SILC Atomic Operations Interface</h4>
 
-A new atomic operations API (silcatomic.h) has been added.  It provides
-routines to perform various operations on integeres and pointers atomically.
+A new atomic operations API (<a href="silcatomic.html">silcatomic.h</a>)
+has been added.  It provides routines to perform various operations on
+integeres and pointers atomically.
 
 <h4>SILC Data Stack Interface</h4>
 
-A new data stack (memory pool system) API (silcstack.h) has been added.
+A new data stack (memory pool system) API
+(<a href="silcstack.html">silcstack.h</a>) has been added.
 It provides a fast memory allocation system.  Many routines in the SILC Toolkit
 are SilcStack aware thus enabling them to use the SilcStack as their source
 for memory allocation.  All routines that are SilcStack aware automatically
@@ -449,12 +462,14 @@ by default.
 
 <h4>SILC Condition Variable Interface</h4>
 
-A new condition variable API (silccond.h) has been added.  It provides
-condition variables for multithreaded applications.
+A new condition variable API (<a href="silccond.html">silccond.h</a>)
+has been added.  It provides condition variables for multithreaded
+applications.
 
 <h4>SILC Stream Interface</h4>
 
-A new abstract stream API (silcstream.h) has been added.  The SilcStream
+A new abstract stream API (<a href="silcstream.html">silcstream.h</a>)
+has been added.  The SilcStream
 provides an abstract way of representing different kinds of streams.  The
 API provides functions that can be used to read, write, control and destroy
 streams.  The API is not used to create streams but separate interfaces
@@ -463,19 +478,22 @@ socket stream and file descriptor stream exist.
 
 <h4>SILC FD Stream Interface</h4>
 
-A new file descriptor stream API (silcfdstream.h) has been added.  It
+A new file descriptor stream API
+(<a href="silcfdstream.html">silcfdstream.h</a>) has been added.  It
 provides a blocking and non-blocking file descriptor stream through the
 SilcStream abstraction.
 
 <h4>SILC Socket Stream Interface</h4>
 
-A new socket stream API (silcsocketstream.h) has been added.  It provides
-a blocking and non-blocking socket stream through the SilcStream
+A new socket stream API
+(<a href="silcsocketstream.html">silcsocketstream.h</a>) has been added.
+It provides a blocking and non-blocking socket stream through the SilcStream
 abstraction.
 
 <h4>SILC FSM Interface</h4>
 
-A new Finite State Machine API (silcfsm.h) has been added.  It provides
+A new Finite State Machine API
+(<a href="silcfsm.html">silcfsm.h</a>) has been added.  It provides
 an FSM that can be used to implement all kinds of machines and protocols.
 The machine also supports threads, and threads that are actually executed
 in real system threads.  The SILC FSM API also supports asynchronous
@@ -483,25 +501,28 @@ events.
 
 <h4>SILC Time Interface</h4>
 
-A new SILC Time API (silctime.h) has been added.  It provides utility
+A new SILC Time API
+(<a href="silctime.html">silctime.h</a>) has been added.  It provides utility
 functions to retrieve and represent time in different ways.  It supports
 Universal and Generalized time string creation and parsing and adds a new
 SilcTime structure to represent time.
 
 <h4>SILC Snprintf Interface</h4>
 
-A new snprintf API (silcsnprintf.h) has been added.  It provides snprintf
-and other string formatting routines.
+A new snprintf API
+(<a href="silcsnprintf.html">silcsnprintf.h</a>) has been added.  It
+provides snprintf and other string formatting routines.
 
 <h4>SILC Mutex Interface changes</h4>
 
-The SILC Mutex API (silcmutex) has several changes.  A support for read/write
-locks has been added (SilcRwLock).  Also silc_mutex_assert_locked function
-is added.
+The SILC Mutex API (<a href="silcmutex.html">silcmutex.h</a>)
+has several changes.  A support for read/write locks has been added
+(SilcRwLock).  Also silc_mutex_assert_locked function is added.
 
 <h4>SILC Network Interface changes</h4>
 
-The SILC Network API (silcnet.h) has several changes.  The API is almost
+The SILC Network API
+(<a href="silcnet.html">silcnet.h</a>) has several changes.  The API is almost
 entirely rewritten and most of the old functions have been removed.  The
 API has now both TCP and UDP support, and as previously supports IPv4
 and IPv6.  New functions are silc_net_tcp_create_listener,
@@ -510,8 +531,9 @@ silc_net_udp_connect, silc_net_udp_receive, silc_net_udp_send.
 
 <h4>SILC Scheduler Interface changes</h4>
 
-The SILC Schedule API (silcschedule.h) has several changes.  The scheduler
-has been entirely rewritten but most of the API remains the same.
+The SILC Schedule API
+(<a href="silcschedule.html">silcschedule.h</a>) has several changes.  The
+scheduler has been entirely rewritten but most of the API remains the same.
 The SILC_TASK_GENERIC and SILC_TASK_CALLBACK_GLOCAL have been removed.
 The way signal are dispatched has been changed.  The SILC Schedule is now
 able to itself dispatch all signals.  New functions are
@@ -523,12 +545,14 @@ removed.
 
 <h4>SILC Types Interface changes</h4>
 
-The SILC Type API (silctypes.h) has several changes.  The bool type is
-replaced with SilcBool.  Sockets are now represented by SilcSocket.
+The SILC Type API (<a href="silctypes.html">silctypes.h</a>) has several
+changes.  The bool type is replaced with SilcBool.  Sockets are now
+represented by SilcSocket.
 
 <h4>SILC String util Interface changes</h4>
 
-The SILC string utility API (silcstrutil.h) has changes.  The PEM encoding
+The SILC string utility API
+(<a href="silcstrutil.html">silcstrutil.h</a>) has changes.  The PEM encoding
 and decoding routines has been renamed, silc_base64_encode,
 silc_base64_encode_file and silc_base64_decode.  The silc_mime_parse has
 been removed.  A new silc_string_split function has been added.
@@ -538,18 +562,19 @@ been removed.  A new silc_string_split function has been added.
 
 <h4>SILC File Util Interface changes</h4>
 
-The SILC file utility API (silcfileutil.h) has changes.  A new function
-silc_file_set_nonblock has been added.
+The SILC file utility API (<a href="silcfileutil.html">silcfileutil.h</a>)
+has changes.  A new function silc_file_set_nonblock has been added.
 
 <h4>SILC List and Dynamic List Interface changes</h4>
 
-The SILC List (silclist.h) and SILC Dynamic List (silcdlist.h) APIs have
-changes. New functions silc_list_insert and silc_dlist_insert have been
-added.
+The SILC List (<a href="silclist.html">silclist.h</a>) and SILC Dynamic List
+(silcdlist.h) APIs have changes. New functions silc_list_insert and
+silc_dlist_insert have been added.
 
 <h4>SILC Buffer Interface changes</h4>
 
-The SILC Buffer API (silcbuffer.h) has several changes.  The SilcBuffer
+The SILC Buffer API (<a href="silcbuffer.html">silcbuffer.h</a>) has several
+changes.  The SilcBuffer
 structure no longer contain the buffer length and true length fields
 but silc_buffer_len() and silc_buffr_truelen() macros are available
 instead.  Also silc_buffer_data(), silc_buffer_datalen(), silc_buffer_purge(),
@@ -558,7 +583,8 @@ silc_buffer_enlarge() has been added.  The API also supports SilcStack.
 
 <h4>SILC Buffer Formatting Interface changes</h4>
 
-The SILC Buffer Formatting API (silcbuffmt.h) has several changes.  The
+The SILC Buffer Formatting API
+(<a href="silcbuffmt.html">silcbuffmt.h</a>) has several changes.  The
 silc_buffer_format now automatically allocates memory to the destination
 buffer if it does not have space.  Also new the following new formatters
 have been added: SILC_STR_DATA (replaces SILC_STR_UI_XNSTRING),
@@ -567,10 +593,10 @@ The API also supports SilcStack.
 
 <h4>SILC Memory Interface changes</h4>
 
-The memory allocation API (silcmemory.h) has several changes.  It supports
-now SilcStack as memory source.  Also all memory allocation routines can
-now fail and return NULL as opposed to fatally failing when memory allocation
-fails.
+The memory allocation API (<a href="silcmemory.html">silcmemory.h</a>) has
+several changes.  It supports now SilcStack as memory source.  Also all
+memory allocation routines can now fail and return NULL as opposed to fatally
+failing when memory allocation fails.
 
 <br />&nbsp;<br />
 <h3><a name="apputil"></a>SILC Application Utility library, lib/silcapputil/</h3>
@@ -583,7 +609,8 @@ does not contain any entirely new interfaces.
 
 <h4>SILC Application Utility Interface</h4>
 
-The silcapputil.h contains various application utility functions.  It
+The <a href="silcapputil.html">silcapputil.h</a> contains various application
+utility functions.  It
 existed in Toolkit 1.0 but some of the APIs has been changed.  The
 silc_create_key_pair, silc_load_key_pair and silc_show_public_key APIs
 has changed.  A new silc_show_public_key_file has been added.  Functions
@@ -596,15 +623,15 @@ libraries into this interface in Toolkit 1.1.
 
 <h4>SILC ID Cache Interface</h4>
 
-The ID Cache interface (silcidcache.h) has been moved from lib/silccore
-into lib/silcapputil/.
+The ID Cache interface (<a href="silcidcache.html">silcidcache.h</a>) has
+been moved from lib/silccore into lib/silcapputil/.
 
 <br />&nbsp;<br />
 <h3><a name="skr"></a>SILC Key Repository library, lib/silcskr/</h3>
 
 A new SILC Key Repository library has been added.  The library provides
-a SILC Key Repository API (silcskr.h) which provides a repository for
-storing and retrieving public keys.
+a SILC Key Repository API (<a href="silcskr.html">silcskr.h</a>) which provides
+a repository for storing and retrieving public keys.
 
 <br />&nbsp;<br />
 <h3><a name="vcard"></a>SILC VCard library, lib/silcvcard/</h3>
@@ -620,14 +647,15 @@ Server Interface and SILC HTTP PHP Translator Interface.
 
 <h4>SILC HTTP Server Interface</h4>
 
-The SILC HTTP Server API (silchttpservder.h) provides a simple HTTP
-server implementation for applications that want to integrate a small
-HTTP server.
+The SILC HTTP Server API (<a href="silchttpserver.html">silchttpservder.h</a>)
+provides a simple HTTP server implementation for applications that want to
+integrate a small HTTP server.
 
 <h4>SILC HTTP PHP Translator Interface</h4>
 
-The SILC HTTP PHP Translator API (silchttpphp.h) provides PHP translates
-PHP code into HTML.  It can be used to serve PHP pages in HTTP server.
+The SILC HTTP PHP Translator API (<a href="silchttpphp.html">silchttpphp.h</a>)
+ provides PHP translates PHP code into HTML.  It can be used to serve PHP
+pages in HTTP server.
 
 <br />&nbsp;<br />
 <h3><a name="asn1"></a>SILC ASN.1 library, lib/silcasn1/</h3>
@@ -638,12 +666,13 @@ encoder and decoder interface.
 
 <h4>SILC ASN.1 Interface</h4>
 
-The SILC ASN.1 API (silcasn1.h) provides ASN.1 encoder and decoder.  The
-interface provides efficient encoder and decoder and is support SilcStack
-as memory source.  The interface is simple and it supports almost all ASN.1
-features.
+The SILC ASN.1 API (<a href="silcasn1.html">silcasn1.h</a>) provides ASN.1
+encoder and decoder.  The interface provides efficient encoder and decoder
+and is support SilcStack as memory source.  The interface is simple and it
+supports almost all ASN.1 features.
 
 <h4>SILC BER Interface</h4>
 
-The SILC BER API (silcber.h) provides BER/DER encoder and decoder.  It is
-integral part of the ASN.1 library and the ASN.1 encoder and decoder.
+The SILC BER API (<a href="silcber.html">silcber.h</a>) provides BER/DER
+encoder and decoder.  It is integral part of the ASN.1 library and the ASN.1
+encoder and decoder.

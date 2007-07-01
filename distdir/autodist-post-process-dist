@@ -1,0 +1,23 @@
+#!/bin/sh
+
+distribution=$1
+dist_version=$2
+package=$3
+distdir=$4
+
+# Remove all CVS directories, as some may be left when we put directories
+# in EXTRA_DIST or 'include' them in distribution.
+
+if test -d $distdir; then
+  rm -rf `find $distdir -name CVS`
+  rm -rf `find $distdir -name Makefile`
+fi
+
+release=$5
+if test -z $release; then
+  release="0.fc7"
+fi
+
+sed -e "s/AUTODIST_VERSION/$dist_version/" -e "s/AUTODIST_RELEASE/$release/" \
+  apps/autodist/autodist.spec.in > $distdir/autodist.spec
+

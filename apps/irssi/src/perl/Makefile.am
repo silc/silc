@@ -2,7 +2,7 @@ LIBTOOL = $(PERL_LIBTOOL)
 
 include $(top_srcdir)/Makefile.defines.in
 
-moduledir = $(silc_modulesdir)
+moduledir = @SILC_IRSSIDIR@
 
 if SILCPLUGIN
 perl_dirs = silc

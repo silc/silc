@@ -2,7 +2,7 @@
 #
 # Author: Pekka Riikonen <priikone@silcnet.org>
 #
-# Copyright (C) 2005 Pekka Riikonen
+# Copyright (C) 2005 - 2007 Pekka Riikonen
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -996,6 +996,7 @@ ad_makedist()
   distribution=`grep "dist:" < autodist.dist | cut -d: -f2` || exit 1
   dist_version=`grep "ver:" < autodist.dist | cut -d: -f2` || exit 1
   am_distdir=`grep "distdir:" < autodist.dist | cut -d: -f2` || exit 1
+  params=`grep "params:" < autodist.dist | cut -d: -f2` || exit 1
   ad_parse_distribution $distribution false
   ad_log "  Distribution: $distribution $dist_version"
   ad_log "  Destination directory: $am_distdir"
@@ -1007,7 +1008,7 @@ ad_makedist()
   fi
 
   # Run pre-dist-hooks
-  ad_run_dist_hooks "$pre_dist_hooks"
+  ad_run_dist_hooks "$pre_dist_hooks" "$params"
 
   # Create distribution directory
   ad_debug "Creating distribution directory $am_distdir"
@@ -1019,7 +1020,7 @@ ad_makedist()
   fi
 
   # Run pre-process-dist-hooks
-  ad_run_dist_hooks "$pre_p_dist_hooks"
+  ad_run_dist_hooks "$pre_p_dist_hooks" "$params"
 
   # Run excludes
   ad_dist_excludes "$excludes" true
@@ -1061,7 +1062,7 @@ ad_makedist()
   ad_process_noprocess false
 
   # Run post-process_dist-hooks
-  ad_run_dist_hooks "$post_p_dist_hooks"
+  ad_run_dist_hooks "$post_p_dist_hooks" "$params"
 
   # Make distribution sane
   ad_makedist_makesane
@@ -1092,7 +1093,7 @@ ad_makedist()
   rm -f $am_distdir.tar
 
   # Run post-dist-hooks
-  ad_run_dist_hooks "$post_dist_hooks"
+  ad_run_dist_hooks "$post_dist_hooks" "$params"
 
   # Cleanup
   rm -rf $am_distdir
@@ -1179,6 +1180,15 @@ ad_parse_distribution()
 
   if test '!' -f $distdir/$1; then
     ad_fatal "Distribution '$1' is not declared"
+  fi
+
+  # Get and enforce prereq version
+  prereq=`sed 's/^[ 	]*//' < $distdir/$1 | grep -v "^#" \
+    | grep "prereq " | cut -d' ' -f2- | sort | uniq`
+  if test '!' -z $prereq; then
+    if [[ $ver < $prereq ]]; then
+      ad_fatal "Autodist $prereq or newer is required for distribution $1"
+    fi
   fi
 
   # Get inherited
@@ -1775,7 +1785,7 @@ ad_process()
 #
 # Run hooks
 #
-# Arguments: ad_run_hooks <hooks>
+# Arguments: ad_run_hooks <hooks> <params>
 #
 ad_run_hooks()
 {
@@ -1790,8 +1800,8 @@ ad_run_hooks()
     if test '!' -f $i; then
       ad_fatal "Hook script $i does not exist"
     fi
-    ad_log "  sh $i \"$distribution\" \"$dist_version\" \"$package\""
-    sh $i "$distribution" "$dist_version" "$package" || exit 1
+    ad_log "  sh $i \"$distribution\" \"$dist_version\" \"$package\" \"$2\""
+    sh $i "$distribution" "$dist_version" "$package" "$2" || exit 1
   done
   ad_log ""
 
@@ -1801,7 +1811,7 @@ ad_run_hooks()
 #
 # Run dist hooks
 #
-# Arguments: ad_run_dist_hooks <hooks>
+# Arguments: ad_run_dist_hooks <hooks> <params>
 #
 ad_run_dist_hooks()
 {
@@ -1817,8 +1827,8 @@ ad_run_dist_hooks()
       ad_fatal "Dist hook script $i does not exist"
     fi
 
-    ad_log "  sh $i \"$distribution\" \"$dist_version\" \"$package\" \"$am_distdir\""
-    sh $i "$distribution" "$dist_version" "$package" "$am_distdir" || exit 1
+    ad_log "  sh $i \"$distribution\" \"$dist_version\" \"$package\" \"$am_distdir\" \"$2\""
+    sh $i "$distribution" "$dist_version" "$package" "$am_distdir" "$2" || exit 1
   done
   ad_log ""
 
@@ -1828,7 +1838,7 @@ ad_run_dist_hooks()
 ###############################################################################
 # Autodist code
 
-usage="Usage: autodist [options] [distribution] [version]"
+usage="Usage: autodist [options] [distribution] [version] [params]"
 help="\
 Autodist prepares source tree for configuration, compilation and
 distribution.  Generates Automake.am files from Automake.ad files, 
@@ -1934,7 +1944,7 @@ while test $# -gt 0; do
     echo "@PACKAGE@ (@PACKAGE_NAME@) $ver" 1>&2;
     echo "Written by Pekka Riikonen" 1>&2;
     echo 1>&2;
-    echo "Copyright (C) 2004 - 2005 SILC Project" 1>&2;
+    echo "Copyright (C) 2004 - 2007 SILC Project" 1>&2;
     echo "\
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. " 1>&2;
@@ -1993,10 +2003,13 @@ else
   ad_fatal "DISTDEFS not defined in $distdir/autodist.conf"
 fi
 
+# Get extra parameters from command line
+shift
+
 #
 # Run pre-hooks
 #
-ad_run_hooks "$pre_hooks"
+ad_run_hooks "$pre_hooks" "$@"
 
 #
 # Generate the Makefile.am files from Makefile.ad files
@@ -2030,11 +2043,12 @@ ad_debug "Creating autodist.dist"
 echo "dist:$distfile" > autodist.dist
 echo "ver:$dist_version" >> autodist.dist
 echo "distdir:$package-$dist_version" >> autodist.dist
+echo "params:$@" >> autodist.dist
 
 #
 # Run post-hooks
 #
-ad_run_hooks "$post_hooks"
+ad_run_hooks "$post_hooks" "$@"
 
 ad_log "Source tree processed successfully."
 ad_debug "Done, now run ./configure and make."

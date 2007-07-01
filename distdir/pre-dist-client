@@ -4,6 +4,14 @@ distribution=$1
 dist_version=$2
 package=$3
 distdir=$4
+release=$5
+
+if test -z $release; then
+  release="0.fc7"
+fi
+
+sed -e "s/SILC_VERSION/$dist_version/" -e "s/SILC_RELEASE/$release/" \
+  apps/irssi/silc-client.spec.in > apps/irssi/silc-client.spec
 
 cd doc
 make dist-hook

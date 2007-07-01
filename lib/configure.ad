@@ -83,12 +83,12 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcvcard"
 LIB_BASE_VERSION=1.1
 
 # libsilc versions
-LIBSILC_CURRENT=1		# prev = 0
+LIBSILC_CURRENT=2		# prev = 1
 LIBSILC_REVISION=0		# prev = 0
 LIBSILC_AGE=0			# prev = 0
 
 # libsilcclient versions
-LIBSILCCLIENT_CURRENT=1		# prev = 0
+LIBSILCCLIENT_CURRENT=2		# prev = 1
 LIBSILCCLIENT_REVISION=0	# prev = 0
 LIBSILCCLIENT_AGE=0		# prev = 0
 
@@ -133,10 +133,10 @@ AC_CHECK_FUNC(epoll_wait,
     )
   ])
 
+MODULESDIR="$silc_prefix/lib/modules"
 #ifdef SILC_DIST_SIM
 # SIM modules directory
 #
-MODULESDIR="$silc_prefix/modules"
 AC_ARG_WITH(simdir,
   [[  --with-simdir=DIR       directory for SIM modules [PREFIX/modules]]],
   [
@@ -148,9 +148,9 @@ AC_ARG_WITH(simdir,
         ;;
     esac
   ])
-AC_SUBST(MODULESDIR)
 AC_DEFINE_UNQUOTED([SILC_MODULESDIR], "$MODULESDIR", [SILC_MODULESDIR])
 #endif SILC_DIST_SIM
+AC_SUBST(MODULESDIR)
 
 #ifdef SILC_DIST_TOOLKIT
 # Stack trace checking

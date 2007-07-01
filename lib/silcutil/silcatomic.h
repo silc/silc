@@ -298,10 +298,10 @@ SILC_ATOMIC_INIT_F(name, bits, type)					\
 }
 #endif /* SILC_ATOMIC_MUTEX */
 
-SILC_ATOMIC_INIT(8, 8, SilcUInt8);
-SILC_ATOMIC_INIT(16, 16, SilcUInt16);
-SILC_ATOMIC_INIT(32, 32, SilcUInt32);
-SILC_ATOMIC_INIT(_pointer, Pointer, void *);
+SILC_ATOMIC_INIT(8, 8, SilcUInt8)
+SILC_ATOMIC_INIT(16, 16, SilcUInt16)
+SILC_ATOMIC_INIT(32, 32, SilcUInt32)
+SILC_ATOMIC_INIT(_pointer, Pointer, void *)
 
 /****f* silcutil/SilcAtomicAPI/silc_atomic_uninit32
  *
@@ -372,13 +372,14 @@ SILC_ATOMIC_UNINIT_F(bits, t)						\
 #define SILC_ATOMIC_UNINIT(bits, t)					\
 SILC_ATOMIC_UNINIT_F(bits, t)						\
 {									\
+  memset(atomic, 0, sizeof(*atomic));					\
 }
 #endif /* SILC_ATOMIC_MUTEX */
 
-SILC_ATOMIC_UNINIT(8, 8);
-SILC_ATOMIC_UNINIT(16, 16);
-SILC_ATOMIC_UNINIT(32, 32);
-SILC_ATOMIC_UNINIT(_pointer, Pointer);
+SILC_ATOMIC_UNINIT(8, 8)
+SILC_ATOMIC_UNINIT(16, 16)
+SILC_ATOMIC_UNINIT(32, 32)
+SILC_ATOMIC_UNINIT(_pointer, Pointer)
 
 /****f* silcutil/SilcAtomicAPI/silc_atomic_set_int32
  *
@@ -478,9 +479,9 @@ SILC_ATOMIC_SET_INT_F(bits)						\
 }
 #endif /* !SILC_THREADS */
 
-SILC_ATOMIC_SET_INT(8, "b", "b");
-SILC_ATOMIC_SET_INT(16, "w", "w");
-SILC_ATOMIC_SET_INT(32, "l", "");
+SILC_ATOMIC_SET_INT(8, "b", "b")
+SILC_ATOMIC_SET_INT(16, "w", "w")
+SILC_ATOMIC_SET_INT(32, "l", "")
 
 /****f* silcutil/SilcAtomicAPI/silc_atomic_set_pointer
  *
@@ -617,9 +618,9 @@ SILC_ATOMIC_GET_INT_F(bits)						\
 }
 #endif /* !SILC_THREADS */
 
-SILC_ATOMIC_GET_INT(8);
-SILC_ATOMIC_GET_INT(16);
-SILC_ATOMIC_GET_INT(32);
+SILC_ATOMIC_GET_INT(8)
+SILC_ATOMIC_GET_INT(16)
+SILC_ATOMIC_GET_INT(32)
 
 /****f* silcutil/SilcAtomicAPI/silc_atomic_get_pointer
  *
@@ -789,9 +790,9 @@ SILC_ATOMIC_ADD_INT_F(bits)						\
 }
 #endif /* !SILC_THREADS */
 
-SILC_ATOMIC_ADD_INT(8, "b");
-SILC_ATOMIC_ADD_INT(16, "w");
-SILC_ATOMIC_ADD_INT(32, "l");
+SILC_ATOMIC_ADD_INT(8, "b")
+SILC_ATOMIC_ADD_INT(16, "w")
+SILC_ATOMIC_ADD_INT(32, "l")
 
 /****f* silcutil/SilcAtomicAPI/silc_atomic_sub_int32
  *
@@ -941,9 +942,9 @@ SILC_ATOMIC_INC_F(bits)				   			\
 }
 #endif /* !SILC_THREADS */
 
-SILC_ATOMIC_INC(8, "b");
-SILC_ATOMIC_INC(16, "w");
-SILC_ATOMIC_INC(32, "l");
+SILC_ATOMIC_INC(8, "b")
+SILC_ATOMIC_INC(16, "w")
+SILC_ATOMIC_INC(32, "l")
 
 /****f* silcutil/SilcAtomicAPI/silc_atomic_dec32
  *
@@ -1047,9 +1048,9 @@ SILC_ATOMIC_DEC_F(bits)				   			\
 }
 #endif /* !SILC_THREADS */
 
-SILC_ATOMIC_DEC(8, "b");
-SILC_ATOMIC_DEC(16, "w");
-SILC_ATOMIC_DEC(32, "l");
+SILC_ATOMIC_DEC(8, "b")
+SILC_ATOMIC_DEC(16, "w")
+SILC_ATOMIC_DEC(32, "l")
 
 /****f* silcutil/SilcAtomicAPI/silc_atomic_cas32
  *
@@ -1173,9 +1174,9 @@ SILC_ATOMIC_CAS_F(bits)							\
 }
 #endif /* !SILC_THREADS */
 
-SILC_ATOMIC_CAS(8, "b");
-SILC_ATOMIC_CAS(16, "w");
-SILC_ATOMIC_CAS(32, "l");
+SILC_ATOMIC_CAS(8, "b")
+SILC_ATOMIC_CAS(16, "w")
+SILC_ATOMIC_CAS(32, "l")
 
 /****f* silcutil/SilcAtomicAPI/silc_atomic_cas_pointer
  *

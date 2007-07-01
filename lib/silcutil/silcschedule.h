@@ -158,6 +158,49 @@ typedef void (*SilcTaskCallback)(SilcSchedule schedule, void *app_context,
 				 SilcTaskEvent type, SilcUInt32 fd,
 				 void *context);
 
+/****f* silcutil/SilcScheduleAPI/SilcTaskNotifyCb
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcTaskNotifyCb)(SilcSchedule schedule,
+ *                                     SilcBool added, SilcTask task,
+ *                                     SilcBool fd_task, SilcUInt32 fd,
+ *                                     SilcTaskEvent event,
+ *                                     long seconds, long useconds,
+ *                                     void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Task notify callback.  Callback of this type can be set to scheduler
+ *    by calling silc_schedule_set_notify and will be called whenever new
+ *    task is added or old task is removed.  If `added' is TRUE then `task'
+ *    is added to scheduler.  If `added' is FALSE then `task' will be removed
+ *    from the scheduler.  If `fd_task' is TRUE the `task' is file descriptor
+ *    task and has `fd' is its file descriptor.  If `fd_task' is FALSE then
+ *    the task is timeout task and `seconds' and `useconds' specify the
+ *    timeout.  The `context' is the context given to silc_schedule_set_notify.
+ *
+ * NOTES
+ *
+ *    The `schedule' is locked while this callback is called.  This means that
+ *    new tasks cannot be added or removed inside this callback.
+ *
+ *    When timeout task expires this callback is not called.  This is called
+ *    only when task is explicitly deleted from the scheduler.  Note that,
+ *    when timeout task expires it is removed from the scheduler and `task'
+ *    will become invalid.
+ *
+ *    If fd task changes its events, this will be called as if it was a new
+ *    task with different `event' mask.
+ *
+ ***/
+typedef void (*SilcTaskNotifyCb)(SilcSchedule schedule,
+				 SilcBool added, SilcTask task,
+				 SilcBool fd_task, SilcUInt32 fd,
+				 SilcTaskEvent event,
+				 long seconds, long useconds,
+				 void *app_context);
+
 /* Macros */
 
 /****d* silcutil/SilcScheduleAPI/SILC_ALL_TASKS
@@ -184,8 +227,8 @@ typedef void (*SilcTaskCallback)(SilcSchedule schedule, void *app_context,
  *
  * DESCRIPTION
  *
- *    Generic macro to define task callback functions. This defines a
- *    static function with name `func' as a task callback function.
+ *    Generic macro to declare task callback functions. This defines a
+ *    function with name `func' as a task callback function.
  *
  * SOURCE
  */
@@ -335,6 +378,22 @@ void silc_schedule_wakeup(SilcSchedule schedule);
  ***/
 void *silc_schedule_get_context(SilcSchedule schedule);
 
+/****f* silcutil/SilcScheduleAPI/silc_schedule_set_notify
+ *
+ * SYNOPSIS
+ *
+ *    void silc_schedule_set_notify(SilcSchedule schedule,
+ *                                  SilcTaskNotifyCb notify, void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Set notify callback to scheduler.  The `notify' will be called whenever
+ *    task is added to or deleted from scheduler.
+ *
+ ***/
+void silc_schedule_set_notify(SilcSchedule schedule,
+			      SilcTaskNotifyCb notify, void *context);
+
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_add_fd
  *
  * SYNOPSIS
@@ -374,7 +433,7 @@ void *silc_schedule_get_context(SilcSchedule schedule);
  *    Add timeout task to scheduler.  The `callback' will be called once
  *    the specified timeout has elapsed.  The task will be removed from the
  *    scheduler automatically once the task expires.  The event returned
- *    to the `callback' is SILC_TASK_EXPIRE.  The task added with zero (0)
+ *    to the `callback' is SILC_TASK_EXPIRE.  A task added with zero (0)
  *    timeout will be executed immediately next time tasks are scheduled.
  *
  ***/

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2006 Pekka Riikonen
+  Copyright (C) 2000 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -50,14 +50,12 @@
  *    Application defines this object and adds contexts to this list with
  *    Dynamic List Interface functions.
  *
- * SOURCE
- */
+ ***/
 typedef struct SilcDListStruct {
   SilcList list;
   void *current;
   void *prev;
 } *SilcDList;
-/***/
 
 /* SilcDListEntry structure, one entry in the list. This MUST NOT be used
    directly by the application. */
@@ -239,22 +237,22 @@ SilcBool silc_dlist_insert(SilcDList list, void *context)
  * SYNOPSIS
  *
  *    static inline
- *    void silc_dlist_del(SilcDList list, void *context);
+ *    void silc_dlist_del(SilcDList list, void *entry);
  *
  * DESCRIPTION
  *
- *    Remove entry from the list. Returns < 0 on error, 0 otherwise.
+ *    Remove entry from the list.
  *
  ***/
 
 static inline
-void silc_dlist_del(SilcDList list, void *context)
+void silc_dlist_del(SilcDList list, void *entry)
 {
   SilcDListEntry e;
 
   silc_list_start(list->list);
   while ((e = (SilcDListEntry)silc_list_get(list->list)) != SILC_LIST_END) {
-    if (e->context == context) {
+    if (e->context == entry) {
       silc_list_del(list->list, e);
 #if defined(SILC_DEBUG)
       memset(e, 'F', sizeof(*e));

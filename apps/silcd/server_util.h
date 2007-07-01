@@ -105,7 +105,8 @@ SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip,
 SilcUInt32 silc_server_num_sockets_by_remote(SilcServer server,
 					     const char *ip,
 					     const char *hostname,
-					     SilcUInt16 port);
+					     SilcUInt16 port,
+					     SilcConnectionType type);
 
 /* Get public key by key usage and key context. */
 SilcPublicKey silc_server_get_public_key(SilcServer server,

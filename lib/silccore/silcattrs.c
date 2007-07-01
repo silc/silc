@@ -129,6 +129,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
 	str = silc_mime_encode(mime, &object_size);
 	if (!str)
 	  return NULL;
+	object = str;
       }
       break;
 

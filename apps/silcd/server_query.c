@@ -61,6 +61,7 @@ typedef struct {
   SilcDList attrs;		    /* Requested Attributes in WHOIS */
 
   /* Query session data */
+  SilcPacketStream router;	    /* Router to send our query */
   SilcServerCommandContext cmd;	    /* Command context for query */
   SilcServerQueryList querylist;    /* Temporary query list context */
   SilcServerQueryID queries;	    /* Ongoing queries */
@@ -69,10 +70,15 @@ typedef struct {
   SilcUInt16 queries_count;	    /* Number of ongoing queries */
   SilcUInt16 queries_left;	    /* Number of ongoing queries left */
   SilcUInt16 errors_count;	    /* number of errors */
-  unsigned int querycmd : 7;	    /* Query command (SilcCommand) */
-  unsigned int resolved : 1;	    /* TRUE if normal server has resolved
+  unsigned int querycmd      : 7;   /* Query command (SilcCommand) */
+  unsigned int resolved      : 1;   /* TRUE if normal server has resolved
 				       information from router */
+  unsigned int dynamic_prim  : 1;   /* Dynamic connection attempt to primary */
+  unsigned int dynamic_retry : 1;   /* Primary returned error, send to
+				       nick@serv server. */
+  unsigned int parsed        : 1;   /* Set when query is parsed */
 } *SilcServerQuery;
+
 
 void silc_server_query_free(SilcServerQuery query);
 void silc_server_query_send_error(SilcServer server,
@@ -89,7 +95,8 @@ void silc_server_query_add_error_id(SilcServer server,
 				    void *id, SilcIdType id_type);
 void silc_server_query_send_router(SilcServer server, SilcServerQuery query);
 void silc_server_query_send_router_reply(void *context, void *reply);
-void silc_server_query_parse(SilcServer server, SilcServerQuery query);
+SilcBool silc_server_query_parse(SilcServer server, SilcServerQuery query,
+				 SilcBool parse_only);
 void silc_server_query_process(SilcServer server, SilcServerQuery query,
 			       SilcBool resolve);
 void silc_server_query_resolve(SilcServer server, SilcServerQuery query,
@@ -220,16 +227,22 @@ void silc_server_query_add_error_id(SilcServer server,
    to the entity who sent this query to us automatically.  Returns
    TRUE if the query is being processed or FALSE on error. */
 
-SilcBool silc_server_query_command(SilcServer server, SilcCommand querycmd,
-				   SilcServerCommandContext cmd)
+SilcBool silc_server_query_command(SilcServer server,
+				   SilcCommand querycmd,
+				   SilcServerCommandContext cmd,
+				   void *old_query)
 {
   SilcServerQuery query;
 
   SILC_LOG_DEBUG(("Query %s command", silc_get_command_name(querycmd)));
 
-  query = silc_calloc(1, sizeof(*query));
-  query->querycmd = querycmd;
-  query->cmd = silc_server_command_dup(cmd);
+  if (!old_query) {
+    query = silc_calloc(1, sizeof(*query));
+    query->querycmd = querycmd;
+    query->cmd = silc_server_command_dup(cmd);
+    query->router = SILC_PRIMARY_ROUTE(server);
+  } else
+    query = old_query;
 
   switch (querycmd) {
 
@@ -243,6 +256,8 @@ SilcBool silc_server_query_command(SilcServer server, SilcCommand querycmd,
 	 (!silc_argument_get_arg_type(cmd->args, 1, NULL) &&
 	  !silc_argument_get_arg_type(cmd->args, 4, NULL) &&
 	  silc_argument_get_arg_type(cmd->args, 3, NULL)))) {
+      if (!silc_server_query_parse(server, query, TRUE))
+	return FALSE;
       silc_server_query_send_router(server, query);
       return TRUE;
     }
@@ -264,6 +279,8 @@ SilcBool silc_server_query_command(SilcServer server, SilcCommand querycmd,
     if (server->server_type == SILC_SERVER && !server->standalone &&
 	cmd->sock != SILC_PRIMARY_ROUTE(server) &&
 	!silc_argument_get_arg_type(cmd->args, 5, NULL)) {
+      if (!silc_server_query_parse(server, query, TRUE))
+	return FALSE;
       silc_server_query_send_router(server, query);
       return TRUE;
     }
@@ -276,9 +293,48 @@ SilcBool silc_server_query_command(SilcServer server, SilcCommand querycmd,
   }
 
   /* Now parse the request */
-  silc_server_query_parse(server, query);
+  silc_server_query_parse(server, query, FALSE);
 
   return TRUE;
+}
+
+/* Remote server connected callback. */
+
+void silc_server_query_connected(SilcServer server,
+				 SilcServerEntry server_entry,
+				 void *context)
+{
+  SilcServerQuery query = context;
+
+  if (!server_entry) {
+    /* Connecting failed */
+    SilcConnectionType type = (server->server_type == SILC_ROUTER ?
+			       SILC_CONN_SERVER : SILC_CONN_ROUTER);
+
+    if (query->dynamic_prim /* && @serv != prim.host.name */ &&
+	!silc_server_num_sockets_by_remote(server, query->nick_server,
+					   query->nick_server, 706, type)) {
+      /* Connection attempt to primary router failed, now try to the one
+	 specified in nick@server. */
+      silc_server_create_connection(server, FALSE, TRUE, query->nick_server,
+				    706, silc_server_query_connected,
+				    query);
+      query->dynamic_prim = FALSE;
+      return;
+    }
+
+    /* Process the query after failed connect.  This will send error back
+       because such nick was not found. */
+    SILC_LOG_DEBUG(("Process query, connecting failed"));
+    silc_server_query_process(server, query, TRUE);
+    return;
+  }
+
+  /* Reprocess the query */
+  SILC_LOG_DEBUG(("Reprocess query after creating connection to %s",
+		  server_entry->server_name));
+  query->router = server_entry->data.sconn->sock;
+  silc_server_query_command(server, query->querycmd, query->cmd, query);
 }
 
 /* Send the received query to our primary router since we could not
@@ -290,7 +346,8 @@ void silc_server_query_send_router(SilcServer server, SilcServerQuery query)
   SilcBuffer tmpbuf;
   SilcUInt16 old_ident;
 
-  SILC_LOG_DEBUG(("Forwarding the query to router for processing"));
+  SILC_LOG_DEBUG(("Forwarding the query to router %p for processing",
+		  query->router));
 
   /* Statistics */
   server->stat.commands_sent++;
@@ -299,8 +356,7 @@ void silc_server_query_send_router(SilcServer server, SilcServerQuery query)
   old_ident = silc_command_get_ident(query->cmd->payload);
   silc_command_set_ident(query->cmd->payload, ++server->cmd_ident);
   tmpbuf = silc_command_payload_encode_payload(query->cmd->payload);
-  silc_server_packet_send(server,
-			  SILC_PRIMARY_ROUTE(server),
+  silc_server_packet_send(server, query->router,
 			  SILC_PACKET_COMMAND, 0,
 			  tmpbuf->data, silc_buffer_len(tmpbuf));
   silc_command_set_ident(query->cmd->payload, old_ident);
@@ -334,6 +390,23 @@ void silc_server_query_send_router_reply(void *context, void *reply)
   /* Check if router sent error reply */
   if (cmdr && !silc_command_get_status(cmdr->payload, NULL, NULL)) {
     SilcBuffer buffer;
+    SilcConnectionType type = (server->server_type == SILC_ROUTER ?
+			       SILC_CONN_SERVER : SILC_CONN_ROUTER);
+
+    /* If this was nick@server query, retry to @serv if the primary router
+       returned error. */
+    if (query->nick_server[0] && !query->dynamic_retry &&
+	!silc_server_num_sockets_by_remote(server, query->nick_server,
+					   query->nick_server, 1334, type)) {
+      SILC_LOG_DEBUG(("Retry query by connecting to %s:%d",
+		      query->nick_server, 706));
+      silc_server_create_connection(server, FALSE, TRUE, query->nick_server,
+				    1334, silc_server_query_connected,
+				    query);
+      query->dynamic_retry = TRUE;
+      query->resolved = FALSE;
+      return;
+    }
 
     SILC_LOG_DEBUG(("Sending error to original query"));
 
@@ -354,12 +427,13 @@ void silc_server_query_send_router_reply(void *context, void *reply)
   }
 
   /* Continue with parsing */
-  silc_server_query_parse(server, query);
+  silc_server_query_parse(server, query, FALSE);
 }
 
 /* Parse the command query and start processing the queries in detail. */
 
-void silc_server_query_parse(SilcServer server, SilcServerQuery query)
+SilcBool silc_server_query_parse(SilcServer server, SilcServerQuery query,
+				 SilcBool parse_only)
 {
   SilcServerCommandContext cmd = query->cmd;
   SilcIDListData idata = silc_packet_get_context(cmd->sock);
@@ -370,6 +444,9 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 
   SILC_LOG_DEBUG(("Parsing %s query",
 		  silc_get_command_name(query->querycmd)));
+
+  if (query->parsed)
+    goto parsed;
 
   switch (query->querycmd) {
 
@@ -397,7 +474,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	silc_server_query_send_error(server, query,
 				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
 	silc_server_query_free(query);
-	return;
+	return FALSE;
       }
 
       /* Get the nickname@server string and parse it */
@@ -409,7 +486,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	silc_server_query_send_error(server, query,
 				     SILC_STATUS_ERR_BAD_NICKNAME, 0);
 	silc_server_query_free(query);
-	return;
+	return FALSE;
       }
 
       /* Check nickname */
@@ -420,7 +497,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	  silc_server_query_send_error(server, query,
 				       SILC_STATUS_ERR_BAD_NICKNAME, 0);
 	  silc_server_query_free(query);
-	  return;
+	  return FALSE;
 	}
 	memset(query->nickname, 0, sizeof(query->nickname));
 	silc_snprintf(query->nickname, sizeof(query->nickname), "%s", tmp);
@@ -457,7 +534,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	      silc_free(query->ids);
 	      query->ids = NULL;
 	      query->ids_count = 0;
-	      return;
+	      return FALSE;
 	    }
 	  }
 	}
@@ -482,7 +559,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       silc_server_query_send_error(server, query,
 				   SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
       silc_server_query_free(query);
-      return;
+      return FALSE;
     }
 
     /* Get the nickname@server string and parse it */
@@ -492,7 +569,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       silc_server_query_send_error(server, query,
 				   SILC_STATUS_ERR_BAD_NICKNAME, 0);
       silc_server_query_free(query);
-      return;
+      return FALSE;
     }
 
     /* Check nickname */
@@ -502,7 +579,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
       silc_server_query_send_error(server, query,
 				   SILC_STATUS_ERR_BAD_NICKNAME, 0);
       silc_server_query_free(query);
-      return;
+      return FALSE;
     }
     memset(query->nickname, 0, sizeof(query->nickname));
     silc_snprintf(query->nickname, sizeof(query->nickname), "%s", tmp);
@@ -538,7 +615,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	  silc_server_query_send_error(server, query,
 				       SILC_STATUS_ERR_BAD_NICKNAME, 0);
 	  silc_server_query_free(query);
-	  return;
+	  return FALSE;
 	}
 	memset(query->nickname, 0, sizeof(query->nickname));
 	silc_snprintf(query->nickname, sizeof(query->nickname), "%s", tmp);
@@ -555,7 +632,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	  silc_server_query_send_error(server, query,
 				       SILC_STATUS_ERR_BAD_SERVER, 0);
 	  silc_server_query_free(query);
-	  return;
+	  return FALSE;
 	}
 	query->server_name = tmp;
       }
@@ -570,7 +647,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	  silc_server_query_send_error(server, query,
 				       SILC_STATUS_ERR_BAD_CHANNEL, 0);
 	  silc_server_query_free(query);
-	  return;
+	  return FALSE;
 	}
 	query->channel_name = tmp;
       }
@@ -579,7 +656,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	silc_server_query_send_error(server, query,
 				     SILC_STATUS_ERR_NOT_ENOUGH_PARAMS, 0);
 	silc_server_query_free(query);
-	return;
+	return FALSE;
       }
 
     } else {
@@ -613,7 +690,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 		silc_free(query->ids);
 		query->ids = NULL;
 		query->ids_count = 0;
-		return;
+		return FALSE;
 	      }
 	    }
 	  } else {
@@ -625,7 +702,7 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
 	    silc_free(query->ids);
 	    query->ids = NULL;
 	    query->ids_count = 0;
-	    return;
+	    return FALSE;
 	  }
 	}
 
@@ -650,8 +727,54 @@ void silc_server_query_parse(SilcServer server, SilcServerQuery query)
     break;
   }
 
+  query->parsed = TRUE;
+
+ parsed:
+  if (!parse_only && query->nickname) {
+    switch (query->querycmd) {
+    case SILC_COMMAND_WHOIS:
+    case SILC_COMMAND_IDENTIFY:
+      /* Check server name.  If we are open server and don't yet have
+	 connection to remote router, create it now. */
+      if (query->nick_server[0] && server->config->dynamic_server &&
+	  !query->resolved) {
+	/* If primary router is specified, use that.  Otherwise connect
+	   to the server in nick@server string. */
+	SilcServerConfigRouter *router;
+	SilcConnectionType type = (server->server_type == SILC_ROUTER ?
+				   SILC_CONN_SERVER : SILC_CONN_ROUTER);
+
+	router = silc_server_config_get_primary_router(server);
+	if (router && server->standalone) {
+	  /* Create connection to primary router */
+	  SILC_LOG_DEBUG(("Create dynamic connection to primary router %s:%d",
+			  router->host, router->port));
+	  query->dynamic_prim = TRUE;
+	  silc_server_create_connection(server, FALSE, TRUE,
+					router->host, router->port,
+					silc_server_query_connected, query);
+	  return FALSE;
+	} else if (!silc_server_num_sockets_by_remote(server,
+						      query->nick_server,
+						      query->nick_server,
+						      706, type)) {
+	  /* Create connection and handle the query after connection */
+	  SILC_LOG_DEBUG(("Create dynamic connection to %s:%d",
+			  query->nick_server, 706));
+	  silc_server_create_connection(server, FALSE, TRUE,
+					query->nick_server, 706,
+					silc_server_query_connected, query);
+	  return FALSE;
+	}
+      }
+    }
+  }
+
   /* Start processing the query information */
-  silc_server_query_process(server, query, TRUE);
+  if (!parse_only)
+    silc_server_query_process(server, query, TRUE);
+
+  return TRUE;
 }
 
 /* Context for holding clients searched by public key. */
@@ -827,23 +950,29 @@ void silc_server_query_process(SilcServer server, SilcServerQuery query,
   if (query->nickname[0]) {
     /* Get all clients matching nickname from local list */
     if (!silc_idlist_get_clients_by_hash(server->local_list,
-					 query->nickname, server->md5hash,
+					 query->nickname,
+					 query->nick_server[0] ?
+					 query->nick_server : NULL,
+					 server->md5hash,
 					 &clients, &clients_count))
       silc_idlist_get_clients_by_nickname(server->local_list,
 					  query->nickname,
-					  query->nick_server,
-					 /* XXX nick_server may not be set */
+					  query->nick_server[0] ?
+					  query->nick_server : NULL,
 					  &clients, &clients_count);
 
     /* Check global list as well */
     if (check_global) {
       if (!silc_idlist_get_clients_by_hash(server->global_list,
-					   query->nickname, server->md5hash,
+					   query->nickname,
+					   query->nick_server[0] ?
+					   query->nick_server : NULL,
+					   server->md5hash,
 					   &clients, &clients_count))
 	silc_idlist_get_clients_by_nickname(server->global_list,
 					    query->nickname,
-					    query->nick_server,
-					 /* XXX nick_server may not be set */
+					    query->nick_server[0] ?
+					    query->nick_server : NULL,
 					    &clients, &clients_count);
     }
 

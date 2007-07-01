@@ -27,7 +27,8 @@
    to the entity who sent this query to us automatically.  Returns
    TRUE if the query is being processed or FALSE on error. */
 SilcBool silc_server_query_command(SilcServer server, SilcCommand querycmd,
-				   SilcServerCommandContext cmd);
+				   SilcServerCommandContext cmd,
+				   void *old_query);
 
 /* Find client by the Client ID indicated by the `client_id', and if not
    found then query it by using WHOIS command.  The client information

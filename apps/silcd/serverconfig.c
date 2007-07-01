@@ -150,7 +150,7 @@ static SilcBool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
     SilcPublicKey public_key;
     SilcSKR skr = *auth_data;
     SilcSKRFind find;
-    SilcSKRStatus status;
+    SilcSKRStatus status = SILC_SKR_NOT_FOUND;
 
     if (!silc_pkcs_load_public_key(p, &public_key)) {
       SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
@@ -161,19 +161,20 @@ static SilcBool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
     find = silc_skr_find_alloc();
     silc_skr_find_set_public_key(find, public_key);
     silc_skr_find_set_usage(find, usage);
-    silc_skr_find_set_context(find, key_context ? key_context : (void *)usage);
+    if (!key_context)
+      silc_skr_find_set_context(find, SILC_32_TO_PTR(usage));
     silc_skr_find(skr, NULL, find, my_find_callback, &status);
-    if (status == SILC_SKR_ALREADY_EXIST) {
+    if (status == SILC_SKR_OK) {
+      /* Already added, ignore error */
       silc_pkcs_public_key_free(public_key);
-      SILC_SERVER_LOG_WARNING(("Warning: public key file \"%s\" already "
-			       "configured, ignoring this key", p));
-      return TRUE; /* non fatal error */
+      return TRUE;
     }
 
     /* Add the public key to repository */
-    if (silc_skr_add_public_key(skr, public_key, usage,
-				key_context ? key_context : (void *)usage,
-				NULL) != SILC_SKR_OK) {
+    status = silc_skr_add_public_key(skr, public_key, usage,
+				     key_context ? key_context :
+				     (void *)usage, NULL);
+    if (status != SILC_SKR_OK) {
       SILC_SERVER_LOG_ERROR(("Error while adding public key \"%s\"", p));
       return FALSE;
     }
@@ -337,6 +338,12 @@ SILC_CONFIG_CALLBACK(fetch_generic)
       goto got_err;
     }
     config->httpd_port = (SilcUInt16)port;
+  }
+  else if (!strcmp(name, "dynamic_server")) {
+    config->dynamic_server = *(SilcBool *)val;
+  }
+  else if (!strcmp(name, "local_channels")) {
+    config->local_channels = *(SilcBool *)val;
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -581,6 +588,11 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
     SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigServerInfoInterface);
     CONFIG_IS_DOUBLE(tmp->server_ip);
     tmp->server_ip = strdup((char *) val);
+  }
+  else if (!strcmp(name, "public_ip")) {
+    SILC_SERVER_CONFIG_ALLOCTMP(SilcServerConfigServerInfoInterface);
+    CONFIG_IS_DOUBLE(tmp->public_ip);
+    tmp->public_ip = strdup((char *) val);
   }
   else if (!strcmp(name, "port")) {
     int port = *(int *)val;
@@ -1157,6 +1169,9 @@ SILC_CONFIG_CALLBACK(fetch_router)
   else if (!strcmp(name, "backuplocal")) {
     tmp->backup_local = *(SilcBool *)val;
   }
+  else if (!strcmp(name, "dynamic_connection")) {
+    tmp->dynamic_connection = *(SilcBool *)val;
+  }
   else
     return SILC_CONFIG_EINTERNAL;
 
@@ -1203,6 +1218,8 @@ static const SilcConfigTable table_general[] = {
   { "http_server",    		SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
   { "http_server_ip",  		SILC_CONFIG_ARG_STRE,	fetch_generic,	NULL },
   { "http_server_port",		SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
+  { "dynamic_server",  		SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
+  { "local_channels",	        SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -1236,6 +1253,7 @@ static const SilcConfigTable table_pkcs[] = {
 
 static const SilcConfigTable table_serverinfo_c[] = {
   { "ip",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "public_ip",	SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
   { "port",		SILC_CONFIG_ARG_INT,	fetch_serverinfo, NULL},
   { 0, 0, 0, 0 }
 };
@@ -1344,6 +1362,7 @@ static const SilcConfigTable table_routerconn[] = {
   { "backuphost",	SILC_CONFIG_ARG_STRE,	fetch_router,	NULL },
   { "backupport",	SILC_CONFIG_ARG_INT,	fetch_router,	NULL },
   { "backuplocal",	SILC_CONFIG_ARG_TOGGLE,	fetch_router,	NULL },
+  { "dynamic_connection",	SILC_CONFIG_ARG_TOGGLE,	fetch_router,	NULL },
   { 0, 0, 0, 0 }
 };
 
@@ -1396,6 +1415,24 @@ static SilcBool silc_server_config_check(SilcServerConfig config)
     ret = FALSE;
   }
 
+  if (!config->server_info->public_key ||
+      !config->server_info->private_key) {
+    SILC_SERVER_LOG_ERROR(("\nError: Server keypair is missing"));
+    ret = FALSE;
+  }
+
+  if (!config->server_info->primary) {
+    SILC_SERVER_LOG_ERROR(("\nError: Missing mandatory block `Primary' "
+			   "in `ServerInfo'"));
+    ret = FALSE;
+  }
+
+  if (!config->server_info->primary->server_ip) {
+    SILC_SERVER_LOG_ERROR(("\nError: Missing mandatory field `Ip' "
+			   "in `Primary' in `ServerInfo'"));
+    ret = FALSE;
+  }
+
   /* RouterConnection sanity checks */
 
   if (config->routers && config->routers->backup_router == TRUE &&
@@ -1405,15 +1442,6 @@ static SilcBool silc_server_config_check(SilcServerConfig config)
 	 "connection. You have marked it incorrectly as backup router."));
     ret = FALSE;
   }
-#if 0
-  if (config->routers && config->routers->initiator == FALSE &&
-      config->routers->backup_router == FALSE) {
-    SILC_SERVER_LOG_ERROR((
-         "\nError: First RouterConnection block must be primary router "
-	 "connection and it must be marked as Initiator."));
-    ret = FALSE;
-  }
-#endif
   if (config->routers && config->routers->backup_router == TRUE &&
       !config->servers && !config->routers->next) {
     SILC_SERVER_LOG_ERROR((

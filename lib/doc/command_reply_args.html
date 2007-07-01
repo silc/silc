@@ -30,10 +30,8 @@ The 'command_reply' client operation callback function prototype is as follows:
 <tt>
 &nbsp;&nbsp;
 void (*command_reply)(SilcClient client, SilcClientConnection conn,<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-SilcCommandPayload cmd_payload, bool success, SilcCommand command,<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-SilcStatus status, ...);
+                      SilcCommand command, SilcStatus status,<br />
+                      SilcStatus error, va_list ap);
 </tt>
 
 <br />&nbsp;<br />

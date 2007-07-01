@@ -3,9 +3,11 @@
 if SILCPLUGIN
 helpdir = $(datadir)/irssi/help/silc
 SILCHELP = silc
+ED =
 else
-helpdir = $(datadir)/irssi/help
-SILCHELP = 
+helpdir = $(datadir)/silc/help
+SILCHELP =
+ED = silc
 endif
 
 
@@ -14,6 +16,7 @@ help_DATA = $(SILCHELP) \
 
 EXTRA_DIST = \
 	Makefile.am.gen \
+	$(ED) \
 	$(help_DATA)
 
 SUBDIRS = in

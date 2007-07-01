@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ void silc_id_create_server_id(const char *ip, SilcUInt16 port, SilcRng rng,
 
   (*new_id)->ip.data_len = silc_net_is_ip4(ip) ? 4 : 16;
   (*new_id)->port = SILC_SWAB_16(port);
-  (*new_id)->rnd = silc_rng_get_rn16(rng);
+  (*new_id)->rnd = 0xff;
 
   SILC_LOG_DEBUG(("New ID (%s)", silc_id_render(*new_id, SILC_ID_SERVER)));
 }

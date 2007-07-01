@@ -4,7 +4,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2005 Pekka Riikonen
+#  Copyright (C) 2005 - 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -30,9 +30,9 @@ IRSSI_SUBDIR=irssi
 
 # help directory
 #
-HELPDIR="$silc_prefix/help"
+HELPDIR="$datadir/silc/help"
 AC_ARG_WITH(helpdir,
-  [[  --with-helpdir=DIR      directory for SILC Client help files [PREFIX/help]]],
+  [[  --with-helpdir=DIR      directory for SILC Client help files [DATADIR/silc/help]]],
   [
     case "$withval" in
       no|yes)
@@ -54,8 +54,20 @@ AC_ARG_WITH(perl,
 
 # Irssi SILC Plugin support
 #
-AC_ARG_ENABLE(silc-plugin,
-[  --enable-silc-plugin    Compile the SILC Plugin instead of the SILC Client])
+AC_MSG_CHECKING(whether to compile SILC Plugin for Irssi)
+AC_ARG_WITH(silc-plugin,
+  [[  --with-silc-plugin[=DIR] Compile the SILC Plugin for Irssi, specify
+                           Irssi location [/usr/lib/irssi]]],
+  [
+    case "${withval}" in
+      no)
+        AC_MSG_RESULT(no)
+        ;;
+       *)
+        AC_MSG_RESULT(yes)
+       ;;
+    esac
+  ],[AC_MSG_RESULT(no)])
 
 AC_CONFIG_SUBDIRS(apps/irssi)
 AC_CONFIG_FILES(

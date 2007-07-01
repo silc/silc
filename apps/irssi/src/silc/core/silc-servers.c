@@ -102,9 +102,14 @@ static void silc_send_msg_clients(SilcClient client,
   clients = silc_client_get_clients_local(silc_client, server->conn,
 					  rec->nick, FALSE);
   if (!clients) {
-    printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
-	      "%s: There is no such client (did you mean %s?)", rec->nick,
-	      target->nickname);
+    if (strchr(rec->nick, '@') && target->server)
+      printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
+		"%s: There is no such client (did you mean %s@%s?)", rec->nick,
+		target->nickname, target->server);
+    else
+      printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
+		"%s: There is no such client (did you mean %s?)", rec->nick,
+		target->nickname);
     goto out;
   }
 
@@ -275,6 +280,7 @@ static void silc_connect_cb(SilcClient client,
 			    void *context)
 {
   SILC_SERVER_REC *server = context;
+  FtpSession ftp;
   char *file;
 
   SILC_LOG_DEBUG(("Connection callback %p, status %d, error %d, message %s",
@@ -347,6 +353,12 @@ static void silc_connect_cb(SilcClient client,
 	       "Server closed connection: %s (%d) %s",
 	       silc_get_status_message(error), error,
 	       message ? message : "");
+
+    /* Close FTP sessions */
+    silc_dlist_start(server->ftp_sessions);
+    while ((ftp = silc_dlist_get(server->ftp_sessions)))
+      silc_client_file_close(client, conn, ftp->session_id);
+    silc_dlist_uninit(server->ftp_sessions);
 
     if (server->conn)
       server->conn->context = NULL;
@@ -454,8 +466,6 @@ static void sig_disconnected(SILC_SERVER_REC *server)
   if (!IS_SILC_SERVER(server))
     return;
 
-  silc_dlist_uninit(server->ftp_sessions);
-
   if (server->conn) {
     /* Close connection */
     silc_client_close_connection(silc_client, server->conn);
@@ -470,9 +480,11 @@ static void sig_disconnected(SILC_SERVER_REC *server)
   }
 
   /* SILC closes the handle */
-  g_io_channel_unref(net_sendbuffer_handle(server->handle));
-  net_sendbuffer_destroy(server->handle, FALSE);
-  server->handle = NULL;
+  if (server->handle) {
+    g_io_channel_unref(net_sendbuffer_handle(server->handle));
+    net_sendbuffer_destroy(server->handle, FALSE);
+    server->handle = NULL;
+  }
 }
 
 SERVER_REC *silc_server_init_connect(SERVER_CONNECT_REC *conn)

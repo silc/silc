@@ -352,6 +352,10 @@ typedef void (*SilcSKECompletionCb)(SilcSKE ske,
  *    SILC_SKE_SP_FLAG_MUTUAL is not set and you are initiator.  For
  *    responder both `public_key' and `private_key' must be set.
  *
+ *    When allocating SKE session for rekey, the `repository' and `private_key'
+ *    pointers must be NULL and the SilcSKEVerifyCb callback must not be
+ *    set with silc_ske_set_callbacks.
+ *
  * EXMPALE
  *
  *    // Initiator example
@@ -443,8 +447,9 @@ void silc_ske_set_callbacks(SilcSKE ske,
  *    the protocol has completed.  The `stream' is the network connection
  *    to the remote host.  The SKE library will handle all key exchange
  *    packets sent and received in the `stream' connection.  The library will
- *    also set the remote host's ID automatically to the `stream'.  The
- *    `params' include SKE parameters, and it must be provided.
+ *    also set the remote host's ID automatically to the `stream' if it is
+ *    present in the exchanged packets.  The `params' include SKE parameters,
+ *    and it must be provided.
  *
  *    If the `start_payload' is NULL the library will generate it
  *    automatically.  Caller may provide it if it wants to send its own
@@ -478,8 +483,10 @@ SilcAsyncOperation silc_ske_initiator(SilcSKE ske,
  *    callback that was set in silc_ske_set_callbacks will be called once
  *    the protocol has completed.  The `stream' is the network connection
  *    to the remote host.  The SKE library will handle all key exchange
- *    packets sent and received in the `stream' connection.  The `params'
- *    include SKE parameters, and must be provided.
+ *    packets sent and received in the `stream' connection.  The library will
+ *    also set the remote hosts's ID automatically to the `stream' if it is
+ *    present in the exchanged packets.  The `params' include SKE parameters,
+ *    and must be provided.
  *
  *    This function returns SilcAsyncOperation operation context which can
  *    be used to control the protocol from the application.  Application may

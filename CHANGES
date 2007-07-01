@@ -1,3 +1,294 @@
+Sun Jul  1 19:15:15 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* SILC Server 1.1 Beta1.
+
+Sun Jul  1 12:40:06 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for rekey with PFS when using CTR mode
+	  encryption.  Affected file is lib/silcske/silcske.c.
+
+	* Added silc_idcache_move that can be used to move entries
+	  between caches.  Affected files are
+	  lib/silcapputil/silcidcache.[ch].
+
+	* Added better checks for invalid argument and notify payloads.
+	  Affected files are lib/silccore/silcnotify.c and
+	  silcargument.c.
+
+	* Fixed SILC_PACKET_FLAG_LONG_PAD bitmask value.  Affected
+	  file lib/silccore/silcpacket.h.
+
+Sat Jun 30 21:48:08 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Set the destination ID to packet stream as SKE responder
+	  if ID was present in key exchange packet.  Affected file
+	  is lib/silcske/silcske.[ch].
+
+	* Handle also zero timeouts in the scheduler notify callback
+	  to avoid problems with SILC Plugin.  Affected file is
+	  apps/irssi/src/silc/core/silc-core.c.
+
+Thu Jun 28 19:19:13 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* SILC Client 1.1.1.
+
+Sun Jun 24 18:47:55 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* SILC Toolkit 1.1.1.
+
+	* Compile sources with _GNU_SOURCE on Linux systems.  Affected
+	  file is configure.ad.
+
+Sun Jun 24 16:33:59 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed Unix signal task dispatching to not lock the signals
+	  when dispatching the callback to avoid deadlocks.  Affected
+	  file is lib/silcutil/unix/silcunixschedule.c.
+
+Sun Jun 24 14:43:21 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
+
+	* Fix configure output for with-plugin.  Affected file is
+	  apps/irssi/configure.ad
+
+Tue Jun 19 17:05:48 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC_VERSION macro for checking package versions at
+	  compile time.  Affected files are configure.ad,
+	  includes/silc.h.in and includes/silcversion.h.in.
+
+Mon Jun 18 23:47:22 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Use SILC_VERIFY to assert that silc_rwlock_wrlock can be
+	  called only once per thread on Unix.  Affected file is
+	  lib/silcutil/unix/silcunixthread.c.  Added same for mutex
+	  as well.   Documented same on the API in 
+	  lib/silcutil/silcmutex.h.
+
+	* Fixed USERS command reply write-lock unlocking.  Affected file
+	  is lib/silcclient/command_reply.c.
+
+Mon Jun 18 08:14:26 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed silc_create_key_pair to check for valid identifier.
+	  Affected file is lib/silcapputil/silcapputil.c.
+
+Sun Jun 17 20:08:26 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
+
+	* Rewrite signed public message handling, adopting the new
+	  hilight interface.  Affected file is
+	  apps/irssi/src/fe-common/silc/fe-silc-messages.c
+
+Thu Jun 14 21:15:31 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
+
+	* Fix off by one error when loading modules.  Affected file is
+	  apps/irssi/src/core/modules-load.c
+
+	* Don't delete hilight entry (because it's just a pointer, not a
+	  copy).  Affected file is 
+	  apps/irssi/src/fe-common/silc/fe-silc-messages.c
+
+Mon Jun 11 22:10:17 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added __SILC_TOOLKIT_x_x_x macro to all Toolkit distribution
+	  which can be used to check for Toolkit version in third-party
+	  software.  Affected file is configure.ad, includes/silc.h.in.
+
+Sun Jun 10 17:32:15 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added support for channel@server channel name strings to
+	  client library (SILC protocol version 1.3 change).  Affected
+	  files are lib/silcclient/silcclient_entry.h, client_entry.c.
+
+	* Added full_nicknames and full_channel_names settings to
+	  SilcClientParams that can be used to specify whether client
+	  library returns full nickname and channel name strings.
+	  Full strings are nick@server and channel@server.  Affected
+	  file is lib/silcclient/client_entry.c and command.c.
+
+Sat Jun  9 19:43:25 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed unix connecting failure to return error code correctly.
+	  Affected file is lib/silcutil/unix/silcunixnet.c.
+
+Fri Jun  8 23:32:33 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed SKE timeout double free crash.  Affected file is
+	  lib/silcske/silcske.c.
+
+	* Fixed MIME multipart decoding buffer overflow.  Affected file
+	  is lib/silcutil/silcmime.c.  Thanks to Matt Miller for patch.
+
+Fri Jun  8 18:39:34 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed connection auth protocol timeout crash.  Affected
+	  file is lib/silcske/silconnauth.c.
+
+	* Fixed FSM machine finishing to check for existing threads
+	  at the final free callback to allow time for the threads to
+	  finish.  Affected file lib/silcutil/silcfsm.c.
+
+Thu Jun  7 21:25:31 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed silc_client_get_clients_local to check the nick's
+	  server also if nick@server nickname string is given to the
+	  function.  Affected file is lib/silcclient/client_entry.c.
+
+Wed Jun  6 18:33:05 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added notify callback to silc_schedule_init which can be used to 
+	  set a notify callback for scheduler which is called when task is
+	  added to scheduler or deleted from scheduler.  Affected file
+	  is lib/silcutil/silcschedule.[ch].
+
+	* Dispatch timeout tasks after dispatching FD tasks if the timeout
+	  was very short.  Affected file is lib/silcutil/silcschedule.c.
+
+	* Rewrote the SILC scheduler handling in SILC Client to not poll
+	  every few msecs but to use the new notify callback.  Affected 
+	  file is apps/irssi/src/silc/core/silc-core.c.
+
+	* Fixed SFTP client library read buffer size which was too small.
+	  Affected file is lib/silcsftp/sftp_client.c.
+
+	* Fixed file transfer crash bug in /QUIT in SILC Client.  Close
+	  the FTP sessions before quitting the client.  Affected file
+	  is apps/irssi/src/silc/core/silc-servers.c.
+
+Tue Jun  5 20:48:40 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed silc_packet_get_ids to decode the IDs correctly.
+	  Affected file is lib/silccore/silcpacket.c.
+
+	* Fixed silc_client_get_clients_local to parse correctly nickname
+	  string that may have server name in it (nick@server) regardless
+	  whether it was formatted nickname or not.  Affected file is
+	  lib/silcclient/client_entry.c.
+
+Mon Jun  4 22:02:53 CEST 2007  Jochen Eisinger <jochen@penguin-breeder.org>
+
+	* Only destroy sendbuffers, if they still exist (they cease to
+	  exist during /upgrade).  Affected file is
+	  apps/irssi/src/silc/core/silc-servers.c
+
+Mon Jun  4 21:24:17 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Removed --enable-silc-plugin.  Added --with-silc-plugin.
+	  Affected files are configure.ad, lib/configure.ad,
+	  apps/irssi/configure.ad, apps/irssi/configure.in,
+	  apps/irssi/scripts/Makefile.am,
+	  apps/irssi/scripts/examples/Makefile.am,
+	  apps/irssi/src/silc/core/silc/Makefile.am,
+	  apps/irssi/src/fe-common/silc/Makefile.am.
+
+Mon Jun  4 08:35:59 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* SILC Client 1.1.
+
+Sun Jun  3 14:00:09 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed DESTDIR handling in make install.
+
+Sat Jun  2 21:04:32 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* SIM modules are not delivered to SILC CLient distribution
+	  anymore.
+
+	* Changed default installation path from /usr/local/silc to
+	  /usr/local for all distributions.
+
+	* Removed --with-etcdir and --with-docdir.  The etcdir is now
+	  the system's default.  The Docdir is system's default.
+
+Sat Jun  2 00:51:57 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* If public key/private key loading fails set the return
+	  pointer to NULL.  Affected file is lib/silccrypt/silcpkcs.c.
+
+	* If private key loading fails in silc_load_key_pair free the
+	  loaded public key.  Affected file is
+	  lib/silcapputil/silcapputil.c.
+
+	* Fixed key pair loading crash with SILC Plugin if key pair
+	  loading fails.  Affected file is
+	  apps/irssi/src/silc/core/silc-core.c.
+
+	* Fixed SILC Client help and script file installation path
+	  to go to prefix/share/silc.  Affected files are
+	  apps/irssi/src/scripts/Makefile.am and
+	  apps/irssi/docs/help/Makefile.am.gen.
+
+Thu May 31 16:49:13 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed UTC offset minutes to be actually minutes.  Affected
+	  file is lib/silcutil/silctime.c.
+
+Thu May 31 09:40:56 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* SILC Toolkit 1.1.
+
+	* Added support for checking for timezone and tm_gmtoff.
+	  Affected files are configure.ad and lib/silcutil/silctime.c.
+
+Wed May 30 18:46:34 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc-toolkit.spec.in RPM spec file.
+
+Mon May 28 23:21:39 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed nickname formatting crash when updating existing
+	  client entry.  Affected file is lib/silcclient/client_entry.c.
+
+	* Fixed MIME object encoding in attribute payload encoding.
+	  Affected file is lib/silccore/silcattrs.c.
+
+Mon May 28 09:02:26 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* SILC Client 1.1 Beta6
+
+Sun May 27 20:38:30 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Copy SILC Plugin's libfe_common_silc.so to libfe_silc.so so
+	  that user's don't have to do it manually.  Affected file
+	  is apps/irssi/src/fe-common/silc/core/Makefile.am.
+
+Thu May 24 15:30:31 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* SILC Toolkit 1.1 Beta4.
+
+	* Fixed channel and server entry freeing in client library.
+	  Affected file is lib/silcclient/client_entry.c.
+
+	* Do not allow stopping client before it has been started.
+	  Affected file is lib/silcclient/client.c.
+
+Wed May 23 23:21:03 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed formatted nickname renaming to rename also irssi's
+	  nicklist (/NAMES etc).  Affected file is
+	  apps/irssi/src/silc/core/client_ops.c.
+
+	* Fixed SILC Plugin crash when stopping client library before
+	  it has been started.  Affected file is
+	  apps/irssi/src/silc/core/silc-core.c.
+
+Tue May 22 17:18:54 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* For SILC Client and SILC Server check for 1.1 Toolkit
+	  in configure.  Affected file is configure.ad.
+
+	* Added better library linking flags and orders for SILC Client.
+	  Affected file is configure.ad, Makefile.defines_int.in and
+	  apps/irssi/src/fe-text/Makefile.am
+
+Mon May 21 08:26:38 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* SILC Client 1.1 Beta5.
+
+Sun May 20 18:34:22 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
+
+	* Add hooks for Irssi 0.8.11 module functions.  Affected file
+	  is apps/irssi/src/fe-common/silc/fe-common-silc.c
+
 Sat May 19 14:46:36 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed passphrase authentication with server.  Affected file

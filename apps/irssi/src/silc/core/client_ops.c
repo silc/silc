@@ -729,11 +729,10 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
     name = va_arg(va, char *);
     client_entry = va_arg(va, SilcClientEntry);
 
-    memset(buf, 0, sizeof(buf));
-    snprintf(buf, sizeof(buf) - 1, "%s@%s",
-	     client_entry->username, client_entry->hostname);
-    signal_emit("message invite", 4, server, channel ? channel->channel_name :
-		name, client_entry->nickname, buf);
+    silc_snprintf(buf, sizeof(buf) - 1, "%s@%s",
+		  client_entry->username, client_entry->hostname);
+    signal_emit("message invite", 4, server, name,
+		client_entry->nickname, buf);
     break;
 
   case SILC_NOTIFY_TYPE_JOIN:
@@ -843,10 +842,13 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       if (silc_client_on_channel(channel, client_entry2)) {
 	silc_snprintf(buf, sizeof(buf), "%s", client_entry2->nickname);
 	silc_client_nickname_format(client, conn, client_entry2, TRUE);
-	if (!silc_utf8_strcasecmp(buf, client_entry2->nickname))
+	if (!silc_utf8_strcasecmp(buf, client_entry2->nickname)) {
+	  nicklist_rename_unique(SERVER(server), client_entry2, buf,
+				 client_entry2, client_entry2->nickname);
 	  printformat_module("fe-common/silc", server, channel->channel_name,
 			     MSGLEVEL_CRAP, SILCTXT_CHANNEL_USER_APPEARS,
 			     buf, client_entry2->nickname);
+	}
       }
       silc_client_list_free(client, conn, clients);
       silc_free(name);
@@ -899,10 +901,13 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
       if (silc_client_on_channel(channel, client_entry2)) {
 	silc_snprintf(buf, sizeof(buf), "%s", client_entry2->nickname);
 	silc_client_nickname_format(client, conn, client_entry2, TRUE);
-	if (!silc_utf8_strcasecmp(buf, client_entry2->nickname))
+	if (!silc_utf8_strcasecmp(buf, client_entry2->nickname)) {
+	  nicklist_rename_unique(SERVER(server), client_entry2, buf,
+				 client_entry2, client_entry2->nickname);
 	  printformat_module("fe-common/silc", server, channel->channel_name,
 			     MSGLEVEL_CRAP, SILCTXT_CHANNEL_USER_APPEARS,
 			     buf, client_entry2->nickname);
+	}
       }
       silc_client_list_free(client, conn, clients);
       silc_free(name);
@@ -1731,6 +1736,20 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       NICK_REC *ownnick;
 
       if (SILC_STATUS_IS_ERROR(status)) {
+	if (status == SILC_STATUS_ERR_NO_SUCH_SERVER) {
+	  char *tmp = va_arg(vp, char *);
+	  if (tmp)
+	    silc_say_error("JOIN: %s: %s", tmp,
+			   silc_get_status_message(status));
+	  return;
+	}
+	if (status == SILC_STATUS_ERR_NO_SUCH_CHANNEL) {
+	  char *tmp = va_arg(vp, char *);
+	  if (tmp)
+	    silc_say_error("JOIN: %s: %s", tmp,
+			   silc_get_status_message(status));
+	  return;
+	}
 	silc_say_error("JOIN: %s", silc_get_status_message(status));
 	return;
       }

@@ -938,7 +938,7 @@ SILC_FSM_STATE(silc_client_command_topic)
   SilcClient client = conn->client;
   SilcChannelEntry channel;
   SilcBuffer idp;
-  char *name;
+  char *name, tmp[512];
 
   if (cmd->argc < 2 || cmd->argc > 3) {
     SAY(conn->client, conn, SILC_CLIENT_MESSAGE_INFO,
@@ -953,7 +953,15 @@ SILC_FSM_STATE(silc_client_command_topic)
       COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
-    name = conn->current_channel->channel_name;
+
+    if (client->internal->params->full_channel_names)
+      silc_snprintf(tmp, sizeof(tmp), conn->current_channel->channel_name);
+    else
+      silc_snprintf(tmp, sizeof(tmp), "%s%s%s",
+		    conn->current_channel->channel_name,
+		    conn->current_channel->server[0] ? "@" : "",
+		    conn->current_channel->server);
+    name = tmp;
   } else {
     name = cmd->argv[1];
   }
@@ -2119,7 +2127,7 @@ SILC_FSM_STATE(silc_client_command_kick)
   SilcBuffer idp, idp2;
   SilcClientEntry target;
   SilcDList clients = NULL;
-  char *name;
+  char *name, tmp[512];
 
   if (cmd->argc < 3) {
     SAY(conn->client, conn, SILC_CLIENT_MESSAGE_INFO,
@@ -2133,7 +2141,15 @@ SILC_FSM_STATE(silc_client_command_kick)
       COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
-    name = conn->current_channel->channel_name;
+
+    if (client->internal->params->full_channel_names)
+      silc_snprintf(tmp, sizeof(tmp), conn->current_channel->channel_name);
+    else
+      silc_snprintf(tmp, sizeof(tmp), "%s%s%s",
+		    conn->current_channel->channel_name,
+		    conn->current_channel->server[0] ? "@" : "",
+		    conn->current_channel->server);
+    name = tmp;
   } else {
     name = cmd->argv[1];
   }
@@ -2521,7 +2537,7 @@ SILC_FSM_STATE(silc_client_command_leave)
   SilcClient client = conn->client;
   SilcChannelEntry channel;
   SilcBuffer idp;
-  char *name;
+  char *name, tmp[512];
 
   if (cmd->argc != 2) {
     SAY(conn->client, conn, SILC_CLIENT_MESSAGE_INFO,
@@ -2535,7 +2551,15 @@ SILC_FSM_STATE(silc_client_command_leave)
       COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
-    name = conn->current_channel->channel_name;
+
+    if (client->internal->params->full_channel_names)
+      silc_snprintf(tmp, sizeof(tmp), conn->current_channel->channel_name);
+    else
+      silc_snprintf(tmp, sizeof(tmp), "%s%s%s",
+		    conn->current_channel->channel_name,
+		    conn->current_channel->server[0] ? "@" : "",
+		    conn->current_channel->server);
+    name = tmp;
   } else {
     name = cmd->argv[1];
   }
@@ -2580,7 +2604,7 @@ SILC_FSM_STATE(silc_client_command_users)
 {
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
-  char *name;
+  char *name, tmp[512];
 
   if (cmd->argc != 2) {
     SAY(conn->client, conn, SILC_CLIENT_MESSAGE_INFO,
@@ -2594,7 +2618,15 @@ SILC_FSM_STATE(silc_client_command_users)
       COMMAND_ERROR(SILC_STATUS_ERR_NOT_ON_CHANNEL);
       goto out;
     }
-    name = conn->current_channel->channel_name;
+
+    if (conn->client->internal->params->full_channel_names)
+      silc_snprintf(tmp, sizeof(tmp), conn->current_channel->channel_name);
+    else
+      silc_snprintf(tmp, sizeof(tmp), "%s%s%s",
+		    conn->current_channel->channel_name,
+		    conn->current_channel->server[0] ? "@" : "",
+		    conn->current_channel->server);
+    name = tmp;
   } else {
     name = cmd->argv[1];
   }

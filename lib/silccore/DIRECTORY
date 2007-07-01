@@ -11,7 +11,7 @@
 @LINK=silcid.html:SILC ID Interface
 @LINK=silcargument.html:SILC Argument Interface
 @LINK=silcattrs.html:SILC Attributes Interface
-@LINK=silcpacket.html:Packet Protocol Interface
+@LINK=silcpacket.html:Packet Engine Interface
 @LINK=silcpubkey.html:SILC Public Key Payload Interface
 -->
 

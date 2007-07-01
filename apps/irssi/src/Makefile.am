@@ -17,9 +17,6 @@ else
 SBDRS=lib-popt lib-config core
 endif
 
-pkginc_srcdir=$(pkgincludedir)/src
-pkginc_src_HEADERS = \
-	common.h
 noinst_HEADERS = \
 	common.h
 

@@ -104,6 +104,7 @@ do {							\
   (list).next_offset = silc_offsetof(type, nextfield);	\
   (list).prev_set = 0;					\
   (list).prev_offset = 0;				\
+  (list).end_set = 0;					\
   (list).head = (list).tail = (list).current = NULL;	\
 } while(0)
 
@@ -143,6 +144,7 @@ do {								\
   (list).next_offset = silc_offsetof(type, nextfield);		\
   (list).prev_offset = silc_offsetof(type, prevfield);		\
   (list).prev_set = 1;						\
+  (list).end_set = 0;						\
   (list).head = (list).tail = (list).current = NULL;		\
 } while(0)
 

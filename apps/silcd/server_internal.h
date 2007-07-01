@@ -120,10 +120,6 @@ struct SilcServerStruct {
   /* Pending command queue */
   SilcDList pending_commands;
 
-  /* Purge context for disconnected clients */
-  SilcIDListPurge purge_i;
-  SilcIDListPurge purge_g;
-
   unsigned int server_type    : 2;   /* Server type (server.h) */
   unsigned int standalone     : 1;   /* Set if server is standalone, and
 					does not have connection to network. */

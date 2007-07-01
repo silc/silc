@@ -50,6 +50,7 @@ typedef struct SilcServerConfigPkcsStruct {
 
 typedef struct SilcServerConfigServerInfoInterfaceStruct {
   char *server_ip;
+  char *public_ip;
   SilcUInt16 port;
   struct SilcServerConfigServerInfoInterfaceStruct *next;
 } SilcServerConfigServerInfoInterface;
@@ -149,6 +150,7 @@ typedef struct SilcServerConfigRouterStruct {
   SilcServerConfigConnParams *param;
   SilcBool initiator;
   SilcBool backup_router;
+  SilcBool dynamic_connection;
   char *backup_replace_ip;
   SilcUInt16 backup_replace_port;
   SilcBool backup_local;
@@ -180,6 +182,8 @@ typedef struct {
   SilcBool httpd;
   char *httpd_ip;
   SilcUInt16 httpd_port;
+  SilcBool dynamic_server;
+  SilcBool local_channels;
 
   /* Other configuration sections */
   SilcServerConfigCipher *cipher;

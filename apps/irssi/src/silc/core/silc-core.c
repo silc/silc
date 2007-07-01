@@ -50,7 +50,7 @@ static int opt_bits = 0;
 static int init_failed = 0;
 #endif
 
-static int idletag = -1;
+static int running = 0;
 
 /* SILC Client */
 SilcClient silc_client = NULL;
@@ -76,10 +76,62 @@ void silc_lag_deinit(void);
 void silc_core_deinit(void);
 #endif
 
-static int my_silc_scheduler(void)
+static gboolean my_silc_scheduler(gpointer data)
 {
+  SILC_LOG_DEBUG(("Timeout"));
   silc_client_run_one(silc_client);
-  return 1;
+  return FALSE;
+}
+
+static gboolean my_silc_scheduler_fd(GIOChannel *source,
+                                     GIOCondition condition,
+                                     gpointer data)
+{
+  SILC_LOG_DEBUG(("I/O event, %d", SILC_PTR_TO_32(data)));
+  silc_client_run_one(silc_client);
+  return TRUE;
+}
+
+static void scheduler_notify_cb(SilcSchedule schedule,
+				SilcBool added, SilcTask task,
+				SilcBool fd_task, SilcUInt32 fd,
+				SilcTaskEvent event,
+				long seconds, long useconds,
+				void *context)
+{
+  if (added) {
+    if (fd_task) {
+      /* Add fd */
+      GIOChannel *ch;
+      guint e = 0;
+
+      SILC_LOG_DEBUG(("Add fd %d, events %d", fd, event));
+      g_source_remove_by_user_data(SILC_32_TO_PTR(fd));
+
+      if (event & SILC_TASK_READ)
+        e |= (G_IO_IN | G_IO_PRI | G_IO_HUP | G_IO_ERR);
+      if (event & SILC_TASK_WRITE)
+        e |= (G_IO_OUT | G_IO_HUP | G_IO_ERR | G_IO_NVAL);
+
+      if (e) {
+	ch = g_io_channel_unix_new(fd);
+	g_io_add_watch(ch, e, my_silc_scheduler_fd, SILC_32_TO_PTR(fd));
+	g_io_channel_unref(ch);
+      }
+    } else {
+      /* Add timeout */
+      guint t;
+
+      t = (seconds * 1000) + (useconds / 1000);
+      SILC_LOG_DEBUG(("interval %d msec", t));
+      g_timeout_add(t, my_silc_scheduler, NULL);
+    }
+  } else {
+    if (fd_task) {
+      /* Remove fd */
+      g_source_remove_by_user_data(SILC_32_TO_PTR(fd));
+    }
+  }
 }
 
 static CHATNET_REC *create_chatnet(void)
@@ -561,6 +613,7 @@ silc_stopped(SilcClient client, void *context)
 static void
 silc_running(SilcClient client, void *context)
 {
+  running = 1;
   SILC_LOG_DEBUG(("Client library is running"));
 }
 
@@ -602,6 +655,8 @@ static void sig_init_finished(void)
     return;
   }
 
+  silc_schedule_set_notify(silc_client->schedule, scheduler_notify_cb, NULL);
+
   silc_log_set_callback(SILC_LOG_INFO, silc_log_misc, NULL);
   silc_log_set_callback(SILC_LOG_WARNING, silc_log_misc, NULL);
   silc_log_set_callback(SILC_LOG_ERROR, silc_log_misc, NULL);
@@ -609,8 +664,8 @@ static void sig_init_finished(void)
 
   silc_hash_alloc("sha1", &sha1hash);
 
-  /* register SILC scheduler */
-  idletag = g_timeout_add(5, (GSourceFunc) my_silc_scheduler, NULL);
+  /* Run SILC scheduler */
+  my_silc_scheduler(NULL);
 }
 
 /* Init SILC. Called from src/fe-text/silc.c */
@@ -715,6 +770,7 @@ void silc_core_init(void)
   /* Initialize client parameters */
   memset(&params, 0, sizeof(params));
   strcat(params.nickname_format, settings_get_str("nickname_format"));
+  params.full_channel_names = TRUE;
 
   /* Allocate SILC client */
   silc_client = silc_client_alloc(&ops, &params, NULL, silc_version_string);
@@ -788,14 +844,12 @@ void silc_core_init(void)
 
 void silc_core_deinit(void)
 {
-  if (idletag != -1)
-    g_source_remove(idletag);
-
-  int stopped = 0;
-  silc_client_stop(silc_client, silc_stopped, &stopped);
-
-  while (!stopped)
-    silc_client_run_one(silc_client);
+  if (running) {
+    volatile int stopped = 0;
+    silc_client_stop(silc_client, silc_stopped, (void *)&stopped);
+    while (!stopped)
+      silc_client_run_one(silc_client);
+  }
 
   if (opt_hostname)
     silc_free(opt_hostname);
@@ -823,7 +877,9 @@ void silc_core_deinit(void)
 
   chat_protocol_unregister("SILC");
 
-  silc_pkcs_public_key_free(irssi_pubkey);
-  silc_pkcs_private_key_free(irssi_privkey);
+  if (irssi_pubkey)
+    silc_pkcs_public_key_free(irssi_pubkey);
+  if (irssi_privkey)
+    silc_pkcs_private_key_free(irssi_privkey);
   silc_client_free(silc_client);
 }

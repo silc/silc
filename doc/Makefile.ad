@@ -17,6 +17,7 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
+#ifdef SILC_DIST_TOOLKIT
 all:
 	touch draft-riikonen-silc-spec-09.txt
 	touch draft-riikonen-silc-pp-09.txt
@@ -26,7 +27,6 @@ all:
 	touch draft-riikonen-silc-multimedia-session-00.txt
 	touch draft-riikonen-presence-attrs-04.txt
 
-#ifdef SILC_DIST_TOOLKIT
 makerfc = $(SILC_TOP_SRCDIR)/scripts/makerfc
 
 toolkit-ref-html:
@@ -52,7 +52,6 @@ toolkit-ref-pdf:
         fi
 
 dist-hook:
-	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
 	touch draft-riikonen-silc-spec-09.txt
 	touch draft-riikonen-silc-pp-09.txt
 	touch draft-riikonen-silc-ke-auth-09.txt
@@ -78,14 +77,6 @@ dist-hook:
 #else !SILC_DIST_TOOLKIT
 dist-hook:
 	$(SILC_TOP_SRCDIR)/scripts/manpages.pl
-	rm -f draft-riikonen*.txt
-	touch draft-riikonen-silc-spec-09.txt
-	touch draft-riikonen-silc-pp-09.txt
-	touch draft-riikonen-silc-ke-auth-09.txt
-	touch draft-riikonen-silc-commands-07.txt
-	touch draft-riikonen-silc-flags-payloads-04.txt
-	touch draft-riikonen-silc-multimedia-session-00.txt
-	touch draft-riikonen-presence-attrs-04.txt
 #endif SILC_DIST_TOOLKIT
 
 doc-install:
@@ -94,9 +85,9 @@ doc-install:
 	-$(INSTALL_DATA) $(top_srcdir)/doc/CodingStyle $(docdir)/
 	-$(INSTALL_DATA) $(top_srcdir)/GPL $(docdir)/
 	-$(INSTALL_DATA) $(top_srcdir)/BSD $(docdir)/
+	-$(INSTALL_DATA) $(top_srcdir)/doc/*.txt $(docdir)/
 #endif SILC_DIST_TOOLKIT
 	-$(INSTALL_DATA) $(top_srcdir)/doc/FAQ $(docdir)/
-	-$(INSTALL_DATA) $(top_srcdir)/doc/*.txt $(docdir)/
 	-$(INSTALL_DATA) $(top_srcdir)/COPYING $(docdir)/
 	-$(INSTALL_DATA) $(top_srcdir)/CHANGES $(docdir)/
 	-$(INSTALL_DATA) $(top_srcdir)/CREDITS $(docdir)/
@@ -114,13 +105,14 @@ EXTRA_DIST = 			\
 #ifdef SILC_DIST_SERVER
 	examples silcd.8 silcd.conf.5	\
 	example_silcd.conf 	\
+	silcalgs.conf		\
 #endif SILC_DIST_SERVER
 #ifdef SILC_DIST_TOOLKIT
 	toolkit			\
 	CodingStyle 		\
+	draft-riikonen*.txt	\
+	silcalgs.conf		\
 #endif SILC_DIST_TOOLKIT
-	FAQ 			\
-	silcalgs.conf 		\
-	draft-riikonen*.txt
+	FAQ
 
 include $(top_srcdir)/Makefile.defines.in

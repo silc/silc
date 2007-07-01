@@ -1,14 +1,12 @@
 
 @SYNTAX:key@
 
-This command is used to set and unset private keys for
-channels, set and unset private keys for private messages
-with remote clients and to send key agreement requests and
-negotiate the key agreement protocol with remote client.
-The key agreement is supported only to negotiate private
-message keys, it currently cannot be used to negotiate
-private keys for channels, as it is not convenient for that
-purpose.
+This command is used to set and unset private channel keys,
+set and unset private message keys with remote users, and
+to send key agreement requests and negotiate the key agreement
+protocol with remote user.  The key agreement is supported only
+to negotiate private message keys, it currently cannot be used
+to negotiate channel private keys.
 
 Types:
 

@@ -1,6 +1,6 @@
 include $(top_srcdir)/Makefile.defines.in
 
-moduledir = $(silc_modulesdir)
+moduledir = @SILC_IRSSIDIR@
 
 
 IRSSI_INCLUDE=../../..

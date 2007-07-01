@@ -118,7 +118,7 @@ typedef void (*SilcNetCallback)(SilcNetStatus status,
  *
  *    This function creates TCP listener.  This is used to create network
  *    listener for incoming connections, and `callback' will be called
- *    everytime new connection is received.  If `local_ip_addr' is NULL any
+ *    everytime new connection is received.  If `local_ip_addr' is NULL 'any'
  *    address is used.  If provided it can be used bind the listener to
  *    `local_ip_count' many IP addresses provided in `local_ip_addr' table.
  *    On success returns the SilcNetListener context, or NULL on error.
@@ -504,7 +504,7 @@ typedef void (*SilcNetResolveCallback)(const char *result, void *context);
  * SYNOPSIS
  *
  *    SilcBool silc_net_gethostbyname(const char *name, SilcBool prefer_ipv6,
- *                                char *address, SilcUInt32 address_len);
+ *                                    char *address, SilcUInt32 address_len);
  *
  * DESCRIPTION
  *
@@ -553,9 +553,9 @@ void silc_net_gethostbyname_async(const char *name,
  * SYNOPSIS
  *
  *   SilcBool silc_net_gethostbyaddr(const char *addr, char *name,
- *                               SilcUInt32 name_len);
+ *                                   SilcUInt32 name_len);
  *
- * DESCRIPTION
+x * DESCRIPTION
  *
  *    Resolves the hostname for the IP address indicated by the `addr'
  *    This returns TRUE and the resolved hostname to the `name' buffer,

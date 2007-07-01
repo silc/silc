@@ -1,12 +1,12 @@
 
 @SYNTAX:cumode@
 
-This command is used to manage the users modes on the channel.
-Most of the modes require that the user which changes some
-other user's mode must be channel founder or channel operator.  The
-mode is added by adding + before the option(s) and removed by
-adding - before the option(s).  The following channel user modes
-are available:
+ This command is used to manage the users modes on the channel.
+ Most of the modes require that the user which changes some
+ other user's mode must be channel founder or channel operator.
+ The mode is added by adding + before the option(s) and removed
+ by adding - before the option(s).  The following channel user
+ modes are available:
 
     a <nickname>[@<server>]
 
@@ -19,7 +19,7 @@ are available:
 
         Set/Unset channel founder.  If you are channel
         founder you can set the channel founder authentication
-        using CMODEc command.
+        using the CMODE command.
 
         If the <pubkeyfile> and <privkeyfile> is
         provided then the <pubkeyfile> will the used
@@ -27,11 +27,12 @@ are available:
         is used to compute a signature for the SILC
         server.  If these are omitted then the default
         SILC keypair is used.  Normally you do not need
-        to provide these arguments.
+        to provide these arguments unless you want to use
+        different keypair for channel founder authentication.
 
     o <nickname>[@<server>]
 
-        Set/unset channel operator.  Requires that 
+        Set/unset channel operator.  Requires that
         you are channel operator or channel founder.
 
     b <nickname>[@<server>]
@@ -67,5 +68,20 @@ are available:
         unset this mode itself.  This mode cannot be set
         or unset to yourself.
 
+Examples:
+
+  Become a founder (and operator) on the channel that you have
+  founded and have set the founder mode:
+
+    /CUMODE * +of yournick
+    /CUMODE channel_name +f yournick
+
+  Give operator privileges to your Friend on this channel:
+
+    /CUMODE * +o Friend
+
+  Quiet misbehaving user on your channel:
+
+    /CUMODE * +q lamer
 
 See also: CMODE, UMODE

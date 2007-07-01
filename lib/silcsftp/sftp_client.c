@@ -330,7 +330,7 @@ static void silc_sftp_client_io(SilcStream stream, SilcStreamStatus status,
 				void *context)
 {
   SilcSFTPClient sftp = context;
-  unsigned char inbuf[63488];
+  unsigned char inbuf[65536];
   SilcBufferStruct packet;
   int ret;
 

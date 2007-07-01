@@ -45,7 +45,7 @@ esac
 fi
 
 SILC_ADD_CC_FLAGS(SILC_CRYPTO, -fno-regmove)
-if test x$summary_debug = xno; then
+if test x$summary_debug = xno -a x$want_cc_optimizations = xtrue; then
   SILC_ADD_CC_FLAGS(SILC_CRYPTO, -fomit-frame-pointer -O3)
 fi
 

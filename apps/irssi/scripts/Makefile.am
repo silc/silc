@@ -1,8 +1,13 @@
 SUBDIRS = examples
 
-scriptdir = $(datadir)/irssi/scripts
+PLUGIN_SCR = silc.pl
 
-script_DATA = \
+if SILCPLUGIN
+scriptdir = $(datadir)/irssi/scripts
+IRSSI_SCR =
+else
+scriptdir = $(datadir)/silc/scripts
+IRSSI_SCR = \
 	autoop.pl \
 	autorejoin.pl \
 	buf.pl \
@@ -12,8 +17,12 @@ script_DATA = \
 	mlock.pl \
 	quitmsg.pl \
 	scriptassist.pl \
-	silc.pl \
 	splitlong.pl \
 	usercount.pl
+endif
+
+script_DATA = \
+        $(PLUGIN_SCR) \
+        $(IRSSI_SCR)
 
 EXTRA_DIST = $(script_DATA)
