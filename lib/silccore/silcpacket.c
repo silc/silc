@@ -1972,8 +1972,8 @@ static inline SilcBool silc_packet_parse(SilcPacket packet)
 		   silc_buffer_len(buffer)), buffer->head,
 		   silc_buffer_headlen(buffer) + silc_buffer_len(buffer));
 
-  SILC_LOG_DEBUG(("Incoming packet type: %d (%s)", packet->type,
-		  silc_get_packet_name(packet->type)));
+  SILC_LOG_DEBUG(("Incoming packet type: %d (%s), flags %d", packet->type,
+		  silc_get_packet_name(packet->type), packet->flags));
 
   return TRUE;
 }

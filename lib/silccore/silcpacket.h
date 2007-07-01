@@ -115,7 +115,7 @@ typedef SilcUInt8 SilcPacketFlags;
 #define SILC_PACKET_FLAG_ACK              0x10    /* Acknowledge packet */
 
 /* Impelemntation specific flags */
-#define SILC_PACKET_FLAG_LONG_PAD         0x12    /* Use maximum padding */
+#define SILC_PACKET_FLAG_LONG_PAD         0x20    /* Use maximum padding */
 /***/
 
 /****s* silccore/SilcPacketAPI/SilcPacketEngine
