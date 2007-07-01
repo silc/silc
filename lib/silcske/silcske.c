@@ -671,19 +671,23 @@ static SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
   SilcBuffer buf;
-  unsigned char *e, *f, *KEY;
-  SilcUInt32 e_len, f_len, KEY_len;
+  unsigned char *e, *f, *KEY, *s_data;
+  SilcUInt32 e_len, f_len, KEY_len, s_len;
   int ret;
 
   SILC_LOG_DEBUG(("Start"));
 
   if (initiator == FALSE) {
+    s_data = (ske->start_payload_copy ?
+	     silc_buffer_data(ske->start_payload_copy) : NULL);
+    s_len = (ske->start_payload_copy ?
+	     silc_buffer_len(ske->start_payload_copy) : 0);
     e = silc_mp_mp2bin(&ske->ke1_payload->x, 0, &e_len);
     f = silc_mp_mp2bin(&ske->ke2_payload->x, 0, &f_len);
     KEY = silc_mp_mp2bin(ske->KEY, 0, &KEY_len);
 
     /* Format the buffer used to compute the hash value */
-    buf = silc_buffer_alloc_size(silc_buffer_len(ske->start_payload_copy) +
+    buf = silc_buffer_alloc_size(s_len +
 				 ske->ke2_payload->pk_len +
 				 ske->ke1_payload->pk_len +
 				 e_len + f_len + KEY_len);
@@ -694,28 +698,24 @@ static SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
     if (!ske->ke1_payload->pk_data) {
       ret =
 	silc_buffer_format(buf,
-			   SILC_STR_UI_XNSTRING(
-				   ske->start_payload_copy->data,
-				   silc_buffer_len(ske->start_payload_copy)),
-			   SILC_STR_UI_XNSTRING(ske->ke2_payload->pk_data,
-						ske->ke2_payload->pk_len),
-			   SILC_STR_UI_XNSTRING(e, e_len),
-			   SILC_STR_UI_XNSTRING(f, f_len),
-			   SILC_STR_UI_XNSTRING(KEY, KEY_len),
+			   SILC_STR_DATA(s_data, s_len),
+			   SILC_STR_DATA(ske->ke2_payload->pk_data,
+					 ske->ke2_payload->pk_len),
+			   SILC_STR_DATA(e, e_len),
+			   SILC_STR_DATA(f, f_len),
+			   SILC_STR_DATA(KEY, KEY_len),
 			   SILC_STR_END);
     } else {
       ret =
 	silc_buffer_format(buf,
-			   SILC_STR_UI_XNSTRING(
-				   ske->start_payload_copy->data,
-				   silc_buffer_len(ske->start_payload_copy)),
-			   SILC_STR_UI_XNSTRING(ske->ke2_payload->pk_data,
-						ske->ke2_payload->pk_len),
-			   SILC_STR_UI_XNSTRING(ske->ke1_payload->pk_data,
-						ske->ke1_payload->pk_len),
-			   SILC_STR_UI_XNSTRING(e, e_len),
-			   SILC_STR_UI_XNSTRING(f, f_len),
-			   SILC_STR_UI_XNSTRING(KEY, KEY_len),
+			   SILC_STR_DATA(s_data, s_len),
+			   SILC_STR_DATA(ske->ke2_payload->pk_data,
+					 ske->ke2_payload->pk_len),
+			   SILC_STR_DATA(ske->ke1_payload->pk_data,
+					 ske->ke1_payload->pk_len),
+			   SILC_STR_DATA(e, e_len),
+			   SILC_STR_DATA(f, f_len),
+			   SILC_STR_DATA(KEY, KEY_len),
 			   SILC_STR_END);
     }
     if (ret == -1) {
@@ -736,21 +736,23 @@ static SilcSKEStatus silc_ske_make_hash(SilcSKE ske,
     silc_free(f);
     silc_free(KEY);
   } else {
+    s_data = (ske->start_payload_copy ?
+	     silc_buffer_data(ske->start_payload_copy) : NULL);
+    s_len = (ske->start_payload_copy ?
+	     silc_buffer_len(ske->start_payload_copy) : 0);
     e = silc_mp_mp2bin(&ske->ke1_payload->x, 0, &e_len);
 
-    buf = silc_buffer_alloc_size(silc_buffer_len(ske->start_payload_copy) +
-				 ske->ke1_payload->pk_len + e_len);
+    buf = silc_buffer_alloc_size(s_len + ske->ke1_payload->pk_len + e_len);
     if (!buf)
       return SILC_SKE_STATUS_OUT_OF_MEMORY;
 
     /* Format the buffer used to compute the hash value */
     ret =
       silc_buffer_format(buf,
-			 SILC_STR_UI_XNSTRING(ske->start_payload_copy->data,
-		       	             silc_buffer_len(ske->start_payload_copy)),
-			 SILC_STR_UI_XNSTRING(ske->ke1_payload->pk_data,
-					      ske->ke1_payload->pk_len),
-			 SILC_STR_UI_XNSTRING(e, e_len),
+			 SILC_STR_DATA(s_data, s_len),
+			 SILC_STR_DATA(ske->ke1_payload->pk_data,
+				       ske->ke1_payload->pk_len),
+			 SILC_STR_DATA(e, e_len),
 			 SILC_STR_END);
     if (ret == -1) {
       silc_buffer_free(buf);
@@ -1611,14 +1613,16 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
 
   payload = ske->ke2_payload;
 
+  /* Compute the HASH value */
+  SILC_LOG_DEBUG(("Computing HASH value"));
+  status = silc_ske_make_hash(ske, hash, &hash_len, FALSE);
+  if (status != SILC_SKE_STATUS_OK)
+    goto err;
+  ske->hash = silc_memdup(hash, hash_len);
+  ske->hash_len = hash_len;
+
   if (ske->prop->public_key) {
     SILC_LOG_DEBUG(("Public key is authentic"));
-
-    /* Compute the hash value */
-    status = silc_ske_make_hash(ske, hash, &hash_len, FALSE);
-    if (status != SILC_SKE_STATUS_OK)
-      goto err;
-
     SILC_LOG_DEBUG(("Verifying signature (HASH)"));
 
     /* Verify signature */
@@ -1630,9 +1634,6 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
     }
 
     SILC_LOG_DEBUG(("Signature is Ok"));
-
-    ske->hash = silc_memdup(hash, hash_len);
-    ske->hash_len = hash_len;
     memset(hash, 'F', hash_len);
   }
 
@@ -2223,22 +2224,23 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
     }
     ske->ke2_payload->pk_data = pk;
     ske->ke2_payload->pk_len = pk_len;
+  }
 
-    SILC_LOG_DEBUG(("Computing HASH value"));
+  SILC_LOG_DEBUG(("Computing HASH value"));
 
-    /* Compute the hash value */
-    memset(hash, 0, sizeof(hash));
-    status = silc_ske_make_hash(ske, hash, &hash_len, FALSE);
-    if (status != SILC_SKE_STATUS_OK) {
-      /** Error computing hash */
-      ske->status = status;
-      silc_fsm_next(fsm, silc_ske_st_responder_error);
-      return SILC_FSM_CONTINUE;
-    }
+  /* Compute the hash value */
+  memset(hash, 0, sizeof(hash));
+  status = silc_ske_make_hash(ske, hash, &hash_len, FALSE);
+  if (status != SILC_SKE_STATUS_OK) {
+    /** Error computing hash */
+    ske->status = status;
+    silc_fsm_next(fsm, silc_ske_st_responder_error);
+    return SILC_FSM_CONTINUE;
+  }
+  ske->hash = silc_memdup(hash, hash_len);
+  ske->hash_len = hash_len;
 
-    ske->hash = silc_memdup(hash, hash_len);
-    ske->hash_len = hash_len;
-
+  if (ske->public_key && ske->private_key) {
     SILC_LOG_DEBUG(("Signing HASH value"));
 
     /* Sign the hash value */
@@ -2276,7 +2278,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
 
   silc_buffer_free(payload_buf);
 
-  /* In case we are doing rekey move to finish it.  */
+  /* In case we are doing rekey move to finish it. */
   if (ske->rekey) {
     /** Finish rekey */
     silc_fsm_next(fsm, silc_ske_st_rekey_responder_done);
@@ -2475,6 +2477,13 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_start)
     return SILC_FSM_CONTINUE;
   }
 
+  if (!silc_hash_alloc(ske->rekey->hash, &ske->prop->hash)) {
+    /** Cannot allocate hash */
+    ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
+    silc_fsm_next(fsm, silc_ske_st_initiator_error);
+    return SILC_FSM_CONTINUE;
+  }
+
   /* Send REKEY packet to start rekey protocol */
   if (!silc_ske_packet_send(ske, SILC_PACKET_REKEY, 0, NULL, 0)) {
     /** Error sending packet */
@@ -2520,13 +2529,7 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_done)
   silc_packet_get_keys(ske->stream, &send_key, NULL, &hmac_send, NULL);
   key_len = silc_cipher_get_key_len(send_key);
   block_len = silc_cipher_get_block_len(send_key);
-
-  if (!silc_hash_alloc(ske->rekey->hash, &hash)) {
-    /** Cannot allocate hash */
-    ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
-    silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
-  }
+  hash = ske->prop->hash;
   hash_len = silc_hash_len(hash);
 
   /* Process key material */
@@ -2557,7 +2560,6 @@ SILC_FSM_STATE(silc_ske_st_rekey_initiator_done)
 
   ske->prop->cipher = send_key;
   ske->prop->hmac = hmac_send;
-  ske->prop->hash = hash;
 
   /* Get sending keys */
   if (!silc_ske_set_keys(ske, ske->keymat, ske->prop, &send_key, NULL,
@@ -2674,8 +2676,11 @@ silc_ske_rekey_initiator(SilcSKE ske,
 {
   SILC_LOG_DEBUG(("Start SKE rekey as initator"));
 
-  if (!ske || !stream || !rekey)
+  if (!ske || !stream || !rekey) {
+    SILC_LOG_ERROR(("Missing arguments to silc_ske_rekey_initiator"));
+    SILC_ASSERT(rekey);
     return NULL;
+  }
 
   if (!silc_async_init(&ske->op, silc_ske_abort, NULL, ske))
     return NULL;
@@ -2758,6 +2763,13 @@ SILC_FSM_STATE(silc_ske_st_rekey_responder_start)
     return SILC_FSM_CONTINUE;
   }
 
+  if (!silc_hash_alloc(ske->rekey->hash, &ske->prop->hash)) {
+    /** Cannot allocate hash */
+    ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
+    silc_fsm_next(fsm, silc_ske_st_responder_error);
+    return SILC_FSM_CONTINUE;
+  }
+
   /* If doing rekey without PFS, move directly to the end of the protocol. */
   if (!ske->rekey->pfs) {
     /** Rekey without PFS */
@@ -2794,13 +2806,7 @@ SILC_FSM_STATE(silc_ske_st_rekey_responder_done)
   silc_packet_get_keys(ske->stream, &send_key, NULL, &hmac_send, NULL);
   key_len = silc_cipher_get_key_len(send_key);
   block_len = silc_cipher_get_block_len(send_key);
-
-  if (!silc_hash_alloc(ske->rekey->hash, &hash)) {
-    /** Cannot allocate hash */
-    ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
-    silc_fsm_next(fsm, silc_ske_st_responder_error);
-    return SILC_FSM_CONTINUE;
-  }
+  hash = ske->prop->hash;
   hash_len = silc_hash_len(hash);
 
   /* Process key material */
@@ -2831,7 +2837,6 @@ SILC_FSM_STATE(silc_ske_st_rekey_responder_done)
 
   ske->prop->cipher = send_key;
   ske->prop->hmac = hmac_send;
-  ske->prop->hash = hash;
 
   /* Get sending keys */
   if (!silc_ske_set_keys(ske, ske->keymat, ske->prop, &send_key, NULL,
@@ -3012,7 +3017,7 @@ silc_ske_process_key_material_data(unsigned char *data,
     return NULL;
   silc_buffer_format(buf,
 		     SILC_STR_UI_CHAR(0),
-		     SILC_STR_UI_XNSTRING(data, data_len),
+		     SILC_STR_DATA(data, data_len),
 		     SILC_STR_END);
 
   /* Take IVs */
@@ -3051,8 +3056,8 @@ silc_ske_process_key_material_data(unsigned char *data,
     if (!dist)
       return NULL;
     silc_buffer_format(dist,
-		       SILC_STR_UI_XNSTRING(data, data_len),
-		       SILC_STR_UI_XNSTRING(k1, hash_len),
+		       SILC_STR_DATA(data, data_len),
+		       SILC_STR_DATA(k1, hash_len),
 		       SILC_STR_END);
     memset(k2, 0, sizeof(k2));
     silc_hash_make(hash, dist->data, silc_buffer_len(dist), k2);
@@ -3062,7 +3067,7 @@ silc_ske_process_key_material_data(unsigned char *data,
     silc_buffer_pull_tail(dist, hash_len);
     silc_buffer_pull(dist, data_len + hash_len);
     silc_buffer_format(dist,
-		       SILC_STR_UI_XNSTRING(k2, hash_len),
+		       SILC_STR_DATA(k2, hash_len),
 		       SILC_STR_END);
     silc_buffer_push(dist, data_len + hash_len);
     memset(k3, 0, sizeof(k3));
@@ -3114,8 +3119,8 @@ silc_ske_process_key_material_data(unsigned char *data,
     if (!dist)
       return NULL;
     silc_buffer_format(dist,
-		       SILC_STR_UI_XNSTRING(data, data_len),
-		       SILC_STR_UI_XNSTRING(k1, hash_len),
+		       SILC_STR_DATA(data, data_len),
+		       SILC_STR_DATA(k1, hash_len),
 		       SILC_STR_END);
     memset(k2, 0, sizeof(k2));
     silc_hash_make(hash, dist->data, silc_buffer_len(dist), k2);
@@ -3125,7 +3130,7 @@ silc_ske_process_key_material_data(unsigned char *data,
     silc_buffer_pull_tail(dist, hash_len);
     silc_buffer_pull(dist, data_len + hash_len);
     silc_buffer_format(dist,
-		       SILC_STR_UI_XNSTRING(k2, hash_len),
+		       SILC_STR_DATA(k2, hash_len),
 		       SILC_STR_END);
     silc_buffer_push(dist, data_len + hash_len);
     memset(k3, 0, sizeof(k3));
@@ -3201,8 +3206,8 @@ silc_ske_process_key_material(SilcSKE ske,
   if (!buf)
     return NULL;
   silc_buffer_format(buf,
-		     SILC_STR_UI_XNSTRING(tmpbuf, klen),
-		     SILC_STR_UI_XNSTRING(ske->hash, ske->hash_len),
+		     SILC_STR_DATA(tmpbuf, klen),
+		     SILC_STR_DATA(ske->hash, ske->hash_len),
 		     SILC_STR_END);
 
   /* Process the key material */

@@ -352,6 +352,10 @@ typedef void (*SilcSKECompletionCb)(SilcSKE ske,
  *    SILC_SKE_SP_FLAG_MUTUAL is not set and you are initiator.  For
  *    responder both `public_key' and `private_key' must be set.
  *
+ *    When allocating SKE session for rekey, the `repository' and `private_key'
+ *    pointers must be NULL and the SilcSKEVerifyCb callback must not be
+ *    set with silc_ske_set_callbacks.
+ *
  * EXMPALE
  *
  *    // Initiator example
