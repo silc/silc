@@ -231,3 +231,42 @@ distributions live in distdir/ directory.  The distdefs can be used in any
 file in the source tree, but mainly they are used in Makefile.ad, 
 configure.ad and source and headers files.  See autodist documentation for 
 more information how to use distdefs.
+
+
+Merging Between CVS Branches
+============================
+
+Usually development moves from trunk to a specific branch when we are 
+nearing releasing the software.  After release the trunk will continue new 
+development and the branch will continue maintenance of the latest 
+version.  At some point the branch needs to be merged back to trunk to
+bring all relevant fixes back to trunk.  The merge is to be done as 
+follows:
+
+  cvs -z3 co -j branch_to_merge silc
+  cd silc
+  ... check trunk status ...
+  cvs -z3 commit
+
+The first command will merge the branch_to_merge to the trunk.  After 
+merging the state of the trunk should be checked for any possible 
+conflicts and fix if any exist.  The trunk then must be committed.
+
+After merge has been done the branch must be tagged:
+
+  cvs -z3 co -r branch_to_merge silc
+  cd silc
+  cvs -z3 tag branch_merged_20070701
+
+This tag can be used later when merging more changes from the same branch 
+to the trunk:
+
+  cvs -z3 co -j branch_merged_20070701 -j branch_to_merge silc
+  cd silc
+  ... check trunk status ...
+  cvs -z3 commit
+
+The tag is relevant so that the earlier changes would not be merged twice.  
+The tag assures that only changes made after the last merge will be merged 
+to trunk.  After this merge has been done the branch must be tagged again 
+in case more changes are merged again later.
