@@ -296,6 +296,70 @@ SilcBool silc_idcache_update_by_context(SilcIDCache cache, void *context,
   return silc_idcache_update(cache, c, new_id, new_name, free_old_name);
 }
 
+/* Move entry to another cache */
+
+SilcBool silc_idcache_move(SilcIDCache from_cache, SilcIDCache to_cache,
+			   SilcIDCacheEntry entry)
+{
+  SilcIDCacheEntry c;
+
+  SILC_LOG_DEBUG(("Moving entry %p from %p cache to %p cache", entry,
+		  from_cache, to_cache));
+
+  if (!from_cache || !to_cache || !entry)
+    return FALSE;
+
+  if (from_cache->id_type != to_cache->id_type) {
+    SILC_LOG_ERROR(("Incompatible ID caches, cannot move entry"));
+    return FALSE;
+  }
+
+  if (entry->context) {
+    if (!silc_hash_table_find(from_cache->context_table, entry->context,
+			      NULL, (void *)&c))
+      return FALSE;
+  } else if (entry->name) {
+    if (!silc_hash_table_find(from_cache->name_table, entry->name,
+			      NULL, (void *)&c))
+      return FALSE;
+  } else if (entry->id) {
+    if (!silc_hash_table_find(from_cache->id_table, entry->id,
+			      NULL, (void *)&c))
+      return FALSE;
+  } else {
+    return FALSE;
+  }
+
+  if (entry != c)
+    return FALSE;
+
+  /* See if this entry is added already to cache */
+  if (c->id && silc_idcache_find_by_id_one(to_cache, c->id, NULL)) {
+    SILC_LOG_ERROR(("Attempted to add same ID twice to ID Cache, id %s",
+		    silc_id_render(c->id, to_cache->id_type)));
+    SILC_ASSERT(FALSE);
+    return FALSE;
+  }
+
+  /* Remove from original cache */
+  if (c->name)
+    silc_hash_table_del_by_context(from_cache->name_table, c->name, c);
+  if (c->context)
+    silc_hash_table_del_by_context(from_cache->context_table, c->context, c);
+  if (c->id)
+    silc_hash_table_del_by_context(from_cache->id_table, c->id, c);
+
+  /* Move to the other cache */
+  if (c->id)
+    silc_hash_table_add(to_cache->id_table, c->id, c);
+  if (c->name)
+    silc_hash_table_add(to_cache->name_table, c->name, c);
+  if (c->context)
+    silc_hash_table_add(to_cache->context_table, c->context, c);
+
+  return TRUE;
+}
+
 /* Returns all cache entrys from the ID cache to the `ret' ID Cache List. */
 
 SilcBool silc_idcache_get_all(SilcIDCache cache, SilcList *ret_list)
