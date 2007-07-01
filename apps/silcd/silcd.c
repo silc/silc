@@ -673,8 +673,9 @@ int main(int argc, char **argv)
     silc_pkcs_register_default();
     silc_hash_register_default();
     silc_hmac_register_default();
-    silc_create_key_pair(opt_pkcs, opt_bits, pubfile, prvfile,
-			 opt_identifier, "", NULL, NULL, FALSE);
+    if (!silc_create_key_pair(opt_pkcs, opt_bits, pubfile, prvfile,
+			      opt_identifier, "", NULL, NULL, FALSE))
+      exit(1);
     exit(0);
   }
 

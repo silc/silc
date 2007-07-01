@@ -2465,10 +2465,22 @@ SILC_SERVER_CMD_FUNC(join)
 	  channel = silc_server_create_new_channel(server, server->id, cipher,
 						   hmac, channel_name, TRUE);
 	  if (!channel) {
-	    silc_server_command_send_status_data(
-				  cmd, SILC_COMMAND_JOIN,
-				  SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
-				  0, 2, cipher, strlen(cipher));
+	    if (cipher) {
+	      silc_server_command_send_status_data(
+				cmd, SILC_COMMAND_JOIN,
+				SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
+				0, 2, cipher, strlen(cipher));
+	    } else if (hmac) {
+	      silc_server_command_send_status_data(
+				cmd, SILC_COMMAND_JOIN,
+				SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
+				0, 2, hmac, strlen(hmac));
+	    } else {
+	      silc_server_command_send_status_reply(
+				cmd, SILC_COMMAND_JOIN,
+				SILC_STATUS_ERR_RESOURCE_LIMIT,
+				0);
+	    }
 	    goto out;
 	  }
 
@@ -2524,10 +2536,22 @@ SILC_SERVER_CMD_FUNC(join)
 	  channel = silc_server_create_new_channel(server, server->id, cipher,
 						   hmac, channel_name, TRUE);
 	  if (!channel) {
-	    silc_server_command_send_status_data(
-				       cmd, SILC_COMMAND_JOIN,
-				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0,
-				       2, cipher, strlen(cipher));
+	    if (cipher) {
+	      silc_server_command_send_status_data(
+				      cmd, SILC_COMMAND_JOIN,
+				      SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
+				      0, 2, cipher, strlen(cipher));
+	    } else if (hmac) {
+	      silc_server_command_send_status_data(
+				      cmd, SILC_COMMAND_JOIN,
+				      SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
+				      0, 2, hmac, strlen(hmac));
+	    } else {
+	      silc_server_command_send_status_reply(
+				      cmd, SILC_COMMAND_JOIN,
+				      SILC_STATUS_ERR_RESOURCE_LIMIT,
+				      0);
+	    }
 	    goto out;
 	  }
 
@@ -2557,10 +2581,22 @@ SILC_SERVER_CMD_FUNC(join)
 	channel = silc_server_create_new_channel(server, server->id, cipher,
 						 hmac, channel_name, TRUE);
 	if (!channel) {
-	  silc_server_command_send_status_data(
-				       cmd, SILC_COMMAND_JOIN,
-				       SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0,
-				       2, cipher, strlen(cipher));
+	  if (cipher) {
+	    silc_server_command_send_status_data(
+				      cmd, SILC_COMMAND_JOIN,
+				      SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
+				      0, 2, cipher, strlen(cipher));
+	  } else if (hmac) {
+	    silc_server_command_send_status_data(
+				      cmd, SILC_COMMAND_JOIN,
+				      SILC_STATUS_ERR_UNKNOWN_ALGORITHM,
+				      0, 2, hmac, strlen(hmac));
+	  } else {
+	    silc_server_command_send_status_reply(
+				      cmd, SILC_COMMAND_JOIN,
+				      SILC_STATUS_ERR_RESOURCE_LIMIT,
+				      0);
+	  }
 	  goto out;
 	}
 
@@ -4464,7 +4500,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
   username = silc_identifier_check(username, tmp_len, SILC_STRING_UTF8, 128,
 				   &tmp_len);
   if (!username) {
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
 					  SILC_STATUS_ERR_BAD_USERNAME,
 					  0);
     goto out;
@@ -4513,7 +4549,7 @@ SILC_SERVER_CMD_FUNC(silcoper)
   }
   if (!result) {
     /* Authentication failed */
-    silc_server_command_send_status_reply(cmd, SILC_COMMAND_OPER,
+    silc_server_command_send_status_reply(cmd, SILC_COMMAND_SILCOPER,
 					  SILC_STATUS_ERR_AUTH_FAILED, 0);
     goto out;
   }

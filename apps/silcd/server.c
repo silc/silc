@@ -24,6 +24,7 @@
 
 SILC_TASK_CALLBACK(silc_server_get_stats);
 SILC_TASK_CALLBACK(silc_server_connect_router);
+SILC_TASK_CALLBACK(silc_server_connect_to_router_retry);
 SILC_TASK_CALLBACK(silc_server_do_rekey);
 SILC_TASK_CALLBACK(silc_server_purge_expired_clients);
 static void silc_server_accept_new_connection(SilcNetStatus status,
@@ -876,12 +877,16 @@ SilcBool silc_server_init(SilcServer server)
      the ID list. */
   id_entry =
     silc_idlist_add_server(server->local_list, strdup(server->server_name),
-			   server->server_type, server->id, NULL, NULL);
+			   server->server_type,
+			   silc_id_dup(server->id, SILC_ID_SERVER),
+			   NULL, NULL);
   if (!id_entry) {
     SILC_LOG_ERROR(("Could not add local server to cache"));
     goto err;
   }
   id_entry->data.status |= SILC_IDLIST_STATUS_REGISTERED;
+  id_entry->data.conn_type = (server->server_type == SILC_SERVER ?
+			      SILC_CONN_SERVER : SILC_CONN_ROUTER);
   server->id_entry = id_entry;
 
   /* Create secondary TCP listeners */
@@ -1205,7 +1210,7 @@ void silc_server_stop(SilcServer server)
       silc_server_free_sock_user_data(server, ps,
 				      "Server is shutting down");
     }
-    silc_dlist_uninit(list);
+    silc_packet_engine_free_streams_list(list);
   }
 
   /* We are not connected to network anymore */
@@ -1216,6 +1221,12 @@ void silc_server_stop(SilcServer server)
     silc_net_close_listener(listener);
 
   silc_server_http_uninit(server);
+
+  /* Cancel any possible retry timeouts */
+  silc_schedule_task_del_by_callback(server->schedule,
+				     silc_server_connect_router);
+  silc_schedule_task_del_by_callback(server->schedule,
+				     silc_server_connect_to_router_retry);
 
   silc_schedule_stop(server->schedule);
 
@@ -1331,6 +1342,7 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 				  SILC_STATUS_ERR_AUTH_FAILED, NULL);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
+    silc_server_connection_free(sconn);
     return;
   }
 
@@ -1468,6 +1480,7 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 	  silc_server_backup_add(server, server->id_entry, ip,
 				 sconn->remote_port, TRUE);
 	}
+#if 0
       } else {
 	/* We already have primary router.  Disconnect this connection */
 	SILC_LOG_DEBUG(("We already have primary router, disconnect"));
@@ -1479,6 +1492,7 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 	silc_server_connection_free(sconn);
 	silc_free(entry);
 	return;
+#endif /* 0 */
       }
     } else {
       /* Add this server to be our backup router */
@@ -1520,13 +1534,6 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
   if (sconn && sconn->callback)
     (*sconn->callback)(server, id_entry, sconn->callback_context);
 
-  /* Free the temporary connection data context */
-  if (sconn) {
-    silc_server_config_unref(&sconn->conn);
-    silc_free(sconn->remote_host);
-    silc_free(sconn->backup_replace_ip);
-    silc_free(sconn);
-  }
   if (sconn == server->router_conn)
     server->router_conn = NULL;
 
@@ -1625,10 +1632,12 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
     }
   }
 
+  entry->data.rekey = rekey;
+
   /* Start connection authentication */
   sconn->op =
-    silc_connauth_initiator(connauth, server->server_type == SILC_ROUTER ?
-			    SILC_CONN_ROUTER : SILC_CONN_SERVER, auth_meth,
+    silc_connauth_initiator(connauth, server->server_type == SILC_SERVER ?
+			    SILC_CONN_SERVER : SILC_CONN_ROUTER, auth_meth,
 			    auth_data, auth_data_len,
 			    silc_server_ke_auth_compl, sconn);
 }
@@ -1800,6 +1809,7 @@ static void silc_server_connection_established(SilcNetStatus status,
       silc_schedule_task_add_timeout(sconn->server->schedule,
 				     silc_server_connect_to_router_retry,
 				     sconn, 1, 0);
+      silc_dlist_del(server->conns, sconn);
     } else {
       if (sconn->callback)
 	(*sconn->callback)(server, NULL, sconn->callback_context);
@@ -1883,7 +1893,6 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
 		   "normal server" : server->server_type == SILC_ROUTER ?
 		   "router" : "backup router/normal server")));
 
-  /* XXX */
   if (!server->config->routers) {
     /* There wasn't a configured router, we will continue but we don't
        have a connection to outside world.  We will be standalone server. */
@@ -1891,6 +1900,12 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
     server->standalone = TRUE;
     return;
   }
+
+  /* Cancel any possible retry timeouts */
+  silc_schedule_task_del_by_callback(server->schedule,
+				     silc_server_connect_router);
+  silc_schedule_task_del_by_callback(server->schedule,
+				     silc_server_connect_to_router_retry);
 
   /* Create the connections to all our routes */
   for (ptr = server->config->routers; ptr; ptr = ptr->next) {
@@ -1947,6 +1962,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
     sconn = silc_calloc(1, sizeof(*sconn));
     if (!sconn)
       continue;
+    sconn->server = server;
     sconn->remote_host = strdup(ptr->host);
     sconn->remote_port = ptr->port;
     sconn->backup = ptr->backup_router;
@@ -1957,7 +1973,6 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
 
     SILC_LOG_DEBUG(("Created connection %p", sconn));
 
-    /* XXX */
     if (!server->router_conn && !sconn->backup)
       server->router_conn = sconn;
 
@@ -2359,9 +2374,11 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
       if (entry->data.conn_type == SILC_CONN_SERVER) {
 	server->stat.my_servers++;
 	server->stat.servers++;
+	SILC_LOG_DEBUG(("my_servers %d", server->stat.my_servers));
       } else {
 	server->stat.my_routers++;
 	server->stat.routers++;
+	SILC_LOG_DEBUG(("my_routers %d", server->stat.my_routers));
       }
 
       /* Check whether this connection is to be our primary router connection
@@ -2696,8 +2713,8 @@ SILC_TASK_CALLBACK(silc_server_do_rekey)
 		  SILC_CONNTYPE_STRING(idata->conn_type)));
 
   /* Allocate SKE */
-  ske = silc_ske_alloc(server->rng, server->schedule, server->repository,
-		       server->public_key, server->private_key, sock);
+  ske = silc_ske_alloc(server->rng, server->schedule, NULL,
+		       server->public_key, NULL, sock);
   if (!ske)
     return;
 
@@ -2749,8 +2766,8 @@ static void silc_server_rekey(SilcServer server, SilcPacketStream sock,
 		  SILC_CONNTYPE_STRING(idata->conn_type)));
 
   /* Allocate SKE */
-  ske = silc_ske_alloc(server->rng, server->schedule, server->repository,
-		       server->public_key, server->private_key, sock);
+  ske = silc_ske_alloc(server->rng, server->schedule, NULL,
+		       server->public_key, NULL, sock);
   if (!ske) {
     silc_packet_free(packet);
     return;
@@ -3114,21 +3131,25 @@ void silc_server_free_sock_user_data(SilcServer server,
       if (idata->sconn)
 	silc_server_connection_free(idata->sconn);
 
+      /* Statistics */
+      if (idata->conn_type == SILC_CONN_SERVER) {
+	server->stat.my_servers--;
+	server->stat.servers--;
+	SILC_LOG_DEBUG(("my_servers %d", server->stat.my_servers));
+      } else if (idata->conn_type == SILC_CONN_ROUTER) {
+	server->stat.my_routers--;
+	server->stat.routers--;
+	SILC_LOG_DEBUG(("my_routers %d", server->stat.my_routers));
+      }
+      if (server->server_type == SILC_ROUTER)
+	server->stat.cell_servers--;
+
       /* Free the server entry */
       silc_server_backup_del(server, user_data);
       silc_server_backup_replaced_del(server, user_data);
       silc_idlist_del_data(user_data);
       if (!silc_idlist_del_server(server->local_list, user_data))
 	silc_idlist_del_server(server->global_list, user_data);
-      if (idata->conn_type == SILC_CONN_SERVER) {
-	server->stat.my_servers--;
-	server->stat.servers--;
-      } else {
-	server->stat.my_routers--;
-	server->stat.routers--;
-      }
-      if (server->server_type == SILC_ROUTER)
-	server->stat.cell_servers--;
 
       if (backup_router && backup_router != server->id_entry) {
 	/* Announce all of our stuff that was created about 5 minutes ago.
@@ -3936,6 +3957,9 @@ static void silc_server_announce_get_clients(SilcServer server,
       if (!client->connection && !client->router)
 	continue;
 
+      SILC_LOG_DEBUG(("Announce Client ID %s",
+		      silc_id_render(client->id, SILC_ID_CLIENT)));
+
       idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
 
       *clients = silc_buffer_realloc(*clients,
@@ -4163,6 +4187,9 @@ void silc_server_announce_get_channel_users(SilcServer server,
   while (silc_hash_table_get(&htl, NULL, (void *)&chl)) {
     clidp = silc_id_payload_encode(chl->client->id, SILC_ID_CLIENT);
 
+    SILC_LOG_DEBUG(("JOIN Client %s", silc_id_render(chl->client->id,
+						     SILC_ID_CLIENT)));
+
     /* JOIN Notify */
     tmp = silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_JOIN, 2,
 					     clidp->data,
@@ -4255,6 +4282,9 @@ void silc_server_announce_get_channels(SilcServer server,
 	announce = FALSE;
       else
 	announce = TRUE;
+
+      SILC_LOG_DEBUG(("Announce Channel ID %s",
+		      silc_id_render(channel->id, SILC_ID_CHANNEL)));
 
       silc_id_id2str(channel->id, SILC_ID_CHANNEL, cid, sizeof(cid), &id_len);
       name_len = strlen(channel->channel_name);
@@ -4560,10 +4590,10 @@ void silc_server_announce_watches(SilcServer server,
 /* Assembles user list and users mode list from the `channel'. */
 
 SilcBool silc_server_get_users_on_channel(SilcServer server,
-				      SilcChannelEntry channel,
-				      SilcBuffer *user_list,
-				      SilcBuffer *mode_list,
-				      SilcUInt32 *user_count)
+					  SilcChannelEntry channel,
+					  SilcBuffer *user_list,
+					  SilcBuffer *mode_list,
+					  SilcUInt32 *user_count)
 {
   SilcChannelClientEntry chl;
   SilcHashTableList htl;

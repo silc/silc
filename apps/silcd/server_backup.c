@@ -108,7 +108,8 @@ void silc_server_backup_add(SilcServer server, SilcServerEntry backup_server,
   }
 
   SILC_LOG_DEBUG(("Backup router %s will replace %s",
-		  backup_server->data.sconn->remote_host, ip, port));
+		  backup_server->data.sconn ?
+		  backup_server->data.sconn->remote_host : "(me)", ip));
 
   for (i = 0; i < server->backup->servers_count; i++) {
     if (!server->backup->servers[i].server) {
@@ -551,10 +552,10 @@ void silc_server_backup_ping_reply(void *context, void *reply)
     /* The primary is not down, refuse to serve the server as primary */
     SILC_LOG_DEBUG(("PING received, primary is up"));
     silc_server_backup_send_start_use(pc->server, pc->sock, TRUE);
+    silc_packet_free(pc->packet);
   }
 
   silc_packet_stream_unref(pc->sock);
-  silc_packet_free(pc->packet);
   silc_free(pc);
 }
 
@@ -811,7 +812,7 @@ void silc_server_backup_connected(SilcServer server,
     /* Try again */
     silc_schedule_task_add_timeout(server->schedule,
 				   silc_server_backup_connected_again,
-				   context, 0, 1);
+				   context, 5, 0);
     return;
   }
 
@@ -1159,7 +1160,27 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup)
 	if (sock == ctx->sock)
 	  continue;
 
-      send_to_backup:
+	server_entry = silc_packet_get_context(sock);
+	server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
+
+	SILC_LOG_DEBUG(("Sending RESUMED to %s", server_entry->server_name));
+	SILC_LOG_INFO(("Sending RESUMED to %s", server_entry->server_name));
+
+	/* This connection is performing this protocol too now */
+	server_entry->backup = TRUE;
+	server_entry->backup_proto = ctx;
+
+	data[0] = SILC_SERVER_BACKUP_RESUMED;
+	data[1] = 0;
+	silc_server_packet_send(server, sock, SILC_PACKET_RESUME_ROUTER, 0,
+				data, sizeof(data));
+      }
+
+      /* Now send the same packet to backup */
+      if (sock != ctx->sock) {
+	sleep(1);
+	sock = ctx->sock;
+	server_entry = silc_packet_get_context(sock);
 	server_entry->data.status &= ~SILC_IDLIST_STATUS_DISABLED;
 
 	SILC_LOG_DEBUG(("Sending RESUMED to %s", server_entry->server_name));
@@ -1176,13 +1197,6 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup)
       }
       silc_packet_engine_free_streams_list(list);
 
-      /* Now send the same packet to backup */
-      if (sock != ctx->sock) {
-	sleep(1);
-	sock = ctx->sock;
-	goto send_to_backup;
-      }
-
       /* We are now resumed and are back as primary router in the cell. */
       SILC_LOG_INFO(("We are now the primary router of our cell again"));
       server->wait_backup = FALSE;
@@ -1196,7 +1210,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup)
       /* For us this is the end of this protocol. */
       silc_schedule_task_add_timeout(server->schedule,
 				     silc_server_protocol_backup_done,
-				     ctx->sock, 0, 1);
+				     ctx, 0, 1);
     }
     break;
 
@@ -1262,7 +1276,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup)
       /* Protocol has ended, call the final callback */
       silc_schedule_task_add_timeout(server->schedule,
 				     silc_server_protocol_backup_done,
-				     ctx->sock, 0, 1);
+				     ctx, 0, 1);
     }
     break;
 
@@ -1270,7 +1284,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup)
     /* Protocol has ended, call the final callback */
     silc_schedule_task_add_timeout(server->schedule,
 				   silc_server_protocol_backup_done,
-				   ctx->sock, 0, 1);
+				   ctx, 0, 1);
     break;
 
   case 252:
@@ -1279,7 +1293,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup)
     ctx->received_failure = TRUE;
     silc_schedule_task_add_timeout(server->schedule,
 				   silc_server_protocol_backup_done,
-				   ctx->sock, 0, 1);
+				   ctx, 0, 1);
     break;
 
   default:
@@ -1445,8 +1459,10 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 
   if (ctx->sock) {
     SilcServerEntry r = silc_packet_get_context(ctx->sock);
-    r->backup = FALSE;
-    r->backup_proto = NULL;
+    if (r) {
+      r->backup = FALSE;
+      r->backup_proto = NULL;
+    }
     silc_packet_stream_unref(ctx->sock);
   }
   silc_free(ctx->sessions);

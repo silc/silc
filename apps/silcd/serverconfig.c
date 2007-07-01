@@ -1415,6 +1415,24 @@ static SilcBool silc_server_config_check(SilcServerConfig config)
     ret = FALSE;
   }
 
+  if (!config->server_info->public_key ||
+      !config->server_info->private_key) {
+    SILC_SERVER_LOG_ERROR(("\nError: Server keypair is missing"));
+    ret = FALSE;
+  }
+
+  if (!config->server_info->primary) {
+    SILC_SERVER_LOG_ERROR(("\nError: Missing mandatory block `Primary' "
+			   "in `ServerInfo'"));
+    ret = FALSE;
+  }
+
+  if (!config->server_info->primary->server_ip) {
+    SILC_SERVER_LOG_ERROR(("\nError: Missing mandatory field `Ip' "
+			   "in `Primary' in `ServerInfo'"));
+    ret = FALSE;
+  }
+
   /* RouterConnection sanity checks */
 
   if (config->routers && config->routers->backup_router == TRUE &&
@@ -1424,15 +1442,6 @@ static SilcBool silc_server_config_check(SilcServerConfig config)
 	 "connection. You have marked it incorrectly as backup router."));
     ret = FALSE;
   }
-#if 0
-  if (config->routers && config->routers->initiator == FALSE &&
-      config->routers->backup_router == FALSE) {
-    SILC_SERVER_LOG_ERROR((
-         "\nError: First RouterConnection block must be primary router "
-	 "connection and it must be marked as Initiator."));
-    ret = FALSE;
-  }
-#endif
   if (config->routers && config->routers->backup_router == TRUE &&
       !config->servers && !config->routers->next) {
     SILC_SERVER_LOG_ERROR((

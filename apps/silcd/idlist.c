@@ -558,28 +558,23 @@ silc_idlist_replace_client_id(SilcServer server,
 
   client = (SilcClientEntry)id_cache->context;
 
-  /* Remove the old entry and add a new one */
-
-  if (!silc_idcache_del_by_context(id_list->clients, client, server))
-    return NULL;
-
   /* Check if anyone is watching old nickname */
   if (server->server_type == SILC_ROUTER)
     silc_server_check_watcher_list(server, client, nickname,
 				   SILC_NOTIFY_TYPE_NICK_CHANGE);
 
+  /* Replace */
+  if (!silc_idcache_update(id_list->clients, id_cache, new_id, nicknamec,
+			   TRUE))
+    return NULL;
+
   silc_free(client->nickname);
-  *client->id = *new_id;
   client->nickname = nickname ? strdup(nickname) : NULL;
 
   /* Check if anyone is watching new nickname */
   if (server->server_type == SILC_ROUTER)
     silc_server_check_watcher_list(server, client, nickname,
 				   SILC_NOTIFY_TYPE_NICK_CHANGE);
-
-  if (!silc_idcache_add(id_list->clients, nicknamec, client->id,
-			client))
-    return NULL;
 
   SILC_LOG_DEBUG(("Replaced"));
 

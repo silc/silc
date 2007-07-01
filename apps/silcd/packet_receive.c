@@ -46,8 +46,17 @@ static void silc_server_notify_process(SilcServer server,
   SilcUInt32 tmp_len, tmp2_len;
   SilcBool local, ret;
 
-  if (idata->conn_type == SILC_CONN_CLIENT ||
-      packet->src_id_type != SILC_ID_SERVER || !packet->dst_id) {
+  if (idata->conn_type == SILC_CONN_CLIENT) {
+    SILC_LOG_DEBUG(("Notify received from client, drop it"));
+    return;
+  }
+
+  if (packet->src_id_type != SILC_ID_SERVER){
+    SILC_LOG_DEBUG(("Bad notify packet received"));
+    return;
+  }
+
+  if (!packet->dst_id) {
     SILC_LOG_DEBUG(("Bad notify packet received"));
     return;
   }
@@ -69,8 +78,10 @@ static void silc_server_notify_process(SilcServer server,
 
   /* Parse the Notify Payload */
   payload = silc_notify_payload_parse(buffer->data, silc_buffer_len(buffer));
-  if (!payload)
+  if (!payload) {
+    SILC_LOG_DEBUG(("Marlformed notify payload"));
     return;
+  }
 
   /* If we are router and this packet is not already broadcast packet
      we will broadcast it. The sending socket really cannot be router or
@@ -84,8 +95,10 @@ static void silc_server_notify_process(SilcServer server,
       /* Packet is destined to channel */
       if (!silc_id_str2id(packet->dst_id, packet->dst_id_len,
 			  packet->dst_id_type, &channel_id,
-			  sizeof(channel_id)))
+			  sizeof(channel_id))) {
+	SILC_LOG_DEBUG(("Malformed destination ID in notify packet"));
 	goto out;
+      }
 
       silc_server_packet_send_dest(server, SILC_PRIMARY_ROUTE(server),
 				   packet->type, packet->flags |
@@ -112,8 +125,10 @@ static void silc_server_notify_process(SilcServer server,
 
   type = silc_notify_get_type(payload);
   args = silc_notify_get_args(payload);
-  if (!args)
+  if (!args) {
+    SILC_LOG_DEBUG(("Notify doesn't have any arguments, drop it"));
     goto out;
+  }
 
   switch(type) {
   case SILC_NOTIFY_TYPE_JOIN:
@@ -133,7 +148,8 @@ static void silc_server_notify_process(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list,
 					       SILC_ID_GET_ID(id), NULL);
       if (!channel) {
-	SILC_LOG_DEBUG(("Notify for unknown channel"));
+	SILC_LOG_DEBUG(("Notify for unknown channel %s",
+			silc_id_render(SILC_ID_GET_ID(id), SILC_ID_CHANNEL)));
 	goto out;
       }
     }
@@ -251,7 +267,8 @@ static void silc_server_notify_process(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list,
 					       &channel_id, NULL);
       if (!channel) {
-	SILC_LOG_DEBUG(("Notify for unknown channel"));
+	SILC_LOG_DEBUG(("Notify for unknown channel %s",
+			silc_id_render(&channel_id, SILC_ID_CHANNEL)));
 	goto out;
       }
     }
@@ -383,7 +400,8 @@ static void silc_server_notify_process(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list,
 					       &channel_id, NULL);
       if (!channel) {
-	SILC_LOG_DEBUG(("Notify for unknown channel"));
+	SILC_LOG_DEBUG(("Notify for unknown channel %s",
+			silc_id_render(&channel_id, SILC_ID_CHANNEL)));
 	goto out;
       }
     }
@@ -503,7 +521,8 @@ static void silc_server_notify_process(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list,
 					       &channel_id, NULL);
       if (!channel) {
-	SILC_LOG_DEBUG(("Notify for unknown channel"));
+	SILC_LOG_DEBUG(("Notify for unknown channel %s",
+			silc_id_render(&channel_id, SILC_ID_CHANNEL)));
 	goto out;
       }
     }
@@ -823,7 +842,8 @@ static void silc_server_notify_process(SilcServer server,
 	channel = silc_idlist_find_channel_by_id(server->local_list,
 						 &channel_id, NULL);
 	if (!channel) {
-	  SILC_LOG_DEBUG(("Notify for unknown channel"));
+	  SILC_LOG_DEBUG(("Notify for unknown channel %s",
+			  silc_id_render(&channel_id, SILC_ID_CHANNEL)));
 	  goto out;
 	}
       }
@@ -1010,7 +1030,8 @@ static void silc_server_notify_process(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list,
 					       SILC_ID_GET_ID(id), NULL);
       if (!channel) {
-	SILC_LOG_DEBUG(("Notify for unknown channel"));
+	SILC_LOG_DEBUG(("Notify for unknown channel %s",
+			silc_id_render(SILC_ID_GET_ID(id), SILC_ID_CHANNEL)));
 	goto out;
       }
     }
@@ -1079,7 +1100,8 @@ static void silc_server_notify_process(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->global_list,
 					       SILC_ID_GET_ID(id), NULL);
       if (!channel) {
-	SILC_LOG_DEBUG(("Notify for unknown channel"));
+	SILC_LOG_DEBUG(("Notify for unknown channel %s",
+			silc_id_render(SILC_ID_GET_ID(id), SILC_ID_CHANNEL)));
 	goto out;
       }
     }
@@ -1208,12 +1230,12 @@ static void silc_server_notify_process(SilcServer server,
 
 	    /* Get client entry */
 	    client = silc_idlist_find_client_by_id(server->global_list,
-						   SILC_ID_GET_ID(id),
+						   SILC_ID_GET_ID(id2),
 						   TRUE, &cache);
 	    local = FALSE;
 	    if (!client) {
 	      client = silc_idlist_find_client_by_id(server->local_list,
-						     SILC_ID_GET_ID(id),
+						     SILC_ID_GET_ID(id2),
 						     TRUE, &cache);
 	      local = TRUE;
 	      if (!client)
@@ -1304,7 +1326,8 @@ static void silc_server_notify_process(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list,
 					       &channel_id, NULL);
       if (!channel) {
-	SILC_LOG_DEBUG(("Notify for unknown channel"));
+	SILC_LOG_DEBUG(("Notify for unknown channel %s",
+			silc_id_render(SILC_ID_GET_ID(id), SILC_ID_CHANNEL)));
 	goto out;
       }
     }
@@ -1564,7 +1587,8 @@ static void silc_server_notify_process(SilcServer server,
       channel = silc_idlist_find_channel_by_id(server->local_list,
 					       SILC_ID_GET_ID(id), NULL);
       if (!channel) {
-	SILC_LOG_DEBUG(("Notify for unknown channel"));
+	SILC_LOG_DEBUG(("Notify for unknown channel %s",
+			silc_id_render(SILC_ID_GET_ID(id), SILC_ID_CHANNEL)));
 	goto out;
       }
     }
@@ -1652,6 +1676,7 @@ static void silc_server_notify_process(SilcServer server,
     break;
 
   default:
+    SILC_LOG_DEBUG(("Unsupported notify %d", type));
     break;
   }
 
@@ -2717,7 +2742,8 @@ static void silc_server_new_id_real(SilcServer server,
       /* As a router we keep information of all global information in our
 	 global list. Cell wide information however is kept in the local
 	 list. */
-      entry = silc_idlist_add_server(id_list, NULL, 0, &id, router,
+      entry = silc_idlist_add_server(id_list, NULL, 0,
+				     silc_id_dup(&id, SILC_ID_SERVER), router,
 				     router_sock);
       if (!entry) {
 	SILC_LOG_ERROR(("Could not add new server to the ID Cache"));
@@ -2959,9 +2985,12 @@ static void silc_server_new_channel_process(SilcServer server,
       }
 
       /* Create the channel with the provided Channel ID */
-      channel = silc_server_create_new_channel_with_id(server, NULL, NULL,
-						       channel_name,
-						       &channel_id, FALSE);
+      channel =
+	silc_server_create_new_channel_with_id(
+				     server, NULL, NULL,
+				     channel_name,
+				     silc_id_dup(&channel_id, SILC_ID_CHANNEL),
+				     FALSE);
       if (!channel) {
 	silc_channel_payload_free(payload);
 	return;
