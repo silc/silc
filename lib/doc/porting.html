@@ -159,8 +159,8 @@ initially use in the SILC network.
 The functions silc_client_connect_to_server, silc_client_connect_to_client
 and silc_client_key_exchange can all be used to create new SILC session with
 a remote.  To connect SILC server use silc_client_connect_to_server.  You
-now give the SilcClientCnnectionParams as argument which includes the nickname
-user wants to use, you now can give the public key pair as argument that is
+now give the SilcClientConnectionParams as argument which includes the 
+nicknameuser wants to use, you now can give the public key pair as argument that is
 to be used in the connecting.  The new SilcClientConnectCallback will be
 called once the connection has been established and it delivers the
 SilcClientConection context to the application.  It will be later called
@@ -170,7 +170,7 @@ connecting, if necessary.  In the past canceling connection was not possible.
 
 <br />&nbsp;<br />
 <pre>
-SilcAsyncOperations op;
+SilcAsyncOperation op;
 SilcClientConnectionParams params;
 
 memset(&params, 0, sizeof(params));
