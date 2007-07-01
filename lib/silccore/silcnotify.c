@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2005 Pekka Riikonen
+  Copyright (C) 2000 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -66,6 +66,8 @@ SilcNotifyPayload silc_notify_payload_parse(const unsigned char *payload,
     newp->args = silc_argument_payload_parse(buffer.data,
 					     silc_buffer_len(&buffer),
 					     newp->argc);
+    if (!newp->args)
+      goto err;
     silc_buffer_push(&buffer, 5);
   }
 
