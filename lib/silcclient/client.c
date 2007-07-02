@@ -947,7 +947,8 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
 
 void silc_client_free(SilcClient client)
 {
-  silc_schedule_uninit(client->schedule);
+  if (client->schedule)
+    silc_schedule_uninit(client->schedule);
 
   if (client->rng)
     silc_rng_free(client->rng);
@@ -959,10 +960,13 @@ void silc_client_free(SilcClient client)
     silc_hmac_unregister_all();
   }
 
-  silc_packet_engine_stop(client->internal->packet_engine);
-  silc_dlist_uninit(client->internal->ftp_sessions);
+  if (client->internal->packet_engine)
+    silc_packet_engine_stop(client->internal->packet_engine);
+  if (client->internal->ftp_sessions)
+    silc_dlist_uninit(client->internal->ftp_sessions);
+  if (client->internal->lock)
+    silc_mutex_free(client->internal->lock);
   silc_atomic_uninit16(&client->internal->conns);
-  silc_mutex_free(client->internal->lock);
   silc_free(client->username);
   silc_free(client->hostname);
   silc_free(client->realname);
