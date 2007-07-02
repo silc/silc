@@ -257,10 +257,8 @@ EXPORTS
 	silc_realloc @ 256 ;
 	silc_scalloc @ 257 ;
 	silc_smalloc @ 258 ;
-	silc_smalloc_ua @ 259 ;
 	silc_smemdup @ 260 ;
 	silc_srealloc @ 261 ;
-	silc_srealloc_ua @ 262 ;
 	silc_sstrdup @ 263 ;
 	silc_config_close @ 264 ;
 	silc_config_get_filename @ 265 ;
@@ -856,4 +854,12 @@ EXPORTS
 	silc_utf8_w2c @ 874 ;
 	silc_packet_engine_free_streams_list @ 875 ;
 	silc_schedule_set_notify @ 876 ;
+	silc_sfree @ 877 ;
+	silc_thread_pool_alloc @ 878 ;
+	silc_thread_pool_free @ 879 ;
+	silc_thread_pool_run @ 880 ;
+	silc_thread_pool_set_max_threads @ 881 ;
+	silc_thread_pool_num_max_threads @ 882 ;
+	silc_thread_pool_num_free_threads @ 883 ;
+	silc_thread_pool_purge @ 884 ;
 

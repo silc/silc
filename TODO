@@ -101,9 +101,6 @@ Runtime library, lib/silcutil/
 
  o silc_getopt routines
 
- o silc_hash_table_replace -> silc_hash_table_set.  Retain support for
-   silc_hash_table_replace as macro.
-
  o The SILC Event signals.  Asynchronous events that can be created,
    connected to and signalled.  Either own event routines or glued into
    SilcSchedule:
@@ -183,6 +180,9 @@ Runtime library, lib/silcutil/
 
  o silc_stringprep to non-allocating version.
 
+ o silc_hash_table_replace -> silc_hash_table_set.  Retain support for
+   silc_hash_table_replace as macro.
+
  o SilcStack aware SilcHashTable.
 
  o SilcStack aware SilcDList.
@@ -203,7 +203,7 @@ Runtime library, lib/silcutil/
    accelerators).  Move also the low level silc_stack_malloc and
    silc_stack_realloc from silcstack_i.h to silcstack.h.  Remove the
    _ua unaligned memory allocation routines.  Remove unaligned memory
-   allocation possibility.
+   allocation possibility. (***DONE)
 
  o Add '%@' format to silc_snprintf functions.  It marks for external
    rendering function of following type:
