@@ -77,7 +77,7 @@ static void silc_thread_pool_unref(SilcThreadPool tp)
     silc_mutex_unlock(tp->lock);
     silc_mutex_free(tp->lock);
     silc_cond_free(tp->pool_signal);
-    silc_free(tp);
+    silc_sfree(tp->stack, tp);
     return;
   }
   silc_mutex_unlock(tp->lock);
@@ -113,7 +113,7 @@ static void *silc_thread_pool_run_thread(void *context)
       /* Stop the thread.  Remove from threads list and free memory. */
       SILC_LOG_DEBUG(("Stop thread %p", t));
       silc_list_del(tp->threads, t);
-      silc_free(t);
+      silc_sfree(tp->stack, t);
 
       /* If we are last thread, signal the waiting destructor. */
       if (silc_list_count(tp->threads) == 0)
@@ -171,7 +171,7 @@ static void *silc_thread_pool_run_thread(void *context)
       t->schedule = q->schedule;
 
       silc_list_del(tp->queue, q);
-      silc_free(q);
+      silc_sfree(tp->stack, q);
       continue;
     }
 
@@ -191,7 +191,7 @@ static SilcThreadPoolThread silc_thread_pool_new_thread(SilcThreadPool tp)
 {
   SilcThreadPoolThread t;
 
-  t = silc_calloc(1, sizeof(*t));
+  t = silc_scalloc(tp->stack, 1, sizeof(*t));
   if (!t)
     return NULL;
   t->tp = tp;
@@ -222,7 +222,7 @@ SilcThreadPool silc_thread_pool_alloc(SilcStack stack,
   if (max_threads < min_threads)
     return NULL;
 
-  tp = silc_calloc(1, sizeof(*tp));
+  tp = silc_scalloc(stack, 1, sizeof(*tp));
   if (!tp)
     return NULL;
 
@@ -235,13 +235,13 @@ SilcThreadPool silc_thread_pool_alloc(SilcStack stack,
   tp->refcnt++;
 
   if (!silc_mutex_alloc(&tp->lock)) {
-    silc_free(tp);
+    silc_sfree(stack, tp);
     return NULL;
   }
 
   if (!silc_cond_alloc(&tp->pool_signal)) {
     silc_mutex_free(tp->lock);
-    silc_free(tp);
+    silc_sfree(stack, tp);
     return NULL;
   }
 
@@ -281,7 +281,7 @@ void silc_thread_pool_free(SilcThreadPool tp, SilcBool wait_unfinished)
   /* Free calls from queue */
   silc_list_start(tp->queue);
   while ((t = silc_list_get(tp->queue)))
-    silc_free(t);
+    silc_sfree(tp->stack, t);
   silc_list_init(tp->queue, struct SilcThreadPoolThreadStruct, next);
 
   /* Release reference.  Releases lock also. */
@@ -321,7 +321,7 @@ SilcBool silc_thread_pool_run(SilcThreadPool tp,
       SILC_LOG_DEBUG(("Queue call %p, context %p", run, run_context));
 
       /* User wants to queue this call until thread becomes free */
-      t = silc_calloc(1, sizeof(*t));
+      t = silc_scalloc(tp->stack, 1, sizeof(*t));
       if (!t) {
 	silc_mutex_unlock(tp->lock);
 	return FALSE;
