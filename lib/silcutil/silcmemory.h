@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1999 - 2005 Pekka Riikonen
+  Copyright (C) 1999 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -140,9 +140,7 @@ void *silc_memdup(const void *ptr, size_t size);
  *    Allocate memory block of size of `size' from the stack indicated by
  *    `stack' and return pointer to it.  Returns NULL on error.  This
  *    function allocates aligned memory so it can be used to allocate
- *    memory for structures, for example.  If you allocate strings or
- *    data buffers using silc_smalloc_ua is recommended instead of this
- *    function.
+ *    memory for structures, for example.
  *
  * NOTES
  *
@@ -154,31 +152,6 @@ void *silc_memdup(const void *ptr, size_t size);
  *
  ***/
 void *silc_smalloc(SilcStack stack, SilcUInt32 size);
-
-/****f* silcutil/SilcMemoryAPI/silc_smalloc_ua
- *
- * SYNOPSIS
- *
- *    void *silc_smalloc_ua(SilcStack stack, SilcUInt32 size);
- *
- * DESCRIPTION
- *
- *    Allocate unaligned memory block of size of `size' from the stack
- *    indicated by `stack' and return pointer to it.  Returns NULL on error.
- *
- * NOTES
- *
- *    This function must not be used to allocate memory for structures.
- *    Use this function only for strings and data buffers.
- *
- *    Be careful with this function:  do not free the returned pointer
- *    explicitly and do not save the returned pointer to a permanent
- *    location.
- *
- *    If `stack' is NULL this function calls silc_malloc.
- *
- ***/
-void *silc_smalloc_ua(SilcStack stack, SilcUInt32 size);
 
 /****f* silcutil/SilcMemoryAPI/silc_scalloc
  *
@@ -228,36 +201,11 @@ void *silc_scalloc(SilcStack stack, SilcUInt32 items, SilcUInt32 size);
  *    is left to the caller to decide whether to allocate new pointer and
  *    copy the old data in case this function returns NULL.
  *
- *    This function can be used to reallocate only aligned memory allocated
- *    with silc_smalloc.
- *
  *    If `stack' is NULL this function calls silc_realloc.
  *
  ***/
 void *silc_srealloc(SilcStack stack, SilcUInt32 old_size,
 		    void *ptr, SilcUInt32 size);
-
-/****f* silcutil/SilcMemoryAPI/silc_srealloc_ua
- *
- * SYNOPSIS
- *
- *    void *silc_srealloc_ua(SilcStack stack, SilcUInt32 old_size,
- *                           void *ptr, SilcUInt32 size);
- *
- * DESCRIPTION
- *
- *    Same as silc_srealloc but reallocates unaligned memory.
- *
- * NOTES
- *
- *    This function can be used to reallocate only unaligned memory
- *    allocated with silc_smalloc_ua.
- *
- *    If `stack' is NULL this function calls silc_realloc.
- *
- ***/
-void *silc_srealloc_ua(SilcStack stack, SilcUInt32 old_size,
-		       void *ptr, SilcUInt32 size);
 
 /****f* silcutil/SilcMemoryAPI/silc_smemdup
  *
@@ -285,6 +233,21 @@ void *silc_srealloc_ua(SilcStack stack, SilcUInt32 old_size,
  ***/
 void *silc_smemdup(SilcStack stack, const void *ptr, SilcUInt32 size);
 
+/****f* silcutil/SilcMemoryAPI/silc_sfree
+ *
+ * SYNOPSIS
+ *
+ *    void silc_scalloc(SilcStack stack, void *ptr);
+ *
+ * DESCRIPTION
+ *
+ *    This function can be used to free the `ptr' if `stack' is NULL.  This
+ *    function does nothing if `stack' is non-NULL.  When `stack' is NULL
+ *    this function calls silc_free.
+ *
+ ***/
+void silc_sfree(SilcStack stack, void *ptr);
+
 /****f* silcutil/SilcMemoryAPI/silc_sstrdup
  *
  * SYNOPSIS
@@ -294,8 +257,7 @@ void *silc_smemdup(SilcStack stack, const void *ptr, SilcUInt32 size);
  * DESCRIPTION
  *
  *    Duplicates the string indicated by `str' and returns the duplicated
- *    string.  This function allocates unaligned memory.  Returns NULL
- *    on error.
+ *    string.  Returns NULL on error.
  *
  * NOTES
  *

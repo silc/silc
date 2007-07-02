@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1999 - 2006 Pekka Riikonen
+  Copyright (C) 1999 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -87,12 +87,14 @@ void *silc_memdup(const void *ptr, size_t size)
 
 void *silc_smalloc(SilcStack stack, SilcUInt32 size)
 {
-  return stack ? silc_stack_malloc(stack, size, TRUE) : silc_malloc(size);
+  return stack ? silc_stack_malloc(stack, size) : silc_malloc(size);
 }
 
-void *silc_smalloc_ua(SilcStack stack, SilcUInt32 size)
+void silc_sfree(SilcStack stack, void *ptr)
 {
-  return stack ? silc_stack_malloc(stack, size, FALSE) : silc_malloc(size);
+  if (stack)
+    return;
+  silc_free(ptr);
 }
 
 void *silc_scalloc(SilcStack stack, SilcUInt32 items, SilcUInt32 size)
@@ -102,7 +104,7 @@ void *silc_scalloc(SilcStack stack, SilcUInt32 items, SilcUInt32 size)
   if (!stack)
     return silc_calloc(items, size);
 
-  addr = silc_stack_malloc(stack, items * size, TRUE);
+  addr = silc_stack_malloc(stack, items * size);
   if (silc_unlikely(!addr))
     return NULL;
   memset(addr, 0, items * size);
@@ -112,14 +114,7 @@ void *silc_scalloc(SilcStack stack, SilcUInt32 items, SilcUInt32 size)
 void *silc_srealloc(SilcStack stack, SilcUInt32 old_size,
 		    void *ptr, SilcUInt32 size)
 {
-  return stack ? silc_stack_realloc(stack, old_size, ptr, size, TRUE) :
-    silc_realloc(ptr, size);
-}
-
-void *silc_srealloc_ua(SilcStack stack, SilcUInt32 old_size,
-		       void *ptr, SilcUInt32 size)
-{
-  return stack ? silc_stack_realloc(stack, old_size, ptr, size, FALSE) :
+  return stack ? silc_stack_realloc(stack, old_size, ptr, size) :
     silc_realloc(ptr, size);
 }
 
@@ -130,7 +125,7 @@ void *silc_smemdup(SilcStack stack, const void *ptr, SilcUInt32 size)
   if (!stack)
     return silc_memdup(ptr, size);
 
-  addr = silc_stack_malloc(stack, size + 1, TRUE);
+  addr = silc_stack_malloc(stack, size + 1);
   if (silc_unlikely(!addr))
     return NULL;
   memcpy((void *)addr, ptr, size);
@@ -146,7 +141,7 @@ char *silc_sstrdup(SilcStack stack, const char *str)
   if (!stack)
     return silc_memdup(str, size);
 
-  addr = silc_stack_malloc(stack, size + 1, FALSE);
+  addr = silc_stack_malloc(stack, size + 1);
   if (silc_unlikely(!addr))
     return NULL;
   memcpy((void *)addr, str, size);
