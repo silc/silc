@@ -690,7 +690,7 @@ SILC_FSM_STATE(silc_client_notify_nick_change)
   SilcNotifyType type = silc_notify_get_type(payload);
   SilcArgumentPayload args = silc_notify_get_args(payload);
   SilcClientEntry client_entry = NULL;
-  unsigned char *tmp, oldnick[128 + 1];
+  unsigned char *tmp, oldnick[256 + 1];
   SilcUInt32 tmp_len;
   SilcID id, id2;
   SilcBool valid;

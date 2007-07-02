@@ -1281,6 +1281,7 @@ SilcClientEntry silc_client_nickname_format(SilcClient client,
   }
 
   newnick[off] = 0;
+  memset(client_entry->nickname, 0, sizeof(client_entry->nickname));
   memcpy(client_entry->nickname, newnick, strlen(newnick));
   silc_client_list_free(client, conn, clients);
 
