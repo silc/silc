@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2005 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,15 +21,21 @@
  *
  * DESCRIPTION
  *
- * Interface for SILC Thread implementation. This is platform independent
- * interface of threads for applications that need concurrent execution
- * with the application's main thread. The threads created with this
- * interface executes concurrently with the calling thread.
+ * Interface for platform independent thread implementation and thread pool
+ * system.  The interface provides routines for applications that need
+ * concurrent execution with the application's main thread.  The threads
+ * created with this interface executes concurrently with the calling thread.
+ *
+ * The thread pool system can be used to start many threads and execute code
+ * in the threads.  The thread pool manages the threads creation and
+ * destruction.
  *
  ***/
 
 #ifndef SILCTHREAD_H
 #define SILCTHREAD_H
+
+#include "silcschedule.h"
 
 /* Prototypes */
 
@@ -161,5 +167,185 @@ SilcBool silc_thread_wait(SilcThread thread, void **exit_value);
  *
  ***/
 void silc_thread_yield(void);
+
+/****s* silcutil/SilcThreadAPI/SilcThreadPool
+ *
+ * NAME
+ *
+ *    typedef struct SilcThreadPoolStruct *SilcThreadPool;
+ *
+ * DESCRIPTION
+ *
+ *    This context is the actual SILC Thread Pool and is returned by
+ *    the silc_thread_pool_alloc function, and given as arguments to
+ *    some of the silc_thread_pool_* functions. This context and its
+ *    resources are freed by calling silc_thread_pool_free;
+ *
+ ***/
+typedef struct SilcThreadPoolStruct *SilcThreadPool;
+
+/****f* silcutil/SilcThreadAPI/SilcThreadPoolFunc
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcThreadPoolFunc)(SilcSchedule schedule,
+ *                                       void *context);
+ *
+ * DESCRIPTION
+ *
+ *    A callback function of this type is given as argument to the
+ *    silc_thread_pool_run.  The `schedule' is the scheduler and the
+ *    `context' is the `run_context' or `completion_context' given as
+ *    argument to silc_thread_pool_run.
+ *
+ ***/
+typedef void (*SilcThreadPoolFunc)(SilcSchedule schedule, void *context);
+
+/****f* silcutil/SilcThreadAPI/silc_thread_pool_alloc
+ *
+ * SYNOPSIS
+ *
+ *    SilcThreadPool silc_thread_pool_alloc(SilcStack stack,
+ *                                          SilcUInt32 min_threads,
+ *                                          SilcUInt32 max_threads,
+ *                                          SilcBool start_min_threads);
+ *
+ * DESCRIPTION
+ *
+ *    Allocate thread pool with at least `min_threads' and at most
+ *    `max_threads' many threads.  If `stack' is non-NULL all memory is
+ *    allocated from the `stack'.  If `start_min_threads' is TRUE this will
+ *    start `min_threads' many threads immediately.  Returns the thread
+ *    pool context or NULL on error.
+ *
+ * EXAMPLE
+ *
+ *    // Start thread pool, by default it has 0 threads.
+ *    pool = silc_thread_pool_alloc(NULL, 0, 5, FALSE);
+ *
+ *    // Function to execute in a thread
+ *    void my_func(SilcSchedule schedule, void *context)
+ *    {
+ *      MyContext mycontext = context;
+ *      ...
+ *    }
+ *
+ *    // Execute code in a thread in the pool
+ *    silc_thread_pool_run(pool, TRUE, NULL, my_func, my_context, NULL, NULL);
+ *
+ ***/
+SilcThreadPool silc_thread_pool_alloc(SilcStack stack,
+				      SilcUInt32 min_threads,
+				      SilcUInt32 max_threads,
+				      SilcBool start_min_threads);
+
+/****f* silcutil/SilcThreadAPI/silc_thread_pool_free
+ *
+ * SYNOPSIS
+ *
+ *    void silc_thread_pool_free(SilcThreadPool tp, SilcBool wait_unfinished);
+ *
+ * DESCRIPTION
+ *
+ *     Free the thread pool.  If `wait_unfinished' is TRUE this will block
+ *     and waits that all remaining active threads finish before freeing
+ *     the pool.
+ *
+ ***/
+void silc_thread_pool_free(SilcThreadPool tp, SilcBool wait_unfinished);
+
+/****f* silcutil/SilcThreadAPI/silc_thread_pool_run
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_thread_pool_run(SilcThreadPool tp,
+ *                                  SilcBool queueable,
+ *                                  SilcSchedule schedule,
+ *                                  SilcThreadPoolFunc run,
+ *                                  void *run_context,
+ *                                  SilcThreadPoolFunc completion,
+ *                                  void *completion_context);
+ *
+ * DESCRIPTION
+ *
+ *    Run the `run' function with `run_context' in one of the threads in the
+ *    thread pool.  Returns FALSE if the thread pool is being freed.  If
+ *    there are no free threads left in the pool this will queue the `run'
+ *    and call it once a thread becomes free, if `queueable' is TRUE.  If
+ *    `queueable' is FALSE and there are no free threads, this returns FALSE
+ *    and `run' is not executed.
+ *
+ *    If `completion' is non-NULL it will be called to indicate completion
+ *    of the `run' function.  If `schedule' is non-NULL the `completion'
+ *    will be called through the scheduler in the main thread.  If it is
+ *    NULL the `completion' is called directly from the thread after the
+ *    `run' has returned.
+ *
+ ***/
+SilcBool silc_thread_pool_run(SilcThreadPool tp,
+			      SilcBool queue,
+			      SilcSchedule schedule,
+			      SilcThreadPoolFunc run,
+			      void *run_context,
+			      SilcThreadPoolFunc completion,
+			      void *completion_context);
+
+/****f* silcutil/SilcThreadAPI/silc_thread_pool_set_max_threads
+ *
+ * SYNOPSIS
+ *
+ *    void silc_thread_pool_set_max_threads(SilcThreadPool tp,
+ *                                          SilcUInt32 max_threads);
+ *
+ * DESCRIPTION
+ *
+ *    Modify the amount of maximum threads of the pool.  This call does not
+ *    affect any currently active or running thread.
+ *
+ ***/
+void silc_thread_pool_set_max_threads(SilcThreadPool tp,
+				      SilcUInt32 max_threads);
+
+/****f* silcutil/SilcThreadAPI/silc_thread_pool_num_max_threads
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_thread_pool_num_max_threads(SilcThreadPool tp);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the number of maximum threads to which the pool can grow.
+ *
+ ***/
+SilcUInt32 silc_thread_pool_num_max_threads(SilcThreadPool tp);
+
+/****f* silcutil/SilcThreadAPI/silc_thread_pool_num_free_threads
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_thread_pool_num_free_threads(SilcThreadPool tp);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the number of free threads in the pool currently.  Free threads
+ *    are threads that are not currently executing any code.
+ *
+ ***/
+SilcUInt32 silc_thread_pool_num_free_threads(SilcThreadPool tp);
+
+/****f* silcutil/SilcThreadAPI/silc_thread_pool_purge
+ *
+ * SYNOPSIS
+ *
+ *    void silc_thread_pool_purge(SilcThreadPool tp);
+ *
+ * DESCRIPTION
+ *
+ *    Stops all free and started threads.  The minumum amount of threads
+ *    specified to silc_thread_pool_alloc always remains.  Any thread that
+ *    is currently executing code is not affected by this call.
+ *
+ ***/
+void silc_thread_pool_purge(SilcThreadPool tp);
 
 #endif

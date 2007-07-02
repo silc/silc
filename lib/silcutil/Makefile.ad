@@ -68,7 +68,8 @@ libsilcutil_la_SOURCES = \
 	silctime.c	\
 	silcmime.c	\
 	silcstack.c	\
-	silcsnprintf.c
+	silcsnprintf.c  \
+	silcthread.c
 
 #ifdef SILC_DIST_TOOLKIT
 include_HEADERS =	\

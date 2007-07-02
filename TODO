@@ -187,55 +187,7 @@ Runtime library, lib/silcutil/
 
  o SilcStack aware SilcDList.
 
- o Thread pool API.  Add this to lib/silcutil/silcthread.[ch].
-
-   typedef void (*SilcThreadPoolFunc)(SilcSchedule schedule,
-				      void *context);
-
-   /* Allocate thread pool with at least `min_threads' and at most
-      `max_threads' many threads.  If `stack' is non-NULL all memory
-      is allocated from the `stack'.  If `start_min_threads' is TRUE
-      this will start `min_threads' many threads immediately. */
-   SilcThreadPool silc_thread_pool_alloc(SilcStack stack,
-					 SilcUInt32 min_threads,
-					 SilcUInt32 max_threads,
-					 SilcBool start_min_threads);
-
-   /* Free thread pool.  If `wait_unfinished' is TRUE this will block
-      and waits that all remaining active threads finish before freeing
-      the pool. */
-   void silc_thread_pool_free(SilcThreadPool tp, SilcBool wait_unfinished);
-
-   /* Run `run' function with `run_context' in one of the threads in the
-      thread pool.  Returns FALSE if the thread pool is being freed.  If
-      there are no free threads left in the pool this will queue the
-      the `run' and will call it once a thread becomes free.
-
-      If `completion' is non-NULL it will be called to indicate completion
-      of the `run' function.  If `schedule' is non-NULL the `completion'
-      will be called through the scheduler in the main thread.  If it is
-      NULL the `completion' is called directly from the thread after the
-      `run' has returned. */
-   SilcBool silc_thread_pool_run(SilcThreadPool tp,
-				 SilcSchedule schedule,
-				 SilcThreadPoolFunc run,
-				 void *run_context,
-				 SilcThreadPoolFunc completion,
-				 void *completion_context);
-
-   /* Modify the amount of maximum threads of the pool. */
-   void silc_thread_pool_set_max_threads(SilcThreadPool tp,
-					 SilcUInt32 max_threads);
-
-   /* Returns the amount of maximum size the pool can grow. */
-   SilcUInt32 silc_thread_pool_num_max_threads(SilcThreadPool tp);
-
-   /* Returns the amount of free threads in the pool currently. */
-   SilcUInt32 silc_thread_pool_num_free_threads(SilcThreadPool tp);
-
-   /* Stops all free and started threads.  The minumum amount of threads
-      specified to silc_thread_pool_alloc always remains. */
-   void silc_thread_pool_purge(SilcThreadPool tp);
+ o Thread pool API.  Add this to lib/silcutil/silcthread.[ch]. 	(***DONE)
 
  o Fast mutex implementation.  Fast rwlock implementation.  Mutex and
    rwlock implementation using atomic operations.
@@ -642,17 +594,17 @@ lib/silcserver
 
  o Library must have support for SERVICE command.
 
- o The server must be able to run behind NAT device.  This means that 
+ o The server must be able to run behind NAT device.  This means that
    Server ID must be based on public IP instead of private IP.
 
- o The following data must be in per-connection context: client id cache, 
-   server id cache, channel id cache, all statistics must be 
+ o The following data must be in per-connection context: client id cache,
+   server id cache, channel id cache, all statistics must be
    per-connection.
 
  o The following data must be in per-thread context: command context
    freelist/pool, pending commands, random number generator.
 
- o Do inccoming packet processing in an own FSM thread in the 
+ o Do inccoming packet processing in an own FSM thread in the
    server-threads FSM.  Same as in client library.
 
  o Reference count all Silc*Entry structures.
