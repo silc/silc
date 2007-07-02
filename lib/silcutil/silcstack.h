@@ -22,31 +22,31 @@
  * DESCRIPTION
  *
  * Implementation of data stack which can be used to allocate memory from
- * the stack.  Basicly SilcStack is a pre-allocated memory pool system
+ * the stack.  Basically SilcStack is a pre-allocated memory pool system
  * which allows fast memory allocation for routines and applications that
  * frequently allocate small amounts of memory.  Other advantage of this
  * system is that there are no memory leaks, as long as the stack is
  * freed eventually.  Since the stack is usually allocated only once this
  * is not an issue.
  *
- * SilcStack can be used to allocate both aligned and unaligned memory so
- * it is suitable for allocating structures and is optimal for allocating
- * strings and data buffers.  SilcStack also supports stack pushing and
- * popping allowing to push the stack, allocate memory and then pop it
- * to free the allocated memory.  The freeing does not actually do any
- * real memory freeing so it is optimized for performance.
+ * SilcStack supports stack pushing and popping allowing to push the stack,
+ * allocate memory and then pop it to free the allocated memory.  The freeing
+ * does not actually do any real memory freeing so it is optimized for
+ * performance.  The memory alignment may also be specified by user for
+ * the stack.  This allows the caller to use special alignment for memory
+ * allocations, if needed.
  *
  * A basic set of utility functions are provided for application that wish
  * to use the SilcStack as their primary memory allocation source.  The
  * following functions support SilcStack:
  *
- * silc_smalloc, silc_smalloc_ua, silc_scalloc, silc_srealloc, silc_smemdup,
- * silc_sstrdup, silc_buffer_salloc, silc_buffer_salloc_size,
+ * silc_smalloc, silc_smalloc, silc_scalloc, silc_srealloc, silc_smemdup,
+ * silc_sfree, silc_sstrdup, silc_buffer_salloc, silc_buffer_salloc_size,
  * silc_buffer_srealloc, silc_buffer_srealloc_size, silc_buffer_scopy,
  * silc_buffer_sclone, silc_buffer_sformat, silc_buffer_sformat_vp,
  * silc_buffer_sstrformat, silc_buffer_senlarge, silc_mp_sinit
  *
- * The data stack is not thread-safe.  If the same stack context must be
+ * The SilcStack context is not thread-safe.  If the same SilcStack must be
  * used in multithreaded environment concurrency control must be employed.
  * Each thread should allocate their own SilcStack.
  *
@@ -222,6 +222,93 @@ SilcUInt32 silc_stack_push(SilcStack stack, SilcStackFrame *frame);
  *
  ***/
 SilcUInt32 silc_stack_pop(SilcStack stack);
+
+/****f* silcutil/SilcStackAPI/silc_stack_malloc
+ *
+ * SYNOPSIS
+ *
+ *    void *silc_stack_malloc(SilcStack stack, SilcUInt32 size);
+ *
+ * DESCRIPTION
+ *
+ *    Low level memory allocation routine.  Allocates memor block of size of
+ *    `size' from the `stack'.  The allocated memory is aligned so it can be
+ *    used to allocate memory for structures, for example.  Returns the
+ *    allocated memory address or NULL if memory could not be allocated from
+ *    the `stack'.
+ *
+ * NOTES
+ *
+ *    This function should be used only if low level memory allocation with
+ *    SilcStack is needed.  Instead, silc_smalloc, could be used.
+ *
+ ***/
+void *silc_stack_malloc(SilcStack stack, SilcUInt32 size);
+
+/****f* silcutil/SilcStackAPI/silc_stack_realloc
+ *
+ * SYNOPSIS
+ *
+ *    void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
+ *                             *void *ptr, SilcUInt32 size);
+ *
+ * DESCRIPTION
+ *
+ *    Attempts to reallocate memory by changing the size of the `ptr' into
+ *    `size'.  This routine works only if the previous allocation to `stack'
+ *    was `ptr'.  If there is another memory allocation between allocating
+ *    `ptr' and this call this routine will return NULL.  NULL is also
+ *    returned if the `size' does not fit into the current block.  If NULL
+ *    is returned the old memory remains intact.
+ *
+ * NOTES
+ *
+ *    This function should be used only if low level memory allocation with
+ *    SilcStack is needed.  Instead, silc_srealloc, could be used.
+ *
+ ***/
+void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
+			 void *ptr, SilcUInt32 size);
+
+/****f* silcutil/SilcStackAPI/silc_stack_set_alignment
+ *
+ * SYNOPSIS
+ *
+ *    void silc_stack_set_alignment(SilcStack stack, SilcUInt32 alignment);
+ *
+ * DESCRIPTION
+ *
+ *    Sets/changes the memory alignment in the `stack' to `alignment' which
+ *    is the alignment in bytes.  By default, the SilcStack will use alignment
+ *    suited for the platform where it is used.  This function can be used
+ *    change this alignment, if such change is needed.  You may check the
+ *    current alignment by calling silc_stack_get_alignment.
+ *
+ * NOTES
+ *
+ *    It is not mandatory to call this function.  By default the SilcStack
+ *    will always use alignment suited for the used platform.  This function
+ *    should be called only if the alignment needs to be changed to something
+ *    other than the default on the used platform.  For example, some
+ *    hardware device, such as crypto accelerator, may require special
+ *    alignment.
+ *
+ ***/
+void silc_stack_set_alignment(SilcStack stack, SilcUInt32 alignment);
+
+/****f* silcutil/SilcStackAPI/silc_stack_get_alignment
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt32 silc_stack_get_alignment(SilcStack stack);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the memory alignment used with `stack'.  The alignment is in
+ *    bytes.
+ *
+ ***/
+SilcUInt32 silc_stack_get_alignment(SilcStack stack);
 
 #include "silcstack_i.h"
 

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2005 Pekka Riikonen
+  Copyright (C) 2003 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -58,6 +58,7 @@ struct SilcStackStruct {
   SilcStackFrame *frames;		      /* Allocated stack frames */
   SilcStackFrame *frame;		      /* Current stack frame */
   SilcUInt32 stack_size;		      /* Default stack size */
+  SilcUInt32 alignment;			      /* Memory alignment */
 #ifdef SILC_DIST_INPLACE
   /* Statistics */
   SilcUInt32 snum_malloc;
@@ -76,9 +77,9 @@ struct SilcStackStruct {
    SILC_STACK_DEFAULT_SIZE * (1L << ((si) - 1)) << 1);
 
 /* Returns a pointer to the data in the frame */
-#define SILC_STACK_DATA(stack, si, bsize)				  \
-  (((unsigned char *)(stack)->stack[si]) +				  \
-   SILC_STACK_ALIGN(sizeof(**(stack)->stack), SILC_STACK_DEFAULT_ALIGN) + \
+#define SILC_STACK_DATA(stack, si, bsize)				\
+  (((unsigned char *)(stack)->stack[si]) +				\
+   SILC_STACK_ALIGN(sizeof(**(stack)->stack), (stack)->alignment) +	\
    ((bsize) - (stack)->stack[si]->bytes_left))
 
 #ifdef SILC_DIST_INPLACE
@@ -88,23 +89,7 @@ struct SilcStackStruct {
 #else /* !SILC_DIST_INPLACE */
 #define SILC_STACK_STAT(stack, stat, val)
 #define SILC_ST_DEBUG(fmt)
-#endif /* SILC_DIST_INPLACE */
 
-/* Allocate memory.  If the `aligned' is FALSE this allocates unaligned
-   memory, otherwise memory is aligned.  Returns pointer to the memory
-   or NULL on error. */
-void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, SilcBool aligned);
-
-/* Attempts to reallocate memory by changing the size of the `ptr' into
-   `size'.  This routine works only if the previous allocation to `stack'
-   was `ptr'.  If there is another memory allocation between allocating
-   `ptr' and this call this routine will return NULL.  NULL is also returned
-   if the `size' does not fit into the current block.  If NULL is returned
-   the old memory remains intact. */
-void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
-			 void *ptr, SilcUInt32 size, SilcBool aligned);
-
-#ifdef SILC_DIST_INPLACE
 /* Prints statistics of the usage of SilcStack to stdout. */
 void silc_stack_stats(SilcStack stack);
 #endif /* SILC_DIST_INPLACE */

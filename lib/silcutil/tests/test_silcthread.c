@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
 
   SILC_LOG_DEBUG(("Allocate thread pool"));
-  tp = silc_thread_pool_alloc(NULL, 0, 2, TRUE);
+  tp = silc_thread_pool_alloc(NULL, 0, 2, FALSE);
   if (!tp)
     goto err;
   for (i = 0; i < 4; i++) {
@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 			      compl, (void *)i + 1))
       goto err;
   }
-  sleep(3);
+  sleep(4);
   SILC_LOG_DEBUG(("Stop thread pool"));
   silc_thread_pool_free(tp, TRUE);
 
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
   silc_thread_pool_free(tp, TRUE);
 
   SILC_LOG_DEBUG(("Allocate thread pool"));
-  tp = silc_thread_pool_alloc(NULL, 8, 16, FALSE);
+  tp = silc_thread_pool_alloc(NULL, 3, 20, TRUE);
   if (!tp)
     goto err;
   for (i = 0; i < 8; i++) {
@@ -86,6 +86,9 @@ int main(int argc, char **argv)
   if (!silc_thread_pool_run(tp, FALSE, schedule, func, (void *)0xff,
 			    compl, (void *)0xff))
     goto err;
+  sleep(1);
+
+  silc_thread_pool_purge(tp);
 
   silc_schedule(schedule);
 

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2006 Pekka Riikonen
+  Copyright (C) 2003 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,12 +37,13 @@ SilcStack silc_stack_alloc(SilcUInt32 stack_size)
     silc_free(stack);
     return NULL;
   }
+  stack->alignment = SILC_STACK_DEFAULT_ALIGN;
 
   /* Create initial stack */
   stack->stack_size = stack_size ? stack_size : SILC_STACK_DEFAULT_SIZE;
   stack->stack[0] = silc_malloc(stack->stack_size +
   				SILC_STACK_ALIGN(sizeof(*stack->stack[0]),
-  						 SILC_STACK_DEFAULT_ALIGN));
+  						 stack->alignment));
   if (!stack->stack[0]) {
     silc_free(stack->frames);
     silc_free(stack);
@@ -141,19 +142,16 @@ SilcUInt32 silc_stack_pop(SilcStack stack)
   return stack->frame->sp + 1;
 }
 
-/* Allocate memory.  If the `aligned' is FALSE this allocates unaligned
-   memory, otherwise memory is aligned.  Returns pointer to the memory
-   or NULL on error. */
+/* Allocate memory.  Returns pointer to the memory or NULL on error. */
 
-void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, SilcBool aligned)
+void *silc_stack_malloc(SilcStack stack, SilcUInt32 size)
 {
   void *ptr;
   SilcUInt32 bsize, bsize2;
   SilcUInt32 si = stack->frame->si;
 
   SILC_STACK_STAT(stack, num_malloc, 1);
-  SILC_ST_DEBUG(("Allocating %d bytes (%s) from %p",
-		 size, aligned ? "align" : "not align", stack));
+  SILC_ST_DEBUG(("Allocating %d bytes from %p", size, stack));
 
   if (silc_unlikely(!size)) {
     SILC_LOG_ERROR(("Allocation by zero (0)"));
@@ -167,8 +165,8 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, SilcBool aligned)
     return NULL;
   }
 
-  /* Align properly if wanted */
-  size = (aligned ? SILC_STACK_ALIGN(size, SILC_STACK_DEFAULT_ALIGN) : size);
+  /* Align properly  */
+  size = SILC_STACK_ALIGN(size, stack->alignment);
 
   /* Compute the size of current stack block */
   bsize = SILC_STACK_BLOCK_SIZE(stack, si);
@@ -204,7 +202,7 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, SilcBool aligned)
     SILC_ST_DEBUG(("Allocating new stack block, %d bytes", bsize2));
     stack->stack[si] = silc_malloc(bsize2 +
 				   SILC_STACK_ALIGN(sizeof(**stack->stack),
-						    SILC_STACK_DEFAULT_ALIGN));
+						    stack->alignment));
     if (silc_unlikely(!stack->stack[si])) {
       SILC_STACK_STAT(stack, num_errors, 1);
       return NULL;
@@ -231,18 +229,17 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size, SilcBool aligned)
    the old memory remains intact. */
 
 void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
-			 void *ptr, SilcUInt32 size, SilcBool aligned)
+			 void *ptr, SilcUInt32 size)
 {
   SilcUInt32 si = stack->frame->si;
   SilcUInt32 bsize;
   void *sptr;
 
   if (!ptr)
-    return silc_stack_malloc(stack, size, aligned);
+    return silc_stack_malloc(stack, size);
 
   SILC_STACK_STAT(stack, num_malloc, 1);
-  SILC_ST_DEBUG(("Reallocating %d bytes (%d) (%s) from %p", size, old_size,
-		 aligned ? "align" : "not align", stack));
+  SILC_ST_DEBUG(("Reallocating %d bytes (%d) from %p", size, old_size, stack));
 
   if (silc_unlikely(!size || !old_size)) {
     SILC_LOG_ERROR(("Allocation by zero (0)"));
@@ -256,17 +253,15 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
     return NULL;
   }
 
-  /* Align the old size if needed */
-  old_size = (aligned ?
-	      SILC_STACK_ALIGN(old_size,
-			       SILC_STACK_DEFAULT_ALIGN) : old_size);
+  /* Align properly */
+  old_size = SILC_STACK_ALIGN(old_size, stack->alignment);
 
   /* Compute the size of current stack block */
   bsize = SILC_STACK_BLOCK_SIZE(stack, si);
 
   /* Check that `ptr' is last allocation */
   sptr = (unsigned char *)stack->stack[si] +
-    SILC_STACK_ALIGN(sizeof(**stack->stack), SILC_STACK_DEFAULT_ALIGN);
+    SILC_STACK_ALIGN(sizeof(**stack->stack), stack->alignment);
   if (stack->stack[si]->bytes_left + old_size +
       ((unsigned char *)ptr - (unsigned char *)sptr) != bsize) {
     SILC_LOG_DEBUG(("Cannot reallocate"));
@@ -277,8 +272,7 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
   /* Now check that the new size fits to this block */
   if (stack->stack[si]->bytes_left >= size) {
     /* It fits, so simply return the old pointer */
-    size = (aligned ? SILC_STACK_ALIGN(size,
-				       SILC_STACK_DEFAULT_ALIGN) : size);
+    size = SILC_STACK_ALIGN(size, stack->alignment);
     stack->stack[si]->bytes_left -= (size - old_size);
     SILC_STACK_STAT(stack, bytes_malloc, (size - old_size));
     return ptr;
@@ -287,6 +281,21 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
   SILC_LOG_DEBUG(("Cannot reallocate in this block"));
   SILC_STACK_STAT(stack, num_errors, 1);
   return NULL;
+}
+
+/* Set default alignment */
+
+void silc_stack_set_alignment(SilcStack stack, SilcUInt32 alignment)
+{
+  SILC_LOG_DEBUG(("Set stack %p alignment to %d bytes", stack, alignment));
+  stack->alignment = alignment;
+}
+
+/* Get default alignment */
+
+SilcUInt32 silc_stack_get_alignment(SilcStack stack)
+{
+  return stack->alignment;
 }
 
 #ifdef SILC_DIST_INPLACE
@@ -307,6 +316,8 @@ void silc_stack_stats(SilcStack stack)
   fprintf(stdout, "\nSilcStack %p statistics :\n\n", stack);
   fprintf(stdout, "  Size of stack           : %u\n",
 	  (unsigned int)stack_size);
+  fprintf(stdout, "  Stack alignment         : %d\n",
+	  (int)stack->alignment);
   fprintf(stdout, "  Number of allocs        : %u\n",
 	  (unsigned int)stack->snum_malloc);
   fprintf(stdout, "  Bytes allocated         : %u\n",
