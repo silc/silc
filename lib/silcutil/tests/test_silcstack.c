@@ -93,6 +93,27 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("Popping"));
   silc_stack_stats(stack);
 
+  SILC_LOG_DEBUG(("Current alignment: %d", silc_stack_get_alignment(stack)));
+  SILC_LOG_DEBUG(("Set alignemtn to 16"));
+  silc_stack_set_alignment(stack, 16);
+  SILC_LOG_DEBUG(("Current alignment: %d", silc_stack_get_alignment(stack)));
+  SILC_LOG_DEBUG(("Allocate 1 byte"));
+  ptr = silc_smalloc(stack, 1);
+  SILC_LOG_DEBUG(("Allocate 1 byte, check alignment"));
+  ptr2 = silc_smalloc(stack, 1);
+  if (ptr2 - ptr < 16) {
+    SILC_LOG_DEBUG(("Bad alignment"));
+    goto err;
+  }
+  SILC_LOG_DEBUG(("Alignment (ptr, ptr2) is %d", ptr2 - ptr));
+  SILC_LOG_DEBUG(("Allocate 1 byte, check alignment"));
+  ptr2 = silc_smalloc(stack, 1);
+  if (ptr2 - ptr < 32) {
+    SILC_LOG_DEBUG(("Bad alignment"));
+    goto err;
+  }
+  SILC_LOG_DEBUG(("Alignment (ptr, ptr2) is %d", ptr2 - ptr));
+
   SILC_LOG_DEBUG(("Freeing the stack"));
   silc_stack_free(stack);
 

@@ -117,7 +117,7 @@ static void *silc_thread_pool_run_thread(void *context)
 
       /* If we are last thread, signal the waiting destructor. */
       if (silc_list_count(tp->threads) == 0)
-	silc_cond_signal(pool_signal);
+	silc_cond_broadcast(pool_signal);
 
       /* Release pool reference.  Releases lock also. */
       silc_thread_pool_unref(tp);
@@ -270,7 +270,7 @@ void silc_thread_pool_free(SilcThreadPool tp, SilcBool wait_unfinished)
   silc_list_start(tp->threads);
   while ((t = silc_list_get(tp->threads)))
     t->stop = TRUE;
-  silc_cond_signal(tp->pool_signal);
+  silc_cond_broadcast(tp->pool_signal);
 
   if (wait_unfinished) {
     SILC_LOG_DEBUG(("Wait threads to finish"));
@@ -357,7 +357,7 @@ SilcBool silc_thread_pool_run(SilcThreadPool tp,
   silc_list_del(tp->free_threads, t);
 
   /* Signal threads */
-  silc_cond_signal(tp->pool_signal);
+  silc_cond_broadcast(tp->pool_signal);
 
   silc_mutex_unlock(tp->lock);
   return TRUE;
@@ -411,6 +411,7 @@ void silc_thread_pool_purge(SilcThreadPool tp)
   silc_mutex_lock(tp->lock);
 
   if (silc_list_count(tp->free_threads) <= tp->min_threads) {
+    SILC_LOG_DEBUG(("No threads to purge"));
     silc_mutex_unlock(tp->lock);
     return;
   }
@@ -433,7 +434,7 @@ void silc_thread_pool_purge(SilcThreadPool tp)
   }
 
   /* Signal threads to stop */
-  silc_cond_signal(tp->pool_signal);
+  silc_cond_broadcast(tp->pool_signal);
 
   silc_mutex_unlock(tp->lock);
 }
