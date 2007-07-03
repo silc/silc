@@ -52,6 +52,7 @@
  *
  ***/
 typedef struct SilcDListStruct {
+  SilcStack stack;
   SilcList list;
   void *current;
   void *prev;
@@ -74,7 +75,7 @@ typedef struct SilcDListEntryStruct {
  *
  * DESCRIPTION
  *
- *    Initializes SilcDList.
+ *    Initializes SilcDList.  Returns the SilcDList context or NULL on error.
  *
  ***/
 
@@ -92,6 +93,40 @@ SilcDList silc_dlist_init(void)
   return list;
 }
 
+/****f* silcutil/SilcDListAPI/silc_dlist_sinit
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcDList silc_dlist_sinit(SilcStack stack);
+ *
+ * DESCRIPTION
+ *
+ *    Initializes SilcDList.  Returns the SilcDList context or NULL on error.
+ *    This is same as silc_dlist_init but allocates the memory from `stack'
+ *    if `stack' is non-NULL.
+ *
+ ***/
+
+static inline
+SilcDList silc_dlist_sinit(SilcStack stack)
+{
+  SilcDList list;
+
+  if (stack)
+    stack = silc_stack_alloc(0, stack);
+  list = (SilcDList)silc_smalloc(stack, sizeof(*list));
+  if (!list) {
+    silc_stack_free(stack);
+    return NULL;
+  }
+  list->stack = stack;
+  list->current = list->prev = NULL;
+  silc_list_init_prev(list->list, struct SilcDListEntryStruct, next, prev);
+
+  return list;
+}
+
 /****f* silcutil/SilcDListAPI/silc_dlist_uninit
  *
  * SYNOPSIS
@@ -102,7 +137,9 @@ SilcDList silc_dlist_init(void)
  * DESCRIPTION
  *
  *    Uninits and frees all memory. Must be called to free memory. Does NOT
- *    free the contexts saved by caller.
+ *    free the contexts saved by caller.  If the silc_dlist_sinit was used
+ *    with SilcStack this will release all memory allocated by the SilcDList
+ *    back to the SilcStack.
  *
  ***/
 
@@ -111,12 +148,14 @@ void silc_dlist_uninit(SilcDList list)
 {
   if (list) {
     SilcDListEntry e;
+    SilcStack stack = list->stack;
     silc_list_start(list->list);
     while ((e = (SilcDListEntry)silc_list_get(list->list)) != SILC_LIST_END) {
       silc_list_del(list->list, e);
-      silc_free(e);
+      silc_sfree(stack, e);
     }
-    silc_free(list);
+    silc_sfree(stack, list);
+    silc_stack_free(stack);
   }
 }
 
@@ -198,7 +237,7 @@ void silc_dlist_end(SilcDList list)
 static inline
 SilcBool silc_dlist_add(SilcDList list, void *context)
 {
-  SilcDListEntry e = (SilcDListEntry)silc_malloc(sizeof(*e));
+  SilcDListEntry e = (SilcDListEntry)silc_smalloc(list->stack, sizeof(*e));
   if (silc_unlikely(!e))
     return FALSE;
   e->context = context;
@@ -224,7 +263,7 @@ SilcBool silc_dlist_add(SilcDList list, void *context)
 static inline
 SilcBool silc_dlist_insert(SilcDList list, void *context)
 {
-  SilcDListEntry e = (SilcDListEntry)silc_malloc(sizeof(*e));
+  SilcDListEntry e = (SilcDListEntry)silc_smalloc(list->stack, sizeof(*e));
   if (silc_unlikely(!e))
     return FALSE;
   e->context = context;
@@ -261,7 +300,7 @@ void silc_dlist_del(SilcDList list, void *entry)
 	list->current = NULL;
       if (list->prev == e)
 	list->prev = NULL;
-      silc_free(e);
+      silc_sfree(list->stack, e);
       break;
     }
   }

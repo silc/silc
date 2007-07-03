@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2006 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,14 +24,15 @@
  * Implementation of collision resistant hash table. This is a hash table
  * that provides a reliable (what you add there stays there, and duplicate
  * keys are allowed) with as fast reference to the key as possible. If
- * there are a lot of duplicate keys in the hash table the lookup gets
- * slower of course. However, this is reliable and no data is lost at any
- * point. If you know that you never have duplicate keys then this is as
- * fast as any simple hash table.
+ * there are a lot of duplicate keys in the hash table the lookup slows down.
+ * However, this is reliable and no data is lost at any point. If you know
+ * that you never have duplicate keys then this is as fast as any simple hash
+ * table.
  *
  * The interface provides many ways to search the hash table including
  * an extended interface where caller can specify its own hash and comparison
- * functions.
+ * functions.  The interface also supports SilcStack and all memory allocated
+ * by the hash table can be allocated from SilcStack.
  *
  * There are two ways to traverse the entire hash table if this feature
  * is needed. There exists a foreach function that calls a foreach
@@ -39,8 +40,8 @@
  * SilcHashTableList structure and traverse the hash table inside while()
  * using the list structure. Both are equally fast.
  *
- * The hash table is not thread safe.  If same hash table context is used in
- * multi thread environment concurrency control must be employed.
+ * The hash table is not thread safe.  If same SilcHashtable context is used
+ * in multi thread environment concurrency control must be employed.
  *
  ***/
 
@@ -172,7 +173,8 @@ typedef void (*SilcHashForeach)(void *key, void *context, void *user_context);
  *
  * SYNOPSIS
  *
- *    SilcHashTable silc_hash_table_alloc(SilcUInt32 table_size,
+ *    SilcHashTable silc_hash_table_alloc(SilcStack stack,
+ *                                        SilcUInt32 table_size,
  *                                        SilcHashFunction hash,
  *                                        void *hash_user_context,
  *                                        SilcHashCompare compare,
@@ -183,7 +185,8 @@ typedef void (*SilcHashForeach)(void *key, void *context, void *user_context);
  *
  * DESCRIPTION
  *
- *    Allocates new hash table and returns it.  If the `table_size' is not
+ *    Allocates new hash table and returns it.  If the `stack' is non-NULL
+ *    the hash table is allocated from `stack'.  If the `table_size' is not
  *    zero then the hash table size is the size provided. If zero then the
  *    default size will be used. Note that if the `table_size' is provided
  *    it should be a prime. The `hash', `compare' and `destructor' are
@@ -192,7 +195,8 @@ typedef void (*SilcHashForeach)(void *key, void *context, void *user_context);
  *    are optional.
  *
  ***/
-SilcHashTable silc_hash_table_alloc(SilcUInt32 table_size,
+SilcHashTable silc_hash_table_alloc(SilcStack stack,
+				    SilcUInt32 table_size,
 				    SilcHashFunction hash,
 				    void *hash_user_context,
 				    SilcHashCompare compare,
@@ -211,6 +215,10 @@ SilcHashTable silc_hash_table_alloc(SilcUInt32 table_size,
  *
  *    Frees the hash table. The destructor function provided in the
  *    silc_hash_table_alloc will be called for all keys in the hash table.
+ *
+ *    If the SilcStack was given to silc_hash_table_alloc this call will
+ *    release all memory allocated during the life time of the `ht' back
+ *    to the SilcStack.
  *
  ***/
 void silc_hash_table_free(SilcHashTable ht);
@@ -260,12 +268,12 @@ SilcUInt32 silc_hash_table_count(SilcHashTable ht);
  ***/
 SilcBool silc_hash_table_add(SilcHashTable ht, void *key, void *context);
 
-/****f* silcutil/SilcHashTableAPI/silc_hash_table_replace
+/****f* silcutil/SilcHashTableAPI/silc_hash_table_set
  *
  * SYNOPSIS
  *
- *    SilcBool silc_hash_table_replace(SilcHashTable ht, void *key,
- *                                     void *context);
+ *    SilcBool silc_hash_table_set(SilcHashTable ht, void *key,
+ *                                 void *context);
  *
  * DESCRIPTION
  *
@@ -275,7 +283,7 @@ SilcBool silc_hash_table_add(SilcHashTable ht, void *key, void *context);
  *    replaced key and context.
  *
  ***/
-SilcBool silc_hash_table_replace(SilcHashTable ht, void *key, void *context);
+SilcBool silc_hash_table_set(SilcHashTable ht, void *key, void *context);
 
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_del
  *
@@ -505,14 +513,14 @@ SilcBool silc_hash_table_add_ext(SilcHashTable ht,
 				 SilcHashFunction hash,
 				 void *hash_user_context);
 
-/****f* silcutil/SilcHashTableAPI/silc_hash_table_replace_ext
+/****f* silcutil/SilcHashTableAPI/silc_hash_table_set_ext
  *
  * SYNOPSIS
  *
- *    SilcBool silc_hash_table_replace_ext(SilcHashTable ht, void *key,
- *                                         void *context,
- *                                         SilcHashFunction hash,
- *                                         void *hash_user_context);
+ *    SilcBool silc_hash_table_set_ext(SilcHashTable ht, void *key,
+ *                                     void *context,
+ *                                     SilcHashFunction hash,
+ *                                     void *hash_user_context);
  *
  * DESCRIPTION
  *
@@ -525,10 +533,10 @@ SilcBool silc_hash_table_add_ext(SilcHashTable ht,
  *    function. If not provided the hash table's default is used.
  *
  ***/
-SilcBool silc_hash_table_replace_ext(SilcHashTable ht,
-				     void *key, void *context,
-				     SilcHashFunction hash,
-				     void *hash_user_context);
+SilcBool silc_hash_table_set_ext(SilcHashTable ht,
+				 void *key, void *context,
+				 SilcHashFunction hash,
+				 void *hash_user_context);
 
 /****f* silcutil/SilcHashTableAPI/silc_hash_table_del_ext
  *

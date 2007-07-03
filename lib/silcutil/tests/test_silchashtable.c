@@ -120,7 +120,7 @@ SilcBool alloc_table()
   SILC_LOG_DEBUG(("Allocating hash table with %d entries (%s)",
 		  count, auto_rehash ? "auto rehash" : "no auto rehash"));
 
-  t = silc_hash_table_alloc(0, hash_entry, NULL,
+  t = silc_hash_table_alloc(NULL, 0, hash_entry, NULL,
 			    hash_compare, NULL,
 			    hash_destructor, NULL, auto_rehash);
 

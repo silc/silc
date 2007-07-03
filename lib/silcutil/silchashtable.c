@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2006 Pekka Riikonen
+  Copyright (C) 2001 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -63,6 +63,7 @@ typedef struct SilcHashTableEntryStruct {
 
 /* Hash table. */
 struct SilcHashTableStruct {
+  SilcStack stack;
   SilcHashTableEntry *table;
   SilcUInt32 table_size;
   SilcUInt32 entry_count;
@@ -281,7 +282,7 @@ silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
 
     SILC_HT_DEBUG(("Collision; adding new key to list"));
 
-    e->next = silc_calloc(1, sizeof(*e->next));
+    e->next = silc_scalloc(ht->stack, 1, sizeof(*e->next));
     if (!e->next)
       return FALSE;
     e->next->key = key;
@@ -290,7 +291,7 @@ silc_hash_table_add_internal(SilcHashTable ht, void *key, void *context,
   } else {
     /* New key */
     SILC_HT_DEBUG(("New key"));
-    *entry = silc_calloc(1, sizeof(**entry));
+    *entry = silc_scalloc(ht->stack, 1, sizeof(**entry));
     if (!(*entry))
       return FALSE;
     (*entry)->key = key;
@@ -325,7 +326,7 @@ silc_hash_table_replace_internal(SilcHashTable ht, void *key, void *context,
 		     ht->destructor_user_context);
   } else {
     /* New key */
-    *entry = silc_calloc(1, sizeof(**entry));
+    *entry = silc_scalloc(ht->stack, 1, sizeof(**entry));
     if (!(*entry))
       return FALSE;
     ht->entry_count++;
@@ -348,7 +349,8 @@ silc_hash_table_replace_internal(SilcHashTable ht, void *key, void *context,
    destructor function, respectively. The `hash' is mandatory, the others
    are optional. */
 
-SilcHashTable silc_hash_table_alloc(SilcUInt32 table_size,
+SilcHashTable silc_hash_table_alloc(SilcStack stack,
+				    SilcUInt32 table_size,
 				    SilcHashFunction hash,
 				    void *hash_user_context,
 				    SilcHashCompare compare,
@@ -363,17 +365,25 @@ SilcHashTable silc_hash_table_alloc(SilcUInt32 table_size,
   if (!hash)
     return NULL;
 
-  ht = silc_calloc(1, sizeof(*ht));
-  if (!ht)
-    return NULL;
-  ht->table = silc_calloc(table_size ? silc_hash_table_primesize(table_size,
-								 &size_index) :
-			  primesize[SILC_HASH_TABLE_SIZE],
-			  sizeof(*ht->table));
-  if (!ht->table) {
-    silc_free(ht);
+  if (stack)
+    stack = silc_stack_alloc(0, stack);
+
+  ht = silc_scalloc(stack, 1, sizeof(*ht));
+  if (!ht) {
+    silc_stack_free(stack);
     return NULL;
   }
+  ht->table = silc_scalloc(stack,
+			   table_size ? silc_hash_table_primesize(table_size,
+								  &size_index) :
+			   primesize[SILC_HASH_TABLE_SIZE],
+			   sizeof(*ht->table));
+  if (!ht->table) {
+    silc_stack_free(stack);
+    silc_sfree(stack, ht);
+    return NULL;
+  }
+  ht->stack = stack;
   ht->table_size = size_index;
   ht->hash = hash;
   ht->compare = compare;
@@ -391,6 +401,7 @@ SilcHashTable silc_hash_table_alloc(SilcUInt32 table_size,
 
 void silc_hash_table_free(SilcHashTable ht)
 {
+  SilcStack stack = ht->stack;
   SilcHashTableEntry e, tmp;
   int i;
 
@@ -401,12 +412,13 @@ void silc_hash_table_free(SilcHashTable ht)
 	ht->destructor(e->key, e->context, ht->destructor_user_context);
       tmp = e;
       e = e->next;
-      silc_free(tmp);
+      silc_sfree(stack, tmp);
     }
   }
 
-  silc_free(ht->table);
-  silc_free(ht);
+  silc_sfree(stack, ht->table);
+  silc_sfree(stack, ht);
+  silc_stack_free(stack);
 }
 
 /* Returns the size of the hash table */
@@ -451,7 +463,7 @@ SilcBool silc_hash_table_add_ext(SilcHashTable ht, void *key, void *context,
    the `context. The destructor function will be called for the
    replaced key and context. */
 
-SilcBool silc_hash_table_replace(SilcHashTable ht, void *key, void *context)
+SilcBool silc_hash_table_set(SilcHashTable ht, void *key, void *context)
 {
   return silc_hash_table_replace_internal(ht, key, context, ht->hash,
 					  ht->hash_user_context);
@@ -459,10 +471,10 @@ SilcBool silc_hash_table_replace(SilcHashTable ht, void *key, void *context)
 
 /* Same as above but with specific hash function. */
 
-SilcBool silc_hash_table_replace_ext(SilcHashTable ht, void *key,
-				     void *context,
-				     SilcHashFunction hash,
-				     void *hash_user_context)
+SilcBool silc_hash_table_set_ext(SilcHashTable ht, void *key,
+				 void *context,
+				 SilcHashFunction hash,
+				 void *hash_user_context)
 {
   return silc_hash_table_replace_internal(ht, key, context,
 					  hash, hash_user_context);
@@ -495,7 +507,7 @@ SilcBool silc_hash_table_del(SilcHashTable ht, void *key)
 
   if (ht->destructor)
     ht->destructor(e->key, e->context, ht->destructor_user_context);
-  silc_free(e);
+  silc_sfree(ht->stack, e);
 
   ht->entry_count--;
 
@@ -545,7 +557,7 @@ SilcBool silc_hash_table_del_ext(SilcHashTable ht, void *key,
     if (ht->destructor)
       ht->destructor(e->key, e->context, ht->destructor_user_context);
   }
-  silc_free(e);
+  silc_sfree(ht->stack, e);
 
   ht->entry_count--;
 
@@ -586,7 +598,7 @@ SilcBool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
 
   if (ht->destructor)
     ht->destructor(e->key, e->context, ht->destructor_user_context);
-  silc_free(e);
+  silc_sfree(ht->stack, e);
 
   ht->entry_count--;
 
@@ -639,7 +651,7 @@ SilcBool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
     if (ht->destructor)
       ht->destructor(e->key, e->context, ht->destructor_user_context);
   }
-  silc_free(e);
+  silc_sfree(ht->stack, e);
 
   ht->entry_count--;
 
@@ -827,7 +839,8 @@ void silc_hash_table_rehash(SilcHashTable ht, SilcUInt32 new_size)
   ht->auto_rehash = FALSE;
 
   /* Allocate new table */
-  ht->table = silc_calloc(primesize[size_index], sizeof(*ht->table));
+  ht->table = silc_scalloc(ht->stack,
+			   primesize[size_index], sizeof(*ht->table));
   if (!ht->table)
     return;
   ht->table_size = size_index;
@@ -842,14 +855,14 @@ void silc_hash_table_rehash(SilcHashTable ht, SilcUInt32 new_size)
       e = e->next;
 
       /* Remove old entry */
-      silc_free(tmp);
+      silc_sfree(ht->stack, tmp);
     }
   }
 
   ht->auto_rehash = auto_rehash;
 
   /* Remove old table */
-  silc_free(table);
+  silc_sfree(ht->stack, table);
 }
 
 /* Same as above but with specific hash function. */
@@ -882,7 +895,8 @@ void silc_hash_table_rehash_ext(SilcHashTable ht, SilcUInt32 new_size,
   ht->auto_rehash = FALSE;
 
   /* Allocate new table */
-  ht->table = silc_calloc(primesize[size_index], sizeof(*ht->table));
+  ht->table = silc_scalloc(ht->stack,
+			   primesize[size_index], sizeof(*ht->table));
   if (!ht->table)
     return;
   ht->table_size = size_index;
@@ -898,14 +912,14 @@ void silc_hash_table_rehash_ext(SilcHashTable ht, SilcUInt32 new_size,
       e = e->next;
 
       /* Remove old entry */
-      silc_free(tmp);
+      silc_sfree(ht->stack, tmp);
     }
   }
 
   ht->auto_rehash = auto_rehash;
 
   /* Remove old table */
-  silc_free(table);
+  silc_sfree(ht->stack, table);
 }
 
 /* Prepares the `htl' list structure sent as argument to be used in the
