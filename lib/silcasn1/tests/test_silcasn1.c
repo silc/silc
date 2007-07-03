@@ -55,6 +55,7 @@ int main(int argc, char **argv)
   char tmp[32];
   SilcRng rng;
   SilcMPInt mpint, mpint2;
+  SilcStack stack;
 
   memset(&node, 0, sizeof(node));
   memset(&node2, 0, sizeof(node2));
@@ -62,15 +63,17 @@ int main(int argc, char **argv)
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_log_debug(TRUE);
     silc_log_debug_hexdump(TRUE);
-    silc_log_set_debug_string("*asn1*,*ber*");
+    silc_log_set_debug_string("*asn1*,*ber*,*stack*");
   }
 
   silc_hash_register_default();
   rng = silc_rng_alloc();
   silc_rng_init(rng);
 
+  stack = silc_stack_alloc(0, NULL);
+
   SILC_LOG_DEBUG(("Allocating ASN.1 context"));
-  asn1 = silc_asn1_alloc();
+  asn1 = silc_asn1_alloc(stack);
   if (!asn1)
     goto out;
 
@@ -744,6 +747,9 @@ int main(int argc, char **argv)
 
 #endif /* 1 */
   silc_asn1_free(asn1);
+  silc_rng_free(rng);
+  silc_hash_unregister_all();
+  silc_stack_free(stack);
 
   success = TRUE;
  out:

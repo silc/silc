@@ -201,13 +201,14 @@ typedef enum {
  *
  * SYNOPSIS
  *
- *    SilcAsn1 silc_asn1_alloc(void);
+ *    SilcAsn1 silc_asn1_alloc(SilcStack stack);
  *
  * DESCRIPTION
  *
  *    Allocates and initializes ASN.1 encoder/decoder and returns SilcAsn1
  *    context or NULL on error.  This context can be used with both
- *    silc_asn1_encode and silc_asn1_decode functions.
+ *    silc_asn1_encode and silc_asn1_decode functions.  If `stack' is non-NULL
+ *    all memory will be allocated from `stack'.
  *
  *    Usually SilcAsn1 is allocated when encoder or decoder is needed,
  *    however it is also possible to allocate long-lasting SilcAsn1 and
@@ -220,7 +221,7 @@ typedef enum {
  *    data that is returned by silc_asn1_decode function becomes invalid.
  *
  ***/
-SilcAsn1 silc_asn1_alloc(void);
+SilcAsn1 silc_asn1_alloc(SilcStack stack);
 
 /****f* silcasn1/SilcASN1API/silc_asn1_free
  *
@@ -241,7 +242,7 @@ void silc_asn1_free(SilcAsn1 asn1);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_asn1_init(SilcAsn1 asn1);
+ *    SilcBool silc_asn1_init(SilcAsn1 asn1, SilcStack stack);
  *
  * DESCRIPTION
  *
@@ -252,11 +253,11 @@ void silc_asn1_free(SilcAsn1 asn1);
  * EXAMPLE
  *
  *    SilcAsn1Struct asn1;
- *    if (!silc_asn1_init(&asn1))
+ *    if (!silc_asn1_init(&asn1, NULL))
  *      error;
  *
  ***/
-SilcBool silc_asn1_init(SilcAsn1 asn1);
+SilcBool silc_asn1_init(SilcAsn1 asn1, SilcStack stack);
 
 /****f* silcasn1/SilcASN1API/silc_asn1_uninit
  *

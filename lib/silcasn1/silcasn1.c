@@ -23,14 +23,30 @@
 
 /* Allocate ASN.1 context. */
 
-SilcAsn1 silc_asn1_alloc(void)
+SilcAsn1 silc_asn1_alloc(SilcStack stack)
 {
-  SilcAsn1 asn1 = silc_calloc(1, sizeof(*asn1));
-  if (!asn1)
+  SilcAsn1 asn1;
+  SilcStack stack1;
+
+  stack1 = silc_stack_alloc(0, stack);
+  if (!stack1)
     return NULL;
 
-  if (!silc_asn1_init(asn1))
+  /* Allocate itself from the stack */
+  asn1 = silc_scalloc(stack1, 1, sizeof(*asn1));
+  if (!asn1) {
+    silc_stack_free(stack1);
     return NULL;
+  }
+
+  asn1->stack1 = stack1;
+  asn1->stack2 = silc_stack_alloc(0, stack);
+  if (!asn1->stack2) {
+    silc_stack_free(stack1);
+    return NULL;
+  }
+
+  asn1->accumul = 0;
 
   return asn1;
 }
@@ -40,20 +56,19 @@ SilcAsn1 silc_asn1_alloc(void)
 void silc_asn1_free(SilcAsn1 asn1)
 {
   silc_asn1_uninit(asn1);
-  silc_free(asn1);
 }
 
 /* Init pre-allocated ASN.1 context */
 
-SilcBool silc_asn1_init(SilcAsn1 asn1)
+SilcBool silc_asn1_init(SilcAsn1 asn1, SilcStack stack)
 {
-  asn1->stack1 = silc_stack_alloc(768);
+  asn1->stack1 = silc_stack_alloc(0, stack);
   if (!asn1->stack1)
     return FALSE;
 
-  asn1->stack2 = silc_stack_alloc(768);
+  asn1->stack2 = silc_stack_alloc(0, stack);
   if (!asn1->stack2) {
-    silc_stack_free(asn1->stack2);
+    silc_stack_free(asn1->stack1);
     return FALSE;
   }
 
@@ -66,8 +81,8 @@ SilcBool silc_asn1_init(SilcAsn1 asn1)
 
 void silc_asn1_uninit(SilcAsn1 asn1)
 {
-  silc_stack_free(asn1->stack1);
   silc_stack_free(asn1->stack2);
+  silc_stack_free(asn1->stack1);
 }
 
 #if defined(SILC_DEBUG)
