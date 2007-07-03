@@ -220,6 +220,7 @@ extern "C" {
 #include "silcversion.h"
 
 /* SILC util library includes */
+#include "silclist.h"
 #include "silcstack.h"
 #include "silcmemory.h"
 #include "silcsnprintf.h"
@@ -247,8 +248,9 @@ extern "C" {
 #include "silcpkcs1.h"
 
 /* More SILC util library includes */
+#include "silcenv.h"
+#include "silcdll.h"
 #include "silchashtable.h"
-#include "silclist.h"
 #include "silcdlist.h"
 #include "silcasync.h"
 #include "silcstream.h"

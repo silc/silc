@@ -211,6 +211,7 @@ AC_CHECK_FUNCS(chmod fcntl stat fstat getenv putenv strerror)
 AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid sched_yield)
 AC_CHECK_FUNCS(setgroups initgroups nl_langinfo nanosleep)
 AC_CHECK_FUNCS(strchr snprintf strstr strcpy strncpy memcpy memset memmove)
+AC_CHECK_FUNCS(setenv getenv putenv unsetenv clearenv)
 
 # lib/contrib conditionals
 #
@@ -671,6 +672,7 @@ AC_CHECK_HEADERS(dlfcn.h,
     AC_CHECK_LIB(dl, dlopen,
       [
         AC_DEFINE([SILC_SIM], [], [HAVE_SIM])
+        AC_DEFINE([HAVE_DLOPEN], [], [HAVE_DLOPEN])
         sim_support=true
         LIBS="$LIBS -ldl"
       ],
@@ -678,6 +680,7 @@ AC_CHECK_HEADERS(dlfcn.h,
         AC_CHECK_LIB(c, dlopen,
           [
             AC_DEFINE([SILC_SIM], [], [HAVE_SIM])
+            AC_DEFINE([HAVE_DLOPEN], [], [HAVE_DLOPEN])
             sim_support=true
           ])
       ])

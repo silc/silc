@@ -82,20 +82,11 @@ Runtime library, lib/silcutil/
 
  o Fix universal time decoding (doesn't accept all formats) in silctime.c.
 
- o Add functions to manipulate environment variables.
-
-   SilcBool silc_setenv(const char *variable, const char *value);
-   const char *silc_getenv(const char *variable);
-   SilcBool silc_clearenv(const char *variable);
+ o Add functions to manipulate environment variables. (***DONE)
 
  o Add functions to loading shared/dynamic object symbols (replaces the
    SIM library (lib/silcsim) and introduces generic library).  Add this
-   to lib/silcutil/silcdll.[ch].
-
-   SilcDll silc_dll_load(const char *object_path, SilcDllFlags flags);
-   void silc_dll_close(SilcDll dll);
-   void *silc_dll_getsym(SilcDll dll, const char *symbol);
-   const char *silc_dll_error(SilcDll dll);
+   to lib/silcutil/silcdll.[ch].  (***TESTING NEEDED WIN32, TODO Symbian)
 
  o Add directory opening/traversing functions
 
@@ -181,11 +172,11 @@ Runtime library, lib/silcutil/
  o silc_stringprep to non-allocating version.
 
  o silc_hash_table_replace -> silc_hash_table_set.  Retain support for
-   silc_hash_table_replace as macro.
+   silc_hash_table_replace as macro. (***DONE)
 
- o SilcStack aware SilcHashTable.
+ o SilcStack aware SilcHashTable. (***DONE)
 
- o SilcStack aware SilcDList.
+ o SilcStack aware SilcDList. (***DONE)
 
  o Thread pool API.  Add this to lib/silcutil/silcthread.[ch]. 	(***DONE)
 
