@@ -36,6 +36,12 @@
  * the stack.  This allows the caller to use special alignment for memory
  * allocations, if needed.
  *
+ * SilcStack is also a full featured memory pool which allows user to group
+ * together multiple stacks.  Child stacks may be created from a parent stack
+ * without consuming the parent stack.  When the child is freed, its memory
+ * is returned back to the parent and can be used again by other childs.
+ * It is also possible to create child stacks from another child stack.
+ *
  * A basic set of utility functions are provided for application that wish
  * to use the SilcStack as their primary memory allocation source.  The
  * following functions support SilcStack:
@@ -44,7 +50,8 @@
  * silc_sfree, silc_sstrdup, silc_buffer_salloc, silc_buffer_salloc_size,
  * silc_buffer_srealloc, silc_buffer_srealloc_size, silc_buffer_scopy,
  * silc_buffer_sclone, silc_buffer_sformat, silc_buffer_sformat_vp,
- * silc_buffer_sstrformat, silc_buffer_senlarge, silc_mp_sinit
+ * silc_buffer_sstrformat, silc_buffer_senlarge, silc_mp_sinit,
+ * silc_dlist_sinit, silc_hash_table_alloc
  *
  * The SilcStack context is not thread-safe.  If the same SilcStack must be
  * used in multithreaded environment concurrency control must be employed.
@@ -81,13 +88,10 @@ typedef struct SilcStackStruct *SilcStack;
  *
  *    Static stack frame context that optionally can be used as stack
  *    frame in SilcStack.  By default silc_stack_push use pre-allocated
- *    stack frame (or allocates new one if all frames are reserved), but
- *    user may also use statically allocated SilcStackFrame instead.  This
- *    is recommended when using SilcStack in recursive routine and the
- *    recursion may become deep.  Using static frame assures that during
- *    recursion frames never run out and silc_stack_push never allocates
- *    any memory.  In other normal usage statically allocated SilcStackFrame
- *    is not needed, unless performance is critical.
+ *    stack frame, but user may also use statically allocated SilcStackFrame
+ *    instead.  This is recommended when using SilcStack in recursive routine
+ *    and the recursion may become deep.  Using static frame assures that
+ *    during recursion frames never run out.
  *
  ***/
 typedef struct SilcStackFrameStruct SilcStackFrame;
@@ -96,7 +100,7 @@ typedef struct SilcStackFrameStruct SilcStackFrame;
  *
  * SYNOPSIS
  *
- *    SilcStack silc_stack_alloc(SilcUInt32 stack_size);
+ *    SilcStack silc_stack_alloc(SilcUInt32 stack_size, SilcStack parent);
  *
  * DESCRIPTION
  *
@@ -104,11 +108,19 @@ typedef struct SilcStackFrameStruct SilcStackFrame;
  *    allocation by various routines.  Returns the pointer to the stack
  *    that must be freed with silc_stack_free function when it is not
  *    needed anymore.  If the `stack_size' is zero (0) by default a
- *    1 kilobyte (1024 bytes) stack is allocated.  If the `stack_size'
+ *    2 kilobytes (2048 bytes) stack is allocated.  If the `stack_size'
  *    is non-zero the byte value must be multiple by 8.
  *
+ *    If `parent' is non-NULL the created stack is a child of the `parent'
+ *    stack.  All of childs the memory is allocated from the `parent' and
+ *    will be returned back to the parent when the child is freed.  Note
+ *    that, even though child allocated memory from the parent, the parent's
+ *    stack is not consumed.
+ *
+ *    Returns NULL on error.
+ *
  ***/
-SilcStack silc_stack_alloc(SilcUInt32 stack_size);
+SilcStack silc_stack_alloc(SilcUInt32 stack_size, SilcStack parent);
 
 /****f* silcutil/SilcStackAPI/silc_stack_free
  *
@@ -120,6 +132,9 @@ SilcStack silc_stack_alloc(SilcUInt32 stack_size);
  *
  *    Frees the data stack context.  The stack cannot be used anymore after
  *    this and all allocated memory are freed.
+ *
+ *    If `stack' is a child stack, its memory is returned back to its
+ *    parent.
  *
  ***/
 void silc_stack_free(SilcStack stack);

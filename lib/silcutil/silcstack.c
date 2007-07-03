@@ -17,46 +17,228 @@
 
 */
 
-/* #define SILC_STACK_DEBUG 1 */
-
 #include "silc.h"
+
+/************************** Types and definitions ***************************/
+
+/* The SilcStack context */
+struct SilcStackStruct {
+  SilcStack parent;			      /* Parent stack */
+  SilcList stacks;			      /* List of stacks */
+  SilcStackDataEntry stack;		      /* Allocated stack blocks */
+  SilcStackFrame *frames;		      /* Allocated stack frames */
+  SilcStackFrame *frame;		      /* Current stack frame */
+  SilcUInt32 stack_size;		      /* Default stack size */
+  SilcUInt32 alignment;			      /* Memory alignment */
+#ifdef SILC_DIST_INPLACE
+  /* Statistics */
+  SilcUInt32 snum_malloc;
+  SilcUInt32 sbytes_malloc;
+  SilcUInt32 snum_errors;
+#endif /* SILC_DIST_INPLACE */
+};
+
+/************************ Static utility functions **************************/
+
+/* Compute stack block index for the `size'. */
+
+static SilcUInt32 silc_stack_get_index(SilcUInt32 size, SilcUInt32 *ret_bsize)
+{
+  SilcUInt32 bsize, si;
+
+  if (size < SILC_STACK_DEFAULT_SIZE)
+    size = SILC_STACK_DEFAULT_SIZE;
+  si = 0;
+  bsize = SILC_STACK_DEFAULT_SIZE;
+  while (bsize < size) {
+    bsize <<= 1;
+    si++;
+  }
+
+  *ret_bsize = bsize;
+
+  return si;
+}
+
+/* Get stack from `stack' or allocate new one. */
+
+static SilcStackDataEntry silc_stack_ref_stack(SilcStack stack,
+					       SilcUInt32 size,
+					       SilcUInt32 *ret_si,
+					       SilcUInt32 *ret_bsize)
+{
+  SilcStackDataEntry e;
+  SilcUInt32 si, bsize;
+
+  /* Get stack block index and block size for requested size */
+  si = silc_stack_get_index(size, &bsize);
+  *ret_si = si;
+  *ret_bsize = bsize;
+
+  SILC_ST_DEBUG(("Get stack block, si %d, size %lu", si, bsize));
+
+  /* Get stack that has block that can house our size requirement. */
+  silc_list_start(stack->stacks);
+  while ((e = silc_list_get(stack->stacks))) {
+    if (!e->data[si])
+      continue;
+
+    silc_list_del(stack->stacks, e);
+    SILC_ST_DEBUG(("Got stack blocks %p from stack %p", e->data, stack));
+    return e;
+  }
+
+  SILC_ST_DEBUG(("Allocate new stack blocks"));
+
+  /* Allocate new stack blocks */
+  e = silc_calloc(1, sizeof(*e));
+  if (!e)
+    return NULL;
+  e->data[si] = silc_malloc(bsize + SILC_STACK_ALIGN(sizeof(*e->data[0]),
+						     stack->alignment));
+  if (!e->data[si]) {
+    silc_free(e);
+    return NULL;
+  }
+  e->data[si]->bytes_left = bsize;
+  e->si = si;
+  e->bsize = bsize;
+
+  SILC_ST_DEBUG(("Got stack blocks %p from stack %p", e->data, stack));
+  return e;
+}
+
+/* Return the `data' back to the `stack'. */
+
+static void silc_stack_unref_stack(SilcStack stack, SilcStackDataEntry e)
+{
+  int i;
+
+  SILC_LOG_DEBUG(("Release stack blocks %p to stack %p, si %d",
+		  e->data, stack, e->si));
+
+  /* Release all blocks from allocations */
+  for (i = e->si; i < SILC_STACK_BLOCK_NUM; i++) {
+    if (!e->data[i])
+      continue;
+    if (!i)
+      e->data[i]->bytes_left = e->bsize;
+    else
+      e->data[i]->bytes_left = SILC_STACK_BLOCK_SIZE(stack, i);
+  }
+
+  silc_list_add(stack->stacks, e);
+}
+
+/* Allocate memory from a specific stack block */
+
+static void *silc_stack_alloc_block(SilcStack stack, SilcStackDataEntry e,
+				    SilcUInt32 items, SilcUInt32 size)
+{
+  SilcUInt32 asize;
+  void *ptr;
+
+  /* Get pointer and consume the stack block */
+  asize = SILC_STACK_ALIGN(items * size, stack->alignment);
+  ptr = SILC_STACK_DATA_EXT(e->data, e->si, e->bsize, stack->alignment);
+  e->data[e->si]->bytes_left -= asize;
+  memset(ptr, 0, items * size);
+
+  return ptr;
+}
+
+/***************************** SilcStack API ********************************/
 
 /* Allocate the stack */
 
-SilcStack silc_stack_alloc(SilcUInt32 stack_size)
+SilcStack silc_stack_alloc(SilcUInt32 stack_size, SilcStack parent)
 {
   SilcStack stack;
+  SilcStackDataEntry e;
+  SilcUInt32 si = 0, bsize = 0;
 
-  stack = silc_calloc(1, sizeof(*stack));
-  if (!stack)
-    return NULL;
+  stack_size = stack_size ? stack_size : SILC_STACK_DEFAULT_SIZE;
+  if (stack_size < SILC_STACK_DEFAULT_SIZE)
+    stack_size = SILC_STACK_DEFAULT_SIZE;
 
-  stack->frames = silc_calloc(SILC_STACK_DEFAULT_NUM,
-			      sizeof(*stack->frames));
-  if (!stack->frames) {
-    silc_free(stack);
-    return NULL;
+  if (parent) {
+    /* Get stack from parent.  The stack itself is allocated from the
+       parent. */
+    e = silc_stack_ref_stack(parent, stack_size, &si, &bsize);
+    if (!e)
+      return NULL;
+
+    /* Allocate stack from the parent */
+    stack = silc_stack_alloc_block(parent, e, 1, sizeof(*stack));
+    if (!stack) {
+      silc_stack_unref_stack(parent, e);
+      return NULL;
+    }
+
+    stack->parent = parent;
+    stack->stack_size = stack_size;
+    stack->alignment = SILC_STACK_DEFAULT_ALIGN;
+    silc_list_init(stack->stacks, struct SilcStackDataEntryStruct, next);
+
+    /* Allocate stack frames from the parent */
+    stack->frames = silc_stack_alloc_block(parent, e, SILC_STACK_BLOCK_NUM,
+					   sizeof(*stack->frames));
+    if (!stack->frames) {
+      silc_stack_unref_stack(parent, e);
+      return NULL;
+    }
+
+    /* Set the initial stack */
+    stack->stack = e;
+  } else {
+    /* Dynamically allocate new stack */
+    stack = silc_calloc(1, sizeof(*stack));
+    if (!stack)
+      return NULL;
+
+    stack->stack_size = stack_size;
+    stack->alignment = SILC_STACK_DEFAULT_ALIGN;
+    silc_list_init(stack->stacks, struct SilcStackDataEntryStruct, next);
+
+    /* Create initial stack */
+    stack->stack = silc_calloc(1, sizeof(*stack->stack));
+    if (!stack->stack) {
+      silc_free(stack);
+      return NULL;
+    }
+    stack->stack->data[0] =
+      silc_malloc(stack->stack_size +
+		  SILC_STACK_ALIGN(sizeof(*stack->stack->data[0]),
+				   stack->alignment));
+    if (!stack->stack->data[0]) {
+      silc_free(stack->stack);
+      silc_free(stack);
+      return NULL;
+    }
+    stack->stack->data[0]->bytes_left = stack->stack_size;
+    stack->stack->si = 0;
+    stack->stack->bsize = stack->stack_size;
+
+    /* Allocate stack frames from the stack itself */
+    stack->frames = silc_stack_alloc_block(stack, stack->stack,
+					   SILC_STACK_DEFAULT_NUM,
+					   sizeof(*stack->frames));
+    if (!stack->frames) {
+      silc_free(stack->stack->data[0]);
+      silc_free(stack->stack);
+      silc_free(stack);
+      return NULL;
+    }
   }
-  stack->alignment = SILC_STACK_DEFAULT_ALIGN;
-
-  /* Create initial stack */
-  stack->stack_size = stack_size ? stack_size : SILC_STACK_DEFAULT_SIZE;
-  stack->stack[0] = silc_malloc(stack->stack_size +
-  				SILC_STACK_ALIGN(sizeof(*stack->stack[0]),
-  						 stack->alignment));
-  if (!stack->stack[0]) {
-    silc_free(stack->frames);
-    silc_free(stack);
-    return NULL;
-  }
-  stack->stack[0]->bytes_left = stack->stack_size;
 
   /* Use the allocated stack in first stack frame */
   stack->frame = &stack->frames[0];
   stack->frame->prev = NULL;
   stack->frame->bytes_used = stack->stack_size;
   stack->frame->sp = 1;
-  stack->frame->si = 0;
+  stack->frame->si = si;
+
+  SILC_LOG_DEBUG(("New stack %p, size %d bytes", stack, stack->stack_size));
 
   return stack;
 }
@@ -65,12 +247,31 @@ SilcStack silc_stack_alloc(SilcUInt32 stack_size)
 
 void silc_stack_free(SilcStack stack)
 {
+  SilcStackDataEntry e;
   int i;
 
-  silc_free(stack->frames);
-  for (i = 0; i < SILC_STACK_BLOCK_NUM; i++)
-    silc_free(stack->stack[i]);
-  silc_free(stack);
+  SILC_LOG_DEBUG(("Free stack %p", stack));
+
+  if (!stack->parent) {
+    silc_list_start(stack->stacks);
+    while ((e = silc_list_get(stack->stacks))) {
+      for (i = 0; i < SILC_STACK_BLOCK_NUM; i++)
+	silc_free(e->data[i]);
+      silc_free(e);
+    }
+
+    for (i = 0; i < SILC_STACK_BLOCK_NUM; i++)
+      silc_free(stack->stack->data[i]);
+    silc_free(stack->stack);
+
+    silc_free(stack);
+  } else {
+    silc_list_start(stack->stacks);
+    while ((e = silc_list_get(stack->stacks)))
+      silc_stack_unref_stack(stack->parent, e);
+
+    silc_stack_unref_stack(stack->parent, stack->stack);
+  }
 }
 
 /* Push to next stack frame */
@@ -81,23 +282,11 @@ SilcUInt32 silc_stack_push(SilcStack stack, SilcStackFrame *frame)
     return 0;
 
   if (!frame) {
-    /* See if all frames are in use, and allocate SILC_STACK_DEFAULT_NUM
-       many new frames if needed. */
     if (stack->frame->sp >= SILC_STACK_ALIGN(stack->frame->sp,
 					     SILC_STACK_DEFAULT_NUM)) {
-      int i = stack->frame->sp;
-      SILC_LOG_DEBUG(("Allocating more stack frames"));
-      frame = silc_realloc(stack->frames,
-			   SILC_STACK_ALIGN(i + 1, SILC_STACK_DEFAULT_NUM) *
-			   sizeof(*stack->frames));
-      if (!frame)
-	return 0;
-      stack->frames = frame;
-      stack->frame = &stack->frames[i - 1];
-
-      /* The prev pointers may become invalid in silc_realloc() */
-      for (i = 1; i < stack->frame->sp; i++)
-	stack->frames[i].prev = &stack->frames[i - 1];
+      SILC_LOG_DEBUG(("SilcStack %p running out of frames, cannot push",
+		      stack));
+      return stack->frame->sp;
     }
 
     frame = &stack->frames[stack->frame->sp];
@@ -107,7 +296,7 @@ SilcUInt32 silc_stack_push(SilcStack stack, SilcStackFrame *frame)
   frame->prev = stack->frame;
   frame->sp = stack->frame->sp + 1;
   frame->si = stack->frame->si;
-  frame->bytes_used = stack->stack[frame->si]->bytes_left;
+  frame->bytes_used = stack->stack->data[frame->si]->bytes_left;
   stack->frame = frame;
 
   SILC_ST_DEBUG(("Push %p: sp %d -> %d, si %d", stack, frame->prev->sp,
@@ -122,18 +311,17 @@ SilcUInt32 silc_stack_pop(SilcStack stack)
 {
   SilcUInt32 si;
 
-  if (!stack)
+  if (!stack || !stack->frame->prev)
     return 0;
 
   /* Pop */
-  assert(stack->frame->prev);
   si = stack->frame->si;
   while (si > stack->frame->prev->si) {
-    if (stack->stack[si])
-      stack->stack[si]->bytes_left = SILC_STACK_BLOCK_SIZE(stack, si);
+    if (stack->stack->data[si])
+      stack->stack->data[si]->bytes_left = SILC_STACK_BLOCK_SIZE(stack, si);
     si--;
   }
-  stack->stack[si]->bytes_left = stack->frame->bytes_used;
+  stack->stack->data[si]->bytes_left = stack->frame->bytes_used;
   stack->frame = stack->frame->prev;
 
   SILC_ST_DEBUG(("Pop %p: sp %d -> %d, si %d", stack, stack->frame->sp + 1,
@@ -172,10 +360,10 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size)
   bsize = SILC_STACK_BLOCK_SIZE(stack, si);
 
   /* See if there is space in the current stack block */
-  if (stack->stack[si]->bytes_left >= size) {
+  if (stack->stack->data[si]->bytes_left >= size) {
     /* Get pointer to the memory */
     ptr = SILC_STACK_DATA(stack, si, bsize);
-    stack->stack[si]->bytes_left -= size;
+    stack->stack->data[si]->bytes_left -= size;
     SILC_STACK_STAT(stack, bytes_malloc, size);
     return ptr;
   }
@@ -198,23 +386,24 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size)
   }
 
   /* Allocate the block if it doesn't exist yet */
-  if (!stack->stack[si]) {
+  if (!stack->stack->data[si]) {
     SILC_ST_DEBUG(("Allocating new stack block, %d bytes", bsize2));
-    stack->stack[si] = silc_malloc(bsize2 +
-				   SILC_STACK_ALIGN(sizeof(**stack->stack),
-						    stack->alignment));
-    if (silc_unlikely(!stack->stack[si])) {
+    stack->stack->data[si] =
+      silc_malloc(bsize2 +
+		  SILC_STACK_ALIGN(sizeof(**stack->stack->data),
+				   stack->alignment));
+    if (silc_unlikely(!stack->stack->data[si])) {
       SILC_STACK_STAT(stack, num_errors, 1);
       return NULL;
     }
-    stack->stack[si]->bytes_left = bsize2;
+    stack->stack->data[si]->bytes_left = bsize2;
   }
 
   /* Now return memory from this new block.  It is guaranteed that in this
      block there is enough space for this memory. */
-  assert(stack->stack[si]->bytes_left >= size);
+  assert(stack->stack->data[si]->bytes_left >= size);
   ptr = SILC_STACK_DATA(stack, si, bsize2);
-  stack->stack[si]->bytes_left -= size;
+  stack->stack->data[si]->bytes_left -= size;
   stack->frame->si = si;
   SILC_STACK_STAT(stack, bytes_malloc, size);
 
@@ -260,9 +449,9 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
   bsize = SILC_STACK_BLOCK_SIZE(stack, si);
 
   /* Check that `ptr' is last allocation */
-  sptr = (unsigned char *)stack->stack[si] +
-    SILC_STACK_ALIGN(sizeof(**stack->stack), stack->alignment);
-  if (stack->stack[si]->bytes_left + old_size +
+  sptr = (unsigned char *)stack->stack->data[si] +
+    SILC_STACK_ALIGN(sizeof(**stack->stack->data), stack->alignment);
+  if (stack->stack->data[si]->bytes_left + old_size +
       ((unsigned char *)ptr - (unsigned char *)sptr) != bsize) {
     SILC_LOG_DEBUG(("Cannot reallocate"));
     SILC_STACK_STAT(stack, num_errors, 1);
@@ -270,10 +459,10 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
   }
 
   /* Now check that the new size fits to this block */
-  if (stack->stack[si]->bytes_left >= size) {
+  if (stack->stack->data[si]->bytes_left >= size) {
     /* It fits, so simply return the old pointer */
     size = SILC_STACK_ALIGN(size, stack->alignment);
-    stack->stack[si]->bytes_left -= (size - old_size);
+    stack->stack->data[si]->bytes_left -= (size - old_size);
     SILC_STACK_STAT(stack, bytes_malloc, (size - old_size));
     return ptr;
   }
@@ -303,11 +492,12 @@ SilcUInt32 silc_stack_get_alignment(SilcStack stack)
 
 void silc_stack_stats(SilcStack stack)
 {
+  SilcStackDataEntry e;
   SilcUInt32 stack_size = 0;
   int i, c = 0;
 
   for (i = 0; i < SILC_STACK_BLOCK_NUM; i++) {
-    if (!stack->stack[i])
+    if (!stack->stack->data[i])
       continue;
     stack_size += SILC_STACK_BLOCK_SIZE(stack, i);
     c++;
@@ -330,5 +520,22 @@ void silc_stack_stats(SilcStack stack)
 	  (unsigned int)SILC_STACK_ALIGN(stack->frame->sp,
 					 SILC_STACK_DEFAULT_NUM));
   fprintf(stdout, "  Number of blocks        : %u\n", c);
+  fprintf(stdout, "  Number of stacks        : %d\n",
+	  silc_list_count(stack->stacks));
+
+  silc_list_start(stack->stacks);
+  while ((e = silc_list_get(stack->stacks))) {
+    stack_size = 0;
+    c = 0;
+    for (i = 0; i < SILC_STACK_BLOCK_NUM; i++) {
+      if (!e->data[i])
+	continue;
+      stack_size += e->data[i]->bytes_left;
+      c++;
+    }
+    fprintf(stdout, "\n  Size of stack           : %u\n",
+	    (unsigned int)stack_size);
+    fprintf(stdout, "  Number of blocks        : %u\n", c);
+  }
 }
 #endif /* SILC_DIST_INPLACE */

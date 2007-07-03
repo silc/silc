@@ -7,7 +7,7 @@
 int main(int argc, char **argv)
 {
   SilcBool success = FALSE;
-  SilcStack stack;
+  SilcStack stack, child, child2;
   void *ptr, *ptr2;
   int i;
 
@@ -19,7 +19,7 @@ int main(int argc, char **argv)
   }
 
   SILC_LOG_DEBUG(("Allocating stack of default size (1024 bytes)"));
-  stack = silc_stack_alloc(0);
+  stack = silc_stack_alloc(0, NULL);
   if (!stack)
     goto err;
   silc_stack_stats(stack);
@@ -34,7 +34,7 @@ int main(int argc, char **argv)
   silc_stack_free(stack);
 
   SILC_LOG_DEBUG(("Allocating stack of default size (1024 bytes)"));
-  stack = silc_stack_alloc(0);
+  stack = silc_stack_alloc(0, NULL);
   if (!stack)
     goto err;
   silc_stack_stats(stack);
@@ -91,6 +91,82 @@ int main(int argc, char **argv)
   silc_stack_stats(stack);
   silc_stack_pop(stack);
   SILC_LOG_DEBUG(("Popping"));
+  silc_stack_stats(stack);
+
+  SILC_LOG_DEBUG(("Creating child stack"));
+  child = silc_stack_alloc(8192, stack);
+  if (!child)
+    goto err;
+  SILC_LOG_DEBUG(("Pushing %d times", NUM_ALLS / 2));
+  for (i = 0; i < NUM_ALLS / 2; i++) {
+    if (!silc_stack_push(child, NULL))
+      goto err;
+    ptr2 = silc_smalloc(child, (i + 1) * 7);
+    if (!ptr2)
+      goto err;
+  }
+  silc_stack_stats(child);
+  SILC_LOG_DEBUG(("Popping %d times", NUM_ALLS / 2));
+  for (i = 0; i < NUM_ALLS / 2; i++)
+    silc_stack_pop(child);
+  silc_stack_stats(child);
+
+  SILC_LOG_DEBUG(("Pushing and reallocating %d times", NUM_ALLS / 10));
+  ptr2 = NULL;
+  if (!silc_stack_push(child, NULL))
+    goto err;
+  for (i = 0; i < NUM_ALLS / 10; i++) {
+    ptr2 = silc_srealloc(child, (i * 7), ptr2, (i + 1) * 7);
+    if (!ptr2)
+      goto err;
+  }
+  ptr = silc_smalloc(child, 100000);
+  silc_stack_stats(child);
+  silc_stack_pop(child);
+  SILC_LOG_DEBUG(("Popping"));
+  silc_stack_stats(child);
+  silc_stack_stats(stack);
+  silc_stack_free(child);
+  silc_stack_stats(stack);
+
+  SILC_LOG_DEBUG(("Creating child stack"));
+  child = silc_stack_alloc(8192, stack);
+  if (!child)
+    goto err;
+  SILC_LOG_DEBUG(("Pushing %d times", NUM_ALLS / 10));
+  for (i = 0; i < NUM_ALLS / 10; i++) {
+    if (!silc_stack_push(child, NULL))
+      goto err;
+    ptr2 = silc_smalloc(child, (i + 1) * 7);
+    if (!ptr2)
+      goto err;
+  }
+  silc_stack_stats(child);
+  SILC_LOG_DEBUG(("Popping %d times", NUM_ALLS / 10));
+  for (i = 0; i < NUM_ALLS / 10; i++)
+    silc_stack_pop(child);
+  silc_stack_stats(child);
+
+  SILC_LOG_DEBUG(("Pushing and reallocating %d times", NUM_ALLS / 10));
+  ptr2 = NULL;
+  if (!silc_stack_push(child, NULL))
+    goto err;
+  for (i = 0; i < NUM_ALLS / 10; i++) {
+    ptr2 = silc_srealloc(child, (i * 7), ptr2, (i + 1) * 7);
+    if (!ptr2)
+      goto err;
+  }
+  SILC_LOG_DEBUG(("Allocate child from child"));
+  child2 = silc_stack_alloc(0, child);
+  ptr = silc_smalloc(child2, 500000);
+  silc_stack_stats(child2);
+  silc_stack_free(child2);
+  silc_stack_stats(child);
+  silc_stack_pop(child);
+  SILC_LOG_DEBUG(("Popping"));
+  silc_stack_stats(child);
+  silc_stack_stats(stack);
+  silc_stack_free(child);
   silc_stack_stats(stack);
 
   SILC_LOG_DEBUG(("Current alignment: %d", silc_stack_get_alignment(stack)));

@@ -25,24 +25,33 @@
 #endif
 
 /* The default stack size when stack is created */
-#define SILC_STACK_DEFAULT_SIZE       1024
+#define SILC_STACK_DEFAULT_SIZE 2048
 
-/* Number of pre-allocated stack frames */
-#define SILC_STACK_DEFAULT_NUM        8
+/* Number of pre-allocated stack frames.  Frames are allocated from the
+   stack itself. */
+#define SILC_STACK_DEFAULT_NUM 32
 
 /* Default alignment */
-#define SILC_STACK_DEFAULT_ALIGN      sizeof(unsigned long)
+#define SILC_STACK_DEFAULT_ALIGN sizeof(unsigned long)
 
-/* Maximum allocation that can be made with SilcStack.  This is
-   SILC_STACK_DEFAULT_SIZE * (2 ^ (SILC_STACK_BLOCK_NUM - 1)). */
-#define SILC_STACK_MAX_ALLOC          0x02000000
-#define SILC_STACK_BLOCK_NUM          16
+/* Maximum allocation that can be made with SilcStack. */
+#define SILC_STACK_BLOCK_NUM 20
+#define SILC_STACK_MAX_ALLOC \
+  (SILC_STACK_DEFAULT_SIZE * (1L << (SILC_STACK_BLOCK_NUM - 1)) << 1)
 
 /* Stack frame data area */
 typedef struct SilcStackDataStruct {
   SilcUInt32 bytes_left;		      /* Free bytes in stack */
   /* Stack data area starts here */
 } *SilcStackData;
+
+/* Stack data entry */
+typedef struct SilcStackDataEntryStruct {
+  struct SilcStackDataEntryStruct *next;
+  SilcStackData data[SILC_STACK_BLOCK_NUM];   /* Blocks */
+  SilcUInt32 bsize;		              /* Default block size */
+  SilcUInt32 si;			      /* Default block index */
+} *SilcStackDataEntry;
 
 /* Stack frame */
 struct SilcStackFrameStruct {
@@ -52,21 +61,6 @@ struct SilcStackFrameStruct {
   unsigned int si : 5;			      /* Stack index */
 };
 
-/* The SilcStack context */
-struct SilcStackStruct {
-  SilcStackData stack[SILC_STACK_BLOCK_NUM];  /* Allocated stack blocks */
-  SilcStackFrame *frames;		      /* Allocated stack frames */
-  SilcStackFrame *frame;		      /* Current stack frame */
-  SilcUInt32 stack_size;		      /* Default stack size */
-  SilcUInt32 alignment;			      /* Memory alignment */
-#ifdef SILC_DIST_INPLACE
-  /* Statistics */
-  SilcUInt32 snum_malloc;
-  SilcUInt32 sbytes_malloc;
-  SilcUInt32 snum_errors;
-#endif /* SILC_DIST_INPLACE */
-};
-
 /* Align the requested amount bytes.  The `align' defines the requested
    alignment. */
 #define SILC_STACK_ALIGN(bytes, align) (((bytes) + (align - 1)) & ~(align - 1))
@@ -74,13 +68,17 @@ struct SilcStackStruct {
 /* Computes the size of stack block si. */
 #define SILC_STACK_BLOCK_SIZE(stack, si)		\
   (((si) == 0) ? stack->stack_size :			\
-   SILC_STACK_DEFAULT_SIZE * (1L << ((si) - 1)) << 1);
+   SILC_STACK_DEFAULT_SIZE * (1L << ((si) - 1)) << 1)
+
+/* Returns a pointer to the data in the given stack block */
+#define SILC_STACK_DATA_EXT(data, si, bsize, alignment)			\
+  (((unsigned char *)(data)[si]) +					\
+   SILC_STACK_ALIGN(sizeof(**(data)), alignment) +			\
+   ((bsize) - (data)[si]->bytes_left))
 
 /* Returns a pointer to the data in the frame */
 #define SILC_STACK_DATA(stack, si, bsize)				\
-  (((unsigned char *)(stack)->stack[si]) +				\
-   SILC_STACK_ALIGN(sizeof(**(stack)->stack), (stack)->alignment) +	\
-   ((bsize) - (stack)->stack[si]->bytes_left))
+  SILC_STACK_DATA_EXT((stack)->stack->data, si, bsize, (stack)->alignment)
 
 #ifdef SILC_DIST_INPLACE
 /* Statistics updating */
