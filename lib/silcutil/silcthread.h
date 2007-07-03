@@ -306,18 +306,18 @@ SilcBool silc_thread_pool_run(SilcThreadPool tp,
 void silc_thread_pool_set_max_threads(SilcThreadPool tp,
 				      SilcUInt32 max_threads);
 
-/****f* silcutil/SilcThreadAPI/silc_thread_pool_num_max_threads
+/****f* silcutil/SilcThreadAPI/silc_thread_pool_get_max_threads
  *
  * SYNOPSIS
  *
- *    SilcUInt32 silc_thread_pool_num_max_threads(SilcThreadPool tp);
+ *    SilcUInt32 silc_thread_pool_get_max_threads(SilcThreadPool tp);
  *
  * DESCRIPTION
  *
  *    Returns the number of maximum threads to which the pool can grow.
  *
  ***/
-SilcUInt32 silc_thread_pool_num_max_threads(SilcThreadPool tp);
+SilcUInt32 silc_thread_pool_get_max_threads(SilcThreadPool tp);
 
 /****f* silcutil/SilcThreadAPI/silc_thread_pool_num_free_threads
  *

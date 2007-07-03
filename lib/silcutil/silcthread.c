@@ -377,7 +377,7 @@ void silc_thread_pool_set_max_threads(SilcThreadPool tp,
 
 /* Get maximum threads in the pool */
 
-SilcUInt32 silc_thread_pool_num_max_threads(SilcThreadPool tp)
+SilcUInt32 silc_thread_pool_get_max_threads(SilcThreadPool tp)
 {
   SilcUInt32 max_threads;
 
