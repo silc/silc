@@ -561,7 +561,8 @@ silc_packet_engine_start(SilcRng rng, SilcBool router,
   if (!engine)
     return NULL;
 
-  engine->contexts = silc_hash_table_alloc(0, silc_hash_ptr, NULL, NULL, NULL,
+  engine->contexts = silc_hash_table_alloc(NULL, 0, silc_hash_ptr,
+					   NULL, NULL, NULL,
 					   silc_packet_engine_context_destr,
 					   engine, TRUE);
   if (!engine->contexts) {
@@ -770,7 +771,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
 
   /* If this is UDP stream, allocate UDP remote stream hash table */
   if (!engine->udp_remote && silc_socket_stream_is_udp(stream, NULL))
-    engine->udp_remote = silc_hash_table_alloc(0, silc_hash_string, NULL,
+    engine->udp_remote = silc_hash_table_alloc(NULL, 0, silc_hash_string, NULL,
 					       silc_hash_string_compare, NULL,
 					       silc_packet_engine_hash_destr,
 					       NULL, TRUE);

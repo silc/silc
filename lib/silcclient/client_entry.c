@@ -810,8 +810,8 @@ SilcClientEntry silc_client_add_client(SilcClient client,
 		      client_entry->hostname,
 		      sizeof(client_entry->hostname));
 
-  client_entry->channels = silc_hash_table_alloc(1, silc_hash_ptr, NULL, NULL,
-						 NULL, NULL, NULL, TRUE);
+  client_entry->channels = silc_hash_table_alloc(NULL, 1, silc_hash_ptr, NULL,
+						 NULL, NULL, NULL, NULL, TRUE);
   if (!client_entry->channels) {
     silc_free(client_entry->realname);
     silc_free(client_entry);
@@ -1643,7 +1643,7 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
     return NULL;
   }
 
-  channel->user_list = silc_hash_table_alloc(1, silc_hash_ptr, NULL, NULL,
+  channel->user_list = silc_hash_table_alloc(NULL, 1, silc_hash_ptr, NULL, NULL,
 					     NULL, NULL, NULL, TRUE);
   if (!channel->user_list) {
     silc_rwlock_free(channel->internal.lock);

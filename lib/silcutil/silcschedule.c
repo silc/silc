@@ -323,7 +323,7 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context)
     return NULL;
 
   schedule->fd_queue =
-    silc_hash_table_alloc(0, silc_hash_uint, NULL, NULL, NULL,
+    silc_hash_table_alloc(NULL, 0, silc_hash_uint, NULL, NULL, NULL,
 			  silc_schedule_fd_destructor, NULL, TRUE);
   if (!schedule->fd_queue) {
     silc_free(schedule);

@@ -59,7 +59,7 @@ SilcMime silc_mime_alloc(void)
   if (!mime)
     return NULL;
 
-  mime->fields = silc_hash_table_alloc(0, silc_hash_string, mime,
+  mime->fields = silc_hash_table_alloc(NULL, 0, silc_hash_string, mime,
 				       silc_hash_string_compare, mime,
 				       silc_mime_field_dest, mime, TRUE);
   if (!mime->fields) {
@@ -102,7 +102,7 @@ SilcMimeAssembler silc_mime_assembler_alloc(void)
     return NULL;
 
   assembler->fragments =
-    silc_hash_table_alloc(0, silc_hash_string, NULL,
+    silc_hash_table_alloc(NULL, 0, silc_hash_string, NULL,
 			  silc_hash_string_compare, NULL,
 			  silc_mime_assembler_dest, assembler, TRUE);
   if (!assembler->fragments) {
@@ -468,7 +468,7 @@ SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
   if (!silc_hash_table_find(assembler->fragments, (void *)id,
 			    NULL, (void *)&f)) {
     /* This is new fragment to new message.  Add to hash table and return. */
-    f = silc_hash_table_alloc(0, silc_hash_uint, NULL, NULL, NULL,
+    f = silc_hash_table_alloc(NULL, 0, silc_hash_uint, NULL, NULL, NULL,
 			      silc_mime_assemble_dest, NULL, TRUE);
     if (!f)
 	 goto err;

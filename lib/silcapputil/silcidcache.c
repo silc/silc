@@ -78,15 +78,15 @@ SilcIDCache silc_idcache_alloc(SilcUInt32 count, SilcIdType id_type,
   if (!cache)
     return NULL;
 
-  cache->id_table = silc_hash_table_alloc(count, silc_hash_id,
+  cache->id_table = silc_hash_table_alloc(NULL, count, silc_hash_id,
 					  SILC_32_TO_PTR(id_type),
 					  silc_hash_id_compare,
 					  SILC_32_TO_PTR(id_type),
 					  NULL, NULL, TRUE);
-  cache->name_table = silc_hash_table_alloc(count, silc_hash_utf8_string, NULL,
-					    silc_hash_utf8_compare, NULL,
+  cache->name_table = silc_hash_table_alloc(NULL, count, silc_hash_utf8_string,
+					    NULL, silc_hash_utf8_compare, NULL,
 					    NULL, NULL, TRUE);
-  cache->context_table = silc_hash_table_alloc(count, silc_hash_ptr, NULL,
+  cache->context_table = silc_hash_table_alloc(NULL, count, silc_hash_ptr, NULL,
 					       NULL, NULL, NULL, NULL, TRUE);
   cache->destructor = destructor;
   cache->context = destructor_context;

@@ -163,7 +163,7 @@ SilcAttributePayload silc_client_attribute_add(SilcClient client,
 
   if (!conn->internal->attrs)
     conn->internal->attrs =
-      silc_hash_table_alloc(0, silc_hash_ptr, NULL, NULL,
+      silc_hash_table_alloc(NULL, 0, silc_hash_ptr, NULL, NULL,
 			    NULL, silc_client_attribute_destruct,
 			    NULL, TRUE);
   silc_hash_table_add(conn->internal->attrs,

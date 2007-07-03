@@ -626,7 +626,7 @@ SilcBool silc_skr_init(SilcSKR skr)
   if (!silc_mutex_alloc(&skr->lock))
     return FALSE;
 
-  skr->keys = silc_hash_table_alloc(0, silc_skr_hash, NULL,
+  skr->keys = silc_hash_table_alloc(NULL, 0, silc_skr_hash, NULL,
 				    silc_skr_compare, NULL,
 				    silc_skr_destructor, NULL, TRUE);
   if (!skr->keys)
@@ -779,7 +779,8 @@ SilcSKRFind silc_skr_find_alloc(void)
   if (!find)
     return NULL;
 
-  find->constr = silc_hash_table_alloc(0, silc_hash_uint, NULL, NULL, NULL,
+  find->constr = silc_hash_table_alloc(NULL, 0, silc_hash_uint,
+				       NULL, NULL, NULL,
 				       silc_skr_find_destructor, NULL, TRUE);
   if (!find->constr) {
     silc_skr_find_free(find);
