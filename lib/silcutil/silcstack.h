@@ -53,9 +53,10 @@
  * silc_buffer_sstrformat, silc_buffer_senlarge, silc_mp_sinit,
  * silc_dlist_sinit, silc_hash_table_alloc
  *
- * The SilcStack context is not thread-safe.  If the same SilcStack must be
- * used in multithreaded environment concurrency control must be employed.
- * Each thread should allocate their own SilcStack.
+ * The SilcStack is not thread-safe so that same context could be used for
+ * allocations from multiple threads.  It is however safe to create and use
+ * child stacks in a different thread from the parent stack.  Each thread
+ * should allocate their own SilcStack, however they may be child stacks.
  *
  ***/
 
@@ -96,6 +97,22 @@ typedef struct SilcStackStruct *SilcStack;
  ***/
 typedef struct SilcStackFrameStruct SilcStackFrame;
 
+/****f* silcutil/SilcStackAPI/SilcStackOomHandler
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcStackOomHandler)(SilcStack stack, void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Callback of this type can be given to silc_stack_set_oom_handler
+ *    to set Out of Memory handler to `stack'.  If memory allocation from
+ *    `stack' fails this callback is called to indicate error.  The `context'
+ *    is the context given to silc_stack_set_oom_handler.
+ *
+ ***/
+typedef void (*SilcStackOomHandler)(SilcStack stack, void *context);
+
 /****f* silcutil/SilcStackAPI/silc_stack_alloc
  *
  * SYNOPSIS
@@ -108,13 +125,13 @@ typedef struct SilcStackFrameStruct SilcStackFrame;
  *    allocation by various routines.  Returns the pointer to the stack
  *    that must be freed with silc_stack_free function when it is not
  *    needed anymore.  If the `stack_size' is zero (0) by default a
- *    2 kilobytes (2048 bytes) stack is allocated.  If the `stack_size'
+ *    1 kilobyte (1024 bytes) stack is allocated.  If the `stack_size'
  *    is non-zero the byte value must be multiple by 8.
  *
  *    If `parent' is non-NULL the created stack is a child of the `parent'
  *    stack.  All of childs the memory is allocated from the `parent' and
  *    will be returned back to the parent when the child is freed.  Note
- *    that, even though child allocated memory from the parent, the parent's
+ *    that, even though child allocates memory from the parent, the parent's
  *    stack is not consumed.
  *
  *    Returns NULL on error.
@@ -134,7 +151,7 @@ SilcStack silc_stack_alloc(SilcUInt32 stack_size, SilcStack parent);
  *    this and all allocated memory are freed.
  *
  *    If `stack' is a child stack, its memory is returned back to its
- *    parent.
+ *    parent.  If `stack' is NULL this function does nothing.
  *
  ***/
 void silc_stack_free(SilcStack stack);
@@ -153,19 +170,15 @@ void silc_stack_free(SilcStack stack);
  *    stack and all allocated memory is freed after the next silc_stack_pop
  *    is called.  This returns so called stack pointer for the new stack
  *    frame, which the caller may use to check that all calls to
- *    silc_stack_pop has been made.  This call may do a small memory
- *    allocation in some cases, but usually it does not allocate any memory.
- *    If this returns zero (0) the system is out of memory.
+ *    silc_stack_pop has been made.
  *
  *    If the `frame' is non-NULL then that SilcStackFrame is used as
  *    stack frame.  Usually `frame' is set to NULL by user.  Statically
  *    allocated SilcStackFrame should be used when using silc_stack_push
  *    in recursive function and the recursion may become deep.  In this
  *    case using statically allocated SilcStackFrame is recommended since
- *    it assures that frames never run out and silc_stack_push never
- *    allocates any memory.  If your routine is not recursive then
- *    setting `frame' to NULL is recommended, unless performance is
- *    critical.
+ *    it assures that frames never run out.  If your routine is not recursive
+ *    then setting `frame' to NULL is recommended.
  *
  *    This function is used when a routine is doing frequent allocations
  *    from the stack.  If the stack is not pushed and later popped all
@@ -173,7 +186,8 @@ void silc_stack_free(SilcStack stack);
  *    (it gets enlarged by normal memory allocation).  By pushing and then
  *    later popping the frequent allocations does not consume the stack.
  *
- *    If `stack' is NULL this call has no effect.
+ *    If `stack' is NULL this call has no effect.  This function does not
+ *    allocate any memory.
  *
  * EXAMPLE
  *
@@ -210,8 +224,8 @@ SilcUInt32 silc_stack_push(SilcStack stack, SilcStackFrame *frame);
  *
  * DESCRIPTION
  *
- *    Pop the top of the stack upwards which reveals the previous stack frame
- *    and becomes the top of the stack.  After popping, memory allocated in
+ *    Pop the top of the stack which removes the previous stack frame and
+ *    becomes the top of the stack.  After popping, memory allocated in
  *    the old frame is freed.  For each silc_stack_push call there must be
  *    silc_stack_pop call to free all memory (in reality any memory is not
  *    freed but within the stack it is).  This returns the stack pointer of
@@ -221,7 +235,8 @@ SilcUInt32 silc_stack_push(SilcStack stack, SilcStackFrame *frame);
  *    silc_stack_pop has been called too many times.  Application should
  *    treat this as a fatal error, as it is a bug in the application code.
  *
- *    If `stack' is NULL this call has no effect.
+ *    If `stack' is NULL this call has no effect.   This function does not
+ *    allocate any memory.
  *
  * EXAMPLE
  *
@@ -246,7 +261,7 @@ SilcUInt32 silc_stack_pop(SilcStack stack);
  *
  * DESCRIPTION
  *
- *    Low level memory allocation routine.  Allocates memor block of size of
+ *    Low level memory allocation routine.  Allocates memory block of size of
  *    `size' from the `stack'.  The allocated memory is aligned so it can be
  *    used to allocate memory for structures, for example.  Returns the
  *    allocated memory address or NULL if memory could not be allocated from
@@ -255,7 +270,8 @@ SilcUInt32 silc_stack_pop(SilcStack stack);
  * NOTES
  *
  *    This function should be used only if low level memory allocation with
- *    SilcStack is needed.  Instead, silc_smalloc, could be used.
+ *    SilcStack is needed.  Instead, silc_smalloc and silc_scalloc could
+ *    be used.
  *
  ***/
 void *silc_stack_malloc(SilcStack stack, SilcUInt32 size);
@@ -273,17 +289,41 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size);
  *    `size'.  This routine works only if the previous allocation to `stack'
  *    was `ptr'.  If there is another memory allocation between allocating
  *    `ptr' and this call this routine will return NULL.  NULL is also
- *    returned if the `size' does not fit into the current block.  If NULL
- *    is returned the old memory remains intact.
+ *    returned if the `size' does not fit into the current stack block.
+ *    If NULL is returned the old memory remains intact.
  *
  * NOTES
  *
  *    This function should be used only if low level memory allocation with
- *    SilcStack is needed.  Instead, silc_srealloc, could be used.
+ *    SilcStack is needed.  Instead, silc_srealloc could be used.
  *
  ***/
 void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
 			 void *ptr, SilcUInt32 size);
+
+/****f* silcutil/SilcStackAPI/silc_stack_set_oom_handler
+ *
+ * SYNOPSIS
+ *
+ *    void silc_stack_set_oom_handler(SilcStack stack,
+ *                                    SilcStackOomHandler oom_handler,
+ *                                    void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Sets Out of Memory handler `oom_handler' to `stack' to be called
+ *    if memory allocation from `stack' fails.  The `context' is delivered
+ *    to `oom_handler'.
+ *
+ *    Usually Out of Memory handler is set only when failed memory allocation
+ *    is a fatal error.  In this case the application would abort() inside
+ *    the `oom_handler'.  It may also be set if in case of failed allocation
+ *    application wants to do clean up properly.
+ *
+ ***/
+void silc_stack_set_oom_handler(SilcStack stack,
+				SilcStackOomHandler oom_handler,
+				void *context);
 
 /****f* silcutil/SilcStackAPI/silc_stack_set_alignment
  *
@@ -296,7 +336,7 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
  *    Sets/changes the memory alignment in the `stack' to `alignment' which
  *    is the alignment in bytes.  By default, the SilcStack will use alignment
  *    suited for the platform where it is used.  This function can be used
- *    change this alignment, if such change is needed.  You may check the
+ *    to change this alignment, if such change is needed.  You may check the
  *    current alignment by calling silc_stack_get_alignment.
  *
  * NOTES

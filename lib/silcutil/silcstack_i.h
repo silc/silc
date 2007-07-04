@@ -25,7 +25,7 @@
 #endif
 
 /* The default stack size when stack is created */
-#define SILC_STACK_DEFAULT_SIZE 2048
+#define SILC_STACK_DEFAULT_SIZE 1024
 
 /* Number of pre-allocated stack frames.  Frames are allocated from the
    stack itself. */
@@ -35,7 +35,7 @@
 #define SILC_STACK_DEFAULT_ALIGN sizeof(unsigned long)
 
 /* Maximum allocation that can be made with SilcStack. */
-#define SILC_STACK_BLOCK_NUM 20
+#define SILC_STACK_BLOCK_NUM 21
 #define SILC_STACK_MAX_ALLOC \
   (SILC_STACK_DEFAULT_SIZE * (1L << (SILC_STACK_BLOCK_NUM - 1)) << 1)
 

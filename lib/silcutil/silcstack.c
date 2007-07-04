@@ -24,10 +24,13 @@
 /* The SilcStack context */
 struct SilcStackStruct {
   SilcStack parent;			      /* Parent stack */
-  SilcList stacks;			      /* List of stacks */
-  SilcStackDataEntry stack;		      /* Allocated stack blocks */
+  SilcMutex lock;			      /* Stack lock */
+  SilcList stacks;			      /* List of stacks for childs */
+  SilcStackDataEntry stack;		      /* The allocated stack */
   SilcStackFrame *frames;		      /* Allocated stack frames */
   SilcStackFrame *frame;		      /* Current stack frame */
+  SilcStackOomHandler oom_handler;	      /* OOM handler */
+  void *oom_context;			      /* OOM handler context */
   SilcUInt32 stack_size;		      /* Default stack size */
   SilcUInt32 alignment;			      /* Memory alignment */
 #ifdef SILC_DIST_INPLACE
@@ -77,6 +80,8 @@ static SilcStackDataEntry silc_stack_ref_stack(SilcStack stack,
 
   SILC_ST_DEBUG(("Get stack block, si %d, size %lu", si, bsize));
 
+  silc_mutex_lock(stack->lock);
+
   /* Get stack that has block that can house our size requirement. */
   silc_list_start(stack->stacks);
   while ((e = silc_list_get(stack->stacks))) {
@@ -85,6 +90,7 @@ static SilcStackDataEntry silc_stack_ref_stack(SilcStack stack,
 
     silc_list_del(stack->stacks, e);
     SILC_ST_DEBUG(("Got stack blocks %p from stack %p", e->data, stack));
+    silc_mutex_unlock(stack->lock);
     return e;
   }
 
@@ -92,12 +98,15 @@ static SilcStackDataEntry silc_stack_ref_stack(SilcStack stack,
 
   /* Allocate new stack blocks */
   e = silc_calloc(1, sizeof(*e));
-  if (!e)
+  if (!e) {
+    silc_mutex_unlock(stack->lock);
     return NULL;
+  }
   e->data[si] = silc_malloc(bsize + SILC_STACK_ALIGN(sizeof(*e->data[0]),
 						     stack->alignment));
   if (!e->data[si]) {
     silc_free(e);
+    silc_mutex_unlock(stack->lock);
     return NULL;
   }
   e->data[si]->bytes_left = bsize;
@@ -105,6 +114,8 @@ static SilcStackDataEntry silc_stack_ref_stack(SilcStack stack,
   e->bsize = bsize;
 
   SILC_ST_DEBUG(("Got stack blocks %p from stack %p", e->data, stack));
+
+  silc_mutex_unlock(stack->lock);
   return e;
 }
 
@@ -127,7 +138,9 @@ static void silc_stack_unref_stack(SilcStack stack, SilcStackDataEntry e)
       e->data[i]->bytes_left = SILC_STACK_BLOCK_SIZE(stack, i);
   }
 
+  silc_mutex_lock(stack->lock);
   silc_list_add(stack->stacks, e);
+  silc_mutex_unlock(stack->lock);
 }
 
 /* Allocate memory from a specific stack block */
@@ -231,6 +244,9 @@ SilcStack silc_stack_alloc(SilcUInt32 stack_size, SilcStack parent)
     }
   }
 
+  /* Allocate lock */
+  silc_mutex_alloc(&stack->lock);
+
   /* Use the allocated stack in first stack frame */
   stack->frame = &stack->frames[0];
   stack->frame->prev = NULL;
@@ -250,7 +266,13 @@ void silc_stack_free(SilcStack stack)
   SilcStackDataEntry e;
   int i;
 
+  if (!stack)
+    return;
+
   SILC_LOG_DEBUG(("Free stack %p", stack));
+
+  if (stack->lock)
+    silc_mutex_free(stack->lock);
 
   if (!stack->parent) {
     silc_list_start(stack->stacks);
@@ -266,6 +288,7 @@ void silc_stack_free(SilcStack stack)
 
     silc_free(stack);
   } else {
+    /* Return all stack blocks to the parent */
     silc_list_start(stack->stacks);
     while ((e = silc_list_get(stack->stacks)))
       silc_stack_unref_stack(stack->parent, e);
@@ -350,6 +373,8 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size)
   if (silc_unlikely(size > SILC_STACK_MAX_ALLOC)) {
     SILC_LOG_ERROR(("Allocating too much"));
     SILC_STACK_STAT(stack, num_errors, 1);
+    if (stack->oom_handler)
+      stack->oom_handler(stack, stack->oom_context);
     return NULL;
   }
 
@@ -382,6 +407,8 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size)
   if (silc_unlikely(si >= SILC_STACK_BLOCK_NUM)) {
     SILC_LOG_ERROR(("Allocating too large block"));
     SILC_STACK_STAT(stack, num_errors, 1);
+    if (stack->oom_handler)
+      stack->oom_handler(stack, stack->oom_context);
     return NULL;
   }
 
@@ -394,6 +421,8 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size)
 				   stack->alignment));
     if (silc_unlikely(!stack->stack->data[si])) {
       SILC_STACK_STAT(stack, num_errors, 1);
+      if (stack->oom_handler)
+	stack->oom_handler(stack, stack->oom_context);
       return NULL;
     }
     stack->stack->data[si]->bytes_left = bsize2;
@@ -439,6 +468,8 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
   if (silc_unlikely(size > SILC_STACK_MAX_ALLOC)) {
     SILC_LOG_ERROR(("Allocating too much"));
     SILC_STACK_STAT(stack, num_errors, 1);
+    if (stack->oom_handler)
+      stack->oom_handler(stack, stack->oom_context);
     return NULL;
   }
 
@@ -470,6 +501,16 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
   SILC_LOG_DEBUG(("Cannot reallocate in this block"));
   SILC_STACK_STAT(stack, num_errors, 1);
   return NULL;
+}
+
+/* Set OOM handler */
+
+void silc_stack_set_oom_handler(SilcStack stack,
+				SilcStackOomHandler oom_handler,
+				void *context)
+{
+  stack->oom_handler = oom_handler;
+  stack->oom_context = context;
 }
 
 /* Set default alignment */
