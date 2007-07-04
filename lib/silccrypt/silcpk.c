@@ -424,7 +424,7 @@ int silc_pkcs_silc_import_public_key(unsigned char *key,
   if (!silc_pkcs_silc_decode_identifier(ident, &silc_pubkey->identifier))
     goto err;
 
-  asn1 = silc_asn1_alloc();
+  asn1 = silc_asn1_alloc(NULL);
   if (!asn1)
     goto err;
 
@@ -615,7 +615,7 @@ unsigned char *silc_pkcs_silc_export_public_key(void *public_key,
     goto err;
   }
 
-  asn1 = silc_asn1_alloc();
+  asn1 = silc_asn1_alloc(NULL);
   if (!asn1)
     goto err;
 
@@ -1033,7 +1033,7 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
   if (!silc_privkey)
     goto err;
 
-  asn1 = silc_asn1_alloc();
+  asn1 = silc_asn1_alloc(NULL);
   if (!asn1)
     goto err;
 
@@ -1469,7 +1469,7 @@ unsigned char *silc_pkcs_silc_export_private_key(void *private_key,
     return NULL;
   silc_buffer_set(&alg_key, prv, prv_len);
 
-  asn1 = silc_asn1_alloc();
+  asn1 = silc_asn1_alloc(NULL);
   if (!asn1)
     goto err;
 

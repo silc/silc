@@ -659,7 +659,7 @@ SilcBool silc_pkcs_load_public_key(const char *filename,
   if (!ret_public_key)
     return FALSE;
 
-  data = silc_file_readfile(filename, &data_len);
+  data = silc_file_readfile(filename, &data_len, NULL);
   if (!data)
     return FALSE;
 
@@ -739,7 +739,7 @@ SilcBool silc_pkcs_load_private_key(const char *filename,
   if (!ret_private_key)
     return FALSE;
 
-  data = silc_file_readfile(filename, &data_len);
+  data = silc_file_readfile(filename, &data_len, NULL);
   if (!data)
     return FALSE;
 

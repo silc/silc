@@ -227,7 +227,7 @@ int silc_pkcs1_import_public_key(unsigned char *key,
   if (!ret_public_key)
     return 0;
 
-  asn1 = silc_asn1_alloc();
+  asn1 = silc_asn1_alloc(NULL);
   if (!asn1)
     return 0;
 
@@ -269,7 +269,7 @@ unsigned char *silc_pkcs1_export_public_key(void *public_key,
   SilcBufferStruct alg_key;
   unsigned char *ret;
 
-  asn1 = silc_asn1_alloc();
+  asn1 = silc_asn1_alloc(NULL);
   if (!asn1)
     goto err;
 
@@ -362,7 +362,7 @@ int silc_pkcs1_import_private_key(unsigned char *key,
   if (!ret_private_key)
     return 0;
 
-  asn1 = silc_asn1_alloc();
+  asn1 = silc_asn1_alloc(NULL);
   if (!asn1)
     return 0;
 
@@ -414,7 +414,7 @@ unsigned char *silc_pkcs1_export_private_key(void *private_key,
   SilcBufferStruct alg_key;
   unsigned char *ret;
 
-  asn1 = silc_asn1_alloc();
+  asn1 = silc_asn1_alloc(NULL);
   if (!asn1)
     return FALSE;
 
@@ -597,7 +597,7 @@ SilcBool silc_pkcs1_sign(void *private_key,
   if (!oid)
     return FALSE;
 
-  asn1 = silc_asn1_alloc();
+  asn1 = silc_asn1_alloc(NULL);
   if (!asn1)
     return FALSE;
 
@@ -676,7 +676,7 @@ SilcBool silc_pkcs1_verify(void *public_key,
 
   SILC_LOG_DEBUG(("Verify signature"));
 
-  asn1 = silc_asn1_alloc();
+  asn1 = silc_asn1_alloc(NULL);
   if (!asn1)
     return FALSE;
 
