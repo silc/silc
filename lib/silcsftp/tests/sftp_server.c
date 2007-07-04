@@ -71,7 +71,7 @@ int main()
   silc_log_debug_hexdump(TRUE);
   silc_log_set_debug_string("*sftp*");
 
-  server->schedule = silc_schedule_init(0, NULL);
+  server->schedule = silc_schedule_init(0, NULL, NULL);
   if (!server->schedule)
     return -1;
 

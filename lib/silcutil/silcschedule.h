@@ -245,7 +245,8 @@ void func(SilcSchedule schedule, void *app_context, SilcTaskEvent type,	\
  *
  * SYNOPSIS
  *
- *    SilcSchedule silc_schedule_init(int max_tasks, void *app_context);
+ *    SilcSchedule silc_schedule_init(int max_tasks, void *app_context,
+ *                                    SilcStack stack);
  *
  * DESCRIPTION
  *
@@ -261,8 +262,17 @@ void func(SilcSchedule schedule, void *app_context, SilcTaskEvent type,	\
  *    limit can be significantly increased when this function is called in
  *    priviliged mode (as super user).
  *
+ *    If `stack' is non-NULL all memory allocation for the scheduler is done
+ *    from the `stack'.  Scheduler's stack may be retrieved by calling
+ *    silc_schedule_get_stack.  A stack is created for scheduler always even
+ *    if `stack' is NULL.  If it is non-NULL the created stack is a child
+ *    stack using `stack' as its parent.  This means that memory allocated
+ *    by the scheduler will be returned to the `stack' when scheduler is
+ *    destroyed.
+ *
  ***/
-SilcSchedule silc_schedule_init(int max_tasks, void *app_context);
+SilcSchedule silc_schedule_init(int max_tasks, void *app_context,
+				SilcStack stack);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_uninit
  *
@@ -276,6 +286,10 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context);
  *    to end. This removes all tasks from the scheduler. Returns FALSE if the
  *    scheduler could not be uninitialized. This happens when the scheduler
  *    is still valid and silc_schedule_stop has not been called.
+ *
+ *    If SilcStack was given to silc_schedule_init all memory allocated
+ *    during the life time of the scheduler will be returned back to the
+ *    given stack.
  *
  ***/
 SilcBool silc_schedule_uninit(SilcSchedule schedule);
@@ -377,6 +391,22 @@ void silc_schedule_wakeup(SilcSchedule schedule);
  *
  ***/
 void *silc_schedule_get_context(SilcSchedule schedule);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_get_stack
+ *
+ * SYNOPSIS
+ *
+ *    SilcStack silc_schedule_get_stack(SilcSchedule schedule);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the stack of the `schedule'.  If it is used to make memory
+ *    allocations outside the scheduler, it is recommended that a new
+ *    child stack is created by using the returned stack as a parent and
+ *    using the child stack to make the memory allocations.
+ *
+ ***/
+SilcStack silc_schedule_get_stack(SilcSchedule schedule);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_set_notify
  *

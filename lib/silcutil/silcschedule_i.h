@@ -76,6 +76,7 @@ struct SilcScheduleStruct {
   void *app_context;		   /* Application specific context */
   SilcTaskNotifyCb notify;	   /* Notify callback */
   void *notify_context;		   /* Notify context */
+  SilcStack stack;		   /* Stack */
   SilcHashTable fd_queue;	   /* FD task queue */
   SilcList fd_dispatch;		   /* Dispatched FDs */
   SilcList timeout_queue;	   /* Timeout queue */

@@ -121,7 +121,7 @@ int main(int argc, char **argv)
   signal(SIGPIPE, SIG_IGN);
 
   SILC_LOG_DEBUG(("Allocating scheduler"));
-  schedule = silc_schedule_init(0, NULL);
+  schedule = silc_schedule_init(0, NULL, NULL);
   if (!schedule)
     goto err;
 

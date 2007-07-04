@@ -212,7 +212,7 @@ SILC_FSM_STATE(test_st_signal1)
 
   SILC_LOG_DEBUG(("Signaller 1"));
   SILC_FSM_EVENT_SIGNAL(&f->wait2);
-  silc_fsm_next_later(fsm, test_st_signal1_check, 0, 500000); 
+  silc_fsm_next_later(fsm, test_st_signal1_check, 0, 500000);
   return SILC_FSM_WAIT;;
 }
 
@@ -454,7 +454,7 @@ int main(int argc, char **argv)
   }
 
   SILC_LOG_DEBUG(("Allocating scheduler"));
-  schedule = silc_schedule_init(0, NULL);
+  schedule = silc_schedule_init(0, NULL, NULL);
 
   f = silc_calloc(1, sizeof(*f));
   if (!f)

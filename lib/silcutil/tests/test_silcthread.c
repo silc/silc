@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     silc_log_set_debug_string("*thread*");
   }
 
-  schedule = silc_schedule_init(0, NULL);
+  schedule = silc_schedule_init(0, NULL, NULL);
   if (!schedule)
     goto err;
 

@@ -349,7 +349,7 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
   SilcUnixScheduler internal;
   int i;
 
-  internal = silc_calloc(1, sizeof(*internal));
+  internal = silc_scalloc(schedule->stack, 1, sizeof(*internal));
   if (!internal)
     return NULL;
 
@@ -389,7 +389,6 @@ void *silc_schedule_internal_init(SilcSchedule schedule,
 #ifdef SILC_THREADS
   if (pipe(internal->wakeup_pipe)) {
     SILC_LOG_ERROR(("pipe() fails: %s", strerror(errno)));
-    silc_free(internal);
     return NULL;
   }
 
@@ -433,8 +432,6 @@ void silc_schedule_internal_uninit(SilcSchedule schedule, void *context)
 #elif defined(HAVE_POLL) && defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
   silc_free(internal->fds);
 #endif /* HAVE_POLL && HAVE_SETRLIMIT && RLIMIT_NOFILE */
-
-  silc_free(internal);
 }
 
 /* Wakes up the scheduler */

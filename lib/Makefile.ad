@@ -48,6 +48,9 @@ SILCLIB_DIRS = 		\
 #ifdef SILC_DIST_VCARD
 	silcvcard	\
 #endif SILC_DIST_VCARD
+#ifdef SILC_DIST_ACC
+	silcacc		\
+#endif SILC_DIST_ACC
 
 if SILC_ENABLE_SHARED
 LIBTOOL_OPTS= -release $(LIB_BASE_VERSION) -rpath $(DESTDIR)$(libdir)

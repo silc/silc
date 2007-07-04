@@ -296,7 +296,7 @@ int main(int argc, char **argv)
     silc_log_set_debug_string("*");
   }
 
-  client->schedule = silc_schedule_init(0, NULL);
+  client->schedule = silc_schedule_init(0, NULL, NULL);
   if (!client->schedule)
     return -1;
 

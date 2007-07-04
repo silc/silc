@@ -289,7 +289,19 @@ SKR Library, lib/silcskr/
 Crypto Library, lib/silccrypt/
 ==============================
 
- o SilcStack to APIs.
+ o Add silc_crypto_init and silc_crypto_uninit.  The _init should take
+   SilcStack that will act as global memory pool for all of crypto 
+   library.  It should not be necessary anymore to separately register
+   default ciphers, HMACs, etc, the _init would do that.  However, if
+   user after _init calls silc_pkcs_register, for example, it would take
+   preference over the default once, ie. user can always dictate the
+   order of algorithms.
+
+   The global SilcStack should be used by all routines in lib/silccrypt, 
+   lib/silcacc (and lib/silcmath).  lib/silcskr and lib/silcasn1 has support 
+   in the API for providing SilcStack, however, if not provided, they 
+   should look for global SilcStack, if SILC_DIST_CRYPTO is defined.
+   Same SILC_DIST_CRYPTO ifdef for other libs.
 
  o Add fingerprint to SilcSILCPublicKey and retrieval to silcpk.h, and
    possibly to silcpkcs.h.

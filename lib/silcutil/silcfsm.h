@@ -905,7 +905,7 @@ typedef struct SilcFSMEventObject SilcFSMEventStruct;
  *    some event happens, some thread moves to a specific state or similar.
  *    The FSM Events may also be used in FSM threads that are executed in
  *    real system threads.  It is safe to wait and signal the event from
- *    threads.
+ *    threads.  The `fsm' must be the machine, not a thread.
  *
  *    Use the macros SILC_FSM_EVENT_WAIT and SILC_FSM_EVENT_TIMEDWAIT to wait
  *    for the event.  Use the SILC_FSM_EVENT_SIGNAL macro to signal all the
@@ -924,7 +924,8 @@ SilcFSMEvent silc_fsm_event_alloc(SilcFSM fsm);
  *
  *    Initializes a pre-allocates FSM event context.  This call is
  *    equivalent to silc_fsm_event_alloc except this use the pre-allocated
- *    context.  This fuction does not allocate any memory.
+ *    context.  This fuction does not allocate any memory.  The `fsm'
+ *    must be the machine, not a thread.
  *
  ***/
 void silc_fsm_event_init(SilcFSMEvent event, SilcFSM fsm);

@@ -98,7 +98,7 @@ int main(int argc, char **argv)
   }
 
   SILC_LOG_DEBUG(("Allocating scheduler"));
-  schedule = silc_schedule_init(NUM_FTASK, NULL);
+  schedule = silc_schedule_init(NUM_FTASK, NULL, NULL);
   if (!schedule)
     goto err;
   silc_schedule_set_notify(schedule, notify_cb, NULL);

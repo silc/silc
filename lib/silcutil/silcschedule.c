@@ -312,27 +312,35 @@ void silc_schedule_stats(SilcSchedule schedule)
    scheduler can handle. The `app_context' is application specific
    context that is delivered to task callbacks. */
 
-SilcSchedule silc_schedule_init(int max_tasks, void *app_context)
+SilcSchedule silc_schedule_init(int max_tasks, void *app_context,
+				SilcStack stack)
 {
   SilcSchedule schedule;
 
-  SILC_LOG_DEBUG(("Initializing scheduler"));
+  stack = silc_stack_alloc(0, stack);
+  if (!stack)
+    return NULL;
 
-  schedule = silc_calloc(1, sizeof(*schedule));
+  /* Allocate scheduler from the stack */
+  schedule = silc_scalloc(stack, 1, sizeof(*schedule));
   if (!schedule)
     return NULL;
 
+  SILC_LOG_DEBUG(("Initializing scheduler %p", schedule));
+
+  /* Allocate Fd task hash table dynamically */
   schedule->fd_queue =
     silc_hash_table_alloc(NULL, 0, silc_hash_uint, NULL, NULL, NULL,
 			  silc_schedule_fd_destructor, NULL, TRUE);
   if (!schedule->fd_queue) {
-    silc_free(schedule);
+    silc_stack_free(stack);
     return NULL;
   }
 
   silc_list_init(schedule->timeout_queue, struct SilcTaskStruct, next);
   silc_list_init(schedule->free_tasks, struct SilcTaskStruct, next);
 
+  schedule->stack = stack;
   schedule->app_context = app_context;
   schedule->valid = TRUE;
   schedule->max_tasks = max_tasks;
@@ -345,7 +353,7 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context)
   if (!schedule->internal) {
     silc_hash_table_free(schedule->fd_queue);
     silc_mutex_free(schedule->lock);
-    silc_free(schedule);
+    silc_stack_free(stack);
     return NULL;
   }
 
@@ -365,7 +373,7 @@ SilcBool silc_schedule_uninit(SilcSchedule schedule)
 {
   SilcTask task;
 
-  SILC_LOG_DEBUG(("Uninitializing scheduler"));
+  SILC_LOG_DEBUG(("Uninitializing scheduler %p", schedule));
 
   if (schedule->valid == TRUE)
     return FALSE;
@@ -397,7 +405,7 @@ SilcBool silc_schedule_uninit(SilcSchedule schedule)
   schedule_ops.uninit(schedule, schedule->internal);
 
   silc_mutex_free(schedule->lock);
-  silc_free(schedule);
+  silc_stack_free(schedule->stack);
 
   return TRUE;
 }
@@ -546,6 +554,13 @@ void silc_schedule_wakeup(SilcSchedule schedule)
 void *silc_schedule_get_context(SilcSchedule schedule)
 {
   return schedule->app_context;
+}
+
+/* Return the stack of the scheduler */
+
+SilcStack silc_schedule_get_stack(SilcSchedule schedule)
+{
+  return schedule->stack;
 }
 
 /* Set notify callback */

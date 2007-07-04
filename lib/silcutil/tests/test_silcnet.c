@@ -172,7 +172,7 @@ int main(int argc, char **argv)
   }
 
   SILC_LOG_DEBUG(("Allocating scheduler"));
-  schedule = silc_schedule_init(0, NULL);
+  schedule = silc_schedule_init(0, NULL, NULL);
 
   f = silc_calloc(1, sizeof(*f));
   if (!f)
