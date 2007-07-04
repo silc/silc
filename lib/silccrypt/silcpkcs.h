@@ -308,8 +308,8 @@ extern DLLAPI const SilcPKCSAlgorithm silc_default_pkcs_alg[];
  *
  * DESCRIPTION
  *
- *    Registers a new PKCS into the SILC.  This function is used
- *    at the initialization of the SILC.  All registered PKCSs
+ *    Registers a new PKCS into the crypto library.  This function is used
+ *    at the initialization of an application.  All registered PKCSs
  *    should be unregistered with silc_pkcs_unregister.  The `pkcs' includes
  *    the name of the PKCS and member functions for the algorithm.  Usually
  *    this function is not called directly.  Instead, application can call
@@ -327,7 +327,7 @@ SilcBool silc_pkcs_register(const SilcPKCSObject *pkcs);
  *
  * DESCRIPTION
  *
- *    Unregister a PKCS from the SILC. Returns FALSE on error.
+ *    Unregister a PKCS from the crypto library. Returns FALSE on error.
  *
  ***/
 SilcBool silc_pkcs_unregister(SilcPKCSObject *pkcs);
@@ -340,9 +340,9 @@ SilcBool silc_pkcs_unregister(SilcPKCSObject *pkcs);
  *
  * DESCRIPTION
  *
- *    Registers a new PKCS Algorithm into the SILC.  This function is used
- *    at the initialization of the SILC.  All registered PKCS algorithms
- *    should be unregistered with silc_pkcs_unregister.
+ *    Registers a new PKCS Algorithm into crypto library.  This function 
+ *    is used at the initialization of an application.  All registered PKCS
+*     algorithms should be unregistered with silc_pkcs_unregister.
  *
  ***/
 SilcBool silc_pkcs_algorithm_register(const SilcPKCSAlgorithm *pkcs);
@@ -355,7 +355,7 @@ SilcBool silc_pkcs_algorithm_register(const SilcPKCSAlgorithm *pkcs);
  *
  * DESCRIPTION
  *
- *    Unregister a PKCS from the SILC. Returns FALSE on error.
+ *    Unregister a PKCS from the crypto library. Returns FALSE on error.
  *
  ***/
 SilcBool silc_pkcs_algorithm_unregister(SilcPKCSAlgorithm *pkcs);
