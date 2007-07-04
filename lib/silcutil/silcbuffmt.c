@@ -85,21 +85,14 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap)
     switch(fmt) {
     case SILC_PARAM_FUNC:
       {
-	SilcBufferFormatFunc func = NULL;
-	SilcBufferSFormatFunc funcs = NULL;
+	SilcBufferFormatFunc func;
 	void *val;
 	void *context;
 	int tmp_len;
-	if (!stack)
-	  func = va_arg(ap, SilcBufferFormatFunc);
-	else
-	  funcs = va_arg(ap, SilcBufferSFormatFunc);
+	func = va_arg(ap, SilcBufferFormatFunc);
 	val = va_arg(ap, void *);
 	context = va_arg(ap, void *);
-	if (!stack)
-	  tmp_len = func(dst, val, context);
-	else
-	  tmp_len = funcs(stack, dst, val, context);
+	tmp_len = func(stack, dst, val, context);
 	if (tmp_len < 0)
 	  goto fail;
 	if (tmp_len) {
@@ -324,21 +317,14 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
     switch(fmt) {
     case SILC_PARAM_FUNC:
       {
-	SilcBufferUnformatFunc func = NULL;
-	SilcBufferSUnformatFunc funcs = NULL;
+	SilcBufferUnformatFunc func;
 	void **val;
 	void *context;
 	int tmp_len;
-	if (!stack)
-	  func = va_arg(ap, SilcBufferUnformatFunc);
-	else
-	  funcs = va_arg(ap, SilcBufferSUnformatFunc);
+	func = va_arg(ap, SilcBufferUnformatFunc);
 	val = va_arg(ap, void **);
 	context = va_arg(ap, void *);
-	if (!stack)
-	  tmp_len = func(src, val, context);
-	else
-	  tmp_len = funcs(stack, src, val, context);
+	tmp_len = func(stack, src, val, context);
 	if (tmp_len < 0)
 	  goto fail;
 	if (tmp_len) {

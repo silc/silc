@@ -39,40 +39,10 @@
  *
  * SYNOPSIS
  *
- *    typedef int (*SilcBufferFormatFunc)(SilcBuffer buffer,
+ *    typedef int (*SilcBuffeSFormatFunc)(SilcStack stack,
+ *                                        SilcBuffer buffer,
  *                                        void *value,
  *                                        void *context);
- *
- * DESCRIPTION
- *
- *    Formatting function callback given with SILC_STR_FUNC type.  The
- *    `buffer' is the buffer being formatted at the location where the
- *    SILC_STR_FUNC was placed in formatting.  The function should call
- *    silc_buffer_enlarge before it adds the data to the buffer to make
- *    sure that it has enough space.  The buffer->head points to the
- *    start of the buffer and silc_buffer_headlen() gives the length
- *    of the currently formatted data area.  It is also possible to use
- *    silc_buffer_format with `buffer' which will enlarge the buffer if
- *    needed.
- *
- *    The `value' is the value given to SILC_STR_FUNC that is to be formatted
- *    into the buffer.  It may be NULL if the function is not formatting
- *    new data into the buffer.  The `context' is caller specific context.
- *    Returns -1 on error and length of the formatted value otherwise, and
- *    0 if nothing was formatted.
- *
- ***/
-typedef int (*SilcBufferFormatFunc)(SilcBuffer buffer, void *value,
-				    void *context);
-
-/****f* silcutil/SilcBufferFormatAPI/SilcBufferSFormatFunc
- *
- * SYNOPSIS
- *
- *    typedef int (*SilcBufferSFormatFunc)(SilcStack stack,
- *                                         SilcBuffer buffer,
- *                                         void *value,
- *                                         void *context);
  *
  * DESCRIPTION
  *
@@ -92,13 +62,9 @@ typedef int (*SilcBufferFormatFunc)(SilcBuffer buffer, void *value,
  *    Returns -1 on error and length of the formatted value otherwise, and
  *    0 if nothing was formatted.
  *
- *    This is same as SilcBufferFormatFunc except the SilcStack will be
- *    delivered.  This callback must be used when SilcStack is used with
- *    formatting.
- *
  ***/
-typedef int (*SilcBufferSFormatFunc)(SilcStack stack, SilcBuffer buffer,
-				     void *value, void *context);
+typedef int (*SilcBufferFormatFunc)(SilcStack stack, SilcBuffer buffer,
+				    void *value, void *context);
 
 /****f* silcutil/SilcBufferFormatAPI/SilcBufferUnformatFunc
  *
@@ -126,42 +92,8 @@ typedef int (*SilcBufferSFormatFunc)(SilcStack stack, SilcBuffer buffer,
  *    unformatted.
  *
  ***/
-typedef int (*SilcBufferUnformatFunc)(SilcBuffer buffer, void **value,
-				      void *context);
-
-/****f* silcutil/SilcBufferFormatAPI/SilcBufferSUnformatFunc
- *
- * SYNOPSIS
- *
- *    typedef int (*SilcBufferSUnformatFunc)(SilcStack stack,
- *                                           SilcBuffer buffer,
- *                                           void **value,
- *                                           void *context);
- *
- * DESCRIPTION
- *
- *    Unformatting function callback given with SILC_STR_FUNC type.  The
- *    `buffer' is the buffer being unformatted and is at the location where
- *    the SILC_STR_FUNC was placed in unformatting.  The function should
- *    check there is enough data in the `buffer' before trying to decode
- *    from it.
- *
- *    If this function unformats anything from the buffer its value is to
- *    be returned to the `value' pointer.  The implementation should itself
- *    decide whether the unformatted value is allocated or not.  If this
- *    function does not unformat anything, nothing is returned to `value'
- *
- *    The `context' is caller specific context.  Returns -1 on error, and
- *    length of the unformatted value otherwise, and 0 if nothing was
- *    unformatted.
- *
- *    This is same as SilcBufferUnformatFunc except the SilcStack will be
- *    delivered.  This callback must be used when SilcStack is used with
- *    unformatting.
- *
- ***/
-typedef int (*SilcBufferSUnformatFunc)(SilcStack stack, SilcBuffer buffer,
-				       void **value, void *context);
+typedef int (*SilcBufferUnformatFunc)(SilcStack stack, SilcBuffer buffer,
+				      void **value, void *context);
 
 /* Prototypes */
 
@@ -236,6 +168,9 @@ int silc_buffer_format(SilcBuffer dst, ...);
  *    Same as silc_buffer_format but uses `stack' to allocate the memory.
  *    if `stack' is NULL reverts back to silc_buffer_format call.
  *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
+ *
  ***/
 int silc_buffer_sformat(SilcStack stack, SilcBuffer dst, ...);
 
@@ -263,6 +198,9 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap);
  *
  *    Same as silc_buffer_format_vp but uses `stack' to allocate the memory.
  *    if `stack' is NULL reverts back to silc_buffer_format_vp call.
+ *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
  *
  ***/
 int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap);
@@ -303,6 +241,9 @@ int silc_buffer_unformat(SilcBuffer src, ...);
  *    Same as silc_buffer_unformat but uses `stack' to allocate the memory.
  *    if `stack' is NULL reverts back to silc_buffer_format call.
  *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
+ *
  ***/
 int silc_buffer_sunformat(SilcStack stack, SilcBuffer src, ...);
 
@@ -330,6 +271,9 @@ int silc_buffer_unformat_vp(SilcBuffer src, va_list ap);
  *
  *    Same as silc_buffer_unformat_vp but uses `stack' to allocate the
  *    memory.  if `stack' is NULL reverts back to silc_buffer_format_vp call.
+ *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
  *
  ***/
 int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap);
@@ -373,6 +317,9 @@ int silc_buffer_strformat(SilcBuffer dst, ...);
  *    allocates the space for the buffer data but `dst' must be already
  *    allocated by the caller.  This function is equivalent to
  *    silc_buffer_strformat but allocates memory from `stack'.
+ *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
  *
  ***/
 int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);

@@ -512,7 +512,8 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
 
 /* Encrypt message payload */
 
-static int silc_message_payload_encode_encrypt(SilcBuffer buffer,
+static int silc_message_payload_encode_encrypt(SilcStack stack,
+					       SilcBuffer buffer,
 					       void *value, void *context)
 {
   SilcMessageEncode *e = context;
@@ -537,7 +538,8 @@ static int silc_message_payload_encode_encrypt(SilcBuffer buffer,
 
 /* Compute message signature */
 
-static int silc_message_payload_encode_sig(SilcBuffer buffer,
+static int silc_message_payload_encode_sig(SilcStack stack,
+					   SilcBuffer buffer,
 					   void *value, void *context)
 {
   SilcMessageEncode *e = context;
