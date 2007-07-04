@@ -292,7 +292,7 @@ void silc_query_attributes_default(SilcClient client,
     /* Put USER_INFO */
     silc_client_attribute_del(silc_client, conn,
 			      SILC_ATTRIBUTE_USER_INFO, NULL);
-    tmp = silc_file_readfile(sv, &tmp_len);
+    tmp = silc_file_readfile(sv, &tmp_len, NULL);
     if (tmp) {
       tmp[tmp_len] = 0;
       if (silc_vcard_decode(tmp, tmp_len, &vcard))
@@ -384,7 +384,7 @@ void silc_query_attributes_default(SilcClient client,
     /* Put STATUS_MESSAGE */
     silc_client_attribute_del(silc_client, conn,
 			      SILC_ATTRIBUTE_STATUS_MESSAGE, NULL);
-    tmp = silc_file_readfile(sv, &tmp_len);
+    tmp = silc_file_readfile(sv, &tmp_len, NULL);
     if (tmp) {
       mime = silc_mime_decode(NULL, tmp, tmp_len);
       if (mime)
@@ -529,7 +529,7 @@ void silc_query_attributes_default(SilcClient client,
     list = g_strsplit(sv, " ", -1);
     for (entry = list; *entry != NULL; entry++) {
       if (!strncasecmp(*entry, "silc-rsa:", 8)) {
-	tmp = silc_file_readfile((*entry) + 8, &tmp_len);
+	tmp = silc_file_readfile((*entry) + 8, &tmp_len, NULL);
 	if (tmp) {
 	  tmp[tmp_len] = 0;
 	  pk.type = "silc-rsa";

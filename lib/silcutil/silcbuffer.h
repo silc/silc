@@ -961,6 +961,9 @@ SilcBool silc_buffer_enlarge(SilcBuffer sb, SilcUInt32 size)
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
  *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
+ *
  ***/
 
 static inline
@@ -1005,6 +1008,9 @@ SilcBuffer silc_buffer_salloc(SilcStack stack, SilcUInt32 len)
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
  *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
+ *
  ***/
 
 static inline
@@ -1033,6 +1039,9 @@ SilcBuffer silc_buffer_salloc_size(SilcStack stack, SilcUInt32 len)
  *
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
+ *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
  *
  ***/
 
@@ -1090,6 +1099,9 @@ SilcBuffer silc_buffer_srealloc(SilcStack stack,
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
  *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
+ *
  ***/
 
 static inline
@@ -1124,6 +1136,9 @@ SilcBuffer silc_buffer_srealloc_size(SilcStack stack,
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
  *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
+ *
  ***/
 
 static inline
@@ -1157,6 +1172,9 @@ SilcBool silc_buffer_senlarge(SilcStack stack, SilcBuffer sb, SilcUInt32 size)
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
  *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
+ *
  ***/
 
 static inline
@@ -1187,6 +1205,9 @@ SilcBuffer silc_buffer_scopy(SilcStack stack, SilcBuffer sb)
  *
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
+ *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
  *
  ***/
 

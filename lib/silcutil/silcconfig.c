@@ -263,7 +263,7 @@ SilcConfigFile *silc_config_open(const char *configfile)
   SilcUInt32 filelen;
   SilcConfigFile *ret;
 
-  if (!(buffer = silc_file_readfile(configfile, &filelen)))
+  if (!(buffer = silc_file_readfile(configfile, &filelen, NULL)))
     return NULL;
 
   ret = silc_calloc(1, sizeof(*ret));

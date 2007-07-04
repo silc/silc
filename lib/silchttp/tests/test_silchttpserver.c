@@ -65,7 +65,7 @@ static void http_callback_file(SilcHttpServer httpd, SilcHttpConnection conn,
     SILC_LOG_DEBUG(("Filename: '%s'", filename));
 
     if (!usephp) {
-      filedata = silc_file_readfile(filename, &data_len);
+      filedata = silc_file_readfile(filename, &data_len, NULL);
       if (!filedata) {
 	silc_http_server_send_error(httpd, conn, "404 Not Found",
 				    "<body><h1>404 Not Found</h1><p>The page you are looking for cannot be located</body>");

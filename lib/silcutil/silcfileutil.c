@@ -124,7 +124,8 @@ int silc_file_writefile_mode(const char *filename, const char *buffer,
 /* Reads a file to a buffer. The allocated buffer is returned. Length of
    the file read is returned to the return_len argument. */
 
-char *silc_file_readfile(const char *filename, SilcUInt32 *return_len)
+char *silc_file_readfile(const char *filename, SilcUInt32 *return_len,
+			 SilcStack stack)
 {
   int fd;
   char *buffer;

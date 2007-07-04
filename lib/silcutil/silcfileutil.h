@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -117,7 +117,8 @@ int silc_file_set_nonblock(int fd);
  *
  * SYNOPSIS
  *
- *    char *silc_file_readfile(const char *filename, SilcUInt32 *return_len);
+ *    char *silc_file_readfile(const char *filename, SilcUInt32 *return_len,
+ *                             SilcStack stack);
  *
  * DESCRIPTION
  *
@@ -129,8 +130,13 @@ int silc_file_set_nonblock(int fd);
  *    If the `return_len' pointer is not NULL, it's filled with the length of
  *    the file.
  *
+ *    If `stack' is non-NULL the returned buffer is allocated from `stack'.
+ *    The allocation consumes `stack' so caller should push the stack before
+ *    calling this function and pop it later.
+ *
  ***/
-char *silc_file_readfile(const char *filename, SilcUInt32 *return_len);
+char *silc_file_readfile(const char *filename, SilcUInt32 *return_len,
+			 SilcStack stack);
 
 /****f* silcutil/SilcFileUtilAPI/silc_file_writefile
  *
