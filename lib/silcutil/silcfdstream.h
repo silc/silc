@@ -38,7 +38,7 @@
  *
  * SYNOPSIS
  *
- *    SilcStream silc_fd_stream_create(int fd);
+ *    SilcStream silc_fd_stream_create(int fd, SilcStack stack);
  *
  * DESCRIPTION
  *
@@ -49,14 +49,18 @@
  *    If the silc_stream_set_notifier is called the stream is set to
  *    non-blocking mode.
  *
+ *    If `stack' is non-NULL all memory is allocated from the `stack' and
+ *    will be released back to `stack' after the stream is destroyed.
+ *
  ***/
-SilcStream silc_fd_stream_create(int fd);
+SilcStream silc_fd_stream_create(int fd, SilcStack stack);
 
 /****f* silcutil/SilcFDStreamAPI/silc_fd_stream_create2
  *
  * SYNOPSIS
  *
- *    SilcStream silc_fd_stream_create2(int read_fd, int write_fd);
+ *    SilcStream silc_fd_stream_create2(int read_fd, int write_fd,
+ *                                      SilcStack stack);
  *
  * DESCRIPTION
  *
@@ -68,15 +72,18 @@ SilcStream silc_fd_stream_create(int fd);
  *    If the silc_stream_set_notifier is called the stream is set to
  *    non-blocking mode.
  *
+ *    If `stack' is non-NULL all memory is allocated from the `stack' and
+ *    will be released back to `stack' after the stream is destroyed.
+ *
  ***/
-SilcStream silc_fd_stream_create2(int read_fd, int write_fd);
+SilcStream silc_fd_stream_create2(int read_fd, int write_fd, SilcStack stack);
 
 /****f* silcutil/SilcFDStreamAPI/silc_fd_stream_file
  *
  * SYNOPSIS
  *
  *    SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
- *                                   SilcBool writing);
+ *                                   SilcBool writing, SilcStack stack);
  *
  * DESCRIPTION
  *
@@ -88,16 +95,20 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd);
  *    If the silc_stream_set_notifier is called the stream is set to
  *    non-blocking mode.
  *
+ *    If `stack' is non-NULL all memory is allocated from the `stack' and
+ *    will be released back to `stack' after the stream is destroyed.
+ *
  ***/
 SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
-			       SilcBool writing);
+			       SilcBool writing, SilcStack stack);
 
 /****f* silcutil/SilcFDStreamAPI/silc_fd_stream_file2
  *
  * SYNOPSIS
  *
  *    SilcStream silc_fd_stream_file2(const char *read_file,
- *                                    const char *write_file);
+ *                                    const char *write_file,
+ *                                    SilcStack stack);
  *
  * DESCRIPTION
  *
@@ -107,8 +118,12 @@ SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
  *    If the silc_stream_set_notifier is called the stream is set to
  *    non-blocking mode.
  *
+ *    If `stack' is non-NULL all memory is allocated from the `stack' and
+ *    will be released back to `stack' after the stream is destroyed.
+ *
  ***/
-SilcStream silc_fd_stream_file2(const char *read_file, const char *write_file);
+SilcStream silc_fd_stream_file2(const char *read_file, const char *write_file,
+				SilcStack stack);
 
 /****f* silcutil/SilcFDStreamAPI/silc_fd_stream_get_info
  *

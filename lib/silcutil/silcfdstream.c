@@ -28,6 +28,7 @@ const SilcStreamOps silc_fd_stream_ops;
 /* FD stream context */
 typedef struct {
   const SilcStreamOps *ops;
+  SilcStack stack;
   SilcSchedule schedule;
   SilcStreamNotifier notifier;
   void *notifier_context;
@@ -67,28 +68,34 @@ SILC_TASK_CALLBACK(silc_fd_stream_io)
 
 /* Create file descriptor stream */
 
-SilcStream silc_fd_stream_create(int fd)
+SilcStream silc_fd_stream_create(int fd, SilcStack stack)
 {
   if (fd < 1)
     return NULL;
-  return silc_fd_stream_create2(fd, 0);
+  return silc_fd_stream_create2(fd, 0, stack);
 }
 
 /* Create stream with two file descriptors */
 
-SilcStream silc_fd_stream_create2(int read_fd, int write_fd)
+SilcStream silc_fd_stream_create2(int read_fd, int write_fd, SilcStack stack)
 {
   SilcFDStream stream;
 
-  stream = silc_calloc(1, sizeof(*stream));
-  if (!stream)
+  if (stack)
+    stack = silc_stack_alloc(0, stack);
+
+  stream = silc_scalloc(stack, 1, sizeof(*stream));
+  if (!stream) {
+    silc_stack_free(stack);
     return NULL;
+  }
 
   SILC_LOG_DEBUG(("Creating new fd stream %p", stream));
 
   stream->ops = &silc_fd_stream_ops;
   stream->fd1 = read_fd;
   stream->fd2 = write_fd;
+  stream->stack = stack;
 
   return stream;
 }
@@ -96,7 +103,7 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd)
 /* Create by opening file */
 
 SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
-			       SilcBool writing)
+			       SilcBool writing, SilcStack stack)
 {
   const char *read_file = NULL, *write_file = NULL;
 
@@ -108,12 +115,13 @@ SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
   if (reading)
     read_file = filename;
 
-  return silc_fd_stream_file2(read_file, write_file);
+  return silc_fd_stream_file2(read_file, write_file, stack);
 }
 
 /* Create by opening two files */
 
-SilcStream silc_fd_stream_file2(const char *read_file, const char *write_file)
+SilcStream silc_fd_stream_file2(const char *read_file, const char *write_file,
+				SilcStack stack)
 {
   SilcStream stream;
   int fd1 = 0, fd2 = 0;
@@ -136,7 +144,7 @@ SilcStream silc_fd_stream_file2(const char *read_file, const char *write_file)
       return NULL;
   }
 
-  stream = silc_fd_stream_create2(fd1, fd2);
+  stream = silc_fd_stream_create2(fd1, fd2, stack);
   if (!stream) {
     silc_file_close(fd1);
     silc_file_close(fd2);
@@ -277,8 +285,12 @@ SilcBool silc_fd_stream_close(SilcStream stream)
 
 void silc_fd_stream_destroy(SilcStream stream)
 {
+  SilcFDStream fd_stream = stream;
+  SilcStack stack = fd_stream->stack;
+
   silc_fd_stream_close(stream);
-  silc_free(stream);
+  silc_sfree(stack, stream);
+  silc_stack_free(stack);
 }
 
 /* Sets stream notification callback for the stream */

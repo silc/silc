@@ -58,7 +58,7 @@ SILC_FSM_STATE(st_readwrite)
   }
 
   SILC_LOG_DEBUG(("Creating FD stream (two fds)"));
-  stream = silc_fd_stream_create2(fd1, fd2);
+  stream = silc_fd_stream_create2(fd1, fd2, NULL);
   if (!stream) {
     SILC_LOG_DEBUG(("Error creating stream"));
     goto err;
@@ -133,7 +133,7 @@ SILC_FSM_STATE(st_write)
   SILC_LOG_DEBUG(("Open file /tmp/test_silcfdstream for writing"));
   SILC_LOG_DEBUG(("Creating FD stream"));
   unlink("/tmp/test_silcfdstream");
-  stream = silc_fd_stream_file("/tmp/test_silcfdstream", FALSE, TRUE);
+  stream = silc_fd_stream_file("/tmp/test_silcfdstream", FALSE, TRUE, NULL);
   if (!stream) {
     SILC_LOG_DEBUG(("Error creating stream"));
     goto err;
