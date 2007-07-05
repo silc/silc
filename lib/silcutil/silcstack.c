@@ -191,6 +191,8 @@ SilcStack silc_stack_alloc(SilcUInt32 stack_size, SilcStack parent)
     stack->parent = parent;
     stack->stack_size = stack_size;
     stack->alignment = SILC_STACK_DEFAULT_ALIGN;
+    stack->oom_handler = parent->oom_handler;
+    stack->oom_context = parent->oom_context;
     silc_list_init(stack->stacks, struct SilcStackDataEntryStruct, next);
 
     /* Allocate stack frames from the parent */
