@@ -169,6 +169,10 @@ int main(int argc, char **argv)
   silc_stack_free(child);
   silc_stack_stats(stack);
 
+  SILC_LOG_DEBUG(("Purge stack"));
+  silc_stack_purge(stack);
+  silc_stack_stats(stack);
+
   SILC_LOG_DEBUG(("Current alignment: %d", silc_stack_get_alignment(stack)));
   SILC_LOG_DEBUG(("Set alignemtn to 16"));
   silc_stack_set_alignment(stack, 16);

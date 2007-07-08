@@ -365,6 +365,25 @@ void silc_stack_set_alignment(SilcStack stack, SilcUInt32 alignment);
  ***/
 SilcUInt32 silc_stack_get_alignment(SilcStack stack);
 
+/****f* silcutil/SilcStackAPI/silc_stack_purge
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_stack_purge(SilcStack stack);
+ *
+ * DESCRIPTION
+ *
+ *    Purges the `stack' from extra unused memory.  This purges only `stack'
+ *    and not its parent if `stack' is a child.  This purges only large
+ *    allocations.  The 1024, 2048, 4096 and 8192 bytes of allocations remain.
+ *    Call this multiple times to purge even more.  Returns FALSE when there
+ *    is no more to purge.  This does not purge memory blocks that currently
+ *    have allocations.  No memory allocations from the stack are lost, so
+ *    this is always safe to call.
+ *
+ ***/
+SilcBool silc_stack_purge(SilcStack stack);
+
 #include "silcstack_i.h"
 
 #endif /* SILCSTACK_H */

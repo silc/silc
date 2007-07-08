@@ -78,7 +78,8 @@ static SilcStackDataEntry silc_stack_ref_stack(SilcStack stack,
   *ret_si = si;
   *ret_bsize = bsize;
 
-  SILC_ST_DEBUG(("Get stack block, si %d, size %lu", si, bsize));
+  SILC_ST_DEBUG(("Get stack block, si %d, size %lu, stack %p",
+		 si, bsize, stack));
 
   silc_mutex_lock(stack->lock);
 
@@ -92,6 +93,12 @@ static SilcStackDataEntry silc_stack_ref_stack(SilcStack stack,
     SILC_ST_DEBUG(("Got stack blocks %p from stack %p", e->data, stack));
     silc_mutex_unlock(stack->lock);
     return e;
+  }
+
+  /* If we are child, get block from parent */
+  if (stack->parent) {
+    silc_mutex_unlock(stack->lock);
+    return silc_stack_ref_stack(stack->parent, size, ret_si, ret_bsize);
   }
 
   SILC_ST_DEBUG(("Allocate new stack blocks"));
@@ -193,6 +200,7 @@ SilcStack silc_stack_alloc(SilcUInt32 stack_size, SilcStack parent)
     stack->alignment = SILC_STACK_DEFAULT_ALIGN;
     stack->oom_handler = parent->oom_handler;
     stack->oom_context = parent->oom_context;
+    stack->lock = parent->lock;
     silc_list_init(stack->stacks, struct SilcStackDataEntryStruct, next);
 
     /* Allocate stack frames from the parent */
@@ -244,10 +252,10 @@ SilcStack silc_stack_alloc(SilcUInt32 stack_size, SilcStack parent)
       silc_free(stack);
       return NULL;
     }
-  }
 
-  /* Allocate lock */
-  silc_mutex_alloc(&stack->lock);
+    /* Allocate lock */
+    silc_mutex_alloc(&stack->lock);
+  }
 
   /* Use the allocated stack in first stack frame */
   stack->frame = &stack->frames[0];
@@ -273,9 +281,6 @@ void silc_stack_free(SilcStack stack)
 
   SILC_LOG_DEBUG(("Free stack %p", stack));
 
-  if (stack->lock)
-    silc_mutex_free(stack->lock);
-
   if (!stack->parent) {
     silc_list_start(stack->stacks);
     while ((e = silc_list_get(stack->stacks))) {
@@ -287,6 +292,9 @@ void silc_stack_free(SilcStack stack)
     for (i = 0; i < SILC_STACK_BLOCK_NUM; i++)
       silc_free(stack->stack->data[i]);
     silc_free(stack->stack);
+
+    if (stack->lock)
+      silc_mutex_free(stack->lock);
 
     silc_free(stack);
   } else {
@@ -528,6 +536,63 @@ void silc_stack_set_alignment(SilcStack stack, SilcUInt32 alignment)
 SilcUInt32 silc_stack_get_alignment(SilcStack stack)
 {
   return stack->alignment;
+}
+
+/* Purge stack */
+
+SilcBool silc_stack_purge(SilcStack stack)
+{
+  SilcStackDataEntry e;
+  SilcBool ret = FALSE;
+  int i;
+
+  SILC_LOG_DEBUG(("Purge stack %p", stack));
+
+  /* Go through the default stack */
+  for (i = SILC_STACK_BLOCK_NUM - 1; i > 3; i--) {
+    if (stack->stack->data[i] &&
+	stack->stack->data[i]->bytes_left == SILC_STACK_BLOCK_SIZE(stack, i)) {
+      SILC_LOG_DEBUG(("Purge %d bytes",
+		      SILC_STACK_BLOCK_SIZE(stack, i)));
+      silc_free(stack->stack->data[i]);
+      stack->stack->data[i] = NULL;
+      ret = TRUE;
+    }
+  }
+
+  silc_mutex_lock(stack->lock);
+
+  /* Remove one child stack */
+  if (silc_list_count(stack->stacks) > 2) {
+    silc_list_start(stack->stacks);
+    e = silc_list_get(stack->stacks);
+
+    SILC_LOG_DEBUG(("Remove stack blocks %p", e->data));
+    silc_list_del(stack->stacks, e);
+    ret = TRUE;
+
+    for (i = 0; i < SILC_STACK_BLOCK_NUM; i++)
+      silc_free(e->data[i]);
+    silc_free(e);
+  }
+
+  /* Go through the child stacks */
+  silc_list_start(stack->stacks);
+  while ((e = silc_list_get(stack->stacks))) {
+    for (i = SILC_STACK_BLOCK_NUM - 1; i > 3; i--) {
+      if (e->data[i]) {
+	SILC_LOG_DEBUG(("Purge %d bytes",
+			SILC_STACK_BLOCK_SIZE(stack, i)));
+	silc_free(e->data[i]);
+	e->data[i] = NULL;
+	ret = TRUE;
+      }
+    }
+  }
+
+  silc_mutex_unlock(stack->lock);
+
+  return ret;
 }
 
 #ifdef SILC_DIST_INPLACE
