@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -242,19 +242,6 @@ SilcUInt32 silc_hash_client_id_hash(void *key, void *user_context);
  ***/
 SilcUInt32 silc_hash_data(void *key, void *user_context);
 
-/****f* silcutil/SilcUtilAPI/silc_hash_public_key
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_hash_public_key(void *key, void *user_context);
- *
- * DESCRIPTION
- *
- *    Hash public key of any type.
- *
- ***/
-SilcUInt32 silc_hash_public_key(void *key, void *user_context);
-
 /****f* silcutil/SilcUtilAPI/silc_hash_string_compare
  *
  * SYNOPSIS
@@ -345,22 +332,6 @@ SilcBool silc_hash_data_compare(void *key1, void *key2, void *user_context);
  *
  ***/
 SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context);
-
-/****f* silcutil/SilcUtilAPI/silc_hash_public_key_compare
- *
- * SYNOPSIS
- *
- *    SilcBool silc_hash_public_key_compare(void *key1, void *key2,
- *                                          void *user_context);
- *
- * DESCRIPTION
- *
- *    Compares two SILC Public keys. It may be used as SilcHashTable
- *    comparison function.
- *
- ***/
-SilcBool silc_hash_public_key_compare(void *key1, void *key2,
-				      void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_fingerprint
  *

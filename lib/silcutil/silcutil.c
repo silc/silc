@@ -380,25 +380,6 @@ SilcUInt32 silc_hash_data(void *key, void *user_context)
   return h;
 }
 
-/* Hash public key of any type. */
-
-SilcUInt32 silc_hash_public_key(void *key, void *user_context)
-{
-  SilcPublicKey public_key = key;
-  unsigned char *pk;
-  SilcUInt32 pk_len;
-  SilcUInt32 hash = 0;
-
-  pk = silc_pkcs_public_key_encode(public_key, &pk_len);
-  if (!pk)
-    return hash;
-
-  hash = silc_hash_data(pk, SILC_32_TO_PTR(pk_len));
-  silc_free(pk);
-
-  return hash;
-}
-
 /* Compares two strings. It may be used as SilcHashTable comparison
    function. */
 
@@ -452,15 +433,6 @@ SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context)
   if (l1 != l2)
     return FALSE;
   return !memcmp(key1, key2, l2);
-}
-
-/* Compares two SILC Public keys. It may be used as SilcHashTable
-   comparison function. */
-
-SilcBool silc_hash_public_key_compare(void *key1, void *key2,
-				      void *user_context)
-{
-  return silc_pkcs_public_key_compare(key1, key2);
 }
 
 /* Creates fingerprint from data, usually used with SHA1 digests */
