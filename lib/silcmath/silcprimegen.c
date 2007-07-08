@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -197,7 +197,7 @@ static SilcUInt32 primetable[] =
 SilcBool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits,
 			     SilcBool verbose, SilcRng rng)
 {
-  unsigned char *numbuf = NULL;
+  unsigned char *numbuf;
   SilcUInt32 i, b, k;
   SilcUInt32 *spmods;
   SilcMPInt r, base, tmp, tmp2, oprime;
@@ -214,13 +214,15 @@ SilcBool silc_math_gen_prime(SilcMPInt *prime, SilcUInt32 bits,
   SILC_LOG_DEBUG(("Generating new prime"));
 
   while (valid == FALSE) {
-    /* Get random number */
-    if (rng)
-      numbuf = silc_rng_get_rn_data(rng, (bits / 8));
-    else
-      numbuf = silc_rng_global_get_rn_data((bits / 8));
+    numbuf = silc_malloc((((bits + 7) / 8) + 1) * sizeof(*numbuf));
     if (!numbuf)
       return FALSE;
+
+    /* Get random number */
+    if (rng)
+      silc_rng_get_rn_data(rng, (bits / 8), numbuf, (bits / 8));
+    else
+      silc_rng_global_get_rn_data(rng, (bits / 8), numbuf, (bits / 8));
 
     /* Convert into MP and set the size */
     silc_mp_bin2mp(numbuf, (bits / 8), prime);

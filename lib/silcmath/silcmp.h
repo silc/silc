@@ -68,13 +68,28 @@ typedef SILC_MP_INT SilcMPInt;
  *
  * DESCRIPTION
  *
- *    Initializes the SilcMPInt *that is the actual MP Integer.
+ *    Initializes the SilcMPInt that is the actual MP Integer.
  *    This must be called before any of the silc_mp_ routines can be
  *    used. The integer is uninitialized with the silc_mp_uninit function.
  *
  ***/
 void silc_mp_init(SilcMPInt *mp);
 
+/****f* silcmath/SilcMPAPI/silc_mp_sinit
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_mp_sinit(SilcStack stack, SilcMPInt *mp);
+ *
+ * DESCRIPTION
+ *
+ *    Initializes the SilcMPInt that is the actual MP Integer.
+ *    This must be called before any of the silc_mp_ routines can be
+ *    used. The integer is uninitialized with the silc_mp_suninit function.
+ *    If `stack' is non-NULL it will be used as the memory source.  If it
+ *    is NULL, this call is equivalent to silc_mp_init.
+ *
+ ***/
 SilcBool silc_mp_sinit(SilcStack stack, SilcMPInt *mp);
 
 /****f* silcmath/SilcMPAPI/silc_mp_uninit
@@ -89,6 +104,19 @@ SilcBool silc_mp_sinit(SilcStack stack, SilcMPInt *mp);
  *
  ***/
 void silc_mp_uninit(SilcMPInt *mp);
+
+/****f* silcmath/SilcMPAPI/silc_mp_suninit
+ *
+ * SYNOPSIS
+ *
+ *    void silc_mp_suninit(SilcStack stack, SilcMPInt *mp);
+ *
+ * DESCRIPTION
+ *
+ *    Uninitializes the MP Integer.
+ *
+ ***/
+void silc_mp_suninit(SilcStack stack, SilcMPInt *mp);
 
 /****f* silcmath/SilcMPAPI/silc_mp_size
  *
