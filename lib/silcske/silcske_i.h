@@ -75,6 +75,7 @@ struct SilcSKEStruct {
   SilcSchedule schedule;
   SilcFSMStruct fsm;
   SilcAsyncOperationStruct op;
+  SilcAsyncOperation key_op;
   SilcUInt16 session_port;
 
   /* Packet retransmission */

@@ -22,6 +22,16 @@
 
 /************************** Types and definitions ***************************/
 
+SILC_FSM_STATE(silc_connauth_st_initiator_start);
+SILC_FSM_STATE(silc_connauth_st_initiator_auth_send);
+SILC_FSM_STATE(silc_connauth_st_initiator_result);
+SILC_FSM_STATE(silc_connauth_st_initiator_failure);
+SILC_FSM_STATE(silc_connauth_st_responder_start);
+SILC_FSM_STATE(silc_connauth_st_responder_authenticate);
+SILC_FSM_STATE(silc_connauth_st_responder_authenticate_pk);
+SILC_FSM_STATE(silc_connauth_st_responder_success);
+SILC_FSM_STATE(silc_connauth_st_responder_failure);
+
 static SilcBool silc_connauth_packet_receive(SilcPacketEngine engine,
 					     SilcPacketStream stream,
 					     SilcPacket packet,
@@ -33,6 +43,7 @@ struct SilcConnAuthStruct {
   SilcSKE ske;
   SilcFSM fsm;
   SilcAsyncOperationStruct op;
+  SilcAsyncOperation key_op;
   SilcConnectionType conn_type;
   SilcAuthMethod auth_method;
   void *auth_data;
@@ -76,19 +87,44 @@ static SilcBool silc_connauth_packet_receive(SilcPacketEngine engine,
 static void silc_connauth_abort(SilcAsyncOperation op, void *context)
 {
   SilcConnAuth connauth = context;
+  if (connauth->key_op)
+    silc_async_abort(connauth->key_op, NULL, NULL);
   connauth->aborted = TRUE;
+}
+
+/* Signature callback */
+
+static void silc_connauth_get_signature_cb(SilcBool success,
+					   const unsigned char *signature,
+					   SilcUInt32 signature_len,
+					   void *context)
+{
+  SilcConnAuth connauth = context;
+
+  connauth->key_op = NULL;
+
+  if (!success) {
+    silc_fsm_next(connauth->fsm, silc_connauth_st_initiator_failure);
+    SILC_FSM_CALL_CONTINUE(connauth->fsm);
+    return;
+  }
+
+  connauth->auth_data = silc_memdup(signature, signature_len);
+  connauth->auth_data_len = signature_len;
+
+  SILC_FSM_CALL_CONTINUE(connauth->fsm);
 }
 
 /* Generates signature for public key based authentication */
 
-static SilcBool silc_connauth_get_signature(SilcConnAuth connauth,
-					    unsigned char **auth_data,
-					    SilcUInt32 *auth_data_len)
+static SilcAsyncOperation
+silc_connauth_get_signature(SilcConnAuth connauth)
 {
-  int len;
+  SilcAsyncOperation op;
   SilcSKE ske;
   SilcPrivateKey private_key;
   SilcBuffer auth;
+  int len;
 
   SILC_LOG_DEBUG(("Compute signature"));
 
@@ -99,54 +135,72 @@ static SilcBool silc_connauth_get_signature(SilcConnAuth connauth,
      KE Start Payload. */
   len = ske->hash_len + silc_buffer_len(ske->start_payload_copy);
   auth = silc_buffer_alloc_size(len);
-  if (!auth)
-    return FALSE;
+  if (!auth) {
+    silc_connauth_get_signature_cb(FALSE, NULL, 0, connauth);
+    return NULL;
+  }
   silc_buffer_format(auth,
-		     SILC_STR_UI_XNSTRING(ske->hash, ske->hash_len),
-		     SILC_STR_UI_XNSTRING(
-			       ske->start_payload_copy->data,
-			       silc_buffer_len(ske->start_payload_copy)),
+		     SILC_STR_DATA(ske->hash, ske->hash_len),
+		     SILC_STR_DATA(ske->start_payload_copy->data,
+				   silc_buffer_len(ske->start_payload_copy)),
 		     SILC_STR_END);
 
-  len = ((silc_pkcs_private_key_get_len(private_key) + 7) / 8) + 1;
-  *auth_data = silc_calloc(len, sizeof(**auth_data));
-  if (*auth_data == NULL) {
-    silc_buffer_free(auth);
-    return FALSE;
-  }
-
   /* Compute signature */
-  if (!silc_pkcs_sign(private_key, auth->data, silc_buffer_len(auth),
-		      *auth_data, len, auth_data_len, TRUE, ske->prop->hash)) {
-    silc_free(*auth_data);
-    silc_buffer_free(auth);
-    return FALSE;
-  }
+  op = silc_pkcs_sign(private_key, auth->data, silc_buffer_len(auth),
+		      TRUE, ske->prop->hash,
+		      silc_connauth_get_signature_cb, connauth);
 
   silc_buffer_free(auth);
-  return TRUE;
+
+  return op;
+}
+
+/* Verify callback */
+
+static void silc_connauth_verify_signature_cb(SilcBool success,
+					      void *context)
+{
+  SilcConnAuth connauth = context;
+
+  connauth->key_op = NULL;
+  silc_free(connauth->auth_data);
+
+  if (!success) {
+    SILC_LOG_DEBUG(("Invalid signature"));
+    silc_fsm_next(connauth->fsm, silc_connauth_st_responder_failure);
+    SILC_FSM_CALL_CONTINUE(connauth->fsm);
+    return;
+  }
+
+  SILC_FSM_CALL_CONTINUE(connauth->fsm);
 }
 
 /* Verifies digital signature */
 
-static SilcBool silc_connauth_verify_signature(SilcConnAuth connauth,
-					       SilcPublicKey pub_key,
-					       unsigned char *sign,
-					       SilcUInt32 sign_len)
+static SilcAsyncOperation
+silc_connauth_verify_signature(SilcConnAuth connauth,
+			       SilcPublicKey pub_key,
+			       unsigned char *sign,
+			       SilcUInt32 sign_len)
 {
-  int len;
+  SilcAsyncOperation op;
   SilcBuffer auth;
   SilcSKE ske = connauth->ske;
+  int len;
 
-  if (!pub_key || !sign)
-    return FALSE;
+  if (!pub_key || !sign) {
+    silc_connauth_verify_signature_cb(FALSE, connauth);
+    return NULL;
+  }
 
   /* Make the authentication data. Protocol says it is HASH plus
      KE Start Payload. */
   len = ske->hash_len + silc_buffer_len(ske->start_payload_copy);
   auth = silc_buffer_alloc_size(len);
-  if (!auth)
-    return FALSE;
+  if (!auth) {
+    silc_connauth_verify_signature_cb(FALSE, connauth);
+    return NULL;
+  }
   silc_buffer_format(auth,
 		     SILC_STR_UI_XNSTRING(ske->hash, ske->hash_len),
 		     SILC_STR_UI_XNSTRING(
@@ -155,15 +209,13 @@ static SilcBool silc_connauth_verify_signature(SilcConnAuth connauth,
 		     SILC_STR_END);
 
   /* Verify signature */
-  if (!silc_pkcs_verify(pub_key, sign, sign_len, auth->data,
-			silc_buffer_len(auth), ske->prop->hash)) {
-    silc_buffer_free(auth);
-    return FALSE;
-  }
+  op = silc_pkcs_verify(pub_key, sign, sign_len, auth->data,
+			silc_buffer_len(auth), ske->prop->hash,
+			silc_connauth_verify_signature_cb, connauth);
 
   silc_buffer_free(auth);
 
-  return TRUE;
+  return op;
 }
 
 /* Timeout */
@@ -172,6 +224,8 @@ SILC_TASK_CALLBACK(silc_connauth_timeout)
 {
   SilcConnAuth connauth = context;
   SILC_LOG_DEBUG(("Protocol timeout"));
+  if (connauth->key_op)
+    silc_async_abort(connauth->key_op, NULL, NULL);
   connauth->aborted = TRUE;
   silc_fsm_continue_sync(connauth->fsm);
 }
@@ -255,18 +309,9 @@ SilcSKE silc_connauth_get_ske(SilcConnAuth connauth)
 
 /******************************** Initiator *********************************/
 
-SILC_FSM_STATE(silc_connauth_st_initiator_start);
-SILC_FSM_STATE(silc_connauth_st_initiator_result);
-SILC_FSM_STATE(silc_connauth_st_initiator_failure);
-
 SILC_FSM_STATE(silc_connauth_st_initiator_start)
 {
   SilcConnAuth connauth = fsm_context;
-  SilcBuffer packet;
-  int payload_len = 0;
-  unsigned char *auth_data = NULL;
-  SilcUInt32 auth_data_len = 0;
-  SilcPacketFlags flags = 0;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -282,32 +327,45 @@ SILC_FSM_STATE(silc_connauth_st_initiator_start)
 				   silc_connauth_timeout, connauth,
 				   connauth->timeout_secs, 0);
 
+  /** Generate auth data */
+  silc_fsm_next(fsm, silc_connauth_st_initiator_auth_send);
+
+  /* Get authentication data */
   switch (connauth->auth_method) {
   case SILC_AUTH_NONE:
     /* No authentication required */
+    connauth->auth_data = NULL;
+    connauth->auth_data_len = 0;
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_AUTH_PASSWORD:
-    auth_data = silc_memdup(connauth->auth_data, connauth->auth_data_len);
-    if (!auth_data) {
-      /** Out of memory */
-      silc_fsm_next(fsm, silc_connauth_st_initiator_failure);
-      return SILC_FSM_CONTINUE;
-    }
-    auth_data_len = connauth->auth_data_len;
-    flags = SILC_PACKET_FLAG_LONG_PAD;
+    /* We have authentication data already */
+    return SILC_FSM_CONTINUE;
     break;
 
   case SILC_AUTH_PUBLIC_KEY:
-    if (!silc_connauth_get_signature(connauth, &auth_data, &auth_data_len)) {
-      /** Error computing signature */
-      silc_fsm_next(fsm, silc_connauth_st_initiator_failure);
-      return SILC_FSM_CONTINUE;
-    }
+    /* Compute signature */
+    SILC_FSM_CALL(connauth->key_op = silc_connauth_get_signature(connauth));
+    /* NOT REACHED */
     break;
   }
 
-  payload_len = 4 + auth_data_len;
+  silc_fsm_next(fsm, silc_connauth_st_initiator_failure);
+  return SILC_FSM_CONTINUE;
+}
+
+SILC_FSM_STATE(silc_connauth_st_initiator_auth_send)
+{
+  SilcConnAuth connauth = fsm_context;
+  SilcBuffer packet;
+  int payload_len ;
+  SilcPacketFlags flags = 0;
+
+  if (connauth->auth_method == SILC_AUTH_PASSWORD)
+    flags |= SILC_PACKET_FLAG_LONG_PAD;
+
+  payload_len = 4 + connauth->auth_data_len;
   packet = silc_buffer_alloc_size(payload_len);
   if (!packet) {
     /** Out of memory */
@@ -318,8 +376,11 @@ SILC_FSM_STATE(silc_connauth_st_initiator_start)
   silc_buffer_format(packet,
 		     SILC_STR_UI_SHORT(payload_len),
 		     SILC_STR_UI_SHORT(connauth->conn_type),
-		     SILC_STR_UI_XNSTRING(auth_data, auth_data_len),
+		     SILC_STR_DATA(connauth->auth_data,
+				   connauth->auth_data_len),
 		     SILC_STR_END);
+
+  silc_free(connauth->auth_data);
 
   /* Send the packet */
   if (!silc_packet_send(connauth->ske->stream, SILC_PACKET_CONNECTION_AUTH,
@@ -329,10 +390,6 @@ SILC_FSM_STATE(silc_connauth_st_initiator_start)
     return SILC_FSM_CONTINUE;
   }
 
-  if (auth_data) {
-    memset(auth_data, 0, auth_data_len);
-    silc_free(auth_data);
-  }
   silc_buffer_free(packet);
 
   /** Wait for responder */
@@ -423,10 +480,14 @@ silc_connauth_initiator(SilcConnAuth connauth,
 
   connauth->conn_type = conn_type;
   connauth->auth_method = auth_method;
-  connauth->auth_data = auth_data;
-  connauth->auth_data_len = auth_data_len;
   connauth->completion = completion;
   connauth->context = context;
+  connauth->auth_data = auth_data;
+  connauth->auth_data_len = auth_data_len;
+
+  if (connauth->auth_method == SILC_AUTH_PASSWORD)
+    connauth->auth_data = silc_memdup(connauth->auth_data,
+				      connauth->auth_data_len);
 
   /* Link to packet stream to get packets */
   silc_packet_stream_link(connauth->ske->stream,
@@ -443,12 +504,6 @@ silc_connauth_initiator(SilcConnAuth connauth,
 
 
 /******************************** Responder *********************************/
-
-SILC_FSM_STATE(silc_connauth_st_responder_start);
-SILC_FSM_STATE(silc_connauth_st_responder_authenticate);
-SILC_FSM_STATE(silc_connauth_st_responder_authenticate_pk);
-SILC_FSM_STATE(silc_connauth_st_responder_success);
-SILC_FSM_STATE(silc_connauth_st_responder_failure);
 
 SILC_FSM_STATE(silc_connauth_st_responder_start)
 {
@@ -604,7 +659,8 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
 
     /** Find public key */
     silc_fsm_next(fsm, silc_connauth_st_responder_authenticate_pk);
-    SILC_FSM_CALL(silc_skr_find(repository, silc_fsm_get_schedule(fsm),
+    SILC_FSM_CALL(connauth->key_op =
+		  silc_skr_find(repository, silc_fsm_get_schedule(fsm),
 				find, silc_connauth_skr_callback,
 				connauth));
     /* NOT REACHED */
@@ -638,23 +694,14 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate_pk)
   SILC_LOG_DEBUG(("Found %d public keys",
 		  silc_dlist_count(connauth->public_keys)));
 
-  /* Verify signature */
+  /** Verify signature */
   key = silc_dlist_get(connauth->public_keys);
-  if (!silc_connauth_verify_signature(connauth, key->key,
-				      connauth->auth_data,
-				      connauth->auth_data_len)) {
-    /** Invalid signature */
-    SILC_LOG_DEBUG(("Invalid signature"));
-    silc_free(connauth->auth_data);
-    silc_fsm_next(fsm, silc_connauth_st_responder_failure);
-    return SILC_FSM_CONTINUE;
-  }
-
-  silc_free(connauth->auth_data);
-
-  /** Authentication successful */
   silc_fsm_next(fsm, silc_connauth_st_responder_success);
-  return SILC_FSM_CONTINUE;
+  SILC_FSM_CALL(connauth->key_op =
+		silc_connauth_verify_signature(connauth, key->key,
+					       connauth->auth_data,
+					       connauth->auth_data_len));
+  /* NOT REACHED */
 }
 
 SILC_FSM_STATE(silc_connauth_st_responder_success)

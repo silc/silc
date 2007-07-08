@@ -37,8 +37,10 @@ struct SilcSKECallbacksStruct {
 SILC_FSM_STATE(silc_ske_st_initiator_start);
 SILC_FSM_STATE(silc_ske_st_initiator_phase1);
 SILC_FSM_STATE(silc_ske_st_initiator_phase2);
+SILC_FSM_STATE(silc_ske_st_initiator_phase2_send);
 SILC_FSM_STATE(silc_ske_st_initiator_phase3);
 SILC_FSM_STATE(silc_ske_st_initiator_phase4);
+SILC_FSM_STATE(silc_ske_st_initiator_phase5);
 SILC_FSM_STATE(silc_ske_st_initiator_end);
 SILC_FSM_STATE(silc_ske_st_initiator_aborted);
 SILC_FSM_STATE(silc_ske_st_initiator_error);
@@ -48,6 +50,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase1);
 SILC_FSM_STATE(silc_ske_st_responder_phase2);
 SILC_FSM_STATE(silc_ske_st_responder_phase4);
 SILC_FSM_STATE(silc_ske_st_responder_phase5);
+SILC_FSM_STATE(silc_ske_st_responder_phase5_send);
 SILC_FSM_STATE(silc_ske_st_responder_end);
 SILC_FSM_STATE(silc_ske_st_responder_aborted);
 SILC_FSM_STATE(silc_ske_st_responder_failure);
@@ -136,6 +139,8 @@ static SilcPacketCallbacks silc_ske_stream_cbs =
 static void silc_ske_abort(SilcAsyncOperation op, void *context)
 {
   SilcSKE ske = context;
+  if (ske->key_op)
+    silc_async_abort(ske->key_op, NULL, NULL);
   ske->aborted = TRUE;
 }
 
@@ -628,7 +633,7 @@ static SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n,
 					 SilcMPInt *rnd)
 {
   SilcSKEStatus status = SILC_SKE_STATUS_OK;
-  unsigned char *string;
+  unsigned char string[2048];
   SilcUInt32 l;
 
   if (!len)
@@ -639,8 +644,7 @@ static SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n,
   l = ((len - 1) / 8);
 
   /* Get the random number as string */
-  string = silc_rng_get_rn_data(ske->rng, l);
-  if (!string)
+  if (!silc_rng_get_rn_data(ske->rng, l, string, sizeof(string)))
     return SILC_SKE_STATUS_OUT_OF_MEMORY;
 
   /* Decode the string into a MP integer */
@@ -1000,6 +1004,86 @@ SILC_TASK_CALLBACK(silc_ske_timeout)
   silc_fsm_continue_sync(&ske->fsm);
 }
 
+/* Initiator signature callback */
+
+static void silc_ske_initiator_sign_cb(SilcBool success,
+				       const unsigned char *signature,
+				       SilcUInt32 signature_len,
+				       void *context)
+{
+  SilcSKE ske = context;
+
+  ske->key_op = NULL;
+
+  if (ske->aborted) {
+    silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
+    SILC_FSM_CALL_CONTINUE(&ske->fsm);
+    return;
+  }
+
+  ske->ke1_payload->sign_data = silc_memdup(signature, signature_len);
+  if (ske->ke1_payload->sign_data)
+    ske->ke1_payload->sign_len = signature_len;
+
+  SILC_FSM_CALL_CONTINUE(&ske->fsm);
+}
+
+/* Responder signature callback */
+
+static void silc_ske_responder_sign_cb(SilcBool success,
+				       const unsigned char *signature,
+				       SilcUInt32 signature_len,
+				       void *context)
+{
+  SilcSKE ske = context;
+
+  ske->key_op = NULL;
+
+  if (ske->aborted) {
+    silc_fsm_next(&ske->fsm, silc_ske_st_responder_failure);
+    SILC_FSM_CALL_CONTINUE(&ske->fsm);
+    return;
+  }
+
+  ske->ke2_payload->sign_data = silc_memdup(signature, signature_len);
+  if (ske->ke2_payload->sign_data)
+    ske->ke2_payload->sign_len = signature_len;
+
+  SILC_FSM_CALL_CONTINUE(&ske->fsm);
+}
+
+/* Verify callback */
+
+static void silc_ske_verify_cb(SilcBool success, void *context)
+{
+  SilcSKE ske = context;
+
+  ske->key_op = NULL;
+
+  if (ske->aborted) {
+    if (ske->responder)
+      silc_fsm_next(&ske->fsm, silc_ske_st_responder_failure);
+    else
+      silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
+    SILC_FSM_CALL_CONTINUE(&ske->fsm);
+    return;
+  }
+
+  if (!success) {
+    SILC_LOG_ERROR(("Signature verification failed, incorrect signature"));
+    ske->status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
+    if (ske->responder)
+      silc_fsm_next(&ske->fsm, silc_ske_st_responder_error);
+    else
+      silc_fsm_next(&ske->fsm, silc_ske_st_initiator_error);
+    SILC_FSM_CALL_CONTINUE(&ske->fsm);
+    return;
+  }
+
+  SILC_LOG_DEBUG(("Signature is Ok"));
+  SILC_FSM_CALL_CONTINUE(&ske->fsm);
+}
+
 /******************************* Protocol API *******************************/
 
 /* Allocates new SKE object. */
@@ -1337,7 +1421,6 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
 {
   SilcSKE ske = fsm_context;
   SilcSKEStatus status;
-  SilcBuffer payload_buf;
   SilcMPInt *x;
   SilcSKEKEPayload payload;
   SilcUInt32 pk_len;
@@ -1385,13 +1468,16 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
   silc_mp_init(&payload->x);
   silc_mp_pow_mod(&payload->x, &ske->prop->group->generator, x,
 		  &ske->prop->group->group);
+  ske->x = x;
 
   /* Get public key */
-  payload->pk_data = silc_pkcs_public_key_encode(ske->public_key, &pk_len);
+  payload->pk_data = silc_pkcs_public_key_encode(NULL, ske->public_key,
+						 &pk_len);
   if (!payload->pk_data) {
     /** Error encoding public key */
     silc_mp_uninit(x);
     silc_free(x);
+    ske->x = NULL;
     silc_mp_uninit(&payload->x);
     silc_free(payload);
     ske->ke1_payload = NULL;
@@ -1402,10 +1488,13 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
   payload->pk_len = pk_len;
   payload->pk_type = silc_pkcs_get_type(ske->public_key);
 
+  /** Send KE1 packet */
+  silc_fsm_next(fsm, silc_ske_st_initiator_phase2_send);
+
   /* Compute signature data if we are doing mutual authentication */
   if (ske->private_key && ske->prop->flags & SILC_SKE_SP_FLAG_MUTUAL) {
-    unsigned char hash[SILC_HASH_MAXLEN], sign[2048 + 1];
-    SilcUInt32 hash_len, sign_len;
+    unsigned char hash[SILC_HASH_MAXLEN];
+    SilcUInt32 hash_len;
 
     SILC_LOG_DEBUG(("We are doing mutual authentication"));
     SILC_LOG_DEBUG(("Computing HASH_i value"));
@@ -1417,30 +1506,32 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
     SILC_LOG_DEBUG(("Signing HASH_i value"));
 
     /* Sign the hash value */
-    if (!silc_pkcs_sign(ske->private_key, hash, hash_len, sign,
-			sizeof(sign) - 1, &sign_len, FALSE, ske->prop->hash)) {
-      /** Error computing signature */
-      silc_mp_uninit(x);
-      silc_free(x);
-      silc_mp_uninit(&payload->x);
-      silc_free(payload->pk_data);
-      silc_free(payload);
-      ske->ke1_payload = NULL;
-      ske->status = SILC_SKE_STATUS_SIGNATURE_ERROR;
-      silc_fsm_next(fsm, silc_ske_st_initiator_error);
-      return SILC_FSM_CONTINUE;
-    }
-    payload->sign_data = silc_memdup(sign, sign_len);
-    if (payload->sign_data)
-      payload->sign_len = sign_len;
-    memset(sign, 0, sizeof(sign));
+    SILC_FSM_CALL(ske->key_op =
+		  silc_pkcs_sign(ske->private_key, hash, hash_len, FALSE,
+				 ske->prop->hash,
+				 silc_ske_initiator_sign_cb, ske));
+    /* NOT REACHED */
   }
+
+  return SILC_FSM_CONTINUE;
+}
+
+/* Send KE1 packet */
+
+SILC_FSM_STATE(silc_ske_st_initiator_phase2_send)
+{
+  SilcSKE ske = fsm_context;
+  SilcSKEStatus status;
+  SilcBuffer payload_buf;
+  SilcSKEKEPayload payload;
+
+  SILC_LOG_DEBUG(("Start"));
+
+  payload = ske->ke1_payload;
 
   status = silc_ske_payload_ke_encode(ske, payload, &payload_buf);
   if (status != SILC_SKE_STATUS_OK) {
     /** Error encoding KE payload */
-    silc_mp_uninit(x);
-    silc_free(x);
     silc_mp_uninit(&payload->x);
     silc_free(payload->pk_data);
     silc_free(payload->sign_data);
@@ -1450,10 +1541,6 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
     silc_fsm_next(fsm, silc_ske_st_initiator_error);
     return SILC_FSM_CONTINUE;
   }
-
-  ske->x = x;
-
-  /* Check for backwards compatibility */
 
   /* Send the packet. */
   if (!silc_ske_packet_send(ske, SILC_PACKET_KEY_EXCHANGE_1, 0,
@@ -1595,7 +1682,6 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
   SilcSKEKEPayload payload;
   unsigned char hash[SILC_HASH_MAXLEN];
   SilcUInt32 hash_len;
-  int key_len, block_len;
 
   if (ske->aborted) {
     /** Aborted */
@@ -1621,57 +1707,22 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
   ske->hash = silc_memdup(hash, hash_len);
   ske->hash_len = hash_len;
 
+  /** Send reply */
+  silc_fsm_next(fsm, silc_ske_st_initiator_phase5);
+
   if (ske->prop->public_key) {
     SILC_LOG_DEBUG(("Public key is authentic"));
     SILC_LOG_DEBUG(("Verifying signature (HASH)"));
 
     /* Verify signature */
-    if (!silc_pkcs_verify(ske->prop->public_key, payload->sign_data,
-			  payload->sign_len, hash, hash_len, NULL)) {
-      SILC_LOG_ERROR(("Signature verification failed, incorrect signature"));
-      status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
-      goto err;
-    }
-
-    SILC_LOG_DEBUG(("Signature is Ok"));
-    memset(hash, 'F', hash_len);
+    SILC_FSM_CALL(ske->key_op =
+		  silc_pkcs_verify(ske->prop->public_key, payload->sign_data,
+				   payload->sign_len, hash, hash_len, NULL,
+				   silc_ske_verify_cb, ske));
+    /* NOT REACHED */
   }
 
-  ske->status = SILC_SKE_STATUS_OK;
-
-  /* In case we are doing rekey move to finish it.  */
-  if (ske->rekey) {
-    /** Finish rekey */
-    silc_fsm_next(fsm, silc_ske_st_rekey_initiator_done);
-    return SILC_FSM_CONTINUE;
-  }
-
-  /* Process key material */
-  key_len = silc_cipher_get_key_len(ske->prop->cipher);
-  block_len = silc_cipher_get_block_len(ske->prop->cipher);
-  hash_len = silc_hash_len(ske->prop->hash);
-  ske->keymat = silc_ske_process_key_material(ske, block_len,
-					      key_len, hash_len,
-					      &ske->rekey);
-  if (!ske->keymat) {
-    SILC_LOG_ERROR(("Error processing key material"));
-    status = SILC_SKE_STATUS_ERROR;
-    goto err;
-  }
-
-  /* Send SUCCESS packet */
-  SILC_PUT32_MSB((SilcUInt32)SILC_SKE_STATUS_OK, hash);
-  if (!silc_ske_packet_send(ske, SILC_PACKET_SUCCESS, 0, hash, 4)) {
-    /** Error sending packet */
-    SILC_LOG_DEBUG(("Error sending packet"));
-    ske->status = SILC_SKE_STATUS_ERROR;
-    silc_fsm_next(fsm, silc_ske_st_initiator_error);
-    return SILC_FSM_CONTINUE;
-  }
-
-  /** Waiting completion */
-  silc_fsm_next(fsm, silc_ske_st_initiator_end);
-  return SILC_FSM_WAIT;
+  return SILC_FSM_CONTINUE;
 
  err:
   memset(hash, 'F', sizeof(hash));
@@ -1695,6 +1746,54 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
   ske->status = status;
   silc_fsm_next(fsm, silc_ske_st_initiator_error);
   return SILC_FSM_CONTINUE;
+}
+
+/* Process key material */
+
+SILC_FSM_STATE(silc_ske_st_initiator_phase5)
+{
+  SilcSKE ske = fsm_context;
+  SilcSKEStatus status;
+  unsigned char tmp[4];
+  SilcUInt32 hash_len;
+  int key_len, block_len;
+
+  ske->status = SILC_SKE_STATUS_OK;
+
+  /* In case we are doing rekey move to finish it.  */
+  if (ske->rekey) {
+    /** Finish rekey */
+    silc_fsm_next(fsm, silc_ske_st_rekey_initiator_done);
+    return SILC_FSM_CONTINUE;
+  }
+
+  /* Process key material */
+  key_len = silc_cipher_get_key_len(ske->prop->cipher);
+  block_len = silc_cipher_get_block_len(ske->prop->cipher);
+  hash_len = silc_hash_len(ske->prop->hash);
+  ske->keymat = silc_ske_process_key_material(ske, block_len,
+					      key_len, hash_len,
+					      &ske->rekey);
+  if (!ske->keymat) {
+    SILC_LOG_ERROR(("Error processing key material"));
+    status = SILC_SKE_STATUS_ERROR;
+    silc_fsm_next(fsm, silc_ske_st_initiator_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  /* Send SUCCESS packet */
+  SILC_PUT32_MSB((SilcUInt32)SILC_SKE_STATUS_OK, tmp);
+  if (!silc_ske_packet_send(ske, SILC_PACKET_SUCCESS, 0, tmp, 4)) {
+    /** Error sending packet */
+    SILC_LOG_DEBUG(("Error sending packet"));
+    ske->status = SILC_SKE_STATUS_ERROR;
+    silc_fsm_next(fsm, silc_ske_st_initiator_error);
+    return SILC_FSM_CONTINUE;
+  }
+
+  /** Waiting completion */
+  silc_fsm_next(fsm, silc_ske_st_initiator_end);
+  return SILC_FSM_WAIT;
 }
 
 /* Protocol completed */
@@ -2097,14 +2196,13 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
   return SILC_FSM_CONTINUE;
 }
 
-/* Phase-4. Generate KE2 payload */
+/* Phase-4. Generate KE2 payload, verify signature */
 
 SILC_FSM_STATE(silc_ske_st_responder_phase4)
 {
   SilcSKE ske = fsm_context;
   SilcSKEStatus status;
-  SilcSKEKEPayload recv_payload, send_payload;
-  SilcMPInt *x, *KEY;
+  SilcSKEKEPayload recv_payload;
 
   if (ske->aborted) {
     /** Aborted */
@@ -2121,6 +2219,9 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
   }
 
   recv_payload = ske->ke1_payload;
+
+  /** Send KE2 packet */
+  silc_fsm_next(fsm, silc_ske_st_responder_phase5);
 
   /* The public key verification was performed only if the Mutual
      Authentication flag is set. */
@@ -2143,19 +2244,30 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
     SILC_LOG_DEBUG(("Verifying signature (HASH_i)"));
 
     /* Verify signature */
-    if (!silc_pkcs_verify(ske->prop->public_key, recv_payload->sign_data,
-			  recv_payload->sign_len, hash, hash_len, NULL)) {
-      /** Incorrect signature */
-      SILC_LOG_ERROR(("Signature verification failed, incorrect signature"));
-      ske->status = SILC_SKE_STATUS_INCORRECT_SIGNATURE;
-      silc_fsm_next(fsm, silc_ske_st_responder_error);
-      return SILC_FSM_CONTINUE;
-    }
-
-    SILC_LOG_DEBUG(("Signature is Ok"));
-
-    memset(hash, 'F', hash_len);
+    SILC_FSM_CALL(ske->key_op =
+		  silc_pkcs_verify(ske->prop->public_key,
+				   recv_payload->sign_data,
+				   recv_payload->sign_len,
+				   hash, hash_len, NULL,
+				   silc_ske_verify_cb, ske));
+    /* NOT REACHED */
   }
+
+  return SILC_FSM_CONTINUE;
+}
+
+/* Phase-5.  Send KE2 payload */
+
+SILC_FSM_STATE(silc_ske_st_responder_phase5)
+{
+  SilcSKE ske = fsm_context;
+  SilcSKEStatus status;
+  unsigned char hash[SILC_HASH_MAXLEN], *pk;
+  SilcUInt32 hash_len, pk_len;
+  SilcMPInt *x, *KEY;
+  SilcSKEKEPayload send_payload;
+
+  SILC_LOG_DEBUG(("Start"));
 
   /* Create the random number x, 1 < x < q. */
   x = silc_calloc(1, sizeof(*x));
@@ -2194,28 +2306,11 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
 		  &ske->prop->group->group);
   ske->KEY = KEY;
 
-  /** Send KE2 payload */
-  silc_fsm_next(fsm, silc_ske_st_responder_phase5);
-  return SILC_FSM_CONTINUE;
-}
-
-/* Phase-5.  Send KE2 payload */
-
-SILC_FSM_STATE(silc_ske_st_responder_phase5)
-{
-  SilcSKE ske = fsm_context;
-  SilcSKEStatus status;
-  SilcBuffer payload_buf;
-  unsigned char hash[SILC_HASH_MAXLEN], sign[2048 + 1], *pk;
-  SilcUInt32 hash_len, sign_len, pk_len;
-
-  SILC_LOG_DEBUG(("Start"));
-
   if (ske->public_key && ske->private_key) {
     SILC_LOG_DEBUG(("Getting public key"));
 
     /* Get the public key */
-    pk = silc_pkcs_public_key_encode(ske->public_key, &pk_len);
+    pk = silc_pkcs_public_key_encode(NULL, ske->public_key, &pk_len);
     if (!pk) {
       /** Error encoding public key */
       status = SILC_SKE_STATUS_OUT_OF_MEMORY;
@@ -2240,21 +2335,31 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
   ske->hash = silc_memdup(hash, hash_len);
   ske->hash_len = hash_len;
 
+  /** Send KE2 packet */
+  silc_fsm_next(fsm, silc_ske_st_responder_phase5_send);
+
   if (ske->public_key && ske->private_key) {
     SILC_LOG_DEBUG(("Signing HASH value"));
 
     /* Sign the hash value */
-    if (!silc_pkcs_sign(ske->private_key, hash, hash_len, sign,
-			sizeof(sign) - 1, &sign_len, FALSE, ske->prop->hash)) {
-      /** Error computing signature */
-      status = SILC_SKE_STATUS_SIGNATURE_ERROR;
-      silc_fsm_next(fsm, silc_ske_st_responder_error);
-      return SILC_FSM_CONTINUE;
-    }
-    ske->ke2_payload->sign_data = silc_memdup(sign, sign_len);
-    ske->ke2_payload->sign_len = sign_len;
-    memset(sign, 0, sizeof(sign));
+    SILC_FSM_CALL(ske->key_op =
+		  silc_pkcs_sign(ske->private_key, hash, hash_len, FALSE,
+				 ske->prop->hash,
+				 silc_ske_responder_sign_cb, ske));
+    /* NOT REACHED */
   }
+
+  return SILC_FSM_CONTINUE;
+}
+
+/* Send KE2 packet */
+
+SILC_FSM_STATE(silc_ske_st_responder_phase5_send)
+{
+  SilcSKE ske = fsm_context;
+  SilcSKEStatus status;
+  SilcBuffer payload_buf;
+
   ske->ke2_payload->pk_type = silc_pkcs_get_type(ske->public_key);
 
   /* Encode the Key Exchange Payload */
