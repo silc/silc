@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -34,7 +34,8 @@
  *
  * SYNOPSIS
  *
- *    SilcBool silc_public_key_payload_encode(SilcPublicKey public_key);
+ *    SilcBuffer silc_public_key_payload_encode(SilcStack stack,
+ *                                              SilcPublicKey public_key);
  *
  * DESCRIPTION
  *
@@ -42,8 +43,13 @@
  *    `public_key'.  Returns the allocated and encoded payload buffer,
  *    or NULL on error.
  *
+ *    If `stack' is non-NULL the returned buffer is allocated from `stack'.
+ *    This call will consume the `stack' so caller should push the stack
+ *    before calling and then later pop it.
+ *
  ***/
-SilcBuffer silc_public_key_payload_encode(SilcPublicKey public_key);
+SilcBuffer silc_public_key_payload_encode(SilcStack stack,
+					  SilcPublicKey public_key);
 
 /****f* silccore/SilcPubKeyAPI/silc_public_key_payload_decode
  *

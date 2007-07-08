@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,8 @@
 
 /* Encodes Public Key Payload for transmitting public keys and certificates. */
 
-SilcBuffer silc_public_key_payload_encode(SilcPublicKey public_key)
+SilcBuffer silc_public_key_payload_encode(SilcStack stack,
+					  SilcPublicKey public_key)
 {
   SilcBuffer buffer;
   unsigned char *pk;
@@ -32,27 +33,27 @@ SilcBuffer silc_public_key_payload_encode(SilcPublicKey public_key)
     return NULL;
 
   type = silc_pkcs_get_type(public_key);
-  pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+  pk = silc_pkcs_public_key_encode(stack, public_key, &pk_len);
   if (!pk)
     return NULL;
 
-  buffer = silc_buffer_alloc_size(4 + pk_len);
+  buffer = silc_buffer_salloc_size(stack, 4 + pk_len);
   if (!buffer) {
-    silc_free(pk);
+    silc_sfree(stack, pk);
     return NULL;
   }
 
-  if (silc_buffer_format(buffer,
-			 SILC_STR_UI_SHORT(pk_len),
-			 SILC_STR_UI_SHORT(type),
-			 SILC_STR_DATA(pk, pk_len),
-			 SILC_STR_END) < 0) {
-    silc_buffer_free(buffer);
-    silc_free(pk);
+  if (silc_buffer_sformat(stack, buffer,
+			  SILC_STR_UI_SHORT(pk_len),
+			  SILC_STR_UI_SHORT(type),
+			  SILC_STR_DATA(pk, pk_len),
+			  SILC_STR_END) < 0) {
+    silc_buffer_sfree(stack, buffer);
+    silc_sfree(stack, pk);
     return NULL;
   }
 
-  silc_free(pk);
+  silc_sfree(stack, pk);
   return buffer;
 }
 
