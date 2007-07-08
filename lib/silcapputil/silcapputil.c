@@ -42,7 +42,7 @@ static char *silc_create_pk_identifier(void)
   /* Create default email address, whether it is right or not */
   silc_snprintf(email, sizeof(email), "%s@%s", username, hostname);
 
-  ident = silc_pkcs_silc_encode_identifier(username, hostname, realname,
+  ident = silc_pkcs_silc_encode_identifier(NULL, username, hostname, realname,
 					   email, NULL, NULL, NULL);
   if (realname)
     silc_free(realname);
@@ -302,7 +302,7 @@ SilcBool silc_show_public_key(SilcPublicKey public_key)
 
   ident = &silc_pubkey->identifier;
   key_len = silc_pkcs_public_key_get_len(public_key);
-  pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+  pk = silc_pkcs_public_key_encode(NULL, public_key, &pk_len);
   if (!pk)
     return FALSE;
   fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
