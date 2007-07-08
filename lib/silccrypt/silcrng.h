@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -184,16 +184,18 @@ unsigned char *silc_rng_get_rn_string(SilcRng rng, SilcUInt32 len);
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len);
+ *    SilcBool silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len,
+ *                                  unsigned char *buf, SilcUInt32 buf_size);
  *
  * DESCRIPTION
  *
- *    Returns random binary data of the length of `len' bytes.  The
- *    caller must free returned data buffer.  It is guaranteed the data
- *    buffer does not include any zero (0x00) bytes.
+ *    Returns random binary data of the length of `len' bytes to the `buf'
+ *    of maximum size of `buf_size'.  It is guaranteed the data buffer does
+ *    not include any zero (0x00) bytes.
  *
  ***/
-unsigned char *silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len);
+SilcBool silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len,
+			      unsigned char *buf, SilcUInt32 buf_size);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_add_noise
  *
@@ -329,16 +331,19 @@ unsigned char *silc_rng_global_get_rn_string(SilcUInt32 len);
  *
  * SYNOPSIS
  *
- *    unsigned char *silc_rng_global_get_rn_data(SilcUInt32 len);
+ *    SilcBool silc_rng_global_get_rn_data(SilcRng rng, SilcUInt32 len,
+ *                                         unsigned char *buf,
+ *                                         SilcUInt32 buf_size);
  *
  * DESCRIPTION
  *
- *    Returns random binary data of the length of `len' bytes.  The
- *    caller must free returned data buffer.  It is guaranteed the data
- *    buffer does not include any zero (0x00) bytes.
+ *    Returns random binary data of the length of `len' bytes to the `buf'
+ *    of maximum size of `buf_size'.  It is guaranteed the data buffer does
+ *    not include any zero (0x00) bytes.
  *
  ***/
-unsigned char *silc_rng_global_get_rn_data(SilcUInt32 len);
+SilcBool silc_rng_global_get_rn_data(SilcRng rng, SilcUInt32 len,
+				     unsigned char *buf, SilcUInt32 buf_size);
 
 /****f* silccrypt/SilcRNGAPI/silc_rng_global_add_noise
  *

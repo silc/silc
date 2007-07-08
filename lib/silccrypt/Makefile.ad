@@ -39,6 +39,7 @@ libsilccrypt_la_SOURCES = 	\
 	sha256.c 		\
 	twofish.c 		\
 	blowfish.c 		\
+	silccrypto.c		\
 	silccipher.c 		\
 	silchash.c 		\
 	silchmac.c 		\
@@ -58,10 +59,12 @@ CFLAGS = $(LTFLAGS) @SILC_CRYPTO_CFLAGS@
 
 #ifdef SILC_DIST_TOOLKIT
 include_HEADERS =		\
+	silccrypto.h		\
 	silccipher.h		\
 	silchash.h		\
 	silchmac.h		\
 	silcpkcs.h		\
+	silcpkcs_i.h		\
 	silcrng.h		\
 	silcpkcs1.h		\
 	silcpk.h

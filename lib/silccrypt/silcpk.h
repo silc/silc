@@ -142,8 +142,11 @@ SilcBool silc_pkcs_silc_generate_key(const char *algorithm,
  *    Protocol says that at least username and host must be provided.
  *    Caller must free the returned identifier string.
  *
+ *    If `stack' is non-NULL the returned string is allocated from `stack'.
+ *
  ***/
-char *silc_pkcs_silc_encode_identifier(char *username, char *host,
+char *silc_pkcs_silc_encode_identifier(SilcStack stack,
+				       char *username, char *host,
 				       char *realname, char *email,
 				       char *org, char *country,
 				       char *version);

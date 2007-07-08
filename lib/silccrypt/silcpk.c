@@ -100,7 +100,7 @@ SilcBool silc_pkcs_silc_generate_key(const char *algorithm,
   (*ret_private_key)->private_key = privkey;
 
   /* Generate the algorithm key pair */
-  if (!alg->generate_key(bits_key_len, rng, &pubkey->public_key,
+  if (!alg->generate_key(alg, bits_key_len, rng, &pubkey->public_key,
 			 &privkey->private_key)) {
     silc_free(pubkey);
     silc_free(privkey);
@@ -196,7 +196,8 @@ SilcBool silc_pkcs_silc_decode_identifier(const char *identifier,
    arguments is NULL those are not encoded into the identifier string.
    Protocol says that at least username and host must be provided. */
 
-char *silc_pkcs_silc_encode_identifier(char *username, char *host,
+char *silc_pkcs_silc_encode_identifier(SilcStack stack,
+				       char *username, char *host,
 				       char *realname, char *email,
 				       char *org, char *country,
 				       char *version)
@@ -212,66 +213,66 @@ char *silc_pkcs_silc_encode_identifier(char *username, char *host,
   memset(&buf, 0, sizeof(buf));
 
   if (username)
-    silc_buffer_format(&buf,
-		       SILC_STR_ADVANCE,
-		       SILC_STR_UI32_STRING("UN="),
-		       SILC_STR_UI32_STRING(username),
-		       SILC_STR_END);
+    silc_buffer_sformat(stack, &buf,
+			SILC_STR_ADVANCE,
+			SILC_STR_UI32_STRING("UN="),
+			SILC_STR_UI32_STRING(username),
+			SILC_STR_END);
 
   if (host)
-    silc_buffer_format(&buf,
-		       SILC_STR_ADVANCE,
-		       SILC_STR_UI32_STRING(", "),
-		       SILC_STR_UI32_STRING("HN="),
-		       SILC_STR_UI32_STRING(host),
-		       SILC_STR_END);
+    silc_buffer_sformat(stack, &buf,
+			SILC_STR_ADVANCE,
+			SILC_STR_UI32_STRING(", "),
+			SILC_STR_UI32_STRING("HN="),
+			SILC_STR_UI32_STRING(host),
+			SILC_STR_END);
 
   if (realname)
-    silc_buffer_format(&buf,
-		       SILC_STR_ADVANCE,
-		       SILC_STR_UI32_STRING(", "),
-		       SILC_STR_UI32_STRING("RN="),
-		       SILC_STR_UI32_STRING(realname),
-		       SILC_STR_END);
+    silc_buffer_sformat(stack, &buf,
+			SILC_STR_ADVANCE,
+			SILC_STR_UI32_STRING(", "),
+			SILC_STR_UI32_STRING("RN="),
+			SILC_STR_UI32_STRING(realname),
+			SILC_STR_END);
 
   if (email)
-    silc_buffer_format(&buf,
-		       SILC_STR_ADVANCE,
-		       SILC_STR_UI32_STRING(", "),
-		       SILC_STR_UI32_STRING("E="),
-		       SILC_STR_UI32_STRING(email),
-		       SILC_STR_END);
+    silc_buffer_sformat(stack, &buf,
+			SILC_STR_ADVANCE,
+			SILC_STR_UI32_STRING(", "),
+			SILC_STR_UI32_STRING("E="),
+			SILC_STR_UI32_STRING(email),
+			SILC_STR_END);
 
   if (org)
-    silc_buffer_format(&buf,
-		       SILC_STR_ADVANCE,
-		       SILC_STR_UI32_STRING(", "),
-		       SILC_STR_UI32_STRING("O="),
-		       SILC_STR_UI32_STRING(org),
-		       SILC_STR_END);
+    silc_buffer_sformat(stack, &buf,
+			SILC_STR_ADVANCE,
+			SILC_STR_UI32_STRING(", "),
+			SILC_STR_UI32_STRING("O="),
+			SILC_STR_UI32_STRING(org),
+			SILC_STR_END);
 
   if (country)
-    silc_buffer_format(&buf,
-		       SILC_STR_ADVANCE,
-		       SILC_STR_UI32_STRING(", "),
-		       SILC_STR_UI32_STRING("C="),
-		       SILC_STR_UI32_STRING(country),
-		       SILC_STR_END);
+    silc_buffer_sformat(stack, &buf,
+			SILC_STR_ADVANCE,
+			SILC_STR_UI32_STRING(", "),
+			SILC_STR_UI32_STRING("C="),
+			SILC_STR_UI32_STRING(country),
+			SILC_STR_END);
 
   if (version) {
     if (strlen(version) > 1 || !isdigit(version[0])) {
-      silc_buffer_purge(&buf);
+      silc_buffer_spurge(stack, &buf);
       return NULL;
     }
-    silc_buffer_format(&buf,
-		       SILC_STR_ADVANCE,
-		       SILC_STR_UI32_STRING(", "),
-		       SILC_STR_UI32_STRING("V="),
-		       SILC_STR_UI32_STRING(version),
-		       SILC_STR_END);
+    silc_buffer_sformat(stack, &buf,
+			SILC_STR_ADVANCE,
+			SILC_STR_UI32_STRING(", "),
+			SILC_STR_UI32_STRING("V="),
+			SILC_STR_UI32_STRING(version),
+			SILC_STR_END);
   }
 
-  silc_buffer_format(&buf, SILC_STR_UI_CHAR(0), SILC_STR_END);
+  silc_buffer_sformat(stack, &buf, SILC_STR_UI_CHAR(0), SILC_STR_END);
 
   identifier = silc_buffer_steal(&buf, NULL);
   return identifier;
@@ -299,7 +300,9 @@ int silc_pkcs_silc_public_key_version(SilcPublicKey public_key)
 
 /* Returns PKCS algorithm context */
 
-const SilcPKCSAlgorithm *silc_pkcs_silc_get_algorithm(void *public_key)
+const SilcPKCSAlgorithm *
+silc_pkcs_silc_get_algorithm(const struct SilcPKCSObjectStruct *pkcs,
+			     void *public_key)
 {
   SilcSILCPublicKey silc_pubkey = public_key;
   return silc_pubkey->pkcs;
@@ -307,10 +310,12 @@ const SilcPKCSAlgorithm *silc_pkcs_silc_get_algorithm(void *public_key)
 
 /* Imports SILC protocol style public key from SILC public key file */
 
-SilcBool silc_pkcs_silc_import_public_key_file(unsigned char *filedata,
-					       SilcUInt32 filedata_len,
-					       SilcPKCSFileEncoding encoding,
-					       void **ret_public_key)
+SilcBool
+silc_pkcs_silc_import_public_key_file(const struct SilcPKCSObjectStruct *pkcs,
+				      unsigned char *filedata,
+				      SilcUInt32 filedata_len,
+				      SilcPKCSFileEncoding encoding,
+				      void **ret_public_key)
 {
   SilcUInt32 i, len;
   unsigned char *data = NULL;
@@ -342,14 +347,14 @@ SilcBool silc_pkcs_silc_import_public_key_file(unsigned char *filedata,
     break;
 
   case SILC_PKCS_FILE_BASE64:
-    data = silc_base64_decode(filedata, filedata_len, &filedata_len);
+    data = silc_base64_decode(NULL, filedata, filedata_len, &filedata_len);
     if (!data)
       return FALSE;
     filedata = data;
     break;
   }
 
-  ret = silc_pkcs_silc_import_public_key(filedata, filedata_len,
+  ret = silc_pkcs_silc_import_public_key(pkcs, filedata, filedata_len,
 					 ret_public_key);
   silc_free(data);
 
@@ -358,11 +363,12 @@ SilcBool silc_pkcs_silc_import_public_key_file(unsigned char *filedata,
 
 /* Imports SILC protocol style public key */
 
-int silc_pkcs_silc_import_public_key(unsigned char *key,
+int silc_pkcs_silc_import_public_key(const struct SilcPKCSObjectStruct *pkcs,
+				     void *key,
 				     SilcUInt32 key_len,
 				     void **ret_public_key)
 {
-  const SilcPKCSAlgorithm *pkcs;
+  const SilcPKCSAlgorithm *alg;
   SilcBufferStruct buf, alg_key;
   SilcSILCPublicKey silc_pubkey = NULL;
   SilcAsn1 asn1 = NULL;
@@ -442,16 +448,16 @@ int silc_pkcs_silc_import_public_key(unsigned char *key,
     if (!silc_pubkey->identifier.version ||
 	atoi(silc_pubkey->identifier.version) <= 1) {
       /* Version 1 */
-      pkcs = silc_pkcs_find_algorithm(pkcs_name, "pkcs1-no-oid");
+      alg = silc_pkcs_find_algorithm(pkcs_name, "pkcs1-no-oid");
     } else {
       /* Version 2 and newer */
-      pkcs = silc_pkcs_find_algorithm(pkcs_name, "pkcs1");
+      alg = silc_pkcs_find_algorithm(pkcs_name, "pkcs1");
     }
-    if (!pkcs) {
+    if (!alg) {
       SILC_LOG_DEBUG(("Unsupported PKCS algorithm: rsa"));
       goto err;
     }
-    silc_pubkey->pkcs = pkcs;
+    silc_pubkey->pkcs = alg;
 
     if (keydata_len < 4)
       goto err;
@@ -497,8 +503,8 @@ int silc_pkcs_silc_import_public_key(unsigned char *key,
   }
 
   /* Import PKCS algorithm public key */
-  if (!pkcs->import_public_key(alg_key.data, silc_buffer_len(&alg_key),
-			       &silc_pubkey->public_key))
+  if (!alg->import_public_key(alg, alg_key.data, silc_buffer_len(&alg_key),
+			      &silc_pubkey->public_key))
     goto err;
 
   silc_free(pkcs_name);
@@ -521,7 +527,9 @@ int silc_pkcs_silc_import_public_key(unsigned char *key,
 /* Exports public key as SILC protocol style public key file */
 
 unsigned char *
-silc_pkcs_silc_export_public_key_file(void *public_key,
+silc_pkcs_silc_export_public_key_file(const struct SilcPKCSObjectStruct *pkcs,
+				      SilcStack stack,
+				      void *public_key,
 				      SilcPKCSFileEncoding encoding,
 				      SilcUInt32 *ret_len)
 {
@@ -532,7 +540,7 @@ silc_pkcs_silc_export_public_key_file(void *public_key,
   SILC_LOG_DEBUG(("Encoding SILC public key file"));
 
   /* Export key */
-  key = silc_pkcs_silc_export_public_key(public_key, &key_len);
+  key = silc_pkcs_silc_export_public_key(pkcs, stack, public_key, &key_len);
   if (!key)
     return NULL;
 
@@ -541,48 +549,51 @@ silc_pkcs_silc_export_public_key_file(void *public_key,
     break;
 
   case SILC_PKCS_FILE_BASE64:
-    data = silc_base64_encode_file(key, key_len);
+    data = silc_base64_encode_file(stack, key, key_len);
     if (!data)
       return NULL;
-    silc_free(key);
+    silc_sfree(stack, key);
     key = data;
     key_len = strlen(data);
     break;
   }
 
   /* Encode SILC public key file */
-  buf = silc_buffer_alloc_size(key_len +
-			       (strlen(SILC_PKCS_PUBLIC_KEYFILE_BEGIN) +
-				strlen(SILC_PKCS_PUBLIC_KEYFILE_END)));
+  buf = silc_buffer_salloc_size(stack, key_len +
+				(strlen(SILC_PKCS_PUBLIC_KEYFILE_BEGIN) +
+				 strlen(SILC_PKCS_PUBLIC_KEYFILE_END)));
   if (!buf) {
-    silc_free(key);
+    silc_sfree(stack, key);
     return NULL;
   }
 
-  if (silc_buffer_format(buf,
-			 SILC_STR_UI32_STRING(SILC_PKCS_PUBLIC_KEYFILE_BEGIN),
-			 SILC_STR_UI_XNSTRING(key, key_len),
-			 SILC_STR_UI32_STRING(SILC_PKCS_PUBLIC_KEYFILE_END),
-			 SILC_STR_END) < 0) {
-    silc_buffer_free(buf);
-    silc_free(key);
+  if (silc_buffer_sformat(stack, buf,
+			  SILC_STR_UI32_STRING(SILC_PKCS_PUBLIC_KEYFILE_BEGIN),
+			  SILC_STR_UI_XNSTRING(key, key_len),
+			  SILC_STR_UI32_STRING(SILC_PKCS_PUBLIC_KEYFILE_END),
+			  SILC_STR_END) < 0) {
+    silc_buffer_sfree(stack, buf);
+    silc_sfree(stack, key);
     return NULL;
   }
 
-  silc_free(key);
+  silc_sfree(stack, key);
   key = silc_buffer_steal(buf, ret_len);
-  silc_buffer_free(buf);
+  silc_buffer_sfree(stack, buf);
 
   return key;
 }
 
 /* Exports public key as SILC protocol style public key */
 
-unsigned char *silc_pkcs_silc_export_public_key(void *public_key,
-						SilcUInt32 *ret_len)
+unsigned char *
+silc_pkcs_silc_export_public_key(const struct SilcPKCSObjectStruct *pkcs,
+				 SilcStack stack,
+				 void *public_key,
+				 SilcUInt32 *ret_len)
 {
   SilcSILCPublicKey silc_pubkey = public_key;
-  const SilcPKCSAlgorithm *pkcs = silc_pubkey->pkcs;
+  const SilcPKCSAlgorithm *alg = silc_pubkey->pkcs;
   SilcBufferStruct alg_key;
   SilcBuffer buf = NULL;
   SilcAsn1 asn1 = NULL;
@@ -593,8 +604,8 @@ unsigned char *silc_pkcs_silc_export_public_key(void *public_key,
   SILC_LOG_DEBUG(("Encoding SILC public key"));
 
   /* Export PKCS algorithm public key */
-  if (pkcs->export_public_key)
-    pk = pkcs->export_public_key(silc_pubkey->public_key, &pk_len);
+  if (alg->export_public_key)
+    pk = alg->export_public_key(alg, stack, silc_pubkey->public_key, &pk_len);
   if (!pk) {
     SILC_LOG_ERROR(("Error exporting PKCS algorithm key"));
     return NULL;
@@ -603,7 +614,8 @@ unsigned char *silc_pkcs_silc_export_public_key(void *public_key,
 
   /* Encode identifier */
   identifier =
-    silc_pkcs_silc_encode_identifier(silc_pubkey->identifier.username,
+    silc_pkcs_silc_encode_identifier(stack,
+				     silc_pubkey->identifier.username,
 				     silc_pubkey->identifier.host,
 				     silc_pubkey->identifier.realname,
 				     silc_pubkey->identifier.email,
@@ -615,11 +627,11 @@ unsigned char *silc_pkcs_silc_export_public_key(void *public_key,
     goto err;
   }
 
-  asn1 = silc_asn1_alloc(NULL);
+  asn1 = silc_asn1_alloc(stack);
   if (!asn1)
     goto err;
 
-  if (!strcmp(pkcs->name, "rsa")) {
+  if (!strcmp(alg->name, "rsa")) {
     /* Parse the PKCS #1 public key */
     SilcMPInt n, e;
     SilcUInt32 n_len, e_len;
@@ -642,7 +654,7 @@ unsigned char *silc_pkcs_silc_export_public_key(void *public_key,
     if (!nb)
       goto err;
     key_len = e_len + 4 + n_len + 4;
-    key = silc_calloc(key_len, sizeof(*key));
+    key = silc_scalloc(stack, key_len, sizeof(*key));
     if (!key)
       goto err;
 
@@ -657,45 +669,44 @@ unsigned char *silc_pkcs_silc_export_public_key(void *public_key,
     silc_free(nb);
     silc_free(eb);
 
-  } else if (!strcmp(pkcs->name, "dsa")) {
+  } else if (!strcmp(alg->name, "dsa")) {
     SILC_NOT_IMPLEMENTED("SILC DSA Public Key");
     goto err;
 
   } else {
-    SILC_LOG_ERROR(("Unsupported PKCS algorithm: %s", pkcs->name));
+    SILC_LOG_ERROR(("Unsupported PKCS algorithm: %s", alg->name));
     goto err;
   }
 
   /* Encode SILC Public Key */
-  totlen = 2 + strlen(pkcs->name) + 2 + strlen(identifier) + key_len;
-  buf = silc_buffer_alloc_size(totlen + 4);
+  totlen = 2 + strlen(alg->name) + 2 + strlen(identifier) + key_len;
+  buf = silc_buffer_salloc_size(stack, totlen + 4);
   if (!buf)
     goto err;
-  if (silc_buffer_format(buf,
-			 SILC_STR_UI_INT(totlen),
-			 SILC_STR_UI_SHORT(strlen(pkcs->name)),
-			 SILC_STR_UI32_STRING(pkcs->name),
-			 SILC_STR_UI_SHORT(strlen(identifier)),
-			 SILC_STR_UI32_STRING(identifier),
-			 SILC_STR_UI_XNSTRING(key, key_len),
-			 SILC_STR_END) < 0)
+  if (silc_buffer_sformat(stack, buf,
+			  SILC_STR_UI_INT(totlen),
+			  SILC_STR_UI_SHORT(strlen(alg->name)),
+			  SILC_STR_UI32_STRING(alg->name),
+			  SILC_STR_UI_SHORT(strlen(identifier)),
+			  SILC_STR_UI32_STRING(identifier),
+			  SILC_STR_UI_XNSTRING(key, key_len),
+			  SILC_STR_END) < 0)
     goto err;
 
   ret = silc_buffer_steal(buf, ret_len);
-  silc_buffer_free(buf);
-  silc_free(key);
-  silc_free(identifier);
-  silc_buffer_purge(&alg_key);
+  silc_buffer_sfree(stack, buf);
+  silc_sfree(stack, key);
+  silc_sfree(stack, identifier);
+  silc_buffer_spurge(stack, &alg_key);
   silc_asn1_free(asn1);
 
   return ret;
 
  err:
-  silc_free(identifier);
-  silc_free(pk);
-  silc_free(key);
-  if (buf)
-    silc_buffer_free(buf);
+  silc_sfree(stack, identifier);
+  silc_sfree(stack, pk);
+  silc_sfree(stack, key);
+  silc_buffer_sfree(stack, buf);
   if (asn1)
     silc_asn1_free(asn1);
   return NULL;
@@ -703,15 +714,19 @@ unsigned char *silc_pkcs_silc_export_public_key(void *public_key,
 
 /* Return key length */
 
-SilcUInt32 silc_pkcs_silc_public_key_bitlen(void *public_key)
+SilcUInt32
+silc_pkcs_silc_public_key_bitlen(const struct SilcPKCSObjectStruct *pkcs,
+				 void *public_key)
 {
   SilcSILCPublicKey silc_pubkey = public_key;
-  return silc_pubkey->pkcs->public_key_bitlen(silc_pubkey->public_key);
+  return silc_pubkey->pkcs->public_key_bitlen(silc_pubkey->pkcs,
+					      silc_pubkey->public_key);
 }
 
 /* Copy public key */
 
-void *silc_pkcs_silc_public_key_copy(void *public_key)
+void *silc_pkcs_silc_public_key_copy(const struct SilcPKCSObjectStruct *pkcs,
+				     void *public_key)
 {
   SilcSILCPublicKey silc_pubkey = public_key, new_pubkey;
   SilcPublicKeyIdentifier ident = &silc_pubkey->identifier;
@@ -722,7 +737,8 @@ void *silc_pkcs_silc_public_key_copy(void *public_key)
   new_pubkey->pkcs = silc_pubkey->pkcs;
 
   new_pubkey->public_key =
-    silc_pubkey->pkcs->public_key_copy(silc_pubkey->public_key);
+    silc_pubkey->pkcs->public_key_copy(silc_pubkey->pkcs,
+				       silc_pubkey->public_key);
   if (!new_pubkey->public_key) {
     silc_free(new_pubkey);
     return NULL;
@@ -755,7 +771,9 @@ void *silc_pkcs_silc_public_key_copy(void *public_key)
 
 /* Compares public keys */
 
-SilcBool silc_pkcs_silc_public_key_compare(void *key1, void *key2)
+SilcBool
+silc_pkcs_silc_public_key_compare(const struct SilcPKCSObjectStruct *pkcs,
+				  void *key1, void *key2)
 {
   SilcSILCPublicKey k1 = key1, k2 = key2;
 
@@ -804,16 +822,18 @@ SilcBool silc_pkcs_silc_public_key_compare(void *key1, void *key2)
        strcmp(k1->identifier.version, k2->identifier.version)))
     return FALSE;
 
-  return k1->pkcs->public_key_compare(k1->public_key, k2->public_key);
+  return k1->pkcs->public_key_compare(k1->pkcs, k1->public_key, k2->public_key);
 }
 
 /* Frees public key */
 
-void silc_pkcs_silc_public_key_free(void *public_key)
+void silc_pkcs_silc_public_key_free(const struct SilcPKCSObjectStruct *pkcs,
+				    void *public_key)
 {
   SilcSILCPublicKey silc_pubkey = public_key;
 
-  silc_pubkey->pkcs->public_key_free(silc_pubkey->public_key);
+  silc_pubkey->pkcs->public_key_free(silc_pubkey->pkcs,
+				     silc_pubkey->public_key);
 
   silc_free(silc_pubkey->identifier.username);
   silc_free(silc_pubkey->identifier.host);
@@ -833,12 +853,14 @@ void silc_pkcs_silc_public_key_free(void *public_key)
 
 /* Imports SILC implementation style private key file */
 
-SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
-						SilcUInt32 filedata_len,
-						const char *passphrase,
-						SilcUInt32 passphrase_len,
-						SilcPKCSFileEncoding encoding,
-						void **ret_private_key)
+SilcBool
+silc_pkcs_silc_import_private_key_file(const struct SilcPKCSObjectStruct *pkcs,
+				       unsigned char *filedata,
+				       SilcUInt32 filedata_len,
+				       const char *passphrase,
+				       SilcUInt32 passphrase_len,
+				       SilcPKCSFileEncoding encoding,
+				       void **ret_private_key)
 {
   SilcCipher aes;
   SilcHash sha1;
@@ -872,7 +894,7 @@ SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
     break;
 
   case SILC_PKCS_FILE_BASE64:
-    data = silc_base64_decode(filedata, filedata_len, &len);
+    data = silc_base64_decode(NULL, filedata, filedata_len, &len);
     if (!data)
       return FALSE;
     filedata = data;
@@ -970,7 +992,7 @@ SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
   silc_cipher_free(aes);
 
   /* Import the private key */
-  ret = silc_pkcs_silc_import_private_key(filedata, len, ret_private_key);
+  ret = silc_pkcs_silc_import_private_key(pkcs, filedata, len, ret_private_key);
 
   silc_free(data);
 
@@ -983,12 +1005,13 @@ SilcBool silc_pkcs_silc_import_private_key_file(unsigned char *filedata,
 
 /* Imports SILC implementation style private key */
 
-int silc_pkcs_silc_import_private_key(unsigned char *key,
+int silc_pkcs_silc_import_private_key(const struct SilcPKCSObjectStruct *pkcs,
+				      void *key,
 				      SilcUInt32 key_len,
 				      void **ret_private_key)
 {
   SilcBufferStruct buf;
-  const SilcPKCSAlgorithm *pkcs;
+  const SilcPKCSAlgorithm *alg;
   SilcBufferStruct alg_key;
   SilcSILCPrivateKey silc_privkey = NULL;
   SilcAsn1 asn1 = NULL;
@@ -1002,7 +1025,7 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
   if (!ret_private_key)
     return 0;
 
-  silc_buffer_set(&buf, key, key_len);
+  silc_buffer_set(&buf, (unsigned char *)key, key_len);
 
   /* Get algorithm name and identifier */
   ret =
@@ -1072,16 +1095,16 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
        versions. */
     if (ver == 0 || ver == SILC_PRIVATE_KEY_VERSION_1) {
       /* Version 0 and 1 */
-      pkcs = silc_pkcs_find_algorithm(pkcs_name, "pkcs1-no-oid");
+      alg = silc_pkcs_find_algorithm(pkcs_name, "pkcs1-no-oid");
     } else {
       /* Version 2 and newer */
-      pkcs = silc_pkcs_find_algorithm(pkcs_name, "pkcs1");
+      alg = silc_pkcs_find_algorithm(pkcs_name, "pkcs1");
     }
-    if (!pkcs) {
+    if (!alg) {
       SILC_LOG_DEBUG(("Unsupported PKCS algorithm"));
       goto err;
     }
-    silc_privkey->pkcs = pkcs;
+    silc_privkey->pkcs = alg;
 
     SILC_LOG_DEBUG(("Private key version %s",
 		    (ver == SILC_PRIVATE_KEY_VERSION_1 ? "1" :
@@ -1263,8 +1286,8 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
   }
 
   /* Import PKCS algorithm private key */
-  if (!pkcs->import_private_key(alg_key.data, silc_buffer_len(&alg_key),
-				&silc_privkey->private_key))
+  if (!alg->import_private_key(alg, alg_key.data, silc_buffer_len(&alg_key),
+			       &silc_privkey->private_key))
     goto err;
 
   silc_free(pkcs_name);
@@ -1286,7 +1309,9 @@ int silc_pkcs_silc_import_private_key(unsigned char *key,
 /* Exports private key as SILC implementation style private key file */
 
 unsigned char *
-silc_pkcs_silc_export_private_key_file(void *private_key,
+silc_pkcs_silc_export_private_key_file(const struct SilcPKCSObjectStruct *pkcs,
+				       SilcStack stack,
+				       void *private_key,
 				       const char *passphrase,
 				       SilcUInt32 passphrase_len,
 				       SilcPKCSFileEncoding encoding,
@@ -1305,7 +1330,7 @@ silc_pkcs_silc_export_private_key_file(void *private_key,
   SILC_LOG_DEBUG(("Encoding SILC private key file"));
 
   /* Export the private key */
-  key = silc_pkcs_silc_export_private_key(private_key, &key_len);
+  key = silc_pkcs_silc_export_private_key(pkcs, stack, private_key, &key_len);
   if (!key)
     return NULL;
 
@@ -1315,19 +1340,20 @@ silc_pkcs_silc_export_private_key_file(void *private_key,
   /* Allocate the AES cipher */
   if (!silc_cipher_alloc("aes-256-cbc", &aes)) {
     SILC_LOG_ERROR(("Could not allocate AES cipher, probably not registered"));
-    silc_free(key);
+    silc_sfree(stack, key);
     return NULL;
   }
   blocklen = silc_cipher_get_block_len(aes);
   if (blocklen * 2 > sizeof(tmp)) {
     silc_cipher_free(aes);
-    silc_free(key);
+    silc_sfree(stack, key);
     return NULL;
   }
 
   /* Allocate SHA1 hash */
   if (!silc_hash_alloc("sha1", &sha1)) {
     SILC_LOG_ERROR(("Could not allocate SHA1 hash, probably not registered"));
+    silc_sfree(stack, key);
     silc_cipher_free(aes);
     return NULL;
   }
@@ -1335,6 +1361,7 @@ silc_pkcs_silc_export_private_key_file(void *private_key,
   /* Allocate HMAC */
   if (!silc_hmac_alloc("hmac-sha1-96", NULL, &sha1hmac)) {
     SILC_LOG_ERROR(("Could not allocate SHA1 HMAC, probably not registered"));
+    silc_sfree(stack, key);
     silc_hash_free(sha1);
     silc_cipher_free(aes);
     return NULL;
@@ -1361,8 +1388,9 @@ silc_pkcs_silc_export_private_key_file(void *private_key,
   /* Allocate buffer for encryption */
   len = silc_hmac_len(sha1hmac);
   padlen = 16 + (16 - ((key_len + 4) % blocklen));
-  enc = silc_buffer_alloc_size(4 + 4 + key_len + padlen + len);
+  enc = silc_buffer_salloc_size(stack, 4 + 4 + key_len + padlen + len);
   if (!enc) {
+    silc_sfree(stack, key);
     silc_hmac_free(sha1hmac);
     silc_hash_free(sha1);
     silc_cipher_free(aes);
@@ -1378,12 +1406,12 @@ silc_pkcs_silc_export_private_key_file(void *private_key,
   silc_buffer_pull(enc, 4);
 
   /* Encode the buffer */
-  silc_buffer_format(enc,
-		     SILC_STR_UI_INT(key_len),
-		     SILC_STR_UI_XNSTRING(key, key_len),
-		     SILC_STR_UI_XNSTRING(tmp, padlen),
-		     SILC_STR_END);
-  silc_free(key);
+  silc_buffer_sformat(stack, enc,
+		      SILC_STR_UI_INT(key_len),
+		      SILC_STR_UI_XNSTRING(key, key_len),
+		      SILC_STR_UI_XNSTRING(tmp, padlen),
+		      SILC_STR_END);
+  silc_sfree(stack, key);
 
   /* Encrypt. */
   silc_cipher_encrypt(aes, enc->data, enc->data, silc_buffer_len(enc) - len,
@@ -1412,13 +1440,13 @@ silc_pkcs_silc_export_private_key_file(void *private_key,
     break;
 
   case SILC_PKCS_FILE_BASE64:
-    data = silc_base64_encode_file(enc->data, silc_buffer_len(enc));
+    data = silc_base64_encode_file(stack, enc->data, silc_buffer_len(enc));
     if (!data) {
       silc_buffer_clear(enc);
-      silc_buffer_free(enc);
+      silc_buffer_sfree(stack, enc);
       return NULL;
     }
-    silc_free(silc_buffer_steal(enc, NULL));
+    silc_sfree(stack, silc_buffer_steal(enc, NULL));
     silc_buffer_set(enc, data, strlen(data));
     break;
   }
@@ -1429,31 +1457,34 @@ silc_pkcs_silc_export_private_key_file(void *private_key,
   /* Encode the data and save to file */
   len = key_len + (strlen(SILC_PKCS_PRIVATE_KEYFILE_BEGIN) +
 		   strlen(SILC_PKCS_PRIVATE_KEYFILE_END));
-  buf = silc_buffer_alloc_size(len);
+  buf = silc_buffer_salloc_size(stack, len);
   if (!buf) {
-    silc_buffer_free(enc);
+    silc_buffer_sfree(stack, enc);
     return NULL;
   }
-  silc_buffer_format(buf,
-		     SILC_STR_UI32_STRING(SILC_PKCS_PRIVATE_KEYFILE_BEGIN),
-		     SILC_STR_UI_XNSTRING(key, key_len),
-		     SILC_STR_UI32_STRING(SILC_PKCS_PRIVATE_KEYFILE_END),
-		     SILC_STR_END);
+  silc_buffer_sformat(stack, buf,
+		      SILC_STR_UI32_STRING(SILC_PKCS_PRIVATE_KEYFILE_BEGIN),
+		      SILC_STR_UI_XNSTRING(key, key_len),
+		      SILC_STR_UI32_STRING(SILC_PKCS_PRIVATE_KEYFILE_END),
+		      SILC_STR_END);
 
-  silc_buffer_free(enc);
+  silc_buffer_sfree(stack, enc);
   data = silc_buffer_steal(buf, ret_len);
-  silc_buffer_free(buf);
+  silc_buffer_sfree(stack, buf);
 
   return data;
 }
 
 /* Exports private key as SILC implementation style private key */
 
-unsigned char *silc_pkcs_silc_export_private_key(void *private_key,
-						 SilcUInt32 *ret_len)
+unsigned char *
+silc_pkcs_silc_export_private_key(const struct SilcPKCSObjectStruct *pkcs,
+				  SilcStack stack,
+				  void *private_key,
+				  SilcUInt32 *ret_len)
 {
   SilcSILCPrivateKey silc_privkey = private_key;
-  const SilcPKCSAlgorithm *pkcs = silc_privkey->pkcs;
+  const SilcPKCSAlgorithm *alg = silc_privkey->pkcs;
   SilcBufferStruct alg_key;
   SilcBuffer buf = NULL;
   SilcAsn1 asn1 = NULL;
@@ -1463,17 +1494,18 @@ unsigned char *silc_pkcs_silc_export_private_key(void *private_key,
   SILC_LOG_DEBUG(("Encoding SILC private key"));
 
   /* Export PKCS algorithm private key */
-  if (pkcs->export_private_key)
-    prv = pkcs->export_private_key(silc_privkey->private_key, &prv_len);
+  if (alg->export_private_key)
+    prv = alg->export_private_key(alg, stack,
+				  silc_privkey->private_key, &prv_len);
   if (!prv)
     return NULL;
   silc_buffer_set(&alg_key, prv, prv_len);
 
-  asn1 = silc_asn1_alloc(NULL);
+  asn1 = silc_asn1_alloc(stack);
   if (!asn1)
     goto err;
 
-  if (!strcmp(pkcs->name, "rsa")) {
+  if (!strcmp(alg->name, "rsa")) {
     /* Parse the PKCS #1 private key */
     SilcMPInt n, e, d, dp, dq, qp, p, q;
     SilcUInt32 e_len, n_len, d_len, dp_len, dq_len,
@@ -1506,32 +1538,32 @@ unsigned char *silc_pkcs_silc_export_private_key(void *private_key,
     len = 4 + e_len + 4 + n_len + 4 + d_len + 4+ dp_len + 4 +
       dq_len + 4 + qp_len + 4 + p_len + 4 + q_len + 4;
 
-    buf = silc_buffer_alloc_size(len);
+    buf = silc_buffer_salloc_size(stack, len);
     if (!buf)
       goto err;
-    if (silc_buffer_format(buf,
-			   SILC_STR_UI_INT(SILC_PRIVATE_KEY_VERSION_1),
-			   SILC_STR_UI_INT(e_len),
-			   SILC_STR_UI_XNSTRING(eb, e_len),
-			   SILC_STR_UI_INT(n_len),
-			   SILC_STR_UI_XNSTRING(nb, n_len),
-			   SILC_STR_UI_INT(d_len),
-			   SILC_STR_UI_XNSTRING(db, d_len),
-			   SILC_STR_UI_INT(dp_len),
-			   SILC_STR_UI_XNSTRING(dpb, dp_len),
-			   SILC_STR_UI_INT(dq_len),
-			   SILC_STR_UI_XNSTRING(dqb, dq_len),
-			   SILC_STR_UI_INT(qp_len),
-			   SILC_STR_UI_XNSTRING(qpb, qp_len),
-			   SILC_STR_UI_INT(p_len),
-			   SILC_STR_UI_XNSTRING(pb, p_len),
-			   SILC_STR_UI_INT(q_len),
-			   SILC_STR_UI_XNSTRING(qb, q_len),
-			   SILC_STR_END) < 0)
+    if (silc_buffer_sformat(stack, buf,
+			    SILC_STR_UI_INT(SILC_PRIVATE_KEY_VERSION_1),
+			    SILC_STR_UI_INT(e_len),
+			    SILC_STR_UI_XNSTRING(eb, e_len),
+			    SILC_STR_UI_INT(n_len),
+			    SILC_STR_UI_XNSTRING(nb, n_len),
+			    SILC_STR_UI_INT(d_len),
+			    SILC_STR_UI_XNSTRING(db, d_len),
+			    SILC_STR_UI_INT(dp_len),
+			    SILC_STR_UI_XNSTRING(dpb, dp_len),
+			    SILC_STR_UI_INT(dq_len),
+			    SILC_STR_UI_XNSTRING(dqb, dq_len),
+			    SILC_STR_UI_INT(qp_len),
+			    SILC_STR_UI_XNSTRING(qpb, qp_len),
+			    SILC_STR_UI_INT(p_len),
+			    SILC_STR_UI_XNSTRING(pb, p_len),
+			    SILC_STR_UI_INT(q_len),
+			    SILC_STR_UI_XNSTRING(qb, q_len),
+			    SILC_STR_END) < 0)
       goto err;
 
     key = silc_buffer_steal(buf, &key_len);
-    silc_buffer_free(buf);
+    silc_buffer_sfree(stack, buf);
     silc_free(nb);
     silc_free(eb);
     silc_free(db);
@@ -1541,7 +1573,7 @@ unsigned char *silc_pkcs_silc_export_private_key(void *private_key,
     silc_free(pb);
     silc_free(qb);
 
-  } else if (!strcmp(pkcs->name, "dsa")) {
+  } else if (!strcmp(alg->name, "dsa")) {
     SILC_NOT_IMPLEMENTED("SILC DSA Private Key");
     goto err;
 
@@ -1551,49 +1583,52 @@ unsigned char *silc_pkcs_silc_export_private_key(void *private_key,
   }
 
   /* Encode SILC private key */
-  totlen = 2 + strlen(pkcs->name) + key_len;
-  buf = silc_buffer_alloc_size(totlen);
+  totlen = 2 + strlen(alg->name) + key_len;
+  buf = silc_buffer_salloc_size(stack, totlen);
   if (!buf)
     goto err;
-  if (silc_buffer_format(buf,
-			 SILC_STR_UI_SHORT(strlen(pkcs->name)),
-			 SILC_STR_UI32_STRING(pkcs->name),
-			 SILC_STR_UI_XNSTRING(key, key_len),
-			 SILC_STR_END) < 0)
+  if (silc_buffer_sformat(stack, buf,
+			  SILC_STR_UI_SHORT(strlen(alg->name)),
+			  SILC_STR_UI32_STRING(alg->name),
+			  SILC_STR_UI_XNSTRING(key, key_len),
+			  SILC_STR_END) < 0)
     goto err;
 
   ret = silc_buffer_steal(buf, ret_len);
-  silc_buffer_free(buf);
-  silc_free(prv);
-  silc_free(key);
+  silc_buffer_sfree(stack, buf);
+  silc_sfree(stack, prv);
+  silc_sfree(stack, key);
   silc_asn1_free(asn1);
 
   return ret;
 
  err:
-  silc_free(prv);
-  silc_free(key);
-  if (buf)
-    silc_buffer_free(buf);
+  silc_sfree(stack, prv);
+  silc_sfree(stack, key);
+  silc_buffer_sfree(stack, buf);
   return NULL;
 }
 
 /* Return key length */
 
-SilcUInt32 silc_pkcs_silc_private_key_bitlen(void *private_key)
+SilcUInt32
+silc_pkcs_silc_private_key_bitlen(const struct SilcPKCSObjectStruct *pkcs,
+				  void *private_key)
 {
   SilcSILCPrivateKey silc_privkey = private_key;
-  return silc_privkey->pkcs->private_key_bitlen(silc_privkey->private_key);
+  return silc_privkey->pkcs->private_key_bitlen(silc_privkey->pkcs,
+						silc_privkey->private_key);
 }
 
 /* Frees private key */
 
-void silc_pkcs_silc_private_key_free(void *private_key)
+void silc_pkcs_silc_private_key_free(const struct SilcPKCSObjectStruct *pkcs,
+				     void *private_key)
 {
   SilcSILCPrivateKey silc_privkey = private_key;
 
-  silc_privkey->pkcs->private_key_free(silc_privkey->private_key);
-
+  silc_privkey->pkcs->private_key_free(silc_privkey->pkcs,
+				       silc_privkey->private_key);
   silc_free(silc_privkey);
 }
 
@@ -1602,80 +1637,98 @@ void silc_pkcs_silc_private_key_free(void *private_key)
 
 /* Encrypts as specified in SILC protocol specification */
 
-SilcBool silc_pkcs_silc_encrypt(void *public_key,
-				unsigned char *src,
-				SilcUInt32 src_len,
-				unsigned char *dst,
-				SilcUInt32 dst_size,
-				SilcUInt32 *ret_dst_len,
-				SilcRng rng)
+SilcAsyncOperation
+silc_pkcs_silc_encrypt(const struct SilcPKCSObjectStruct *pkcs,
+		       void *public_key,
+		       unsigned char *src,
+		       SilcUInt32 src_len,
+		       SilcRng rng,
+		       SilcPKCSEncryptCb encrypt_cb,
+		       void *context)
 {
   SilcSILCPublicKey silc_pubkey = public_key;
 
-  if (!silc_pubkey->pkcs->encrypt)
-    return FALSE;
+  if (!silc_pubkey->pkcs->encrypt) {
+    encrypt_cb(FALSE, NULL, 0, context);
+    return NULL;
+  }
 
-  return silc_pubkey->pkcs->encrypt(silc_pubkey->public_key,
-				    src, src_len,
-				    dst, dst_size, ret_dst_len, rng);
+  return silc_pubkey->pkcs->encrypt(silc_pubkey->pkcs,
+				    silc_pubkey->public_key,
+				    src, src_len, rng, encrypt_cb, context);
 }
 
 /* Decrypts as specified in SILC protocol specification */
 
-SilcBool silc_pkcs_silc_decrypt(void *private_key,
-				unsigned char *src,
-				SilcUInt32 src_len,
-				unsigned char *dst,
-				SilcUInt32 dst_size,
-				SilcUInt32 *ret_dst_len)
+SilcAsyncOperation
+silc_pkcs_silc_decrypt(const struct SilcPKCSObjectStruct *pkcs,
+		       void *private_key,
+		       unsigned char *src,
+		       SilcUInt32 src_len,
+		       SilcPKCSDecryptCb decrypt_cb,
+		       void *context)
 {
   SilcSILCPrivateKey silc_privkey = private_key;
 
-  if (!silc_privkey->pkcs->decrypt)
-    return FALSE;
+  if (!silc_privkey->pkcs->decrypt) {
+    decrypt_cb(FALSE, NULL, 0, context);
+    return NULL;
+  }
 
-  return silc_privkey->pkcs->decrypt(silc_privkey->private_key,
-				     src, src_len,
-				     dst, dst_size, ret_dst_len);
+  return silc_privkey->pkcs->decrypt(silc_privkey->pkcs,
+				     silc_privkey->private_key,
+				     src, src_len, decrypt_cb, context);
 }
 
 /* Signs as specified in SILC protocol specification */
 
-SilcBool silc_pkcs_silc_sign(void *private_key,
-			     unsigned char *src,
-			     SilcUInt32 src_len,
-			     unsigned char *signature,
-			     SilcUInt32 signature_size,
-			     SilcUInt32 *ret_signature_len,
-			     SilcBool compute_hash,
-			     SilcHash hash)
+SilcAsyncOperation
+silc_pkcs_silc_sign(const struct SilcPKCSObjectStruct *pkcs,
+		    void *private_key,
+		    unsigned char *src,
+		    SilcUInt32 src_len,
+		    SilcBool compute_hash,
+		    SilcHash hash,
+		    SilcPKCSSignCb sign_cb,
+		    void *context)
 {
   SilcSILCPrivateKey silc_privkey = private_key;
 
-  if (!silc_privkey->pkcs->sign)
-    return FALSE;
+  if (!silc_privkey->pkcs->sign) {
+    sign_cb(FALSE, NULL, 0, context);
+    return NULL;
+  }
 
-  return silc_privkey->pkcs->sign(silc_privkey->private_key,
+  return silc_privkey->pkcs->sign(silc_privkey->pkcs,
+				  silc_privkey->private_key,
 				  src, src_len,
-				  signature, signature_size,
-				  ret_signature_len, compute_hash, hash);
+				  compute_hash, hash,
+				  sign_cb, context);
 }
 
 /* Verifies as specified in SILC protocol specification */
 
-SilcBool silc_pkcs_silc_verify(void *public_key,
-			       unsigned char *signature,
-			       SilcUInt32 signature_len,
-			       unsigned char *data,
-			       SilcUInt32 data_len,
-			       SilcHash hash)
+SilcAsyncOperation
+silc_pkcs_silc_verify(const struct SilcPKCSObjectStruct *pkcs,
+		      void *public_key,
+		      unsigned char *signature,
+		      SilcUInt32 signature_len,
+		      unsigned char *data,
+		      SilcUInt32 data_len,
+		      SilcHash hash,
+		      SilcPKCSVerifyCb verify_cb,
+		      void *context)
 {
   SilcSILCPublicKey silc_pubkey = public_key;
 
-  if (!silc_pubkey->pkcs->verify)
-    return FALSE;
+  if (!silc_pubkey->pkcs->verify) {
+    verify_cb(FALSE, context);
+    return NULL;
+  }
 
-  return silc_pubkey->pkcs->verify(silc_pubkey->public_key,
+  return silc_pubkey->pkcs->verify(silc_pubkey->pkcs,
+				   silc_pubkey->public_key,
 				   signature, signature_len,
-				   data, data_len, hash);
+				   data, data_len, hash,
+				   verify_cb, context);
 }

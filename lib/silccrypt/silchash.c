@@ -51,8 +51,7 @@ const SilcHashObject silc_default_hash[] =
   { NULL, NULL, 0, 0, NULL, NULL, NULL, NULL, NULL }
 };
 
-/* Registers a new hash function into the SILC. This function is used at
-   the initialization of the SILC. */
+/* Registers a new hash function */
 
 SilcBool silc_hash_register(const SilcHashObject *hash)
 {
@@ -101,7 +100,7 @@ SilcBool silc_hash_register(const SilcHashObject *hash)
   return TRUE;
 }
 
-/* Unregister a hash function from the SILC. */
+/* Unregister a hash function */
 
 SilcBool silc_hash_unregister(SilcHashObject *hash)
 {
@@ -134,21 +133,15 @@ SilcBool silc_hash_unregister(SilcHashObject *hash)
   return FALSE;
 }
 
-/* Function that registers all the default hash funcs (all builtin ones).
-   The application may use this to register the default hash funcs if
-   specific hash funcs in any specific order is not wanted. */
+/* Register default hash functions */
 
 SilcBool silc_hash_register_default(void)
 {
-#ifndef SILC_SYMBIAN
-  int i;
-
-  for (i = 0; silc_default_hash[i].name; i++)
-    silc_hash_register(&(silc_default_hash[i]));
-
-#endif /* SILC_SYMBIAN */
+  /* We use builtin hash functions */
   return TRUE;
 }
+
+/* Unregister all hash functions */
 
 SilcBool silc_hash_unregister_all(void)
 {
@@ -174,10 +167,12 @@ SilcBool silc_hash_unregister_all(void)
 SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
 {
   SilcHashObject *entry = NULL;
+  int i;
 
   SILC_LOG_DEBUG(("Allocating new hash %s", name));
 
 #ifndef SILC_SYMBIAN
+  /* Check list of registered hash functions */
   if (silc_hash_list) {
     silc_dlist_start(silc_hash_list);
     while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
@@ -185,10 +180,10 @@ SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
 	break;
     }
   }
-#else
-  {
-    /* On EPOC which don't have globals we check our constant hash list. */
-    int i;
+#endif /* SILC_SYMBIAN */
+
+  if (!entry) {
+    /* Check builtin hash function list */
     for (i = 0; silc_default_hash[i].name; i++) {
       if (!strcmp(silc_default_hash[i].name, name)) {
 	entry = (SilcHashObject *)&(silc_default_hash[i]);
@@ -196,7 +191,6 @@ SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
       }
     }
   }
-#endif /* SILC_SYMBIAN */
 
   if (entry) {
     *new_hash = silc_calloc(1, sizeof(**new_hash));
@@ -219,10 +213,12 @@ SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
 SilcBool silc_hash_alloc_by_oid(const char *oid, SilcHash *new_hash)
 {
   SilcHashObject *entry = NULL;
+  int i;
 
   SILC_LOG_DEBUG(("Allocating new hash %s", oid));
 
 #ifndef SILC_SYMBIAN
+  /* Check list of registered hash functions */
   if (silc_hash_list) {
     silc_dlist_start(silc_hash_list);
     while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
@@ -230,10 +226,10 @@ SilcBool silc_hash_alloc_by_oid(const char *oid, SilcHash *new_hash)
 	break;
     }
   }
-#else
-  {
-    /* On EPOC which don't have globals we check our constant hash list. */
-    int i;
+#endif /* SILC_SYMBIAN */
+
+  if (!entry) {
+    /* Check builtin hash function list */
     for (i = 0; silc_default_hash[i].oid; i++) {
       if (!strcmp(silc_default_hash[i].oid, oid)) {
 	entry = (SilcHashObject *)&(silc_default_hash[i]);
@@ -241,7 +237,6 @@ SilcBool silc_hash_alloc_by_oid(const char *oid, SilcHash *new_hash)
       }
     }
   }
-#endif /* SILC_SYMBIAN */
 
   if (entry) {
     *new_hash = silc_calloc(1, sizeof(**new_hash));
@@ -301,9 +296,10 @@ const char *silc_hash_get_oid(SilcHash hash)
 
 SilcBool silc_hash_is_supported(const unsigned char *name)
 {
-#ifndef SILC_SYMBIAN
   SilcHashObject *entry;
+  int i;
 
+#ifndef SILC_SYMBIAN
   if (silc_hash_list) {
     silc_dlist_start(silc_hash_list);
     while ((entry = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
@@ -311,14 +307,12 @@ SilcBool silc_hash_is_supported(const unsigned char *name)
 	return TRUE;
     }
   }
-#else
-  {
-    int i;
-    for (i = 0; silc_default_hash[i].name; i++)
-      if (!strcmp(silc_default_hash[i].name, name))
-	return TRUE;
-  }
 #endif /* SILC_SYMBIAN */
+
+  for (i = 0; silc_default_hash[i].name; i++)
+    if (!strcmp(silc_default_hash[i].name, name))
+      return TRUE;
+
   return FALSE;
 }
 
@@ -326,9 +320,9 @@ SilcBool silc_hash_is_supported(const unsigned char *name)
 
 char *silc_hash_get_supported(void)
 {
-  SilcHashObject *entry;
+  SilcHashObject *entry, *entry2;
   char *list = NULL;
-  int len = 0;
+  int i, len = 0;
 
 #ifndef SILC_SYMBIAN
   if (silc_hash_list) {
@@ -343,21 +337,29 @@ char *silc_hash_get_supported(void)
       len++;
     }
   }
-#else
-  {
-    int i;
-    for (i = 0; silc_default_hash[i].name; i++) {
-      entry = (SilcHashObject *)&(silc_default_hash[i]);
-      len += strlen(entry->name);
-      list = silc_realloc(list, len + 1);
-
-      memcpy(list + (len - strlen(entry->name)),
-	     entry->name, strlen(entry->name));
-      memcpy(list + len, ",", 1);
-      len++;
-    }
-  }
 #endif /* SILC_SYMBIAN */
+
+  for (i = 0; silc_default_hash[i].name; i++) {
+    entry = (SilcHashObject *)&(silc_default_hash[i]);
+
+    if (silc_hash_list) {
+      silc_dlist_start(silc_hash_list);
+      while ((entry2 = silc_dlist_get(silc_hash_list)) != SILC_LIST_END) {
+	if (!strcmp(entry2->name, entry->name))
+	  break;
+      }
+      if (entry2)
+	continue;
+    }
+
+    len += strlen(entry->name);
+    list = silc_realloc(list, len + 1);
+
+    memcpy(list + (len - strlen(entry->name)),
+	   entry->name, strlen(entry->name));
+    memcpy(list + len, ",", 1);
+    len++;
+  }
 
   list[len - 1] = 0;
 

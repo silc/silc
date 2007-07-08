@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -311,7 +311,7 @@ static void silc_rng_get_soft_noise(SilcRng rng)
   silc_rng_xor(rng, (r.ru_nvcsw ^ r.ru_nivcsw), pos++);
 #endif /* SILC_SYMBIAN */
 #endif /* HAVE_GETRUSAGE */
-  
+
 #ifdef SILC_RNG_DEBUG
   SILC_LOG_HEXDUMP(("pool"), rng->pool, sizeof(rng->pool));
 #endif
@@ -623,17 +623,18 @@ unsigned char *silc_rng_get_rn_string(SilcRng rng, SilcUInt32 len)
 
 /* Returns non-zero random number binary data. */
 
-unsigned char *silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len)
+SilcBool silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len, unsigned char *buf,
+			      SilcUInt32 buf_size)
 {
   int i;
-  unsigned char *data;
 
-  data = silc_calloc(len + 1, sizeof(*data));
+  if (len > buf_size)
+    return FALSE;
 
   for (i = 0; i < len; i++)
-    data[i] = silc_rng_get_byte(rng);
+    buf[i] = silc_rng_get_byte(rng);
 
-  return data;
+  return TRUE;
 }
 
 /* Global RNG. This is global RNG that application can initialize so
@@ -701,9 +702,11 @@ unsigned char *silc_rng_global_get_rn_string(SilcUInt32 len)
   return global_rng ? silc_rng_get_rn_string(global_rng, len) : NULL;
 }
 
-unsigned char *silc_rng_global_get_rn_data(SilcUInt32 len)
+SilcBool silc_rng_global_get_rn_data(SilcRng rng, SilcUInt32 len,
+				     unsigned char *buf, SilcUInt32 buf_size)
 {
-  return global_rng ? silc_rng_get_rn_data(global_rng, len) : NULL;
+  return global_rng ? silc_rng_get_rn_data(global_rng, len, buf,
+					   buf_size) : FALSE;
 }
 
 void silc_rng_global_add_noise(unsigned char *buffer, SilcUInt32 len)

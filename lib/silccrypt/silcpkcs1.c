@@ -169,7 +169,8 @@ SilcBool silc_pkcs1_decode(SilcPkcs1BlockType bt,
 
 /* Generates RSA key pair. */
 
-SilcBool silc_pkcs1_generate_key(SilcUInt32 keylen,
+SilcBool silc_pkcs1_generate_key(const struct SilcPKCSAlgorithmStruct *pkcs,
+				 SilcUInt32 keylen,
 				 SilcRng rng,
 				 void **ret_public_key,
 				 void **ret_private_key)
@@ -216,7 +217,8 @@ SilcBool silc_pkcs1_generate_key(SilcUInt32 keylen,
 
 /* Import PKCS #1 compliant public key */
 
-int silc_pkcs1_import_public_key(unsigned char *key,
+int silc_pkcs1_import_public_key(const struct SilcPKCSAlgorithmStruct *pkcs,
+				 void *key,
 				 SilcUInt32 key_len,
 				 void **ret_public_key)
 {
@@ -261,15 +263,18 @@ int silc_pkcs1_import_public_key(unsigned char *key,
 
 /* Export PKCS #1 compliant public key */
 
-unsigned char *silc_pkcs1_export_public_key(void *public_key,
-					    SilcUInt32 *ret_len)
+unsigned char *
+silc_pkcs1_export_public_key(const struct SilcPKCSAlgorithmStruct *pkcs,
+			     SilcStack stack,
+			     void *public_key,
+			     SilcUInt32 *ret_len)
 {
   RsaPublicKey *key = public_key;
   SilcAsn1 asn1 = NULL;
   SilcBufferStruct alg_key;
   unsigned char *ret;
 
-  asn1 = silc_asn1_alloc(NULL);
+  asn1 = silc_asn1_alloc(stack);
   if (!asn1)
     goto err;
 
@@ -296,7 +301,9 @@ unsigned char *silc_pkcs1_export_public_key(void *public_key,
 
 /* Returns key length */
 
-SilcUInt32 silc_pkcs1_public_key_bitlen(void *public_key)
+SilcUInt32
+silc_pkcs1_public_key_bitlen(const struct SilcPKCSAlgorithmStruct *pkcs,
+			     void *public_key)
 {
   RsaPublicKey *key = public_key;
   return key->bits;
@@ -304,7 +311,8 @@ SilcUInt32 silc_pkcs1_public_key_bitlen(void *public_key)
 
 /* Copy public key */
 
-void *silc_pkcs1_public_key_copy(void *public_key)
+void *silc_pkcs1_public_key_copy(const struct SilcPKCSAlgorithmStruct *pkcs,
+				 void *public_key)
 {
   RsaPublicKey *key = public_key, *new_key;
 
@@ -323,7 +331,9 @@ void *silc_pkcs1_public_key_copy(void *public_key)
 
 /* Compare public keys */
 
-SilcBool silc_pkcs1_public_key_compare(void *key1, void *key2)
+SilcBool
+silc_pkcs1_public_key_compare(const struct SilcPKCSAlgorithmStruct *pkcs,
+			      void *key1, void *key2)
 {
   RsaPublicKey *k1 = key1, *k2 = key2;
 
@@ -339,7 +349,8 @@ SilcBool silc_pkcs1_public_key_compare(void *key1, void *key2)
 
 /* Frees public key */
 
-void silc_pkcs1_public_key_free(void *public_key)
+void silc_pkcs1_public_key_free(const struct SilcPKCSAlgorithmStruct *pkcs,
+				void *public_key)
 {
   RsaPublicKey *key = public_key;
 
@@ -350,7 +361,8 @@ void silc_pkcs1_public_key_free(void *public_key)
 
 /* Import PKCS #1 compliant private key */
 
-int silc_pkcs1_import_private_key(unsigned char *key,
+int silc_pkcs1_import_private_key(const struct SilcPKCSAlgorithmStruct *pkcs,
+				  void *key,
 				  SilcUInt32 key_len,
 				  void **ret_private_key)
 {
@@ -406,15 +418,18 @@ int silc_pkcs1_import_private_key(unsigned char *key,
 
 /* Export PKCS #1 compliant private key */
 
-unsigned char *silc_pkcs1_export_private_key(void *private_key,
-					     SilcUInt32 *ret_len)
+unsigned char *
+silc_pkcs1_export_private_key(const struct SilcPKCSAlgorithmStruct *pkcs,
+			      SilcStack stack,
+			      void *private_key,
+			      SilcUInt32 *ret_len)
 {
   RsaPrivateKey *key = private_key;
   SilcAsn1 asn1;
   SilcBufferStruct alg_key;
   unsigned char *ret;
 
-  asn1 = silc_asn1_alloc(NULL);
+  asn1 = silc_asn1_alloc(stack);
   if (!asn1)
     return FALSE;
 
@@ -447,7 +462,9 @@ unsigned char *silc_pkcs1_export_private_key(void *private_key,
 
 /* Returns key length */
 
-SilcUInt32 silc_pkcs1_private_key_bitlen(void *private_key)
+SilcUInt32
+silc_pkcs1_private_key_bitlen(const struct SilcPKCSAlgorithmStruct *pkcs,
+			      void *private_key)
 {
   RsaPrivateKey *key = private_key;
   return key->bits;
@@ -455,7 +472,8 @@ SilcUInt32 silc_pkcs1_private_key_bitlen(void *private_key)
 
 /* Frees private key */
 
-void silc_pkcs1_private_key_free(void *private_key)
+void silc_pkcs1_private_key_free(const struct SilcPKCSAlgorithmStruct *pkcs,
+				 void *private_key)
 {
   RsaPrivateKey *key = private_key;
 
@@ -472,32 +490,38 @@ void silc_pkcs1_private_key_free(void *private_key)
 
 /* PKCS #1 RSA routines */
 
-SilcBool silc_pkcs1_encrypt(void *public_key,
-			    unsigned char *src,
-			    SilcUInt32 src_len,
-			    unsigned char *dst,
-			    SilcUInt32 dst_size,
-			    SilcUInt32 *ret_dst_len,
-			    SilcRng rng)
+SilcAsyncOperation
+silc_pkcs1_encrypt(const struct SilcPKCSAlgorithmStruct *pkcs,
+		   void *public_key,
+		   unsigned char *src,
+		   SilcUInt32 src_len,
+		   SilcRng rng,
+		   SilcPKCSEncryptCb encrypt_cb,
+		   void *context)
 {
   RsaPublicKey *key = public_key;
   SilcMPInt mp_tmp;
   SilcMPInt mp_dst;
   unsigned char padded[2048 + 1];
   SilcUInt32 len = (key->bits + 7) / 8;
+  SilcStack stack;
 
-  if (sizeof(padded) < len)
-    return FALSE;
-  if (dst_size < len)
-    return FALSE;
+  if (sizeof(padded) < len) {
+    encrypt_cb(FALSE, NULL, 0, context);
+    return NULL;
+  }
 
   /* Pad data */
   if (!silc_pkcs1_encode(SILC_PKCS1_BT_PUB, src, src_len,
-			 padded, len, rng))
-    return FALSE;
+			 padded, len, rng)) {
+    encrypt_cb(FALSE, NULL, 0, context);
+    return NULL;
+  }
 
-  silc_mp_init(&mp_tmp);
-  silc_mp_init(&mp_dst);
+  stack = silc_stack_alloc(2048, silc_crypto_stack());
+
+  silc_mp_sinit(stack, &mp_tmp);
+  silc_mp_sinit(stack, &mp_dst);
 
   /* Data to MP */
   silc_mp_bin2mp(padded, len, &mp_tmp);
@@ -506,34 +530,43 @@ SilcBool silc_pkcs1_encrypt(void *public_key,
   silc_rsa_public_operation(key, &mp_tmp, &mp_dst);
 
   /* MP to data */
-  silc_mp_mp2bin_noalloc(&mp_dst, dst, len);
-  *ret_dst_len = len;
+  silc_mp_mp2bin_noalloc(&mp_dst, padded, len);
+
+  /* Deliver result */
+  encrypt_cb(TRUE, padded, len, context);
 
   memset(padded, 0, sizeof(padded));
-  silc_mp_uninit(&mp_tmp);
-  silc_mp_uninit(&mp_dst);
+  silc_mp_suninit(stack, &mp_tmp);
+  silc_mp_suninit(stack, &mp_dst);
+  silc_stack_free(stack);
 
-  return TRUE;
+  return NULL;
 }
 
-SilcBool silc_pkcs1_decrypt(void *private_key,
-			    unsigned char *src,
-			    SilcUInt32 src_len,
-			    unsigned char *dst,
-			    SilcUInt32 dst_size,
-			    SilcUInt32 *ret_dst_len)
+SilcAsyncOperation
+silc_pkcs1_decrypt(const struct SilcPKCSAlgorithmStruct *pkcs,
+		   void *private_key,
+		   unsigned char *src,
+		   SilcUInt32 src_len,
+		   SilcPKCSDecryptCb decrypt_cb,
+		   void *context)
 {
   RsaPrivateKey *key = private_key;
   SilcMPInt mp_tmp;
   SilcMPInt mp_dst;
   unsigned char *padded, unpadded[2048 + 1];
-  SilcUInt32 padded_len;
+  SilcUInt32 padded_len, dst_len;
+  SilcStack stack;
 
-  if (dst_size < (key->bits + 7) / 8)
-    return FALSE;
+  if (sizeof(unpadded) < (key->bits + 7) / 8) {
+    decrypt_cb(FALSE, NULL, 0, context);
+    return NULL;
+  }
 
-  silc_mp_init(&mp_tmp);
-  silc_mp_init(&mp_dst);
+  stack = silc_stack_alloc(2048, silc_crypto_stack());
+
+  silc_mp_sinit(stack, &mp_tmp);
+  silc_mp_sinit(stack, &mp_dst);
 
   /* Data to MP */
   silc_mp_bin2mp(src, src_len, &mp_tmp);
@@ -546,36 +579,39 @@ SilcBool silc_pkcs1_decrypt(void *private_key,
 
   /* Unpad data */
   if (!silc_pkcs1_decode(SILC_PKCS1_BT_PUB, padded, padded_len,
-			 unpadded, sizeof(unpadded), ret_dst_len)) {
+			 unpadded, sizeof(unpadded), &dst_len)) {
     memset(padded, 0, padded_len);
     silc_free(padded);
-    silc_mp_uninit(&mp_tmp);
-    silc_mp_uninit(&mp_dst);
-    return FALSE;
+    silc_mp_suninit(stack, &mp_tmp);
+    silc_mp_suninit(stack, &mp_dst);
+    decrypt_cb(FALSE, NULL, 0, context);
+    return NULL;
   }
 
-  /* Copy to destination */
-  memcpy(dst, unpadded, *ret_dst_len);
+  /* Deliver result */
+  decrypt_cb(TRUE, unpadded, dst_len, context);
 
   memset(padded, 0, padded_len);
   memset(unpadded, 0, sizeof(unpadded));
   silc_free(padded);
-  silc_mp_uninit(&mp_tmp);
-  silc_mp_uninit(&mp_dst);
+  silc_mp_suninit(stack, &mp_tmp);
+  silc_mp_suninit(stack, &mp_dst);
+  silc_stack_free(stack);
 
-  return TRUE;
+  return NULL;
 }
 
 /* PKCS #1 sign with appendix, hash OID included in the signature */
 
-SilcBool silc_pkcs1_sign(void *private_key,
-			 unsigned char *src,
-			 SilcUInt32 src_len,
-			 unsigned char *signature,
-			 SilcUInt32 signature_size,
-			 SilcUInt32 *ret_signature_len,
-			 SilcBool compute_hash,
-			 SilcHash hash)
+SilcAsyncOperation
+silc_pkcs1_sign(const struct SilcPKCSAlgorithmStruct *pkcs,
+		void *private_key,
+		unsigned char *src,
+		SilcUInt32 src_len,
+		SilcBool compute_hash,
+		SilcHash hash,
+		SilcPKCSSignCb sign_cb,
+		void *context)
 {
   RsaPrivateKey *key = private_key;
   unsigned char padded[2048 + 1], hashr[SILC_HASH_MAXLEN];
@@ -584,22 +620,30 @@ SilcBool silc_pkcs1_sign(void *private_key,
   SilcBufferStruct di;
   SilcUInt32 len = (key->bits + 7) / 8;
   const char *oid;
+  SilcStack stack;
   SilcAsn1 asn1;
 
   SILC_LOG_DEBUG(("Sign"));
 
-  if (sizeof(padded) < len)
-    return FALSE;
-  if (signature_size < len)
-    return FALSE;
+  if (sizeof(padded) < len) {
+    sign_cb(FALSE, NULL, 0, context);
+    return NULL;
+  }
 
   oid = silc_hash_get_oid(hash);
-  if (!oid)
-    return FALSE;
+  if (!oid) {
+    sign_cb(FALSE, NULL, 0, context);
+    return NULL;
+  }
 
-  asn1 = silc_asn1_alloc(NULL);
-  if (!asn1)
-    return FALSE;
+  stack = silc_stack_alloc(2048, silc_crypto_stack());
+
+  asn1 = silc_asn1_alloc(stack);
+  if (!asn1) {
+    silc_stack_free(stack);
+    sign_cb(FALSE, NULL, 0, context);
+    return NULL;
+  }
 
   /* Compute hash */
   if (compute_hash) {
@@ -614,12 +658,14 @@ SilcBool silc_pkcs1_sign(void *private_key,
 			SILC_ASN1_SEQUENCE,
 			  SILC_ASN1_SEQUENCE,
 			    SILC_ASN1_OID(oid),
-			    SILC_ASN1_NULL,
+			    SILC_ASN1_NULL(TRUE),
 			  SILC_ASN1_END,
 			  SILC_ASN1_OCTET_STRING(src, src_len),
 			SILC_ASN1_END, SILC_ASN1_END)) {
     silc_asn1_free(asn1);
-    return FALSE;
+    silc_stack_free(stack);
+    sign_cb(FALSE, NULL, 0, context);
+    return NULL;
   }
   SILC_LOG_HEXDUMP(("DigestInfo"), silc_buffer_data(&di),
 		   silc_buffer_len(&di));
@@ -628,11 +674,13 @@ SilcBool silc_pkcs1_sign(void *private_key,
   if (!silc_pkcs1_encode(SILC_PKCS1_BT_PRV1, silc_buffer_data(&di),
 			 silc_buffer_len(&di), padded, len, NULL)) {
     silc_asn1_free(asn1);
-    return FALSE;
+    silc_stack_free(stack);
+    sign_cb(FALSE, NULL, 0, context);
+    return NULL;
   }
 
-  silc_mp_init(&mp_tmp);
-  silc_mp_init(&mp_dst);
+  silc_mp_sinit(stack, &mp_tmp);
+  silc_mp_sinit(stack, &mp_dst);
 
   /* Data to MP */
   silc_mp_bin2mp(padded, len, &mp_tmp);
@@ -641,27 +689,34 @@ SilcBool silc_pkcs1_sign(void *private_key,
   silc_rsa_private_operation(key, &mp_tmp, &mp_dst);
 
   /* MP to data */
-  silc_mp_mp2bin_noalloc(&mp_dst, signature, len);
-  *ret_signature_len = len;
+  silc_mp_mp2bin_noalloc(&mp_dst, padded, len);
+
+  /* Deliver result */
+  sign_cb(TRUE, padded, len, context);
 
   memset(padded, 0, sizeof(padded));
-  silc_mp_uninit(&mp_tmp);
-  silc_mp_uninit(&mp_dst);
   if (compute_hash)
     memset(hashr, 0, sizeof(hashr));
+  silc_mp_suninit(stack, &mp_tmp);
+  silc_mp_suninit(stack, &mp_dst);
   silc_asn1_free(asn1);
+  silc_stack_free(stack);
 
-  return TRUE;
+  return NULL;
 }
 
 /* PKCS #1 verification with appendix. */
 
-SilcBool silc_pkcs1_verify(void *public_key,
-			   unsigned char *signature,
-			   SilcUInt32 signature_len,
-			   unsigned char *data,
-			   SilcUInt32 data_len,
-			   SilcHash hash)
+SilcAsyncOperation
+silc_pkcs1_verify(const struct SilcPKCSAlgorithmStruct *pkcs,
+		  void *public_key,
+		  unsigned char *signature,
+		  SilcUInt32 signature_len,
+		  unsigned char *data,
+		  SilcUInt32 data_len,
+		  SilcHash hash,
+		  SilcPKCSVerifyCb verify_cb,
+		  void *context)
 {
   RsaPublicKey *key = public_key;
   SilcBool ret = FALSE;
@@ -670,18 +725,24 @@ SilcBool silc_pkcs1_verify(void *public_key,
   unsigned char *verify, unpadded[2048 + 1], hashr[SILC_HASH_MAXLEN];
   SilcUInt32 verify_len, len = (key->bits + 7) / 8;
   SilcBufferStruct di, ldi;
+  SilcBool has_null = TRUE;
   SilcHash ihash = NULL;
-  SilcAsn1 asn1 = NULL;
+  SilcStack stack;
+  SilcAsn1 asn1;
   char *oid;
 
   SILC_LOG_DEBUG(("Verify signature"));
 
-  asn1 = silc_asn1_alloc(NULL);
-  if (!asn1)
-    return FALSE;
+  stack = silc_stack_alloc(2048, silc_crypto_stack());
 
-  silc_mp_init(&mp_tmp2);
-  silc_mp_init(&mp_dst);
+  asn1 = silc_asn1_alloc(stack);
+  if (!asn1) {
+    verify_cb(FALSE, context);
+    return NULL;
+  }
+
+  silc_mp_sinit(stack, &mp_tmp2);
+  silc_mp_sinit(stack, &mp_dst);
 
   /* Format the signature into MP int */
   silc_mp_bin2mp(signature, signature_len, &mp_tmp2);
@@ -700,12 +761,16 @@ SilcBool silc_pkcs1_verify(void *public_key,
 
   /* If hash isn't given, allocate the one given in digest info */
   if (!hash) {
+    has_null = FALSE;
+
     /* Decode digest info */
     if (!silc_asn1_decode(asn1, &di,
 			  SILC_ASN1_OPTS(SILC_ASN1_ACCUMUL),
 			  SILC_ASN1_SEQUENCE,
 			    SILC_ASN1_SEQUENCE,
 			      SILC_ASN1_OID(&oid),
+			      SILC_ASN1_NULL_T(SILC_ASN1_OPTIONAL,
+					       SILC_ASN1_TAG_NULL, &has_null),
 			    SILC_ASN1_END,
 			  SILC_ASN1_END, SILC_ASN1_END))
       goto err;
@@ -730,7 +795,7 @@ SilcBool silc_pkcs1_verify(void *public_key,
 			SILC_ASN1_SEQUENCE,
 			  SILC_ASN1_SEQUENCE,
 			    SILC_ASN1_OID(oid),
-			    SILC_ASN1_NULL,
+			    SILC_ASN1_NULL(has_null),
 			  SILC_ASN1_END,
 			  SILC_ASN1_OCTET_STRING(data, data_len),
 			SILC_ASN1_END, SILC_ASN1_END))
@@ -747,53 +812,62 @@ SilcBool silc_pkcs1_verify(void *public_key,
 	      silc_buffer_len(&ldi)))
     ret = TRUE;
 
+  /* Deliver result */
+  verify_cb(ret, context);
+
   memset(verify, 0, verify_len);
   memset(unpadded, 0, sizeof(unpadded));
   silc_free(verify);
-  silc_mp_uninit(&mp_tmp2);
-  silc_mp_uninit(&mp_dst);
+  silc_mp_suninit(stack, &mp_tmp2);
+  silc_mp_suninit(stack, &mp_dst);
   if (hash)
     memset(hashr, 0, sizeof(hashr));
   if (ihash)
     silc_hash_free(ihash);
   silc_asn1_free(asn1);
+  silc_stack_free(stack);
 
-  return ret;
+  return NULL;
 
  err:
   memset(verify, 0, verify_len);
   silc_free(verify);
-  silc_mp_uninit(&mp_tmp2);
-  silc_mp_uninit(&mp_dst);
+  silc_mp_suninit(stack, &mp_tmp2);
+  silc_mp_suninit(stack, &mp_dst);
   if (ihash)
     silc_hash_free(ihash);
   silc_asn1_free(asn1);
-  return FALSE;
+  silc_stack_free(stack);
+
+  verify_cb(FALSE, context);
+  return NULL;
 }
 
 /* PKCS #1 sign without hash oid */
 
-SilcBool silc_pkcs1_sign_no_oid(void *private_key,
-				unsigned char *src,
-				SilcUInt32 src_len,
-				unsigned char *signature,
-				SilcUInt32 signature_size,
-				SilcUInt32 *ret_signature_len,
-				SilcBool compute_hash,
-				SilcHash hash)
+SilcAsyncOperation
+silc_pkcs1_sign_no_oid(const struct SilcPKCSAlgorithmStruct *pkcs,
+		       void *private_key,
+		       unsigned char *src,
+		       SilcUInt32 src_len,
+		       SilcBool compute_hash,
+		       SilcHash hash,
+		       SilcPKCSSignCb sign_cb,
+		       void *context)
 {
   RsaPrivateKey *key = private_key;
   SilcMPInt mp_tmp;
   SilcMPInt mp_dst;
   unsigned char padded[2048 + 1], hashr[SILC_HASH_MAXLEN];
   SilcUInt32 len = (key->bits + 7) / 8;
+  SilcStack stack;
 
   SILC_LOG_DEBUG(("Sign"));
 
-  if (sizeof(padded) < len)
-    return FALSE;
-  if (signature_size < len)
-    return FALSE;
+  if (sizeof(padded) < len) {
+    sign_cb(FALSE, NULL, 0, context);
+    return NULL;
+  }
 
   /* Compute hash if requested */
   if (compute_hash) {
@@ -804,11 +878,15 @@ SilcBool silc_pkcs1_sign_no_oid(void *private_key,
 
   /* Pad data */
   if (!silc_pkcs1_encode(SILC_PKCS1_BT_PRV1, src, src_len,
-			 padded, len, NULL))
-    return FALSE;
+			 padded, len, NULL)) {
+    sign_cb(FALSE, NULL, 0, context);
+    return NULL;
+  }
 
-  silc_mp_init(&mp_tmp);
-  silc_mp_init(&mp_dst);
+  stack = silc_stack_alloc(2048, silc_crypto_stack());
+
+  silc_mp_sinit(stack, &mp_tmp);
+  silc_mp_sinit(stack, &mp_dst);
 
   /* Data to MP */
   silc_mp_bin2mp(padded, len, &mp_tmp);
@@ -817,26 +895,33 @@ SilcBool silc_pkcs1_sign_no_oid(void *private_key,
   silc_rsa_private_operation(key, &mp_tmp, &mp_dst);
 
   /* MP to data */
-  silc_mp_mp2bin_noalloc(&mp_dst, signature, len);
-  *ret_signature_len = len;
+  silc_mp_mp2bin_noalloc(&mp_dst, padded, len);
+
+  /* Deliver result */
+  sign_cb(TRUE, padded, len, context);
 
   memset(padded, 0, sizeof(padded));
-  silc_mp_uninit(&mp_tmp);
-  silc_mp_uninit(&mp_dst);
   if (compute_hash)
     memset(hashr, 0, sizeof(hashr));
+  silc_mp_suninit(stack, &mp_tmp);
+  silc_mp_suninit(stack, &mp_dst);
+  silc_stack_free(stack);
 
-  return TRUE;
+  return NULL;
 }
 
 /* PKCS #1 verify without hash oid */
 
-SilcBool silc_pkcs1_verify_no_oid(void *public_key,
-				  unsigned char *signature,
-				  SilcUInt32 signature_len,
-				  unsigned char *data,
-				  SilcUInt32 data_len,
-				  SilcHash hash)
+SilcAsyncOperation
+silc_pkcs1_verify_no_oid(const struct SilcPKCSAlgorithmStruct *pkcs,
+			 void *public_key,
+			 unsigned char *signature,
+			 SilcUInt32 signature_len,
+			 unsigned char *data,
+			 SilcUInt32 data_len,
+			 SilcHash hash,
+			 SilcPKCSVerifyCb verify_cb,
+			 void *context)
 {
   RsaPublicKey *key = public_key;
   SilcBool ret = FALSE;
@@ -844,11 +929,14 @@ SilcBool silc_pkcs1_verify_no_oid(void *public_key,
   SilcMPInt mp_dst;
   unsigned char *verify, unpadded[2048 + 1], hashr[SILC_HASH_MAXLEN];
   SilcUInt32 verify_len, len = (key->bits + 7) / 8;
+  SilcStack stack;
 
   SILC_LOG_DEBUG(("Verify signature"));
 
-  silc_mp_init(&mp_tmp2);
-  silc_mp_init(&mp_dst);
+  stack = silc_stack_alloc(2048, silc_crypto_stack());
+
+  silc_mp_sinit(stack, &mp_tmp2);
+  silc_mp_sinit(stack, &mp_dst);
 
   /* Format the signature into MP int */
   silc_mp_bin2mp(signature, signature_len, &mp_tmp2);
@@ -864,9 +952,11 @@ SilcBool silc_pkcs1_verify_no_oid(void *public_key,
 			 unpadded, sizeof(unpadded), &len)) {
     memset(verify, 0, verify_len);
     silc_free(verify);
-    silc_mp_uninit(&mp_tmp2);
-    silc_mp_uninit(&mp_dst);
-    return FALSE;
+    silc_mp_suninit(stack, &mp_tmp2);
+    silc_mp_suninit(stack, &mp_dst);
+    silc_stack_free(stack);
+    verify_cb(FALSE, context);
+    return NULL;
   }
 
   /* Hash data if requested */
@@ -880,13 +970,17 @@ SilcBool silc_pkcs1_verify_no_oid(void *public_key,
   if (len == data_len && !memcmp(data, unpadded, len))
     ret = TRUE;
 
+  /* Deliver result */
+  verify_cb(ret, context);
+
   memset(verify, 0, verify_len);
   memset(unpadded, 0, sizeof(unpadded));
-  silc_free(verify);
-  silc_mp_uninit(&mp_tmp2);
-  silc_mp_uninit(&mp_dst);
   if (hash)
     memset(hashr, 0, sizeof(hashr));
+  silc_free(verify);
+  silc_mp_suninit(stack, &mp_tmp2);
+  silc_mp_suninit(stack, &mp_dst);
+  silc_stack_free(stack);
 
-  return ret;
+  return NULL;
 }

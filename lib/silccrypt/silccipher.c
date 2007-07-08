@@ -66,10 +66,7 @@ const SilcCipherObject silc_default_ciphers[] =
   { NULL, NULL, 0, 0, 0, 0 }
 };
 
-/* Register a new cipher into SILC. This is used at the initialization of
-   the SILC. This function allocates a new object for the cipher to be
-   registered. Therefore, if memory has been allocated for the object sent
-   as argument it has to be free'd after this function returns succesfully. */
+/* Register new cipher */
 
 SilcBool silc_cipher_register(const SilcCipherObject *cipher)
 {
@@ -82,7 +79,7 @@ SilcBool silc_cipher_register(const SilcCipherObject *cipher)
   if (silc_cipher_list) {
     SilcCipherObject *entry;
     silc_dlist_start(silc_cipher_list);
-    while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
+    while ((entry = silc_dlist_get(silc_cipher_list))) {
       if (!strcmp(entry->name, cipher->name))
 	return FALSE;
     }
@@ -115,7 +112,7 @@ SilcBool silc_cipher_register(const SilcCipherObject *cipher)
   return TRUE;
 }
 
-/* Unregister a cipher from the SILC. */
+/* Unregister a cipher */
 
 SilcBool silc_cipher_unregister(SilcCipherObject *cipher)
 {
@@ -128,7 +125,7 @@ SilcBool silc_cipher_unregister(SilcCipherObject *cipher)
     return FALSE;
 
   silc_dlist_start(silc_cipher_list);
-  while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
+  while ((entry = silc_dlist_get(silc_cipher_list))) {
     if (cipher == SILC_ALL_CIPHERS || entry == cipher) {
       silc_dlist_del(silc_cipher_list, entry);
       silc_free(entry->name);
@@ -147,21 +144,15 @@ SilcBool silc_cipher_unregister(SilcCipherObject *cipher)
   return FALSE;
 }
 
-/* Function that registers all the default ciphers (all builtin ciphers).
-   The application may use this to register the default ciphers if specific
-   ciphers in any specific order is not wanted. */
+/* Register default ciphers */
 
 SilcBool silc_cipher_register_default(void)
 {
-#ifndef SILC_SYMBIAN
-  int i;
-
-  for (i = 0; silc_default_ciphers[i].name; i++)
-    silc_cipher_register(&(silc_default_ciphers[i]));
-
-#endif /* SILC_SYMBIAN */
+  /* We use builtin ciphers */
   return TRUE;
 }
+
+/* Unregister all ciphers */
 
 SilcBool silc_cipher_unregister_all(void)
 {
@@ -172,7 +163,7 @@ SilcBool silc_cipher_unregister_all(void)
     return FALSE;
 
   silc_dlist_start(silc_cipher_list);
-  while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
+  while ((entry = silc_dlist_get(silc_cipher_list))) {
     silc_cipher_unregister(entry);
     if (!silc_cipher_list)
       break;
@@ -189,21 +180,23 @@ SilcBool silc_cipher_unregister_all(void)
 SilcBool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
 {
   SilcCipherObject *entry = NULL;
+  int i;
 
   SILC_LOG_DEBUG(("Allocating new cipher object"));
 
 #ifndef SILC_SYMBIAN
+  /* First check registered list of ciphers */
   if (silc_cipher_list) {
     silc_dlist_start(silc_cipher_list);
-    while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
+    while ((entry = silc_dlist_get(silc_cipher_list))) {
       if (!strcmp(entry->name, name))
 	break;
     }
   }
-#else
-  {
-    /* On EPOC which don't have globals we check our constant cipher list. */
-    int i;
+#endif /* SILC_SYMBIAN */
+
+  if (!entry) {
+    /* Check builtin list of ciphers */
     for (i = 0; silc_default_ciphers[i].name; i++) {
       if (!strcmp(silc_default_ciphers[i].name, name)) {
 	entry = (SilcCipherObject *)&(silc_default_ciphers[i]);
@@ -211,7 +204,6 @@ SilcBool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
       }
     }
   }
-#endif /* SILC_SYMBIAN */
 
   if (entry) {
     *new_cipher = silc_calloc(1, sizeof(**new_cipher));
@@ -223,6 +215,7 @@ SilcBool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
       silc_free(*new_cipher);
       return FALSE;
     }
+
     return TRUE;
   }
 
@@ -243,24 +236,25 @@ void silc_cipher_free(SilcCipher cipher)
 
 SilcBool silc_cipher_is_supported(const unsigned char *name)
 {
-#ifndef SILC_SYMBIAN
   SilcCipherObject *entry;
+  int i;
 
+#ifndef SILC_SYMBIAN
+  /* First check registered list of ciphers */
   if (silc_cipher_list) {
     silc_dlist_start(silc_cipher_list);
-    while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
+    while ((entry = silc_dlist_get(silc_cipher_list))) {
       if (!strcmp(entry->name, name))
 	return TRUE;
     }
   }
-#else
-  {
-    int i;
-    for (i = 0; silc_default_ciphers[i].name; i++)
-      if (!strcmp(silc_default_ciphers[i].name, name))
-	return TRUE;
-  }
 #endif /* SILC_SYMBIAN */
+
+  /* Check builtin list of ciphers */
+  for (i = 0; silc_default_ciphers[i].name; i++)
+    if (!strcmp(silc_default_ciphers[i].name, name))
+      return TRUE;
+
   return FALSE;
 }
 
@@ -268,28 +262,14 @@ SilcBool silc_cipher_is_supported(const unsigned char *name)
 
 char *silc_cipher_get_supported(void)
 {
-  SilcCipherObject *entry;
+  SilcCipherObject *entry, *entry2;
   char *list = NULL;
-  int len = 0;
+  int i, len = 0;
 
 #ifndef SILC_SYMBIAN
   if (silc_cipher_list) {
     silc_dlist_start(silc_cipher_list);
-    while ((entry = silc_dlist_get(silc_cipher_list)) != SILC_LIST_END) {
-      len += strlen(entry->name);
-      list = silc_realloc(list, len + 1);
-
-      memcpy(list + (len - strlen(entry->name)),
-	     entry->name, strlen(entry->name));
-      memcpy(list + len, ",", 1);
-      len++;
-    }
-  }
-#else
-  {
-    int i;
-    for (i = 0; silc_default_ciphers[i].name; i++) {
-      entry = (SilcCipherObject *)&(silc_default_ciphers[i]);
+    while ((entry = silc_dlist_get(silc_cipher_list))) {
       len += strlen(entry->name);
       list = silc_realloc(list, len + 1);
 
@@ -300,6 +280,28 @@ char *silc_cipher_get_supported(void)
     }
   }
 #endif /* SILC_SYMBIAN */
+
+  for (i = 0; silc_default_ciphers[i].name; i++) {
+    entry = (SilcCipherObject *)&(silc_default_ciphers[i]);
+
+    if (silc_cipher_list) {
+      silc_dlist_start(silc_cipher_list);
+      while ((entry2 = silc_dlist_get(silc_cipher_list))) {
+	if (!strcmp(entry2->name, entry->name))
+	  break;
+      }
+      if (entry2)
+	continue;
+    }
+
+    len += strlen(entry->name);
+    list = silc_realloc(list, len + 1);
+
+    memcpy(list + (len - strlen(entry->name)),
+	   entry->name, strlen(entry->name));
+    memcpy(list + len, ",", 1);
+    len++;
+  }
 
   list[len - 1] = 0;
 

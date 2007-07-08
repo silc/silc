@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1999 - 2006 Pekka Riikonen
+  Copyright (C) 1999 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -81,8 +81,7 @@ static void silc_hmac_init_internal(SilcHmac hmac, unsigned char *key,
   }
 }
 
-/* Registers a new HMAC into the SILC. This function is used at the
-   initialization of the SILC. */
+/* Registers a new HMAC */
 
 SilcBool silc_hmac_register(const SilcHmacObject *hmac)
 {
@@ -116,7 +115,7 @@ SilcBool silc_hmac_register(const SilcHmacObject *hmac)
   return TRUE;
 }
 
-/* Unregister a HMAC from the SILC. */
+/* Unregister a HMAC */
 
 SilcBool silc_hmac_unregister(SilcHmacObject *hmac)
 {
@@ -148,21 +147,15 @@ SilcBool silc_hmac_unregister(SilcHmacObject *hmac)
   return FALSE;
 }
 
-/* Function that registers all the default hmacs (all builtin ones).
-   The application may use this to register the default hmacs if
-   specific hmacs in any specific order is not wanted. */
+/* Register default HMACs */
 
 SilcBool silc_hmac_register_default(void)
 {
-#ifndef SILC_SYMBIAN
-  int i;
-
-  for (i = 0; silc_default_hmacs[i].name; i++)
-    silc_hmac_register(&(silc_default_hmacs[i]));
-
-#endif /* SILC_SYMBIAN */
+  /* We use builtin HMACs */
   return TRUE;
 }
+
+/* Unregister all HMACs */
 
 SilcBool silc_hmac_unregister_all(void)
 {
@@ -189,6 +182,9 @@ SilcBool silc_hmac_unregister_all(void)
 
 SilcBool silc_hmac_alloc(const char *name, SilcHash hash, SilcHmac *new_hmac)
 {
+  SilcHmacObject *entry = NULL;
+  int i;
+
   SILC_LOG_DEBUG(("Allocating new HMAC"));
 
   /* Allocate the new object */
@@ -219,8 +215,8 @@ SilcBool silc_hmac_alloc(const char *name, SilcHash hash, SilcHmac *new_hmac)
   (*new_hmac)->hash = hash;
 
 #ifndef SILC_SYMBIAN
+  /* Check registered list of HMACs */
   if (silc_hmac_list) {
-    SilcHmacObject *entry;
     silc_dlist_start(silc_hmac_list);
     while ((entry = silc_dlist_get(silc_hmac_list)) != SILC_LIST_END) {
       if (!strcmp(entry->name, name)) {
@@ -229,10 +225,10 @@ SilcBool silc_hmac_alloc(const char *name, SilcHash hash, SilcHmac *new_hmac)
       }
     }
   }
-#else
-  {
-    /* On EPOC which don't have globals we check our constant hash list. */
-    int i;
+#endif /* SILC_SYMBIAN */
+
+  if (!entry) {
+    /* Check builtin list of HMACs */
     for (i = 0; silc_default_hmacs[i].name; i++) {
       if (!strcmp(silc_default_hmacs[i].name, name)) {
 	(*new_hmac)->hmac = (SilcHmacObject *)&(silc_default_hmacs[i]);
@@ -240,7 +236,6 @@ SilcBool silc_hmac_alloc(const char *name, SilcHash hash, SilcHmac *new_hmac)
       }
     }
   }
-#endif /* SILC_SYMBIAN */
 
   silc_free(*new_hmac);
   *new_hmac = NULL;
@@ -289,12 +284,13 @@ const char *silc_hmac_get_name(SilcHmac hmac)
 
 SilcBool silc_hmac_is_supported(const char *name)
 {
-#ifndef SILC_SYMBIAN
   SilcHmacObject *entry;
+  int i;
 
   if (!name)
     return FALSE;
 
+#ifndef SILC_SYMBIAN
   if (silc_hmac_list) {
     silc_dlist_start(silc_hmac_list);
     while ((entry = silc_dlist_get(silc_hmac_list)) != SILC_LIST_END) {
@@ -302,14 +298,12 @@ SilcBool silc_hmac_is_supported(const char *name)
 	return TRUE;
     }
   }
-#else
-  {
-    int i;
-    for (i = 0; silc_default_hmacs[i].name; i++)
-      if (!strcmp(silc_default_hmacs[i].name, name))
-	return TRUE;
-  }
 #endif /* SILC_SYMBIAN */
+
+  for (i = 0; silc_default_hmacs[i].name; i++)
+    if (!strcmp(silc_default_hmacs[i].name, name))
+      return TRUE;
+
   return FALSE;
 }
 
@@ -317,9 +311,9 @@ SilcBool silc_hmac_is_supported(const char *name)
 
 char *silc_hmac_get_supported()
 {
-  SilcHmacObject *entry;
+  SilcHmacObject *entry, *entry2;
   char *list = NULL;
-  int len = 0;
+  int len = 0, i;
 
 #ifndef SILC_SYMBIAN
   if (silc_hmac_list) {
@@ -334,21 +328,30 @@ char *silc_hmac_get_supported()
       len++;
     }
   }
-#else
-  {
-    int i;
-    for (i = 0; silc_default_hmacs[i].name; i++) {
-      entry = (SilcHmacObject *)&(silc_default_hmacs[i]);
-      len += strlen(entry->name);
-      list = silc_realloc(list, len + 1);
-
-      memcpy(list + (len - strlen(entry->name)),
-	     entry->name, strlen(entry->name));
-      memcpy(list + len, ",", 1);
-      len++;
-    }
-  }
 #endif /* SILC_SYMBIAN */
+
+
+  for (i = 0; silc_default_hmacs[i].name; i++) {
+    entry = (SilcHmacObject *)&(silc_default_hmacs[i]);
+
+    if (silc_hmac_list) {
+      silc_dlist_start(silc_hmac_list);
+      while ((entry2 = silc_dlist_get(silc_hmac_list)) != SILC_LIST_END) {
+	if (!strcmp(entry2->name, entry->name))
+	  break;
+      }
+      if (entry2)
+	continue;
+    }
+
+    len += strlen(entry->name);
+    list = silc_realloc(list, len + 1);
+
+    memcpy(list + (len - strlen(entry->name)),
+	   entry->name, strlen(entry->name));
+    memcpy(list + len, ",", 1);
+    len++;
+  }
 
   list[len - 1] = 0;
 
