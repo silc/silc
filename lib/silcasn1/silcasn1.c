@@ -39,6 +39,7 @@ SilcAsn1 silc_asn1_alloc(SilcStack stack)
     return NULL;
   }
 
+  asn1->orig_stack = stack;
   asn1->stack1 = stack1;
   asn1->stack2 = silc_stack_alloc(0, stack);
   if (!asn1->stack2) {
@@ -62,6 +63,8 @@ void silc_asn1_free(SilcAsn1 asn1)
 
 SilcBool silc_asn1_init(SilcAsn1 asn1, SilcStack stack)
 {
+  asn1->orig_stack = stack;
+
   asn1->stack1 = silc_stack_alloc(0, stack);
   if (!asn1->stack1)
     return FALSE;
@@ -193,7 +196,7 @@ SilcBool silc_asn1_dump(SilcAsn1 asn1, SilcBuffer src)
     }
 
     fprintf(stdout, "Type %s [%d]\n",
-	    silc_asn1_tag_name(rtag), rtag);
+	    silc_asn1_tag_name(rtag), (int)rtag);
 
     if (renc == SILC_BER_ENC_PRIMITIVE)
       len = len + rdata_len;

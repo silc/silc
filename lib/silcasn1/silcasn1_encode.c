@@ -22,6 +22,7 @@
 #include "silcber.h"
 
 #define SILC_ASN1_BUFFER_FREE(b, stack) if (!stack) silc_buffer_purge(b);
+#define SILC_ASN1_STACK(stack, asn1) stack ? stack : asn1->orig_stack
 
 /************************** ASN.1 Encoder routines **************************/
 
@@ -44,7 +45,7 @@
     s[s_len] = '\0';							\
   }									\
   len = silc_ber_encoded_len(tag, s_len, indef);			\
-  dest = silc_buffer_srealloc_size(stack1, dest,			\
+  dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,	\
 				   silc_buffer_truelen(dest) + len);	\
   ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,	\
 			tag, s, s_len, indef);				\
@@ -147,7 +148,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 
       /* Encode the explicit tag */
       len = silc_ber_encoded_len(tag, silc_buffer_len(&buf), FALSE);
-      dest = silc_buffer_srealloc_size(stack1, dest,
+      dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 				       silc_buffer_truelen(dest) + len);
       ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_CONSTRUCTED,
 			    tag, buf.data, silc_buffer_len(&buf), FALSE);
@@ -192,7 +193,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 
 	  /* Now encode with implicit tagging */
 	  len = silc_ber_encoded_len(tag, d_len, FALSE);
-	  dest = silc_buffer_srealloc_size(stack1, dest,
+	  dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					   silc_buffer_truelen(dest) + len);
 	  ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_CONSTRUCTED,
 				tag, d, d_len, FALSE);
@@ -201,7 +202,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	} else {
 	  /* Copy the data directly into the tree. */
 	  len = silc_buffer_len(node);
-	  dest = silc_buffer_srealloc_size(stack1, dest,
+	  dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					   silc_buffer_truelen(dest) + len);
 	  if (!dest)
 	    goto fail;
@@ -219,7 +220,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 
 	/* Encode the primitive data */
 	len = silc_ber_encoded_len(tag, silc_buffer_len(prim), FALSE);
-	dest = silc_buffer_srealloc_size(stack1, dest,
+	dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, prim->data, silc_buffer_len(prim), FALSE);
@@ -249,7 +250,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 
 	/* Encode the sequence */
 	len = silc_ber_encoded_len(tag, silc_buffer_len(&buf), indef);
-	dest = silc_buffer_srealloc_size(stack1, dest,
+	dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_CONSTRUCTED,
 			      tag, buf.data, silc_buffer_len(&buf), indef);
@@ -288,7 +289,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 
 	/* Encode the integer */
 	len = silc_ber_encoded_len(tag, len, indef);
-	dest = silc_buffer_srealloc_size(stack1, dest,
+	dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, buf.data, silc_buffer_len(&buf), FALSE);
@@ -327,7 +328,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 
 	/* Encode the integer */
 	len = silc_ber_encoded_len(tag, len, indef);
-	dest = silc_buffer_srealloc_size(stack1, dest,
+	dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, buf.data, silc_buffer_len(&buf), FALSE);
@@ -418,7 +419,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	}
 
 	len = silc_ber_encoded_len(tag, silc_buffer_len(&buf), indef);
-	dest = silc_buffer_srealloc_size(stack1, dest,
+	dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, buf.data, silc_buffer_len(&buf), FALSE);
@@ -437,7 +438,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 
 	assert(indef == FALSE);
 	len = silc_ber_encoded_len(tag, 1, FALSE);
-	dest = silc_buffer_srealloc_size(stack1, dest,
+	dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, val, 1, FALSE);
@@ -468,7 +469,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	silc_buffer_push(&buf, 1);
 
 	len = silc_ber_encoded_len(tag, silc_buffer_len(&buf), indef);
-	dest = silc_buffer_srealloc_size(stack1, dest,
+	dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, buf.data, silc_buffer_len(&buf), indef);
@@ -482,14 +483,21 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
     case SILC_ASN1_TAG_NULL:
       {
 	/* Encode empty BER block */
+	SilcBool val = va_arg(asn1->ap, SilcUInt32);
+
 	assert(indef == FALSE);
+
+	if (!val)
+	  break;
+
 	len = silc_ber_encoded_len(tag, 0, FALSE);
-	dest = silc_buffer_srealloc_size(stack1, dest,
+	dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, NULL, 0, FALSE);
 	if (!ret)
 	  goto fail;
+
 	break;
       }
 
@@ -507,7 +515,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	}
 
 	len = silc_ber_encoded_len(tag, strlen(timestr), indef);
-	dest = silc_buffer_srealloc_size(stack1, dest,
+	dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, timestr, strlen(timestr), indef);
@@ -530,7 +538,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	}
 
 	len = silc_ber_encoded_len(tag, strlen(timestr), indef);
-	dest = silc_buffer_srealloc_size(stack1, dest,
+	dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, timestr, strlen(timestr), indef);
@@ -554,7 +562,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	}
 
 	len = silc_ber_encoded_len(tag, d_len, indef);
-	dest = silc_buffer_srealloc_size(stack1, dest,
+	dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, d, d_len, indef);
@@ -570,7 +578,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	SilcUInt32 d_len = va_arg(asn1->ap, SilcUInt32);
 
 	len = silc_ber_encoded_len(tag, d_len, indef);
-	dest = silc_buffer_srealloc_size(stack1, dest,
+	dest = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1), dest,
 					 silc_buffer_truelen(dest) + len);
 	ret = silc_ber_encode(dest, ber_class, SILC_BER_ENC_PRIMITIVE,
 			      tag, d, d_len, indef);
@@ -693,13 +701,16 @@ SilcBool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...)
   SilcAsn1Options opts;
   SilcBerClass ber_class;
   SilcStackFrame frame1, frame2;
-  SilcStack stack1 = NULL;
+  SilcStack stack1 = NULL, orig;
   SilcBool ret;
 
   if (!asn1)
     return FALSE;
 
   va_start(asn1->ap, dest);
+
+  orig = asn1->orig_stack;
+  asn1->orig_stack = NULL;
 
   /* Get the first arguments and call the encoder. */
   SILC_ASN1_ARGS(asn1, type, tag, ber_class, opts);
@@ -717,6 +728,7 @@ SilcBool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...)
 	 that stack aware calls revert to normal allocation routines. */
       stack1 = asn1->stack1;
       asn1->stack1 = NULL;
+      asn1->orig_stack = orig;
     }
 
     if (o & SILC_ASN1_ACCUMUL) {
@@ -757,6 +769,8 @@ SilcBool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...)
   /* If SILC_ASN1_ALLOC flag was set, restore the stack. */
   if (stack1 && !asn1->stack1)
     asn1->stack1 = stack1;
+
+  asn1->orig_stack = orig;
 
   va_end(asn1->ap);
 

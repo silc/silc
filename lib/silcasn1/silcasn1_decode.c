@@ -21,6 +21,8 @@
 #include "silcasn1.h"
 #include "silcber.h"
 
+#define SILC_ASN1_STACK(stack, asn1) stack ? stack : asn1->orig_stack
+
 /************************** ASN.1 Decoder routines **************************/
 
 /* Internal SEQUENCE OF and SET OF decoder.  This is used only when decoding
@@ -36,8 +38,8 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
   SilcBuffer *retb;
   SilcUInt32 *retc, rtag;
   const unsigned char *rdata;
-  SilcUInt32 rdata_len, len = 0;
-  SilcBool found = FALSE, rindef;
+  SilcUInt32 rdata_len, len = 0, *choice_index = NULL;
+  SilcBool found = FALSE, rindef, chosen = FALSE;
 
   struct SilcAsn1SofStruct {
     SilcAsn1Tag type;
@@ -62,10 +64,13 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
 
   if (type == SILC_ASN1_TAG_CHOICE) {
     /* The sequence may consist of the following types. */
+    choice_index = va_arg(asn1->ap, SilcUInt32 *);
+    *choice_index = 0;
+
     type = va_arg(asn1->ap, SilcUInt32);
     assert(type != SILC_ASN1_END);
     while (type != SILC_ASN1_END) {
-      t = silc_smalloc(asn1->stack1, sizeof(*t));
+      t = silc_smalloc(SILC_ASN1_STACK(asn1->stack1, asn1), sizeof(*t));
       if (!t)
 	goto out;
       t->type = type;
@@ -78,7 +83,7 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
     }
   } else {
     /* The sequence consists of this type. */
-    t = silc_smalloc(asn1->stack1, sizeof(*t));
+    t = silc_smalloc(SILC_ASN1_STACK(asn1->stack1, asn1), sizeof(*t));
     if (!t)
       goto out;
     t->type = type;
@@ -118,10 +123,14 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
     found = FALSE;
     silc_list_start(types);
     while ((t = silc_list_get(types)) != SILC_LIST_END) {
+      if (choice_index && !chosen)
+	(*choice_index)++;
+
       if (t->type != rtag)
 	continue;
 
-      *retb = silc_srealloc(asn1->stack1, sizeof(**retb) * (*retc), *retb,
+      *retb = silc_srealloc(SILC_ASN1_STACK(asn1->stack1, asn1),
+			    sizeof(**retb) * (*retc), *retb,
 			    sizeof(**retb) * (*retc + 1));
       if (*retb == NULL)
 	goto out;
@@ -129,9 +138,10 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
       SILC_LOG_DEBUG(("Decode %s [%d] from sequence of types",
 		      silc_asn1_tag_name(rtag), rtag));
 
-      /* Data is duplicated only if SILC_ASN1_ALLOC flag is set */
+      /* Data is duplicated only if SILC_ASN1_ALLOC flag is set, ie.
+	 asn1->stack1 == NULL */
       if (!asn1->stack1)
-	rdata = silc_memdup(rdata - len, rdata_len + len);
+	rdata = silc_smemdup(asn1->orig_stack, rdata - len, rdata_len + len);
       else
 	rdata = rdata - len;
       rdata_len += len;
@@ -140,6 +150,7 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
       silc_buffer_set(&(*retb)[*retc], (unsigned char *)rdata, rdata_len);
       (*retc)++;
       found = TRUE;
+      chosen = TRUE;
       break;
     }
 
@@ -158,7 +169,7 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
   if (!asn1->stack1) {
     silc_list_start(types);
     while ((t = silc_list_get(types)) != SILC_LIST_END)
-      silc_free(t);
+      silc_sfree(asn1->orig_stack, t);
   }
 
   return ret;
@@ -178,7 +189,8 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
     }								\
     if (name == NULL)						\
       break;							\
-    *name = silc_scalloc(asn1->stack1, 1, sizeof(**name));     	\
+    *name = silc_scalloc(SILC_ASN1_STACK(stack1, asn1),		\
+			 1, sizeof(**name));			\
     if (*name == NULL)						\
       break;							\
   } else {							\
@@ -219,7 +231,7 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
 
 #define SILC_ASN1_VA_FREE(opts, name)		\
   if ((opts) & SILC_ASN1_OPTIONAL)		\
-    silc_free(*name);
+    silc_sfree(SILC_ASN1_STACK(stack1, asn1), *name);
 
 /* Decodes string to UTF-8 string which is our internal representation
    of any string. */
@@ -230,7 +242,7 @@ static SilcBool silc_asn1_decoder_sof(SilcAsn1 asn1, SilcBuffer src)
     ret = FALSE;						\
     goto fail;							\
   }								\
-  *s = silc_smalloc(stack1, *s_len + 1);			\
+  *s = silc_smalloc(SILC_ASN1_STACK(stack1, asn1), *s_len + 1);	\
   if (*s) {							\
     silc_utf8_encode(rdata, rdata_len, (enc), *s, *s_len);	\
     (*s)[*s_len] = '\0';					\
@@ -254,8 +266,9 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
   SilcBerEncoding renc;
   SilcUInt32 len = 0, rtag;
   SilcBool ret, indef, rindef, found = FALSE, choice = FALSE;
+  SilcBool choice_found = FALSE;
   const unsigned char *rdata;
-  SilcUInt32 rdata_len;
+  SilcUInt32 rdata_len, *choice_index = NULL;
   int i;
 
 #ifdef SILC_DEBUG
@@ -335,6 +348,8 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	 having OPTIONAL flag set, except that at the end one must have
 	 been found. */
       if (type == SILC_ASN1_TAG_CHOICE) {
+	choice_index = va_arg(asn1->ap, SilcUInt32 *);
+	*choice_index = 0;
 	choice = TRUE;
 	SILC_ASN1_ARGS(asn1, type, tag, ber_class, opts);
 	opts |= SILC_ASN1_OPTIONAL;
@@ -416,7 +431,8 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	     the node */
 	  SILC_ASN1_VAD(asn1, opts, SilcBufferStruct, node);
 
-	  *node = silc_buffer_srealloc_size(stack1, *node, len + rdata_len);
+	  *node = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1),
+					    *node, len + rdata_len);
 	  silc_buffer_put(*node, rdata - len, rdata_len + len);
 	  break;
 	}
@@ -426,7 +442,8 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	  /* ANY_PRIMITIVE returns the raw data blob of any primitive type. */
 	  SILC_ASN1_VAD(asn1, opts, SilcBufferStruct, prim);
 
-	  *prim = silc_buffer_srealloc_size(stack1, *prim, rdata_len);
+	  *prim = silc_buffer_srealloc_size(SILC_ASN1_STACK(stack1, asn1),
+					    *prim, rdata_len);
 	  silc_buffer_put(*prim, rdata, rdata_len);
 	  break;
 	}
@@ -442,8 +459,9 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	  SILC_ASN1_ARGS(asn1, rtype, rtag, rclass, ropts);
 
 	  /* Decode the sequence recursively */
-	  ret = silc_asn1_decoder(asn1, stack1, rtype, rtag, rclass,
-				  ropts, src, depth + 1, FALSE);
+	  ret = silc_asn1_decoder(asn1, SILC_ASN1_STACK(stack1, asn1),
+				  rtype, rtag, rclass, ropts, src,
+				  depth + 1, FALSE);
 	  if (!ret)
 	    goto fail;
 	  break;
@@ -463,7 +481,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	    goto fail;
 	  }
 
-	  silc_mp_sinit(asn1->stack1, *intval);
+	  silc_mp_sinit(SILC_ASN1_STACK(stack1, asn1), *intval);
 
 	  /* Check whether the integer is positive or negative */
 	  if (rdata[0] & 0x80) {
@@ -500,12 +518,12 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	    goto fail;
 	  }
 
-	  silc_stack_push(asn1->stack1, NULL);
-	  silc_mp_sinit(asn1->stack1, &z);
+	  silc_stack_push(SILC_ASN1_STACK(stack1, asn1), NULL);
+	  silc_mp_sinit(SILC_ASN1_STACK(stack1, asn1), &z);
 	  silc_mp_bin2mp((unsigned char *)rdata, rdata_len, &z);
 	  *(*intval) = silc_mp_get_ui(&z);
 	  silc_mp_uninit(&z);
-	  silc_stack_pop(asn1->stack1);
+	  silc_stack_pop(SILC_ASN1_STACK(stack1, asn1));
 	  break;
 	}
 
@@ -530,7 +548,8 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	  silc_snprintf(tmpstr, sizeof(tmpstr) - 1, "%lu.%lu",
 		   (unsigned long)(rdata[0] & 0xff) / 40,
 		   (unsigned long)(rdata[0] & 0xff) % 40);
-	  silc_buffer_sstrformat(asn1->stack1, &tmpb, tmpstr, SILC_STR_END);
+	  silc_buffer_sstrformat(SILC_ASN1_STACK(stack1, asn1),
+				 &tmpb, tmpstr, SILC_STR_END);
 
 	  /* Set rest of the OID values, each octet having 7 bits of the
 	     OID value with bit 8 set.  An octet not having bit 8 set
@@ -549,8 +568,10 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	    oid |= rdata[i];
 
 	    memset(tmpstr, 0, sizeof(tmpstr));
-	    silc_snprintf(tmpstr, sizeof(tmpstr) - 1, ".%lu", (unsigned long)oid);
-	    silc_buffer_sstrformat(asn1->stack1, &tmpb, tmpstr, SILC_STR_END);
+	    silc_snprintf(tmpstr, sizeof(tmpstr) - 1, ".%lu",
+			  (unsigned long)oid);
+	    silc_buffer_sstrformat(SILC_ASN1_STACK(stack1, asn1),
+				   &tmpb, tmpstr, SILC_STR_END);
 	  }
 	  *oidstr = tmpb.head;
 
@@ -585,18 +606,23 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	    goto fail;
 	  }
 
-	  *d = silc_smemdup(stack1, rdata + 1, rdata_len - 1);
+	  *d = silc_smemdup(SILC_ASN1_STACK(stack1, asn1),
+			    rdata + 1, rdata_len - 1);
 	  *d_len = (rdata_len - 1) * 8;
 	  break;
 	}
 
       case SILC_ASN1_TAG_NULL:
 	{
+	  SILC_ASN1_VAD(asn1, opts, SilcBool, val);
+
 	  /* Decode empty BER block */
 	  if (rdata_len != 0) {
 	    SILC_LOG_DEBUG(("Malformed null value"));
 	    goto fail;
 	  }
+
+	  *(*val) = TRUE;
 	  break;
 	}
 
@@ -657,7 +683,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	    goto fail;
 	  }
 
-	  *s = silc_smemdup(stack1, rdata, rdata_len);
+	  *s = silc_smemdup(SILC_ASN1_STACK(stack1, asn1), rdata, rdata_len);
 	  *s_len = rdata_len;
 	  break;
 	}
@@ -666,7 +692,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	{
 	  /* Octet string.  Take data as is. */
 	  SILC_ASN1_VAD_UCHAR(asn1, opts, unsigned char, s, s_len);
-	  *s = silc_smemdup(stack1, rdata, rdata_len);
+	  *s = silc_smemdup(SILC_ASN1_STACK(stack1, asn1), rdata, rdata_len);
 	  *s_len = rdata_len;
 	  break;
 	}
@@ -776,8 +802,15 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
 	  if (!found) {
 	    /* No choices were found, error */
 	    SILC_LOG_DEBUG(("Invalid ASN.1 choice: no choices present"));
+	    *choice_index = 0;
 	    ret = FALSE;
 	    goto fail;
+	  }
+
+	  if (!choice_found) {
+	    (*choice_index)++;
+	    SILC_LOG_DEBUG(("Found choice %s type, index %d",
+			    silc_asn1_tag_name(rtype), *choice_index));
 	  }
 
 	  /* Take next type and new BER object, choices are over */
@@ -796,10 +829,15 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
       }
 
       if (choice) {
+	if (!choice_found)
+	  (*choice_index)++;
+
 	/* Even if the choice was found we must go through rest of
 	   the choices. */
 	if (found && len) {
-	  SILC_LOG_DEBUG(("Found choice %s type", silc_asn1_tag_name(rtype)));
+	  choice_found = TRUE;
+	  SILC_LOG_DEBUG(("Found choice %s type, index %d",
+			  silc_asn1_tag_name(rtype), *choice_index));
 	  rdata_len = len = 0;
 	}
 	opts |= SILC_ASN1_OPTIONAL;
@@ -833,13 +871,15 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...)
   SilcAsn1Options opts;
   SilcBerClass ber_class;
   SilcStackFrame frame1, frame2;
-  SilcStack stack1 = NULL, stack2 = NULL;
+  SilcStack stack1 = NULL, stack2 = NULL, orig;
   SilcBool ret;
 
   if (!asn1)
     return FALSE;
 
   va_start(asn1->ap, src);
+
+  orig = asn1->orig_stack;
 
   /* Get the first arguments and call the decoder. */
   SILC_ASN1_ARGS(asn1, type, tag, ber_class, opts);
@@ -859,6 +899,7 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...)
       stack2 = asn1->stack2;
       asn1->stack1 = NULL;
       asn1->stack2 = NULL;
+      asn1->orig_stack = orig;
     }
 
     if (o & SILC_ASN1_ACCUMUL) {
@@ -915,6 +956,8 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...)
     asn1->stack1 = stack1;
     asn1->stack2 = stack2;
   }
+
+  asn1->orig_stack = orig;
 
   va_end(asn1->ap);
 

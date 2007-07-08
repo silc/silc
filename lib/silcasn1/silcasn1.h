@@ -112,6 +112,20 @@ typedef struct SilcAsn1Object SilcAsn1Struct;
  *                                         SILC_ASN1_EXPLICIT, 100, boolval),
  *                     SILC_ASN1_END);
  *
+ *
+ *    // Decode optional value, with SILC_ASN1_OPTIONAL the type must be
+ *    // a pointer so that NULL can be returned if the type is not present.
+ *    SilcBool *val;
+ *
+ *    silc_asn1_decode(asn1, src,
+ *                     SILC_ASN1_OPTS(SILC_ASN1_OPTIONAL),
+ *                     SILC_ASN1_BOOLEAN(&val),
+ *                     SILC_ASN1_END);
+ *
+ *    // If val == NULL, the optional value was not present
+ *    if (val == NULL)
+ *      error;
+ *
  * SOURCE
  */
 typedef enum {
@@ -141,7 +155,10 @@ typedef enum {
 
   /* ASN.1 encoder/decoder options (bitmask).  These can be given
      only with SILC_ASN1_OPTS macro at the start of encoding/decoding. */
-  SILC_ASN1_ALLOC        = 0x0400,       /* Dynamically allocate results */
+  SILC_ASN1_ALLOC        = 0x0400,       /* Dynamically allocate results,
+					    or if stack was given to
+					    silc_asn1_alloc, they are allocated
+					    and consumed from the stack. */
   SILC_ASN1_ACCUMUL      = 0x0800,       /* Accumulate memory for results,
 					    next call to silc_asn1_decode
 					    will not cancel old results. */
@@ -218,7 +235,9 @@ typedef enum {
  *
  *    When this context is freed with silc_asn1_free all memory will be
  *    freed, and all encoded ASN.1 buffers becomes invalid.  Also all
- *    data that is returned by silc_asn1_decode function becomes invalid.
+ *    data that is returned by silc_asn1_encode and silc_asn1_decode function
+ *    becomes invalid, unless SILC_ASN1_ALLOC flag is used, in which case the
+ *    memory is allocated from `stack' and the `stack' is consumed.
  *
  ***/
 SilcAsn1 silc_asn1_alloc(SilcStack stack);
@@ -290,11 +309,12 @@ void silc_asn1_uninit(SilcAsn1 asn1);
  *
  *    If the SILC_ASN1_OPTS macro with SILC_ASN1_ALLOC option is given then
  *    the `dest' is dynamically allocated and caller must free it by itself.
- *    Alternatively if SILC_ASN1_ACCUMUL is given then memory is accumulated
- *    from `asn1' for `dest' and it is freed only when silc_asn1_free or
- *    silc_asn1_uninit is called.  Next call to silc_asn1_encode will not
- *    cancel the previous result, but will accumulate more memory for new
- *    result.
+ *    If the `stack' was given to silc_asn1_alloc, the SILC_ASN1_ALLOC will
+ *    allocate from that stack and consume the stack.  Alternatively if
+ *    SILC_ASN1_ACCUMUL is given then memory is accumulated from `asn1' fo
+ *    `dest' and it is freed only when silc_asn1_free or silc_asn1_uninit
+ *    is called.  Next call to silc_asn1_encode will not cancel the previous
+ *    result, but will accumulate more memory for new result.
  *
  *    The variable argument list is constructed by using various
  *    macros, for example SILC_ASN1_SEQUENCE, etc.  The variable argument
@@ -352,13 +372,14 @@ SilcBool silc_asn1_encode(SilcAsn1 asn1, SilcBuffer dest, ...);
  *
  *    If the SILC_ASN1_OPTS macro with SILC_ASN1_ALLOC option is given then
  *    all results are dynamically allocated and caller must free them by
- *    itself. Alternatively if SILC_ASN1_ACCUMUL is given then memory is
- *    accumulated from `asn1' for results and they are freed only when the
- *    silc_asn1_free or silc_asn1_uninit is called.  Next calls to the
- *    silc_asn1_decode will NOT invalidate the old results, but will
- *    accumulate more memory for new results.  If the SILC_ASN1_OPTS is not
- *    given at all then the default allocation method (decribed above)
- *    applies.
+ *    itself. If the `stack' was given to silc_asn1_alloc, the SILC_ASN1_ALLOC
+ *    will allocate from that stack and consume the stack.  Alternatively if
+ *    SILC_ASN1_ACCUMUL is given then memory is accumulated from `asn1' for
+ *    results and they are freed only when the silc_asn1_free or
+ *    silc_asn1_uninit is called.  Next calls to the silc_asn1_decode will
+ *    NOT invalidate the old results, but will accumulate more memory for new
+ *    results.  If the SILC_ASN1_OPTS is not given at all then the default
+ *    allocation method (decribed above) applies.
  *
  *    If caller needs to store the results even after `asn1' becomes invalid
  *    then call must either use SILC_ASN1_ALLOC option or duplicate the
@@ -631,27 +652,29 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
  * SYNOPSIS
  *
  *    Decoding:
- *    SILC_ASN1_CHOICE
+ *    SILC_ASN1_CHOICE(&chosen)
  *
  * DESCRIPTION
  *
  *    Macro used to specify choices in decoding.  The choice list must
  *    be terminated with SILC_ASN1_END.  There is no limit how many choices
- *    can be specified in the list.
+ *    can be specified in the list.  The `chosen' is SilcUInt32 and its
+ *    value tells which of the choice was found.  First choice in the list
+ *    has value 1, second value 2, and so on.
  *
  * EXAMPLE
  *
  *    // Decode timeval that is either UTC or generalized time
  *    silc_asn1_decode(asn1, tree,
  *                     SILC_ASN1_SEQUENCE,
- *                       SILC_ASN1_CHOICE,
+ *                       SILC_ASN1_CHOICE(&chosen),
  *                         SILC_ASN1_UTC_TIME(&timeval),
  *                         SILC_ASN1_GEN_TIME(&timeval),
  *                       SILC_ASN1_END,
  *                     SILC_ASN1_END, SILC_ASN1_END);
  *
  ***/
-#define SILC_ASN1_CHOICE SILC_ASN1_U0(CHOICE)
+#define SILC_ASN1_CHOICE(x) SILC_ASN1_U1(CHOICE, x)
 
 /****f* silcasn1/SilcASN1API/SILC_ASN1_BOOLEAN
  *
@@ -776,21 +799,25 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...);
  *
  *    Encoding:
  *    SILC_ASN1_NULL
- *    SILC_ASN1_NULL_T(opts, tag)
+ *    SILC_ASN1_NULL_T(opts, tag, set)
  *
  *    Decoding:
  *    SILC_ASN1_NULL
- *    SILC_ASN1_NULL_T(opts, tag)
+ *    SILC_ASN1_NULL_T(opts, tag, &set)
  *
  * DESCRIPTION
  *
  *    Macro used to encode or decode null value.
  *
- *    The `opts' is SilcAsn1Options.  The `tag' is a tag number.
+ *    The `opts' is SilcAsn1Options.  The `tag' is a tag number.  In encoding
+ *    `set' is SilcBool and if it is TRUE the NULL value will be encoded.  If
+ *    it is FALSE the SILC_ASN1_NULL will be ignored.  In decoding the `set'
+ *    is SilcBool and if it is TRUE the NULL value was present.  This can be
+ *    used to verify whether NULL was present if it is SILC_ASN1_OPTIONAL.
  *
  ***/
-#define SILC_ASN1_NULL SILC_ASN1_U0(NULL)
-#define SILC_ASN1_NULL_T(o, t) SILC_ASN1_T0(NULL, 0, t)
+#define SILC_ASN1_NULL(x) SILC_ASN1_U1(NULL, x)
+#define SILC_ASN1_NULL_T(o, t, x) SILC_ASN1_T1(NULL, o, t, x)
 
 /****f* silcasn1/SilcASN1API/SILC_ASN1_OID
  *

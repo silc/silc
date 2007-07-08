@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2006 Pekka Riikonen
+  Copyright (C) 2003 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,9 +26,10 @@
 
 /* ASN.1 context */
 struct SilcAsn1Object {
-  va_list ap;			/* List of ASN.1 types given as argument */
+  SilcStack orig_stack;		/* Stack given to silc_asn1_alloc */
   SilcStack stack1;		/* Stack for encoder */
   SilcStack stack2;		/* Internal stack for encoding/decoding */
+  va_list ap;			/* List of ASN.1 types given as argument */
   unsigned int accumul  : 1;	/* Accumulate memory from stack for result */
 };
 

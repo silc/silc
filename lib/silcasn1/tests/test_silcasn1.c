@@ -48,10 +48,10 @@ int main(int argc, char **argv)
   SilcBufferStruct node, node2;
   SilcAsn1 asn1;
   SilcBool success = FALSE;
-  SilcBool val = TRUE;
+  SilcBool val = TRUE, nval;
   int i;
-  unsigned char *str;
-  SilcUInt32 str_len, tmpint;
+  unsigned char *str, buf[512];
+  SilcUInt32 str_len, tmpint, choice;
   char tmp[32];
   SilcRng rng;
   SilcMPInt mpint, mpint2;
@@ -183,7 +183,10 @@ int main(int argc, char **argv)
 		       SILC_ASN1_SEQUENCE_T(SILC_ASN1_EXPLICIT, 9),
 		         SILC_ASN1_SEQUENCE_T(SILC_ASN1_INDEFINITE, 0),
 		           SILC_ASN1_BOOLEAN_T(0, 4, &val),
-		           SILC_ASN1_BOOLEAN(&val),
+		           SILC_ASN1_CHOICE(&choice),
+		             SILC_ASN1_SHORT_INT(&tmpint),
+		             SILC_ASN1_BOOLEAN(&val),
+		           SILC_ASN1_END,
 		         SILC_ASN1_END,
 		       SILC_ASN1_END,
 		     SILC_ASN1_END, SILC_ASN1_END);
@@ -193,6 +196,9 @@ int main(int argc, char **argv)
   }
   SILC_LOG_DEBUG(("Decoding success"));
   SILC_LOG_DEBUG(("Boolean val %d", val));
+  SILC_LOG_DEBUG(("Choice index %d", choice));
+  if (choice != 2)
+    goto out;
   printf("\n");
 
 
@@ -607,7 +613,7 @@ int main(int argc, char **argv)
 		         SILC_ASN1_BOOLEAN_T(0, 100, val),
 		       SILC_ASN1_END,
 		       SILC_ASN1_SEQUENCE,
-		         SILC_ASN1_NULL,
+		         SILC_ASN1_NULL(TRUE),
 		         SILC_ASN1_BOOLEAN_T(SILC_ASN1_EXPLICIT, 0, val),
 		         SILC_ASN1_OCTET_STRING("foobar", 6),
 		         SILC_ASN1_BOOLEAN_T(SILC_ASN1_PRIVATE, 43, val),
@@ -634,7 +640,7 @@ int main(int argc, char **argv)
 		         SILC_ASN1_BOOLEAN_T(0, 100, &val),
 		       SILC_ASN1_END,
 		       SILC_ASN1_SEQUENCE,
-		         SILC_ASN1_NULL,
+		         SILC_ASN1_NULL(&nval),
 		         SILC_ASN1_BOOLEAN_T(SILC_ASN1_EXPLICIT, 0, &val),
 		         SILC_ASN1_OCTET_STRING(&str, &str_len),
 		         SILC_ASN1_BOOLEAN_T(SILC_ASN1_PRIVATE, 43, &val),
@@ -648,16 +654,17 @@ int main(int argc, char **argv)
   }
   SILC_LOG_DEBUG(("Decoding success"));
   SILC_LOG_DEBUG(("Boolean val %d", val));
+  SILC_LOG_DEBUG(("NULL is present %s", nval ? "yes" : "no"));
   SILC_LOG_DEBUG(("Ooctet-string %s, len %d", str, str_len));
   printf("\n");
 
 
   memset(&node, 0, sizeof(node));
   SILC_LOG_DEBUG(("Encoding ASN.1 tree 10 (INTEGER)"));
-  str = silc_rng_get_rn_data(rng, 256);
+  silc_rng_get_rn_data(rng, 256, buf, sizeof(buf));
   silc_mp_init(&mpint);
   silc_mp_init(&mpint2);
-  silc_mp_bin2mp(str, 256, &mpint);
+  silc_mp_bin2mp(buf, 256, &mpint);
   success =
     silc_asn1_encode(asn1, &node,
 		     SILC_ASN1_INT(&mpint),
