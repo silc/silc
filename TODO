@@ -290,18 +290,12 @@ Crypto Library, lib/silccrypt/
 ==============================
 
  o Add silc_crypto_init and silc_crypto_uninit.  The _init should take
-   SilcStack that will act as global memory pool for all of crypto 
+   SilcStack that will act as global memory pool for all of crypto
    library.  It should not be necessary anymore to separately register
    default ciphers, HMACs, etc, the _init would do that.  However, if
    user after _init calls silc_pkcs_register, for example, it would take
    preference over the default once, ie. user can always dictate the
-   order of algorithms.
-
-   The global SilcStack should be used by all routines in lib/silccrypt, 
-   lib/silcacc (and lib/silcmath).  lib/silcskr and lib/silcasn1 has support 
-   in the API for providing SilcStack, however, if not provided, they 
-   should look for global SilcStack, if SILC_DIST_CRYPTO is defined.
-   Same SILC_DIST_CRYPTO ifdef for other libs.
+   order of algorithms. (***DONE)
 
  o Add fingerprint to SilcSILCPublicKey and retrieval to silcpk.h, and
    possibly to silcpkcs.h.
@@ -315,62 +309,12 @@ Crypto Library, lib/silccrypt/
 
  o Change SILC PKCS API to asynchronous, so that accelerators can be used.
    All PKCS routines should now take callbacks as argument and they should
-   be delivered to SilcPKCSObject and SilcPKCSAlgorithm too.
-
-   /* Signature computation callback */
-   typedef void (*SilcPKCSSignCb)(SilcBool success,
-				  const unsigned char *signature,
-				  SilcUInt32 signature_len,
-				  void *context);
-
-   /* Signature verification callback */
-   typedef void (*SilcPKCSVerifyCb)(SilcBool success, void *context);
-
-   /* Encryption callback */
-   typedef void (*SilcPKCSEncryptCb)(SilcBool success,
-				     const unsigned char *encrypted,
-				     SilcUInt32 encrypted_len,
-				     void *context);
-
-   /* Decryption callback */
-   typedef void (*SilcPKCSDecryptCb)(SilcBool success,
-				     const unsigned char *decrypted,
-				     SilcUInt32 decrypted_len,
-				     void *context);
-
-   Either add new _async functions or add the callbacks to existing API
-   and if the callback is NULL then the API is not async and if provided
-   it may be async.  For example;
-
-   SilcBool silc_pkcs_sign(SilcPrivateKey private_key,
-			   unsigned char *src, SilcUInt32 src_len,
-			   unsigned char *dst, SilcUInt32 dst_size,
-			   SilcUInt32 *dst_len,
-			   SilcBool compute_hash, SilcHash hash,
-			   SilcPKCSSignCb async_sign,
-			   void *async_sign_context);
-
-   (if this is done then there's no reason why the buffers in the
-    callbacks cannot be the ones user gives here) or allow only async:
-
-   SilcBool silc_pkcs_sign(SilcPrivateKey private_key,
-			   unsigned char *src, SilcUInt32 src_len,
-			   SilcBool compute_hash, SilcHash hash,
-			   SilcPKCSSignCb async_sign,
-			   void *async_sign_context);
-
-   or add new:
-
-   SilcBool silc_pkcs_sign_async(SilcPrivateKey private_key,
-			         unsigned char *src, SilcUInt32 src_len,
-			         SilcBool compute_hash, SilcHash hash,
-			         SilcPKCSSignCb async_sign,
-			         void *async_sign_context);
+   be delivered to SilcPKCSObject and SilcPKCSAlgorithm too. (***DONE)
 
  o Change PKCS Algorithm API to take SilcPKCSAlgorithm as argument to
    encrypt, decrypt, sign and verify functions.  We may need to for exmaple
    check the alg->hash, supported hash functions.  Maybe deliver it also
-   to all other functions in SilcPKCSAlgorithm to be consistent.
+   to all other functions in SilcPKCSAlgorithm to be consistent. (***DONE)
 
  o Add DSS support.  Take implementation from Tom or make it yourself.
 
@@ -521,11 +465,11 @@ lib/silcasn1
 
  o SILC_ASN1_CHOICE should perhaps return an index what choice in the
    choice list was found.  Currently it is left for caller to figure out
-   which choice was found.
+   which choice was found. (***DONE)
 
  o SILC_ASN1_NULL in decoding should return SilcBool whether or not
    the NULL was present.  It's important when it's SILC_ASN1_OPTIONAL
-   and we need to know whether it was present or not.
+   and we need to know whether it was present or not. (***DONE)
 
 
 lib/silcpgp
