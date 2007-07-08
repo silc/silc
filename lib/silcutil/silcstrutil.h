@@ -67,51 +67,6 @@ typedef enum {
 } SilcStringEncoding;
 /***/
 
-/****f* silcutil/SilcStrUtilAPI/silc_base64_encode
- *
- * SYNOPSIS
- *
- *    char *silc_base64_encode(unsigned char *data, SilcUInt32 len);
- *
- * DESCRIPTION
- *
- *    Encodes data into Base 64 (PEM) encoding. Returns NULL terminated
- *    Base 64 encoded data string.
- *
- ***/
-char *silc_base64_encode(unsigned char *data, SilcUInt32 len);
-
-/****f* silcutil/SilcStrUtilAPI/silc_base64_encode_file
- *
- * SYNOPSIS
- *
- *    char *silc_base64_encode_file(unsigned char *data, SilcUInt32 data_len);
- *
- * DESCRIPTION
- *
- *    Same as silc_base64_encode() but puts newline ('\n') every 72
- *    characters.
- *
- ***/
-char *silc_base64_encode_file(unsigned char *data, SilcUInt32 data_len);
-
-/****f* silcutil/SilcStrUtilAPI/silc_base_decode
- *
- * SYNOPSIS
- *
- *    unsigned char *silc_base_decode(unsigned char *base64,
- *                                    SilcUInt32 base64_len,
- *                                    SilcUInt32 *ret_len);
- *
- * DESCRIPTION
- *
- *    Decodes Base 64 (PEM) into data. Returns the decoded data.
- *
- ***/
-unsigned char *silc_base64_decode(unsigned char *base64,
-				  SilcUInt32 base64_len,
-				  SilcUInt32 *ret_len);
-
 /****f* silcutil/SilcStrStrUtilAPI/silc_strncat
  *
  * SYNOPSIS
