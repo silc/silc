@@ -231,34 +231,54 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
 				      SilcCipher cipher,
 				      SilcHmac hmac);
 
+/****f* silccore/SilcMessageAPI/SilcMessagePayloadEncoded
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcMessagePayloadEncoded)(const SilcBuffer message,
+ *                                              void *context);
+ *
+ * DESCRIPTION
+ *
+ *    This callback is given as arugment to silc_message_payload_encode
+ *    and will be called when the message payload has been encoded.  If
+ *    `message' is NULL, encoding failed.
+ *
+ ***/
+typedef void (*SilcMessagePayloadEncoded)(SilcBuffer message,
+					  void *context);
+
 /****f* silccore/SilcMessageAPI/silc_message_payload_encode
  *
  * SYNOPSIS
  *
- *    SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
- *                                           const unsigned char *data,
- *                                           SilcUInt32 data_len,
- *                                           SilcBool generate_iv,
- *                                           SilcBool private_message,
- *                                           SilcCipher cipher,
- *                                           SilcHmac hmac,
- *                                           SilcRng rng,
- *                                           SilcPublicKey public_key,
- *                                           SilcPrivateKey private_key,
- *                                           SilcHash hash,
- *                                           SilcID *sender_id,
- *                                           SilcID *receiver_id,
- *                                           SilcBuffer buffer);
+ *    SilcAsyncOperation
+ *    silc_message_payload_encode(SilcMessageFlags flags,
+ *                                const unsigned char *data,
+ *                                SilcUInt32 data_len,
+ *                                SilcBool generate_iv,
+ *                                SilcBool private_message,
+ *                                SilcCipher cipher,
+ *                                SilcHmac hmac,
+ *                                SilcRng rng,
+ *                                SilcPublicKey public_key,
+ *                                SilcPrivateKey private_key,
+ *                                SilcHash hash,
+ *                                SilcID *sender_id,
+ *                                SilcID *receiver_id,
+ *                                SilcStack stack,
+ *                                SilcMessagePayloadEncoded encoded,
+ *                                void *context);
  *
  * DESCRIPTION
  *
- *    Encodes a Message Payload into a buffer and returns it.  This is
- *    used to encode channel messages and private messages into a packet.
- *    If `private_message' is FALSE then this encodes channel message, if
- *    it is TRUE this encodes private message.  If `private_message' is
- *    TRUE then `generate_iv' MUST be FALSE if the private message key
- *    `cipher' is not static key (pre-shared key).  If it is static key
- *    then protocol dictates that IV must be present in the Message Payload
+ *    Encodes a Message Payload into a buffer and returns it to the `encoded'
+ *    callback.  This is used to encode channel messages and private messages
+ *    into a packet.  If `private_message' is FALSE then this encodes channel
+ *    message, if it is TRUE this encodes private message.  If
+ *    `private_message' is TRUE then `generate_iv' MUST be FALSE if the private
+ *    message key `cipher' is not static key (pre-shared key).  If it is static
+ *    key then protocol dictates that IV must be present in the Message Payload
  *    and `generate_iv' must be TRUE.  The caller must know whether the key
  *    is static or not for private messages.  If the key was generated with
  *    Key Agreement protocol then `generate_iv' is always FALSE.  For
@@ -281,26 +301,28 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
  *    The `sender_id' is the ID message sender and `receiver_id' is ID of
  *    message receiver.
  *
- *    If the `buffer' is non-NULL then the payload will be encoded into
- *    that buffer.  The same buffer is returned.  Otherwise new buffer is
- *    allocated and returned.  The `buffer' will be automatically enlarged
- *    if the payload does not fit to it.
+ *    If `stack' is non-NULL the message payload is allocated from stack.
+ *    The memory will be returned back to `stack' after the `encoded' has
+ *    been called.
  *
  ***/
-SilcBuffer silc_message_payload_encode(SilcMessageFlags flags,
-				       const unsigned char *data,
-				       SilcUInt32 data_len,
-				       SilcBool generate_iv,
-				       SilcBool private_message,
-				       SilcCipher cipher,
-				       SilcHmac hmac,
-				       SilcRng rng,
-				       SilcPublicKey public_key,
-				       SilcPrivateKey private_key,
-				       SilcHash hash,
-				       SilcID *sender_id,
-				       SilcID *receiver_id,
-				       SilcBuffer buffer);
+SilcAsyncOperation
+silc_message_payload_encode(SilcMessageFlags flags,
+			    const unsigned char *data,
+			    SilcUInt32 data_len,
+			    SilcBool generate_iv,
+			    SilcBool private_message,
+			    SilcCipher cipher,
+			    SilcHmac hmac,
+			    SilcRng rng,
+			    SilcPublicKey public_key,
+			    SilcPrivateKey private_key,
+			    SilcHash hash,
+			    SilcID *sender_id,
+			    SilcID *receiver_id,
+			    SilcStack stack,
+			    SilcMessagePayloadEncoded encoded,
+			    void *context);
 
 /****f* silccore/SilcMessageAPI/silc_message_payload_free
  *
@@ -364,22 +386,27 @@ unsigned char *silc_message_get_mac(SilcMessagePayload payload);
  *
  * SYNOPSIS
  *
- *    SilcAuthResult
+ *    SilcAsyncOperation
  *    silc_message_signed_verify(SilcMessagePayload message,
  *                               SilcPublicKey remote_public_key,
- *                               SilcHash hash);
+ *                               SilcHash hash,
+ *                               SilcAuthResultCb result,
+ *                               void *context);
+ *
  *
  * DESCRIPTION
  *
  *    This routine can be used to verify the digital signature from the
  *    message indicated by `message'.  The signature is present only if
- *    the SILC_MESSAGE_FLAG_SIGNED is set in the message flags.  This
- *    returns SILC_AUTH_OK if the signature verification was successful.
+ *    the SILC_MESSAGE_FLAG_SIGNED is set in the message flags.  The
+ *    result of the verification is returned to `result' callback.
  *
  ***/
-SilcAuthResult silc_message_signed_verify(SilcMessagePayload message,
-					  SilcPublicKey remote_public_key,
-					  SilcHash hash);
+SilcAsyncOperation silc_message_signed_verify(SilcMessagePayload message,
+					      SilcPublicKey remote_public_key,
+					      SilcHash hash,
+					      SilcAuthResultCb result,
+					      void *context);
 
 /****f* silccore/SilcMessageAPI/silc_message_signed_get_public_key
  *
