@@ -254,7 +254,54 @@ SilcBuffer silc_buffer_alloc(SilcUInt32 len)
 
   if (silc_likely(len)) {
     /* Allocate the actual data area */
-    sb->head = (unsigned char *)silc_calloc(len, sizeof(*sb->head));
+    sb->head = (unsigned char *)silc_malloc(len * sizeof(*sb->head));
+    if (silc_unlikely(!sb->head))
+      return NULL;
+
+    /* Set pointers to the new buffer */
+    sb->data = sb->head;
+    sb->tail = sb->head;
+    sb->end = sb->head + len;
+  }
+
+  return sb;
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_salloc
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcBuffer silc_buffer_salloc(SilcStack stack, SilcUInt32 len);
+ *
+ * DESCRIPTION
+ *
+ *    Allocates new SilcBuffer and returns it.
+ *
+ *    This routine use SilcStack are memory source.  If `stack' is NULL
+ *    reverts back to normal allocating routine.
+ *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
+ *
+ ***/
+
+static inline
+SilcBuffer silc_buffer_salloc(SilcStack stack, SilcUInt32 len)
+{
+  SilcBuffer sb;
+
+  if (!stack)
+    return silc_buffer_alloc(len);
+
+  /* Allocate new SilcBuffer */
+  sb = (SilcBuffer)silc_scalloc(stack, 1, sizeof(*sb));
+  if (silc_unlikely(!sb))
+    return NULL;
+
+  if (silc_likely(len)) {
+    /* Allocate the actual data area */
+    sb->head = (unsigned char *)silc_smalloc(stack, len * sizeof(*sb->head));
     if (silc_unlikely(!sb->head))
       return NULL;
 
@@ -282,6 +329,7 @@ SilcBuffer silc_buffer_alloc(SilcUInt32 len)
  *
  *    Must not be called for buffers allocated with silc_buffer_salloc,
  *    silc_buffer_salloc_size, silc_buffer_scopy and silc_buffer_sclone.
+ *    Call silc_buffer_sfree instead.
  *
  ***/
 
@@ -296,6 +344,37 @@ void silc_buffer_free(SilcBuffer sb)
     silc_free(sb->head);
     silc_free(sb);
   }
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_sfree
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    void silc_buffer_free(SilcStack stack, SilcBuffer sb);
+ *
+ * DESCRIPTION
+ *
+ *    Frees SilcBuffer.  If `stack' is NULL this calls silc_buffer_free.  Can
+ *    be called safely `sb' as NULL.
+ *
+ ***/
+
+static inline
+void silc_buffer_sfree(SilcStack stack, SilcBuffer sb)
+{
+  if (stack) {
+#ifdef SILC_DEBUG
+    if (sb) {
+      if (sb->head)
+	memset(sb->head, 'F', silc_buffer_truelen(sb));
+      memset(sb, 'F', sizeof(*sb));
+    }
+#endif /* SILC_DEBUG */
+    return;
+  }
+
+  silc_buffer_free(sb);
 }
 
 /****f* silcutil/SilcBufferAPI/silc_buffer_steal
@@ -343,6 +422,7 @@ unsigned char *silc_buffer_steal(SilcBuffer sb, SilcUInt32 *data_len)
  *
  *    Must not be called for buffers allocated with silc_buffer_salloc,
  *    silc_buffer_salloc_size, silc_buffer_scopy and silc_buffer_sclone.
+ *    Use silc_buffer_spurge instead.
  *
  ***/
 
@@ -350,6 +430,36 @@ static inline
 void silc_buffer_purge(SilcBuffer sb)
 {
   silc_free(silc_buffer_steal(sb, NULL));
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_spurge
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    void silc_buffer_spurge(SilcStack stack, SilcBuffer sb);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_buffer_free but free's only the contents of the buffer
+ *    not the buffer itself.  The `sb' remains intact, data is freed.  Buffer
+ *    is ready for re-use after calling this function.  If `stack' is NULL
+ *    this calls silc_buffer_purge.
+ *
+ ***/
+
+static inline
+void silc_buffer_spurge(SilcStack stack, SilcBuffer sb)
+{
+  if (stack) {
+#ifdef SILC_DEBUG
+    if (sb && sb->head)
+      memset(silc_buffer_steal(sb, NULL), 'F', silc_buffer_truelen(sb));
+#endif /* SILC_DEBUG */
+    return;
+  }
+
+  silc_buffer_purge(sb);
 }
 
 /****f* silcutil/SilcBufferAPI/silc_buffer_set
@@ -703,6 +813,37 @@ SilcBuffer silc_buffer_alloc_size(SilcUInt32 len)
   return sb;
 }
 
+/****f* silcutil/SilcBufferAPI/silc_buffer_salloc_size
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcBuffer silc_buffer_salloc_size(SilcStack stack, SilcUInt32 len);
+ *
+ * DESCRIPTION
+ *
+ *    Allocates `len' bytes size buffer and moves the tail area automatically
+ *    `len' bytes so that the buffer is ready to use without calling the
+ *    silc_buffer_pull_tail.
+ *
+ *    This routine use SilcStack are memory source.  If `stack' is NULL
+ *    reverts back to normal allocating routine.
+ *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
+ *
+ ***/
+
+static inline
+SilcBuffer silc_buffer_salloc_size(SilcStack stack, SilcUInt32 len)
+{
+  SilcBuffer sb = silc_buffer_salloc(stack, len);
+  if (silc_unlikely(!sb))
+    return NULL;
+  silc_buffer_pull_tail(sb, len);
+  return sb;
+}
+
 /****f* silcutil/SilcBufferAPI/silc_buffer_reset
  *
  * SYNOPSIS
@@ -815,6 +956,40 @@ SilcBuffer silc_buffer_copy(SilcBuffer sb)
   return sb_new;
 }
 
+/****f* silcutil/SilcBufferAPI/silc_buffer_scopy
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcBuffer silc_buffer_scopy(SilcStack stack, SilcBuffer sb);
+ *
+ * DESCRIPTION
+ *
+ *    Generates copy of a SilcBuffer. This copies everything inside the
+ *    currently valid data area, nothing more. Use silc_buffer_clone to
+ *    copy entire buffer.
+ *
+ *    This routine use SilcStack are memory source.  If `stack' is NULL
+ *    reverts back to normal allocating routine.
+ *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
+ *
+ ***/
+
+static inline
+SilcBuffer silc_buffer_scopy(SilcStack stack, SilcBuffer sb)
+{
+  SilcBuffer sb_new;
+
+  sb_new = silc_buffer_salloc_size(stack, silc_buffer_len(sb));
+  if (silc_unlikely(!sb_new))
+    return NULL;
+  silc_buffer_put(sb_new, sb->data, silc_buffer_len(sb));
+
+  return sb_new;
+}
+
 /****f* silcutil/SilcBufferAPI/silc_buffer_clone
  *
  * SYNOPSIS
@@ -836,6 +1011,42 @@ SilcBuffer silc_buffer_clone(SilcBuffer sb)
   SilcBuffer sb_new;
 
   sb_new = silc_buffer_alloc_size(silc_buffer_truelen(sb));
+  if (silc_unlikely(!sb_new))
+    return NULL;
+  silc_buffer_put(sb_new, sb->head, silc_buffer_truelen(sb));
+  sb_new->data = sb_new->head + silc_buffer_headlen(sb);
+  sb_new->tail = sb_new->data + silc_buffer_len(sb);
+
+  return sb_new;
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_sclone
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcBuffer silc_buffer_sclone(SilcStack stack, SilcBuffer sb);
+ *
+ * DESCRIPTION
+ *
+ *    Clones SilcBuffer. This generates new SilcBuffer and copies
+ *    everything from the source buffer. The result is exact clone of
+ *    the original buffer.
+ *
+ *    This routine use SilcStack are memory source.  If `stack' is NULL
+ *    reverts back to normal allocating routine.
+ *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
+ *
+ ***/
+
+static inline
+SilcBuffer silc_buffer_sclone(SilcStack stack, SilcBuffer sb)
+{
+  SilcBuffer sb_new;
+
+  sb_new = silc_buffer_salloc_size(stack, silc_buffer_truelen(sb));
   if (silc_unlikely(!sb_new))
     return NULL;
   silc_buffer_put(sb_new, sb->head, silc_buffer_truelen(sb));
@@ -883,143 +1094,6 @@ SilcBuffer silc_buffer_realloc(SilcBuffer sb, SilcUInt32 newsize)
   sb->tail = sb->data + dlen;
   sb->end = sb->head + newsize;
 
-  return sb;
-}
-
-/****f* silcutil/SilcBufferAPI/silc_buffer_realloc_size
- *
- * SYNOPSIS
- *
- *    static inline
- *    SilcBuffer silc_buffer_realloc_size(SilcBuffer sb, SilcUInt32 newsize);
- *
- * DESCRIPTION
- *
- *    Same as silc_buffer_realloc but moves moves the tail area
- *    automatically so that the buffer is ready to use without calling the
- *    silc_buffer_pull_tail.  Returns NULL on error.
- *
- ***/
-
-static inline
-SilcBuffer silc_buffer_realloc_size(SilcBuffer sb, SilcUInt32 newsize)
-{
-  sb = silc_buffer_realloc(sb, newsize);
-  if (silc_unlikely(!sb))
-    return NULL;
-  silc_buffer_pull_tail(sb, silc_buffer_taillen(sb));
-  return sb;
-}
-
-/****f* silcutil/SilcBufferAPI/silc_buffer_enlarge
- *
- * SYNOPSIS
- *
- *    static inline
- *    SilcBuffer silc_buffer_enlarge(SilcBuffer sb, SilcUInt32 size);
- *
- * DESCRIPTION
- *
- *    Enlarges the buffer by the amount of `size' if it doesn't have that
- *    must space in the data area and in the tail area.  Moves the tail
- *    area automatically after enlarging so that the current data area
- *    is at least the size of `size'.  If there is more space than `size'
- *    in the data area this does not do anything.  If there is enough
- *    space in the tail area this merely moves the tail area to reveal
- *    the extra space.  Returns FALSE on error.
- *
- ***/
-
-static inline
-SilcBool silc_buffer_enlarge(SilcBuffer sb, SilcUInt32 size)
-{
-  if (size > silc_buffer_len(sb)) {
-    if (size > silc_buffer_taillen(sb) + silc_buffer_len(sb))
-      if (silc_unlikely(!silc_buffer_realloc(sb, silc_buffer_truelen(sb) +
-					     (size - silc_buffer_taillen(sb) -
-					      silc_buffer_len(sb)))))
-	return FALSE;
-    silc_buffer_pull_tail(sb, size - silc_buffer_len(sb));
-  }
-  return TRUE;
-}
-
-
-/* SilcStack aware SilcBuffer routines */
-
-/****f* silcutil/SilcBufferAPI/silc_buffer_salloc
- *
- * SYNOPSIS
- *
- *    static inline
- *    SilcBuffer silc_buffer_salloc(SilcStack stack, SilcUInt32 len);
- *
- * DESCRIPTION
- *
- *    Allocates new SilcBuffer and returns it.
- *
- *    This routine use SilcStack are memory source.  If `stack' is NULL
- *    reverts back to normal allocating routine.
- *
- *    Note that this call consumes the `stack'.  The caller should push the
- *    stack before calling the function and pop it later.
- *
- ***/
-
-static inline
-SilcBuffer silc_buffer_salloc(SilcStack stack, SilcUInt32 len)
-{
-  SilcBuffer sb;
-
-  if (!stack)
-    return silc_buffer_alloc(len);
-
-  /* Allocate new SilcBuffer */
-  sb = (SilcBuffer)silc_scalloc(stack, 1, sizeof(*sb));
-  if (silc_unlikely(!sb))
-    return NULL;
-
-  /* Allocate the actual data area */
-  sb->head = (unsigned char *)silc_smalloc(stack, len);
-  if (silc_unlikely(!sb->head))
-    return NULL;
-
-  /* Set pointers to the new buffer */
-  sb->data = sb->head;
-  sb->tail = sb->head;
-  sb->end = sb->head + len;
-
-  return sb;
-}
-
-/****f* silcutil/SilcBufferAPI/silc_buffer_salloc_size
- *
- * SYNOPSIS
- *
- *    static inline
- *    SilcBuffer silc_buffer_salloc_size(SilcStack stack, SilcUInt32 len);
- *
- * DESCRIPTION
- *
- *    Allocates `len' bytes size buffer and moves the tail area automatically
- *    `len' bytes so that the buffer is ready to use without calling the
- *    silc_buffer_pull_tail.
- *
- *    This routine use SilcStack are memory source.  If `stack' is NULL
- *    reverts back to normal allocating routine.
- *
- *    Note that this call consumes the `stack'.  The caller should push the
- *    stack before calling the function and pop it later.
- *
- ***/
-
-static inline
-SilcBuffer silc_buffer_salloc_size(SilcStack stack, SilcUInt32 len)
-{
-  SilcBuffer sb = silc_buffer_salloc(stack, len);
-  if (silc_unlikely(!sb))
-    return NULL;
-  silc_buffer_pull_tail(sb, len);
   return sb;
 }
 
@@ -1082,6 +1156,31 @@ SilcBuffer silc_buffer_srealloc(SilcStack stack,
   return sb;
 }
 
+/****f* silcutil/SilcBufferAPI/silc_buffer_realloc_size
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcBuffer silc_buffer_realloc_size(SilcBuffer sb, SilcUInt32 newsize);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_buffer_realloc but moves moves the tail area
+ *    automatically so that the buffer is ready to use without calling the
+ *    silc_buffer_pull_tail.  Returns NULL on error.
+ *
+ ***/
+
+static inline
+SilcBuffer silc_buffer_realloc_size(SilcBuffer sb, SilcUInt32 newsize)
+{
+  sb = silc_buffer_realloc(sb, newsize);
+  if (silc_unlikely(!sb))
+    return NULL;
+  silc_buffer_pull_tail(sb, silc_buffer_taillen(sb));
+  return sb;
+}
+
 /****f* silcutil/SilcBufferAPI/silc_buffer_srealloc_size
  *
  * SYNOPSIS
@@ -1113,6 +1212,39 @@ SilcBuffer silc_buffer_srealloc_size(SilcStack stack,
     return NULL;
   silc_buffer_pull_tail(sb, silc_buffer_taillen(sb));
   return sb;
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_enlarge
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcBuffer silc_buffer_enlarge(SilcBuffer sb, SilcUInt32 size);
+ *
+ * DESCRIPTION
+ *
+ *    Enlarges the buffer by the amount of `size' if it doesn't have that
+ *    must space in the data area and in the tail area.  Moves the tail
+ *    area automatically after enlarging so that the current data area
+ *    is at least the size of `size'.  If there is more space than `size'
+ *    in the data area this does not do anything.  If there is enough
+ *    space in the tail area this merely moves the tail area to reveal
+ *    the extra space.  Returns FALSE on error.
+ *
+ ***/
+
+static inline
+SilcBool silc_buffer_enlarge(SilcBuffer sb, SilcUInt32 size)
+{
+  if (size > silc_buffer_len(sb)) {
+    if (size > silc_buffer_taillen(sb) + silc_buffer_len(sb))
+      if (silc_unlikely(!silc_buffer_realloc(sb, silc_buffer_truelen(sb) +
+					     (size - silc_buffer_taillen(sb) -
+					      silc_buffer_len(sb)))))
+	return FALSE;
+    silc_buffer_pull_tail(sb, size - silc_buffer_len(sb));
+  }
+  return TRUE;
 }
 
 /****f* silcutil/SilcBufferAPI/silc_buffer_senlarge
@@ -1154,76 +1286,6 @@ SilcBool silc_buffer_senlarge(SilcStack stack, SilcBuffer sb, SilcUInt32 size)
     silc_buffer_pull_tail(sb, size - silc_buffer_len(sb));
   }
   return TRUE;
-}
-
-/****f* silcutil/SilcBufferAPI/silc_buffer_scopy
- *
- * SYNOPSIS
- *
- *    static inline
- *    SilcBuffer silc_buffer_scopy(SilcStack stack, SilcBuffer sb);
- *
- * DESCRIPTION
- *
- *    Generates copy of a SilcBuffer. This copies everything inside the
- *    currently valid data area, nothing more. Use silc_buffer_clone to
- *    copy entire buffer.
- *
- *    This routine use SilcStack are memory source.  If `stack' is NULL
- *    reverts back to normal allocating routine.
- *
- *    Note that this call consumes the `stack'.  The caller should push the
- *    stack before calling the function and pop it later.
- *
- ***/
-
-static inline
-SilcBuffer silc_buffer_scopy(SilcStack stack, SilcBuffer sb)
-{
-  SilcBuffer sb_new;
-
-  sb_new = silc_buffer_salloc_size(stack, silc_buffer_len(sb));
-  if (silc_unlikely(!sb_new))
-    return NULL;
-  silc_buffer_put(sb_new, sb->data, silc_buffer_len(sb));
-
-  return sb_new;
-}
-
-/****f* silcutil/SilcBufferAPI/silc_buffer_sclone
- *
- * SYNOPSIS
- *
- *    static inline
- *    SilcBuffer silc_buffer_sclone(SilcStack stack, SilcBuffer sb);
- *
- * DESCRIPTION
- *
- *    Clones SilcBuffer. This generates new SilcBuffer and copies
- *    everything from the source buffer. The result is exact clone of
- *    the original buffer.
- *
- *    This routine use SilcStack are memory source.  If `stack' is NULL
- *    reverts back to normal allocating routine.
- *
- *    Note that this call consumes the `stack'.  The caller should push the
- *    stack before calling the function and pop it later.
- *
- ***/
-
-static inline
-SilcBuffer silc_buffer_sclone(SilcStack stack, SilcBuffer sb)
-{
-  SilcBuffer sb_new;
-
-  sb_new = silc_buffer_salloc_size(stack, silc_buffer_truelen(sb));
-  if (silc_unlikely(!sb_new))
-    return NULL;
-  silc_buffer_put(sb_new, sb->head, silc_buffer_truelen(sb));
-  sb_new->data = sb_new->head + silc_buffer_headlen(sb);
-  sb_new->tail = sb_new->data + silc_buffer_len(sb);
-
-  return sb_new;
 }
 
 #endif /* SILCBUFFER_H */

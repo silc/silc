@@ -92,8 +92,13 @@ void *silc_smalloc(SilcStack stack, SilcUInt32 size)
 
 void silc_sfree(SilcStack stack, void *ptr)
 {
-  if (stack)
+  if (stack) {
+#ifdef SILC_DEBUG
+    if (ptr)
+      *(unsigned char *)ptr = 'F';
+#endif /* SILC_DEBUG */
     return;
+  }
   silc_free(ptr);
 }
 
