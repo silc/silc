@@ -21,6 +21,8 @@
 
 /************************** Types and definitions ***************************/
 
+#define SILC_ACC_KEY_MAGIC 0xfde09137
+
 SILC_PKCS_GET_ALGORITHM(silc_acc_pkcs_get_algorithm);
 SILC_PKCS_IMPORT_PUBLIC_KEY_FILE(silc_acc_pkcs_import_public_key_file);
 SILC_PKCS_IMPORT_PUBLIC_KEY(silc_acc_pkcs_import_public_key);
@@ -43,6 +45,7 @@ SILC_PKCS_VERIFY(silc_acc_pkcs_verify);
 
 /* Accelerator public key */
 typedef struct {
+  SilcUInt32 magic;
   int pkcs_index;		/* Accelerator PKCS index */
   SilcAccelerator acc;		/* The accelerator */
   void *context;		/* Accelerator context */
@@ -51,6 +54,7 @@ typedef struct {
 
 /* Accelerator private key */
 typedef struct {
+  SilcUInt32 magic;
   int pkcs_index;		/* Accelerator PKCS index */
   SilcAccelerator acc;		/* The accelerator */
   void *context;		/* Accelerator context */
@@ -145,43 +149,68 @@ SILC_PKCS_PUBLIC_KEY_COPY(silc_acc_pkcs_public_key_copy)
 
 SILC_PKCS_PUBLIC_KEY_COMPARE(silc_acc_pkcs_public_key_compare)
 {
-  /* XXX */
-  return FALSE;
+  SilcAcceleratorPublicKey pub;
+
+  pub = key2;
+  if (pub->magic == SILC_ACC_KEY_MAGIC)
+    key2 = pub->accelerated->public_key;
+
+  pub = key1;
+
+  return pub->accelerated->pkcs->
+    public_key_compare(pub->accelerated->pkcs,
+		       pub->accelerated->public_key, key2);
 }
 
 SILC_PKCS_IMPORT_PRIVATE_KEY_FILE(silc_acc_pkcs_import_private_key_file)
 {
-  return 0;
+  /* Not implemented */
+  return FALSE;
 }
 
 SILC_PKCS_IMPORT_PRIVATE_KEY(silc_acc_pkcs_import_private_key)
 {
-  return 0;
+  /* Not implemented */
+  return FALSE;
 }
 
 SILC_PKCS_EXPORT_PRIVATE_KEY_FILE(silc_acc_pkcs_export_private_key_file)
 {
-  return 0;
+  SilcAcceleratorPrivateKey prv = private_key;
+  return prv->accelerated->pkcs->
+    export_private_key_file(prv->accelerated->pkcs, stack,
+			    prv->accelerated->private_key, passphrase,
+			    passphrase_len, encoding, rng, ret_len);
 }
 
 SILC_PKCS_EXPORT_PRIVATE_KEY(silc_acc_pkcs_export_private_key)
 {
-  return 0;
+  SilcAcceleratorPrivateKey prv = private_key;
+  return prv->accelerated->pkcs->
+    export_private_key(prv->accelerated->pkcs, stack,
+		       prv->accelerated->private_key, ret_len);
 }
 
 SILC_PKCS_PRIVATE_KEY_BITLEN(silc_acc_pkcs_private_key_bitlen)
 {
-  return 0;
+  SilcAcceleratorPrivateKey prv = private_key;
+  return prv->accelerated->pkcs->
+    private_key_bitlen(prv->accelerated->pkcs,
+		       prv->accelerated->private_key);
 }
 
 SILC_PKCS_PUBLIC_KEY_FREE(silc_acc_pkcs_public_key_free)
 {
-
+  SilcAcceleratorPublicKey pub = public_key;
+  pub->acc->pkcs[pub->pkcs_index].
+    public_key_free(&pub->acc->pkcs[pub->pkcs_index], pub->context);
 }
 
 SILC_PKCS_PRIVATE_KEY_FREE(silc_acc_pkcs_private_key_free)
 {
-
+  SilcAcceleratorPrivateKey prv = private_key;
+  prv->acc->pkcs[prv->pkcs_index].
+    private_key_free(&prv->acc->pkcs[prv->pkcs_index], prv->context);
 }
 
 SILC_PKCS_ENCRYPT(silc_acc_pkcs_encrypt)
@@ -279,6 +308,7 @@ SilcPublicKey silc_acc_public_key(SilcAccelerator acc,
   }
   *pubkey->pkcs = silc_acc_pkcs;
   pubkey->pkcs->type = silc_pkcs_get_type(public_key);
+  pubkey->alg = silc_pkcs_get_algorithm(public_key);
 
   /* Allocate accelerator public key */
   acc_pubkey = silc_calloc(1, sizeof(*acc_pubkey));
@@ -287,6 +317,7 @@ SilcPublicKey silc_acc_public_key(SilcAccelerator acc,
     silc_free(pubkey);
     return NULL;
   }
+  acc_pubkey->magic = SILC_ACC_KEY_MAGIC;
   acc_pubkey->accelerated = public_key;
   acc_pubkey->acc = acc;
   acc_pubkey->pkcs_index = i;
@@ -360,6 +391,7 @@ SilcPrivateKey silc_acc_private_key(SilcAccelerator acc,
   }
   *privkey->pkcs = silc_acc_pkcs;
   privkey->pkcs->type = silc_pkcs_get_type(private_key);
+  privkey->alg = silc_pkcs_get_algorithm(private_key);
 
   /* Allocate accelerator public key */
   acc_privkey = silc_calloc(1, sizeof(*acc_privkey));
@@ -368,6 +400,7 @@ SilcPrivateKey silc_acc_private_key(SilcAccelerator acc,
     silc_free(privkey);
     return NULL;
   }
+  acc_privkey->magic = SILC_ACC_KEY_MAGIC;
   acc_privkey->accelerated = private_key;
   acc_privkey->acc = acc;
   acc_privkey->pkcs_index = i;
