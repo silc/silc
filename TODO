@@ -337,8 +337,6 @@ SILC Accelerator Library
    and SilcPrivateKey can be used but they call the accelerators.
    (***DONE)
 
- o Add complete wrapper for PKCS API in silcacc_pkcs.c.
-
  o Implement software accelerator.  It is a thread pool system where the
    public key and private key operations are executed in threads. 
    (***DONE)
