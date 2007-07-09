@@ -28,18 +28,11 @@ typedef struct SilcThreadPoolThreadStruct {
   SilcThreadPool tp;		    /* The thread pool */
   SilcSchedule schedule;	    /* Scheduler, may be NULL */
   SilcThreadPoolFunc run;	    /* The function to run in a thread */
-  SilcThreadPoolFunc completion;    /* Completion function */
+  SilcTaskCallback completion;	    /* Completion function */
   void *run_context;
   void *completion_context;
   unsigned int stop        : 1;	    /* Set to stop the thread */
 } *SilcThreadPoolThread;
-
-/* Completion context */
-typedef struct SilcThreadPoolCompletionStruct {
-  SilcSchedule schedule;	    /* Scheduler, may be NULL */
-  SilcThreadPoolFunc completion;    /* Completion function */
-  void *completion_context;
-} *SilcThreadPoolCompletion;
 
 /* Thread pool context */
 struct SilcThreadPoolStruct {
@@ -74,22 +67,15 @@ static void silc_thread_pool_unref(SilcThreadPool tp)
   SILC_LOG_DEBUG(("Thread pool %p refcnt %d -> %d", tp, tp->refcnt + 1,
 		  tp->refcnt));
   if (!tp->refcnt) {
+    SilcStack stack = tp->stack;
     silc_mutex_unlock(tp->lock);
     silc_mutex_free(tp->lock);
     silc_cond_free(tp->pool_signal);
-    silc_sfree(tp->stack, tp);
+    silc_sfree(stack, tp);
+    silc_stack_free(stack);
     return;
   }
   silc_mutex_unlock(tp->lock);
-}
-
-/* Thread completion callback */
-
-SILC_TASK_CALLBACK(silc_thread_pool_run_completion)
-{
-  SilcThreadPoolCompletion c = context;
-  c->completion(c->schedule, c->completion_context);
-  silc_free(c);
 }
 
 /* The thread executor.  Each thread in the pool is run here.  They wait
@@ -135,22 +121,16 @@ static void *silc_thread_pool_run_thread(void *context)
        is running. */
     if (t->completion) {
       if (t->schedule) {
-	SilcThreadPoolCompletion c = silc_calloc(1, sizeof(*c));
-	if (c) {
-	  SILC_LOG_DEBUG(("Run completion through scheduler %p", t->schedule));
-	  c->schedule = t->schedule;
-	  c->completion = t->completion;
-	  c->completion_context = t->completion_context;
-	  silc_schedule_task_add_timeout(c->schedule,
-					 silc_thread_pool_run_completion, c,
-					 0, 0);
-	  silc_schedule_wakeup(c->schedule);
-	} else {
-	  t->completion(NULL, t->completion_context);
+	SILC_LOG_DEBUG(("Run completion through scheduler %p", t->schedule));
+	if (!silc_schedule_task_add_timeout(t->schedule, t->completion,
+					    t->completion_context, 0, 0)) {
+	  SILC_LOG_DEBUG(("Run completion directly"));
+	  t->completion(NULL, NULL, 0, 0, t->completion_context);
 	}
+	silc_schedule_wakeup(t->schedule);
       } else {
 	SILC_LOG_DEBUG(("Run completion directly"));
-	t->completion(NULL, t->completion_context);
+	t->completion(NULL, NULL, 0, 0, t->completion_context);
       }
     }
 
@@ -222,9 +202,14 @@ SilcThreadPool silc_thread_pool_alloc(SilcStack stack,
   if (max_threads < min_threads)
     return NULL;
 
+  if (stack)
+    stack = silc_stack_alloc(0, stack);
+
   tp = silc_scalloc(stack, 1, sizeof(*tp));
-  if (!tp)
+  if (!tp) {
+    silc_stack_free(stack);
     return NULL;
+  }
 
   SILC_LOG_DEBUG(("Starting thread pool %p, min threads %d, max threads %d",
 		  tp, min_threads, max_threads));
@@ -236,12 +221,14 @@ SilcThreadPool silc_thread_pool_alloc(SilcStack stack,
 
   if (!silc_mutex_alloc(&tp->lock)) {
     silc_sfree(stack, tp);
+    silc_stack_free(stack);
     return NULL;
   }
 
   if (!silc_cond_alloc(&tp->pool_signal)) {
     silc_mutex_free(tp->lock);
     silc_sfree(stack, tp);
+    silc_stack_free(stack);
     return NULL;
   }
 
@@ -295,7 +282,7 @@ SilcBool silc_thread_pool_run(SilcThreadPool tp,
 			      SilcSchedule schedule,
 			      SilcThreadPoolFunc run,
 			      void *run_context,
-			      SilcThreadPoolFunc completion,
+			      SilcTaskCallback completion,
 			      void *completion_context)
 {
   SilcThreadPoolThread t;

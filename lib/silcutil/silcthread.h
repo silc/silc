@@ -195,8 +195,8 @@ typedef struct SilcThreadPoolStruct *SilcThreadPool;
  *
  *    A callback function of this type is given as argument to the
  *    silc_thread_pool_run.  The `schedule' is the scheduler and the
- *    `context' is the `run_context' or `completion_context' given as
- *    argument to silc_thread_pool_run.
+ *    `context' is the `run_context' given as argument to
+ *    silc_thread_pool_run.
  *
  ***/
 typedef void (*SilcThreadPoolFunc)(SilcSchedule schedule, void *context);
@@ -213,10 +213,11 @@ typedef void (*SilcThreadPoolFunc)(SilcSchedule schedule, void *context);
  * DESCRIPTION
  *
  *    Allocate thread pool with at least `min_threads' and at most
- *    `max_threads' many threads.  If `stack' is non-NULL all memory is
- *    allocated from the `stack'.  If `start_min_threads' is TRUE this will
+ *    `max_threads' many threads. If `start_min_threads' is TRUE this will
  *    start `min_threads' many threads immediately.  Returns the thread
- *    pool context or NULL on error.
+ *    pool context or NULL on error.  If `stack' is non-NULL memory is
+ *    allocated from `stack'.  When the thread pool is freed the memory
+ *    is returned to `stack'.
  *
  * EXAMPLE
  *
@@ -263,7 +264,7 @@ void silc_thread_pool_free(SilcThreadPool tp, SilcBool wait_unfinished);
  *                                  SilcSchedule schedule,
  *                                  SilcThreadPoolFunc run,
  *                                  void *run_context,
- *                                  SilcThreadPoolFunc completion,
+ *                                  SilcTaskCallback completion,
  *                                  void *completion_context);
  *
  * DESCRIPTION
@@ -287,7 +288,7 @@ SilcBool silc_thread_pool_run(SilcThreadPool tp,
 			      SilcSchedule schedule,
 			      SilcThreadPoolFunc run,
 			      void *run_context,
-			      SilcThreadPoolFunc completion,
+			      SilcTaskCallback completion,
 			      void *completion_context);
 
 /****f* silcutil/SilcThreadAPI/silc_thread_pool_set_max_threads

@@ -10,7 +10,7 @@ static void func(SilcSchedule schedule, void *context)
   sleep(1);
 }
 
-static void compl(SilcSchedule schedule, void *context)
+SILC_TASK_CALLBACK(compl)
 {
   SILC_LOG_DEBUG(("completion: %d", (int)context));
   if ((int)context == 0xff)
