@@ -95,25 +95,22 @@ static SilcStackDataEntry silc_stack_ref_stack(SilcStack stack,
     return e;
   }
 
+  silc_mutex_unlock(stack->lock);
+
   /* If we are child, get block from parent */
-  if (stack->parent) {
-    silc_mutex_unlock(stack->lock);
+  if (stack->parent)
     return silc_stack_ref_stack(stack->parent, size, ret_si, ret_bsize);
-  }
 
   SILC_ST_DEBUG(("Allocate new stack blocks"));
 
   /* Allocate new stack blocks */
   e = silc_calloc(1, sizeof(*e));
-  if (!e) {
-    silc_mutex_unlock(stack->lock);
+  if (!e)
     return NULL;
-  }
   e->data[si] = silc_malloc(bsize + SILC_STACK_ALIGN(sizeof(*e->data[0]),
 						     stack->alignment));
   if (!e->data[si]) {
     silc_free(e);
-    silc_mutex_unlock(stack->lock);
     return NULL;
   }
   e->data[si]->bytes_left = bsize;
@@ -122,7 +119,6 @@ static SilcStackDataEntry silc_stack_ref_stack(SilcStack stack,
 
   SILC_ST_DEBUG(("Got stack blocks %p from stack %p", e->data, stack));
 
-  silc_mutex_unlock(stack->lock);
   return e;
 }
 
