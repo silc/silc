@@ -238,6 +238,7 @@ extern "C" {
 #include "silcbuffer.h"
 #include "silcbuffmt.h"
 #include "silcasync.h"
+#include "silcdlist.h"
 
 /* Crypto library includes */
 #include "silccrypto.h"
@@ -248,12 +249,12 @@ extern "C" {
 #include "silcpkcs.h"
 #include "silcpk.h"
 #include "silcpkcs1.h"
+#include "silcacc.h"
 
 /* More SILC util library includes */
 #include "silcenv.h"
 #include "silcdll.h"
 #include "silchashtable.h"
-#include "silcdlist.h"
 #include "silcstream.h"
 #include "silcnet.h"
 #include "silcfileutil.h"

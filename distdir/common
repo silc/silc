@@ -19,5 +19,8 @@ define SILC_DIST_TMA
 # ASN.1 library
 define SILC_DIST_ASN1
 
+# Accelerator library
+define SILC_DIST_ACC
+
 # Key Repository library
 define SILC_DIST_SKR

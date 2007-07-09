@@ -335,83 +335,15 @@ SILC Accelerator Library
  o SILC Accelerator API.  Provides generic way to use different kind of
    accelerators.  Basically implements SILC PKCS API so that SilcPublicKey
    and SilcPrivateKey can be used but they call the accelerators.
+   (***DONE)
 
-   Something in the lines of (preliminary):
-
-   /* Register accelerator to system.  Initializes the accelerator. */
-      Varargs are optional accelerator specific init parameteres. */
-   SilcBool silc_acc_register(SilcAccelerator acc, ...);
-
-     silc_acc_register(softacc, "min_threads", 2, "max_threads", 16, NULL);
-
-   /* Unregister accelerator.  Uninitializes the accelerator. */
-   SilcBool silc_acc_unregister(const SilcAccelerator acc);
-
-   /* Return list of the registered accelerators */
-   SilcDList silc_acc_get_supported(void);
-
-   /* Find existing accelerator.  `name' is accelerator's name. */
-   SilcAccelerator silc_acc_find(const char *name);
-
-   /* Return accelerator's name */
-   const char *silc_acc_get_name(SilcAccelerator acc);
-
-   /* Accelerate `public_key'.  Return accelerated public key. */
-   SilcPublicKey silc_acc_public_key(SilcAccelerator acc,
-			 	     SilcPublicKey public_key);
-
-   /* Accelerate `private_key'.  Returns accelerated private key. */
-   SilcPrivateKey silc_acc_private_key(SilcAccelerator acc,
-				       SilcPrivateKey private_key);
-
-   /* Return the underlaying public key */
-   SilcPublicKey silc_acc_get_public_key(SilcAccelerator acc,
-					 SilcPublicKey public_key);
-
-   /* Return the underlaying private key */
-   SilcPrivateKey silc_acc_get_private_key(SilcAccelerator acc,
-					   SilcPrivateKey private_key);
-
-   typedef struct SilcAcceleratorObject {
-     const char *name;			/* Accelerator's name */
-     SilcBool (*init)(va_list va);	/* Initialize accelerator */
-     SilcBool (*uninit)(void);		/* Uninitialize accelerator */
-     const SilcPKCSAlgorithm *pkcs;	/* Accelerated PKCS algorithms */
-     const SilcDHObject *dh;		/* Accelerated Diffie-Hellmans */
-     const SilcCipherObject *cipher;	/* Accelerated ciphers */
-     const SilcHashObject *hash;	/* Accelerated hashes */
-     const SilcHmacObject *hmac;	/* Accelerated HMACs */
-     const SilcRngObject *rng;		/* Accelerated RNG's */
-   } *SilcAccelerator, SilcAcceleratorStruct;
-
-   Allows accelerator to have multiple accelerators (cipher, hash etc)
-   and multiple different algorithms and implementations (SHA-1, SHA-256 etc).
-
-   SilcPublicKey->SilcSILCPublicKey->RsaPublicKey accelerated as:
-   SilcPublicKey->SilcAcceleratorPublicKey->SilcSoftAccPublicKey->
-     SilcPublicKey->SilcSILCPublicKey->RsaPublicKey
-
-   silc_acc_public_key creates SilcPublicKey and SilcAcceleratorPublicKey
-   and acc->pkcs->import_public_key creates SilcSoftAccPublicKey.
+ o Add complete wrapper for PKCS API in silcacc_pkcs.c.
 
  o Implement software accelerator.  It is a thread pool system where the
-   public key and private key operations are executed in threads.
+   public key and private key operations are executed in threads. 
+   (***DONE)
 
-   const struct SilcAcceleratorObject softacc =
-   {
-     "softacc", softacc_init, softacc_uninit,
-     softacc_pkcs, NULL, NULL, NULL, NULL
-   }
-
-   /* Called from silc_acc_private_key */
-   int silc_softacc_import_private_key(void *key, SilcUInt32 key_len,
-				       void **ret_private_key)
-   {
-     SilcSoftAccPrivateKey prv = silc_calloc(1, sizeof(*prv));
-     prv->pkcs = acc->pkcs;
-     prv->private_key = key;
-     *ret_private_key = prv;
-   }
+ o Diffie-Hellman acceleration
 
  (o Symmetric key cryptosystem acceleration?  They are always sycnhronouos
    even with hardware acceleration so the crypto API shouldn't require
