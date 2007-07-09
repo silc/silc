@@ -427,8 +427,7 @@ const SilcPKCSObject *silc_pkcs_get_pkcs(void *key)
 const SilcPKCSAlgorithm *silc_pkcs_get_algorithm(void *key)
 {
   SilcPublicKey public_key = key;
-  return public_key->pkcs->get_algorithm(public_key->pkcs,
-					 public_key->public_key);
+  return public_key->alg;
 }
 
 /* Return algorithm name */
@@ -465,14 +464,17 @@ SilcBool silc_pkcs_public_key_alloc(SilcPKCSType type,
   if (!public_key)
     return FALSE;
 
-  public_key->pkcs = pkcs = silc_pkcs_find_pkcs(type);
+  pkcs = silc_pkcs_find_pkcs(type);
+  public_key->pkcs = (SilcPKCSObject *)pkcs;
   if (!public_key->pkcs) {
     silc_free(public_key);
     return FALSE;
   }
 
   /* Import the PKCS public key */
-  if (!pkcs->import_public_key(pkcs, key, key_len, &public_key->public_key)) {
+  if (!pkcs->import_public_key(pkcs, key, key_len,
+			       &public_key->public_key,
+			       &public_key->alg)) {
     silc_free(public_key);
     return FALSE;
   }
@@ -536,7 +538,8 @@ SilcBool silc_pkcs_private_key_alloc(SilcPKCSType type,
   if (!private_key)
     return FALSE;
 
-  private_key->pkcs = pkcs = silc_pkcs_find_pkcs(type);
+  pkcs = silc_pkcs_find_pkcs(type);
+  private_key->pkcs = (SilcPKCSObject *)pkcs;
   if (!private_key->pkcs) {
     silc_free(private_key);
     return FALSE;
@@ -544,7 +547,8 @@ SilcBool silc_pkcs_private_key_alloc(SilcPKCSType type,
 
   /* Import the PKCS private key */
   if (!pkcs->import_private_key(pkcs, key, key_len,
-				&private_key->private_key)) {
+				&private_key->private_key,
+				&private_key->alg)) {
     silc_free(private_key);
     return FALSE;
   }
@@ -688,14 +692,15 @@ SilcBool silc_pkcs_load_public_key(const char *filename,
 
   /* Try loading all types until one succeeds. */
   for (type = SILC_PKCS_SILC; type <= SILC_PKCS_SPKI; type++) {
-    public_key->pkcs = silc_pkcs_find_pkcs(type);
+    public_key->pkcs = (SilcPKCSObject *)silc_pkcs_find_pkcs(type);
     if (!public_key->pkcs)
       continue;
 
     if (public_key->pkcs->import_public_key_file(public_key->pkcs,
 						 data, data_len,
 						 SILC_PKCS_FILE_BASE64,
-						 &public_key->public_key)) {
+						 &public_key->public_key,
+						 &public_key->alg)) {
       silc_free(data);
       return TRUE;
     }
@@ -703,7 +708,8 @@ SilcBool silc_pkcs_load_public_key(const char *filename,
     if (public_key->pkcs->import_public_key_file(public_key->pkcs,
 						 data, data_len,
 						 SILC_PKCS_FILE_BIN,
-						 &public_key->public_key)) {
+						 &public_key->public_key,
+						 &public_key->alg)) {
       silc_free(data);
       return TRUE;
     }
@@ -779,7 +785,7 @@ SilcBool silc_pkcs_load_private_key(const char *filename,
 
   /* Try loading all types until one succeeds. */
   for (type = SILC_PKCS_SILC; type <= SILC_PKCS_SPKI; type++) {
-    private_key->pkcs = silc_pkcs_find_pkcs(type);
+    private_key->pkcs = (SilcPKCSObject *)silc_pkcs_find_pkcs(type);
     if (!private_key->pkcs)
       continue;
 
@@ -789,7 +795,8 @@ SilcBool silc_pkcs_load_private_key(const char *filename,
 					      passphrase,
 					      passphrase_len,
 					      SILC_PKCS_FILE_BIN,
-					      &private_key->private_key)) {
+					      &private_key->private_key,
+					      &private_key->alg)) {
       silc_free(data);
       return TRUE;
     }
@@ -800,7 +807,8 @@ SilcBool silc_pkcs_load_private_key(const char *filename,
 					      passphrase,
 					      passphrase_len,
 					      SILC_PKCS_FILE_BASE64,
-					      &private_key->private_key)) {
+					      &private_key->private_key,
+					      &private_key->alg)) {
       silc_free(data);
       return TRUE;
     }

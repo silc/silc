@@ -26,104 +26,24 @@
 #define SILC_PKCS_PRIVATE_KEYFILE_BEGIN "-----BEGIN SILC PRIVATE KEY-----\n"
 #define SILC_PKCS_PRIVATE_KEYFILE_END "\n-----END SILC PRIVATE KEY-----\n"
 
-const SilcPKCSAlgorithm *
-silc_pkcs_silc_get_algorithm(const struct SilcPKCSObjectStruct *pkcs,
-			     void *public_key);
-SilcBool
-silc_pkcs_silc_import_public_key_file(const struct SilcPKCSObjectStruct *pkcs,
-				      unsigned char *filedata,
-				      SilcUInt32 filedata_len,
-				      SilcPKCSFileEncoding encoding,
-				      void **ret_public_key);
-int silc_pkcs_silc_import_public_key(const struct SilcPKCSObjectStruct *pkcs,
-				     void *key,
-				     SilcUInt32 key_len,
-				     void **ret_public_key);
-unsigned char *
-silc_pkcs_silc_export_public_key_file(const struct SilcPKCSObjectStruct *pkcs,
-				      SilcStack stack,
-				      void *public_key,
-				      SilcPKCSFileEncoding encoding,
-				      SilcUInt32 *ret_len);
-unsigned char *
-silc_pkcs_silc_export_public_key(const struct SilcPKCSObjectStruct *pkcs,
-				 SilcStack stack,
-				 void *public_key,
-				 SilcUInt32 *ret_len);
-SilcUInt32
-silc_pkcs_silc_public_key_bitlen(const struct SilcPKCSObjectStruct *pkcs,
-				 void *public_key);
-void *silc_pkcs_silc_public_key_copy(const struct SilcPKCSObjectStruct *pkcs,
-				     void *public_key);
-SilcBool
-silc_pkcs_silc_public_key_compare(const struct SilcPKCSObjectStruct *pkcs,
-				  void *key1, void *key2);
-void silc_pkcs_silc_public_key_free(const struct SilcPKCSObjectStruct *pkcs,
-				    void *public_key);
-SilcBool
-silc_pkcs_silc_import_private_key_file(const struct SilcPKCSObjectStruct *pkcs,
-				       unsigned char *filedata,
-				       SilcUInt32 filedata_len,
-				       const char *passphrase,
-				       SilcUInt32 passphrase_len,
-				       SilcPKCSFileEncoding encoding,
-				       void **ret_private_key);
-int silc_pkcs_silc_import_private_key(const struct SilcPKCSObjectStruct *pkcs,
-				      void *key,
-				      SilcUInt32 key_len,
-				      void **ret_private_key);
-unsigned char *
-silc_pkcs_silc_export_private_key_file(const struct SilcPKCSObjectStruct *pkcs,
-				       SilcStack stack,
-				       void *private_key,
-				       const char *passphrase,
-				       SilcUInt32 passphrase_len,
-				       SilcPKCSFileEncoding encoding,
-				       SilcRng rng,
-				       SilcUInt32 *ret_len);
-unsigned char *
-silc_pkcs_silc_export_private_key(const struct SilcPKCSObjectStruct *pkcs,
-				  SilcStack stack,
-				  void *private_key,
-				  SilcUInt32 *ret_len);
-SilcUInt32
-silc_pkcs_silc_private_key_bitlen(const struct SilcPKCSObjectStruct *pkcs,
-				  void *private_key);
-void silc_pkcs_silc_private_key_free(const struct SilcPKCSObjectStruct *pkcs,
-				     void *private_key);
-SilcAsyncOperation
-silc_pkcs_silc_encrypt(const struct SilcPKCSObjectStruct *pkcs,
-		       void *public_key,
-		       unsigned char *src,
-		       SilcUInt32 src_len,
-		       SilcRng rng,
-		       SilcPKCSEncryptCb encrypt_cb,
-		       void *context);
-SilcAsyncOperation
-silc_pkcs_silc_decrypt(const struct SilcPKCSObjectStruct *pkcs,
-			void *private_key,
-			unsigned char *src,
-			SilcUInt32 src_len,
-			SilcPKCSDecryptCb decrypt_cb,
-			void *context);
-SilcAsyncOperation
-silc_pkcs_silc_sign(const struct SilcPKCSObjectStruct *pkcs,
-		    void *private_key,
-		    unsigned char *src,
-		    SilcUInt32 src_len,
-		    SilcBool compute_hash,
-		    SilcHash hash,
-		    SilcPKCSSignCb sign_cb,
-		    void *context);
-SilcAsyncOperation
-silc_pkcs_silc_verify(const struct SilcPKCSObjectStruct *pkcs,
-		      void *public_key,
-		      unsigned char *signature,
-		      SilcUInt32 signature_len,
-		      unsigned char *data,
-		      SilcUInt32 data_len,
-		      SilcHash hash,
-		      SilcPKCSVerifyCb verify_cb,
-		      void *context);
+SILC_PKCS_GET_ALGORITHM(silc_pkcs_silc_get_algorithm);
+SILC_PKCS_IMPORT_PUBLIC_KEY_FILE(silc_pkcs_silc_import_public_key_file);
+SILC_PKCS_IMPORT_PUBLIC_KEY(silc_pkcs_silc_import_public_key);
+SILC_PKCS_EXPORT_PUBLIC_KEY_FILE(silc_pkcs_silc_export_public_key_file);
+SILC_PKCS_EXPORT_PUBLIC_KEY(silc_pkcs_silc_export_public_key);
+SILC_PKCS_PUBLIC_KEY_BITLEN(silc_pkcs_silc_public_key_bitlen);
+SILC_PKCS_PUBLIC_KEY_COPY(silc_pkcs_silc_public_key_copy);
+SILC_PKCS_PUBLIC_KEY_COMPARE(silc_pkcs_silc_public_key_compare);
+SILC_PKCS_PUBLIC_KEY_FREE(silc_pkcs_silc_public_key_free);
+SILC_PKCS_IMPORT_PRIVATE_KEY_FILE(silc_pkcs_silc_import_private_key_file);
+SILC_PKCS_IMPORT_PRIVATE_KEY(silc_pkcs_silc_import_private_key);
+SILC_PKCS_EXPORT_PRIVATE_KEY_FILE(silc_pkcs_silc_export_private_key_file);
+SILC_PKCS_EXPORT_PRIVATE_KEY(silc_pkcs_silc_export_private_key);
+SILC_PKCS_PRIVATE_KEY_BITLEN(silc_pkcs_silc_private_key_bitlen);
+SILC_PKCS_PRIVATE_KEY_FREE(silc_pkcs_silc_private_key_free);
+SILC_PKCS_ENCRYPT(silc_pkcs_silc_encrypt);
+SILC_PKCS_DECRYPT(silc_pkcs_silc_decrypt);
+SILC_PKCS_SIGN(silc_pkcs_silc_sign);
+SILC_PKCS_VERIFY(silc_pkcs_silc_verify);
 
 #endif /* SILCPK_I_H */
