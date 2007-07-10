@@ -8,12 +8,18 @@ SilcPrivateKey private_key, accprv;
 SilcHash hash;
 unsigned char data[] = "Single block msg";
 int data_len = 16;
-int s = 100;
+int s = 200;
 
 void sign_compl(SilcBool success, const unsigned char *signature,
 	        SilcUInt32 signature_len, void *context)
 {
   SILC_LOG_DEBUG(("Sign compl %s", success ? "Ok" : "failed"));
+}
+
+SILC_TASK_CALLBACK(stats)
+{
+  silc_stack_stats(silc_crypto_stack());
+  silc_schedule_task_add_timeout(schedule, stats, NULL, 1, 1);
 }
 
 SILC_TASK_CALLBACK(quit)
@@ -25,7 +31,7 @@ SILC_TASK_CALLBACK(sign)
 {
   silc_pkcs_sign(accprv, data, data_len, TRUE, hash, sign_compl, NULL);
   if (--s > 0)
-    silc_schedule_task_add_timeout(schedule, sign, NULL, 0, 70000);
+    silc_schedule_task_add_timeout(schedule, sign, NULL, 0, 60000);
 }
 
 int main(int argc, char **argv)
@@ -71,7 +77,8 @@ int main(int argc, char **argv)
     goto err;
 
   silc_schedule_task_add_timeout(schedule, sign, NULL, 0, 1);
-  silc_schedule_task_add_timeout(schedule, quit, NULL, 15, 0);
+  silc_schedule_task_add_timeout(schedule, stats, NULL, 1, 1);
+  silc_schedule_task_add_timeout(schedule, quit, NULL, 19, 0);
   silc_schedule(schedule);
 
   silc_acc_uninit(softacc);

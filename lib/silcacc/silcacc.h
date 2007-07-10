@@ -90,6 +90,20 @@ SilcBool silc_acc_register(const SilcAccelerator acc);
  ***/
 void silc_acc_unregister(SilcAccelerator acc);
 
+/****f* silcacc/SilcAccAPI/silc_acc_find
+ *
+ * SYNOPSIS
+ *
+ *    SilcAccelerator silc_acc_find(const char *name);
+ *
+ * DESCRIPTION
+ *
+ *    Find accelerator by its name indicated by `name'.  Returns the
+ *    accelerator context or NULL if such accelerator is not registered.
+ *
+ ***/
+SilcAccelerator silc_acc_find(const char *name);
+
 /****f* silcacc/SilcAccAPI/silc_acc_init
  *
  * SYNOPSIS
@@ -141,20 +155,6 @@ SilcBool silc_acc_uninit(SilcAccelerator acc);
  *
  ***/
 SilcDList silc_acc_get_supported(void);
-
-/****f* silcacc/SilcAccAPI/silc_acc_find
- *
- * SYNOPSIS
- *
- *    SilcAccelerator silc_acc_find(const char *name);
- *
- * DESCRIPTION
- *
- *    Find accelerator by its name indicated by `name'.  Returns the
- *    accelerator context or NULL if such accelerator is not registered.
- *
- ***/
-SilcAccelerator silc_acc_find(const char *name);
 
 /****f* silcacc/SilcAccAPI/silc_acc_get_name
  *

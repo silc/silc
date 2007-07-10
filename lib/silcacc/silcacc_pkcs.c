@@ -199,6 +199,8 @@ SILC_PKCS_PRIVATE_KEY_BITLEN(silc_acc_pkcs_private_key_bitlen)
 		       prv->accelerated->private_key);
 }
 
+/* Accelerator routines follow */
+
 SILC_PKCS_PUBLIC_KEY_FREE(silc_acc_pkcs_public_key_free)
 {
   SilcAcceleratorPublicKey pub = public_key;
@@ -292,7 +294,7 @@ SilcPublicKey silc_acc_public_key(SilcAccelerator acc,
   }
   if (alg) {
     SILC_LOG_DEBUG(("Accelerator %s does not support %s/%s acceleration",
-		    alg->name, alg->scheme));
+		    acc->name, alg->name, alg->scheme));
     return NULL;
   }
 
@@ -375,7 +377,7 @@ SilcPrivateKey silc_acc_private_key(SilcAccelerator acc,
   }
   if (alg) {
     SILC_LOG_DEBUG(("Accelerator %s does not support %s/%s acceleration",
-		    alg->name, alg->scheme));
+		    acc->name, alg->name, alg->scheme));
     return NULL;
   }
 

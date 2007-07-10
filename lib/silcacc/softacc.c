@@ -165,6 +165,7 @@ SilcBool silc_softacc_init(SilcSchedule schedule, va_list va)
   sa->tp = silc_thread_pool_alloc(NULL, min_threads, max_threads, TRUE);
   if (!sa->tp) {
     silc_free(sa);
+    sa = NULL;
     return FALSE;
   }
 
@@ -233,6 +234,7 @@ SILC_TASK_CALLBACK(silc_softacc_completion)
  out:
   silc_sfree(stack, e->src);
   silc_sfree(stack, e->data);
+  silc_sfree(stack, e->result_data);
   silc_sfree(stack, e);
   silc_stack_free(stack);
 }
@@ -245,7 +247,7 @@ void silc_softacc_data_cb(SilcBool success, const unsigned char *data,
   SilcSoftaccExec e = context;
   SilcStack stack = e->stack;
 
-  /* Pop e->src and e->data from memory */
+  /* Pop e->src */
   silc_stack_pop(stack);
 
   if (success)
@@ -261,7 +263,9 @@ void silc_softacc_verify_cb(SilcBool success, void *context)
   SilcSoftaccExec e = context;
   SilcStack stack = e->stack;
 
+  /* Pop e->src and e->data from memory */
   silc_stack_pop(stack);
+
   e->result = success;
 }
 
