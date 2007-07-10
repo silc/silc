@@ -58,7 +58,7 @@
  *    registered algorithms, user can re-register them with their
  *    corresponding registering functions in the wanted order.
  *
- *    If `stack' is non-NULL, it will be used by all libraries as their main
+ *    If `stack' is non-NULL, it will be used by some libraries as their main
  *    source for memory.  A child stack is created from the `stack'.  When
  *    silc_crypto_uninit is called the allocated memory is returned back to
  *    `stack' and the caller must then free `stack'.
