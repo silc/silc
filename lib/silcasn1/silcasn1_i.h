@@ -31,6 +31,7 @@ struct SilcAsn1Object {
   SilcStack stack2;		/* Internal stack for encoding/decoding */
   va_list ap;			/* List of ASN.1 types given as argument */
   unsigned int accumul  : 1;	/* Accumulate memory from stack for result */
+  unsigned int switched  : 1;	/* Set when stack2 is set to stack1 */
 };
 
 /* The maximum depth for recursion in encoder and decoder. */

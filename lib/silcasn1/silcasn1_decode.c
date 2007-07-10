@@ -948,6 +948,7 @@ SilcBool silc_asn1_decode(SilcAsn1 asn1, SilcBuffer src, ...)
       stack1 = asn1->stack1;
       asn1->stack1 = asn1->stack2;
       asn1->stack2 = stack1;
+      asn1->switched = !asn1->switched;
     }
   }
 

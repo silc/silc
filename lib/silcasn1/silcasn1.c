@@ -84,8 +84,15 @@ SilcBool silc_asn1_init(SilcAsn1 asn1, SilcStack stack)
 
 void silc_asn1_uninit(SilcAsn1 asn1)
 {
+  SilcStack stack1 = asn1->stack1;
+
+  if (asn1->switched) {
+    stack1 = asn1->stack2;
+    asn1->stack2 = asn1->stack1;
+  }
+
   silc_stack_free(asn1->stack2);
-  silc_stack_free(asn1->stack1);
+  silc_stack_free(stack1);
 }
 
 #if defined(SILC_DEBUG)
