@@ -87,7 +87,7 @@ SilcDList silc_dlist_init(void)
   list = (SilcDList)silc_malloc(sizeof(*list));
   if (!list)
     return NULL;
-  list->current = list->prev = NULL;
+  list->stack = list->current = list->prev = NULL;
   silc_list_init_prev(list->list, struct SilcDListEntryStruct, next, prev);
 
   return list;
