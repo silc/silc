@@ -42,6 +42,7 @@ struct SilcThreadPoolStruct {
   SilcList threads;		    /* Threads in the pool */
   SilcList free_threads;	    /* Threads freelist */
   SilcList queue;		    /* Queue for waiting calls */
+  SilcList free_queue;		    /* Queue freelist */
   SilcUInt16 min_threads;	    /* Minimum threads in the pool */
   SilcUInt16 max_threads;	    /* Maximum threads in the pool */
   SilcUInt16 refcnt;		    /* Reference counter */
@@ -151,7 +152,7 @@ static void *silc_thread_pool_run_thread(void *context)
       t->schedule = q->schedule;
 
       silc_list_del(tp->queue, q);
-      silc_sfree(tp->stack, q);
+      silc_list_add(tp->free_queue, q);
       continue;
     }
 
@@ -235,6 +236,7 @@ SilcThreadPool silc_thread_pool_alloc(SilcStack stack,
   silc_list_init(tp->threads, struct SilcThreadPoolThreadStruct, next);
   silc_list_init(tp->free_threads, struct SilcThreadPoolThreadStruct, next2);
   silc_list_init(tp->queue, struct SilcThreadPoolThreadStruct, next);
+  silc_list_init(tp->free_queue, struct SilcThreadPoolThreadStruct, next);
 
   for (i = 0; i < tp->min_threads && start_min_threads; i++)
     silc_thread_pool_new_thread(tp);
@@ -269,7 +271,11 @@ void silc_thread_pool_free(SilcThreadPool tp, SilcBool wait_unfinished)
   silc_list_start(tp->queue);
   while ((t = silc_list_get(tp->queue)))
     silc_sfree(tp->stack, t);
+  silc_list_start(tp->free_queue);
+  while ((t = silc_list_get(tp->free_queue)))
+    silc_sfree(tp->stack, t);
   silc_list_init(tp->queue, struct SilcThreadPoolThreadStruct, next);
+  silc_list_init(tp->free_queue, struct SilcThreadPoolThreadStruct, next);
 
   /* Release reference.  Releases lock also. */
   silc_thread_pool_unref(tp);
@@ -308,10 +314,16 @@ SilcBool silc_thread_pool_run(SilcThreadPool tp,
       SILC_LOG_DEBUG(("Queue call %p, context %p", run, run_context));
 
       /* User wants to queue this call until thread becomes free */
-      t = silc_scalloc(tp->stack, 1, sizeof(*t));
+      silc_list_start(tp->free_queue);
+      t = silc_list_get(tp->free_queue);
       if (!t) {
-	silc_mutex_unlock(tp->lock);
-	return FALSE;
+	t = silc_scalloc(tp->stack, 1, sizeof(*t));
+	if (!t) {
+	  silc_mutex_unlock(tp->lock);
+	  return FALSE;
+	}
+      } else {
+	silc_list_del(tp->free_queue, t);
       }
 
       t->run = run;
