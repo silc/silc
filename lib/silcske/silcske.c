@@ -658,7 +658,6 @@ static SilcSKEStatus silc_ske_create_rnd(SilcSKE ske, SilcMPInt *n,
     status = SILC_SKE_STATUS_ERROR;
 
   memset(string, 'F', l);
-  silc_free(string);
 
   return status;
 }
