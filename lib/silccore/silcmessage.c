@@ -379,8 +379,15 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
     silc_hmac_update(hmac, receiver_id, receiver_id_len);
     silc_hmac_final(hmac, mac, &mac_len);
     if (silc_unlikely(memcmp(data + (data_len - mac_len), mac, mac_len))) {
-      SILC_LOG_DEBUG(("Message MAC does not match"));
-      return FALSE;
+      /* Check for old style (version 1.2) message MAC.  Remove this check
+	 at some point. */
+      silc_hmac_init(hmac);
+      silc_hmac_update(hmac, data, data_len - mac_len);
+      silc_hmac_final(hmac, mac, &mac_len);
+      if (silc_unlikely(memcmp(data + (data_len - mac_len), mac, mac_len))) {
+	SILC_LOG_DEBUG(("Message MAC does not match"));
+	return FALSE;
+      }
     }
     SILC_LOG_DEBUG(("MAC is Ok"));
   }
@@ -574,7 +581,8 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
 
 /* Encrypt message payload */
 
-static int silc_message_payload_encode_encrypt(SilcBuffer buffer,
+static int silc_message_payload_encode_encrypt(SilcStack stack,
+					       SilcBuffer buffer,
 					       void *value, void *context)
 {
   SilcMessageEncode *e = context;
@@ -626,8 +634,10 @@ silc_message_payload_encode_final(SilcBuffer buffer,
 
   /* Encrypt */
   if (silc_buffer_format(buffer,
-			 SILC_STR_DATA(silc_buffer_data(signature),
-				       silc_buffer_len(signature)),
+			 SILC_STR_DATA(signature ?
+				       silc_buffer_data(signature) : NULL,
+				       signature ?
+				       silc_buffer_len(signature) : 0),
 			 SILC_STR_DATA(iv, iv_len),
 			 SILC_STR_FUNC(silc_message_payload_encode_encrypt,
 				       NULL, &e),
@@ -760,6 +770,8 @@ silc_message_payload_encode(SilcMessageFlags flags,
     e->iv = iv_len ? iv : NULL;
     e->iv_len = iv_len;
     e->payload_len = 6 + data_len + pad_len;
+    e->encoded = encoded;
+    e->context = context;
 
     /* Compute signature */
     return silc_message_signed_payload_encode(buffer, e);
