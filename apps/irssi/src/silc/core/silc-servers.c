@@ -418,7 +418,7 @@ static void sig_connected_stream_created(SilcSocketStreamStatus status,
 
   /* Try to read detached session data and use it if found. */
   file = silc_get_session_filename(server);
-  params.detach_data = silc_file_readfile(file, &params.detach_data_len);
+  params.detach_data = silc_file_readfile(file, &params.detach_data_len, NULL);
   if (params.detach_data)
     params.detach_data[params.detach_data_len] = 0;
   if (params.detach_data)

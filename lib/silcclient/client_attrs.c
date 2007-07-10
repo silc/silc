@@ -24,6 +24,12 @@
 
 typedef struct {
   SilcBuffer buffer;
+  SilcPKCSSignCb sign_cb;
+  void *context;
+} *SilcAttrSign;
+
+typedef struct {
+  SilcBuffer buffer;
 } SilcAttrForeach;
 
 /* Add one attribute that was found from hash table */
@@ -72,19 +78,49 @@ static void silc_client_attributes_process_foreach(void *key, void *context,
 						 data, data_len);
 }
 
+/* Attribute signature callback */
+
+static void
+silc_client_attributes_process_signed(SilcBool success,
+				      const unsigned char *signature,
+				      SilcUInt32 signature_len,
+				      void *context)
+{
+  SilcAttrSign s = context;
+  SilcAttributeObjPk pk;
+
+  if (success) {
+    pk.type = NULL;
+    pk.data = (unsigned char *)signature;
+    pk.data_len = signature_len;
+    s->buffer =
+      silc_attribute_payload_encode(s->buffer,
+				    SILC_ATTRIBUTE_USER_DIGITAL_SIGNATURE,
+				    SILC_ATTRIBUTE_FLAG_VALID,
+				    &pk, sizeof(pk));
+  }
+
+  s->sign_cb(TRUE, silc_buffer_data(s->buffer), silc_buffer_len(s->buffer),
+	     s->context);
+
+  silc_buffer_free(s->buffer);
+  silc_free(s);
+}
+
 /* Process list of attributes.  Returns reply to the requested attributes. */
 
-SilcBuffer silc_client_attributes_process(SilcClient client,
-					  SilcClientConnection conn,
-					  SilcDList attrs)
+void silc_client_attributes_process(SilcClient client,
+				    SilcClientConnection conn,
+				    SilcDList attrs,
+				    SilcPKCSSignCb sign_cb,
+				    void *context)
 {
+  SilcAttrSign s;
   SilcBuffer buffer = NULL;
   SilcAttrForeach f;
   SilcAttribute attribute;
   SilcAttributePayload attr;
   SilcAttributeObjPk pk;
-  unsigned char sign[2048 + 1];
-  SilcUInt32 sign_len;
 
   SILC_LOG_DEBUG(("Process Requested Attributes"));
 
@@ -92,12 +128,13 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
      attributes, ignore the request. */
   if (!conn->internal->attrs) {
     SILC_LOG_DEBUG(("User has not set any attributes"));
-    return NULL;
+    sign_cb(FALSE, NULL, 0, context);
+    return;
   }
 
   /* Always put our public key. */
   pk.type = "silc-rsa";
-  pk.data = silc_pkcs_public_key_encode(conn->public_key, &pk.data_len);
+  pk.data = silc_pkcs_public_key_encode(NULL, conn->public_key, &pk.data_len);
   buffer = silc_attribute_payload_encode(buffer,
 					 SILC_ATTRIBUTE_USER_PUBLIC_KEY,
 					 pk.data ? SILC_ATTRIBUTE_FLAG_VALID :
@@ -123,21 +160,19 @@ SilcBuffer silc_client_attributes_process(SilcClient client,
   }
   buffer = f.buffer;
 
-  /* Finally compute the digital signature of all the data we provided. */
-  if (silc_pkcs_sign(conn->private_key, silc_buffer_data(buffer),
-		     silc_buffer_len(buffer), sign, sizeof(sign), &sign_len,
-		     TRUE, conn->internal->sha1hash)) {
-    pk.type = NULL;
-    pk.data = sign;
-    pk.data_len = sign_len;
-    buffer =
-      silc_attribute_payload_encode(buffer,
-				    SILC_ATTRIBUTE_USER_DIGITAL_SIGNATURE,
-				    SILC_ATTRIBUTE_FLAG_VALID,
-				    &pk, sizeof(pk));
+  s = silc_calloc(1, sizeof(*s));
+  if (!s) {
+    sign_cb(FALSE, NULL, 0, context);
+    return;
   }
+  s->sign_cb = sign_cb;
+  s->context = context;
+  s->buffer = buffer;
 
-  return buffer;
+  /* Finally compute the digital signature of all the data we provided. */
+  silc_pkcs_sign(conn->private_key, silc_buffer_data(buffer),
+		 silc_buffer_len(buffer), TRUE, conn->internal->sha1hash,
+		 silc_client_attributes_process_signed, s);
 }
 
 static void silc_client_attribute_destruct(void *key, void *context,

@@ -302,9 +302,6 @@ static void silc_register_cipher(SilcClient client, const char *cipher)
 #endif
     }
   }
-
-  /* Register other defaults */
-  silc_cipher_register_default();
 }
 
 static void silc_register_hash(SilcClient client, const char *hash)
@@ -328,9 +325,6 @@ static void silc_register_hash(SilcClient client, const char *hash)
 #endif
     }
   }
-
-  /* Register other defaults */
-  silc_hash_register_default();
 }
 
 static void silc_register_hmac(SilcClient client, const char *hmac)
@@ -354,9 +348,6 @@ static void silc_register_hmac(SilcClient client, const char *hmac)
 #endif
     }
   }
-
-  /* Register other defaults */
-  silc_hmac_register_default();
 }
 
 /* Finalize init. Init finish signal calls this. */
@@ -408,7 +399,6 @@ void silc_opt_callback(poptContext con,
   if ((argc == 2) && (strcasecmp(argv[1], "list-ciphers") == 0)) {
 #else
   if (strcmp(opt->longName, "list-ciphers") == 0) {
-    silc_cipher_register_default();
 #endif
     silc_client_list_ciphers();
     FUNCTION_EXIT;
@@ -418,7 +408,6 @@ void silc_opt_callback(poptContext con,
   if ((argc == 2) && (strcasecmp(argv[1], "list-hash-funcs") == 0)) {
 #else
   if (strcmp(opt->longName, "list-hash-funcs") == 0) {
-    silc_hash_register_default();
 #endif
     silc_client_list_hash_funcs();
     FUNCTION_EXIT;
@@ -428,7 +417,6 @@ void silc_opt_callback(poptContext con,
   if ((argc == 2) && (strcasecmp(argv[1], "list-hmacs") == 0)) {
 #else
   if (strcmp(opt->longName, "list-hmacs") == 0) {
-    silc_hmac_register_default();
 #endif
     silc_client_list_hmacs();
     FUNCTION_EXIT;
@@ -438,7 +426,6 @@ void silc_opt_callback(poptContext con,
   if ((argc == 2) && (strcasecmp(argv[1], "list-pkcs") == 0)) {
 #else
   if (strcmp(opt->longName, "list-pkcs") == 0) {
-    silc_pkcs_register_default();
 #endif
     silc_client_list_pkcs();
     FUNCTION_EXIT;
@@ -534,10 +521,7 @@ void silc_opt_callback(poptContext con,
 		       MSGLEVEL_CRAP, SILCTXT_CONFIG_NEXTTIME);
     goto out;
 #else
-    silc_cipher_register_default();
-    silc_pkcs_register_default();
-    silc_hash_register_default();
-    silc_hmac_register_default();
+    silc_crypto_init(NULL);
     silc_create_key_pair(opt_pkcs, opt_bits, NULL, NULL,
 			 NULL, NULL, NULL, NULL, TRUE);
     exit(0);
@@ -562,10 +546,7 @@ void silc_opt_callback(poptContext con,
 			    ENTRY_REDIRECT_FLAG_HIDDEN, rec);
     goto out;
 #else
-    silc_cipher_register_default();
-    silc_pkcs_register_default();
-    silc_hash_register_default();
-    silc_hmac_register_default();
+    silc_crypto_init(NULL);
     silc_change_private_key_passphrase(arg, NULL, NULL);
     exit(0);
 #endif
@@ -574,10 +555,7 @@ void silc_opt_callback(poptContext con,
 #ifndef SILC_PLUGIN
   if (strcmp(opt->longName, "show-key") == 0) {
     /* Dump the key */
-    silc_cipher_register_default();
-    silc_pkcs_register_default();
-    silc_hash_register_default();
-    silc_hmac_register_default();
+    silc_crypto_init(NULL);
     silc_show_public_key_file((char *)arg);
     exit(0);
   }
@@ -794,7 +772,6 @@ void silc_core_init(void)
   if (init_failed)
     return;
 #endif
-  silc_pkcs_register_default();
 
 #ifdef SILC_PLUGIN
   command_bind("silc", MODULE_NAME, (SIGNAL_FUNC) silc_opt_callback);

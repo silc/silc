@@ -24,6 +24,29 @@
 
 /************************** Channel Message Send ****************************/
 
+typedef struct {
+  SilcClient client;
+  SilcClientConnection conn;
+  SilcChannelEntry channel;
+} *SilcClientChannelMessageContext;
+
+/* Message payload encoding callback */
+
+static void silc_client_send_channel_message_final(SilcBuffer message,
+						   void *context)
+{
+  SilcClientChannelMessageContext c = context;
+
+  /* Send the channel message */
+  if (message)
+    silc_packet_send_ext(c->conn->stream, SILC_PACKET_CHANNEL_MESSAGE, 0,
+			 0, NULL, SILC_ID_CHANNEL, &c->channel->id,
+			 silc_buffer_datalen(message), NULL, NULL);
+
+  silc_client_unref_channel(c->client, c->conn, c->channel);
+  silc_free(c);
+}
+
 /* Sends channel message to `channel'. */
 
 SilcBool silc_client_send_channel_message(SilcClient client,
@@ -35,11 +58,10 @@ SilcBool silc_client_send_channel_message(SilcClient client,
 					  unsigned char *data,
 					  SilcUInt32 data_len)
 {
+  SilcClientChannelMessageContext c;
   SilcChannelUser chu;
-  SilcBuffer buffer;
   SilcCipher cipher;
   SilcHmac hmac;
-  SilcBool ret;
   SilcID sid, rid;
 
   SILC_LOG_DEBUG(("Sending channel message"));
@@ -109,27 +131,26 @@ SilcBool silc_client_send_channel_message(SilcClient client,
     return FALSE;
   }
 
-  /* Encode the message payload. This also encrypts the message payload. */
+  c = silc_calloc(1, sizeof(*c));
+  if (!c)
+    return FALSE;
+
+  c->client = client;
+  c->conn = conn;
+  c->channel = silc_client_ref_channel(client, conn, channel);
+
   sid.type = SILC_ID_CLIENT;
   sid.u.client_id = chu->client->id;
   rid.type = SILC_ID_CHANNEL;
   rid.u.channel_id = chu->channel->id;
-  buffer = silc_message_payload_encode(flags, data, data_len, TRUE, FALSE,
-				       cipher, hmac, client->rng, NULL,
-				       conn->private_key, hash, &sid, &rid,
-				       NULL);
-  if (silc_unlikely(!buffer)) {
-    SILC_LOG_ERROR(("Error encoding channel message"));
-    return FALSE;
-  }
 
-  /* Send the channel message */
-  ret = silc_packet_send_ext(conn->stream, SILC_PACKET_CHANNEL_MESSAGE, 0,
-			     0, NULL, SILC_ID_CHANNEL, &channel->id,
-			     silc_buffer_datalen(buffer), NULL, NULL);
+  /* Encode the message payload. This also encrypts the message payload. */
+  silc_message_payload_encode(flags, data, data_len, TRUE, FALSE,
+			      cipher, hmac, client->rng, NULL,
+			      conn->private_key, hash, &sid, &rid, NULL,
+			      silc_client_send_channel_message_final, c);
 
-  silc_buffer_free(buffer);
-  return ret;
+  return TRUE;
 }
 
 /************************* Channel Message Receive **************************/

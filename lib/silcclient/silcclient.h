@@ -701,9 +701,9 @@ typedef struct SilcClientParamsStruct {
      not all SILC server versions return such channel name strings. */
   SilcBool full_channel_names;
 
-  /* If this is set to TRUE, the silcclient library will not register and
-     deregister the cipher, pkcs, hash and hmac algorithms. The application
-     itself will need to handle that. */
+  /* If this is set to TRUE, the silcclient library will not initialize
+     or uninitialize the SILC Crypto Toolkit.  The application will have
+     to do that itself by calling silc_crypto_init and silc_crypto_uninit. */
   SilcBool dont_register_crypto_library;
 
 } SilcClientParams;

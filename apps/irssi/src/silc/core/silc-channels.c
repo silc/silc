@@ -1092,7 +1092,7 @@ void silc_list_key(const char *pub_filename, int verbose)
   silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
   ident = &silc_pubkey->identifier;
 
-  pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+  pk = silc_pkcs_public_key_encode(NULL, public_key, &pk_len);
   if (!pk)
     return;
   fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);

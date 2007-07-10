@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ SILC_FSM_STATE(silc_client_st_register);
 SILC_FSM_STATE(silc_client_st_register_complete);
 SILC_FSM_STATE(silc_client_st_register_error);
 SILC_FSM_STATE(silc_client_st_resume);
+SILC_FSM_STATE(silc_client_st_resume_send);
 SILC_FSM_STATE(silc_client_st_resume_resolve_channels);
 SILC_FSM_STATE(silc_client_st_resume_resolve_cmodes);
 SILC_FSM_STATE(silc_client_st_resume_completed);

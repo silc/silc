@@ -952,12 +952,8 @@ void silc_client_free(SilcClient client)
   if (client->rng)
     silc_rng_free(client->rng);
 
-  if (!client->internal->params->dont_register_crypto_library) {
-    silc_cipher_unregister_all();
-    silc_pkcs_unregister_all();
-    silc_hash_unregister_all();
-    silc_hmac_unregister_all();
-  }
+  if (!client->internal->params->dont_register_crypto_library)
+    silc_crypto_uninit();
 
   silc_packet_engine_stop(client->internal->packet_engine);
   silc_dlist_uninit(client->internal->ftp_sessions);
@@ -1023,15 +1019,10 @@ SilcBool silc_client_init(SilcClient client, const char *username,
   if (!client->internal->ftp_sessions)
     return FALSE;
 
-  if (!client->internal->params->dont_register_crypto_library) {
+  if (!client->internal->params->dont_register_crypto_library)
     /* Initialize the crypto library.  If application has done this already
-       this has no effect.  Also, we will not be overriding something
-       application might have registered earlier. */
-    silc_cipher_register_default();
-    silc_pkcs_register_default();
-    silc_hash_register_default();
-    silc_hmac_register_default();
-  }
+       this has no effect. */
+    silc_crypto_init(NULL);
 
   /* Initialize random number generator */
   client->rng = silc_rng_alloc();

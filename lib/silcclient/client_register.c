@@ -28,7 +28,10 @@ typedef struct {
   SilcClient client;
   SilcClientConnection conn;
   SilcBufferStruct detach;
+  SilcBuffer auth;
   char *nickname;
+  unsigned char *id;
+  SilcUInt32 id_len;
   SilcUInt32 channel_count;
 } *SilcClientResumeSession;
 
@@ -66,6 +69,23 @@ silc_client_resume_command_callback(SilcClient client,
   client->internal->ops->command_reply(client, conn, command,
 				       SILC_STATUS_OK, SILC_STATUS_OK, ap);
   va_end(ap);
+}
+
+/* Resume authentication data generation callback */
+
+static void silc_client_resume_auth_generated(const SilcBuffer data,
+					      void *context)
+{
+  SilcClientConnection conn = context;
+  SilcClientResumeSession resume =
+    silc_fsm_get_state_context(&conn->internal->event_thread);
+
+  if (!data)
+    silc_fsm_next(&conn->internal->event_thread, silc_client_st_resume_error);
+  else
+    resume->auth = silc_buffer_copy(data);
+
+  SILC_FSM_CALL_CONTINUE_SYNC(&conn->internal->event_thread);
 }
 
 
@@ -279,7 +299,6 @@ SILC_FSM_STATE(silc_client_st_resume)
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
   SilcClientResumeSession resume;
-  SilcBuffer auth;
   unsigned char *id;
   SilcUInt16 id_len;
   SilcClientID client_id;
@@ -323,25 +342,34 @@ SILC_FSM_STATE(silc_client_st_resume)
     silc_fsm_next(fsm, silc_client_st_resume_error);
     return SILC_FSM_CONTINUE;
   }
+  resume->id = id;
+  resume->id_len = id_len;
 
   /* Generate authentication data that server will verify */
-  auth = silc_auth_public_key_auth_generate(conn->public_key,
-					    conn->private_key,
-					    client->rng,
-					    conn->internal->hash,
-					    &client_id, SILC_ID_CLIENT);
-  if (!auth) {
-    /** Out of memory */
-    silc_fsm_next(fsm, silc_client_st_resume_error);
-    return SILC_FSM_CONTINUE;
-  }
+  silc_fsm_next(fsm, silc_client_st_resume_send);
+  SILC_FSM_CALL(silc_auth_public_key_auth_generate(
+				 conn->public_key, conn->private_key,
+				 client->rng, conn->internal->hash,
+				 &client_id, SILC_ID_CLIENT,
+				 silc_client_resume_auth_generated, conn));
+  /* NOT REACHED */
+}
+
+/* Send RESUME_CLIENT packet */
+
+SILC_FSM_STATE(silc_client_st_resume_send)
+{
+  SilcClientConnection conn = fsm_context;
+  SilcClientResumeSession resume = state_context;
+
+  SILC_LOG_DEBUG(("Send RESUME_CLIENT packet"));
 
   /* Send RESUME_CLIENT packet to resume to network */
   if (!silc_packet_send_va(conn->stream, SILC_PACKET_RESUME_CLIENT, 0,
-			   SILC_STR_UI_SHORT(id_len),
-			   SILC_STR_DATA(id, id_len),
-			   SILC_STR_DATA(silc_buffer_data(auth),
-					 silc_buffer_len(auth)),
+			   SILC_STR_UI_SHORT(resume->id_len),
+			   SILC_STR_DATA(resume->id, resume->id_len),
+			   SILC_STR_DATA(silc_buffer_data(resume->auth),
+					 silc_buffer_len(resume->auth)),
 			   SILC_STR_END)) {
     /** Error sending packet */
     SILC_LOG_DEBUG(("Error sending packet"));

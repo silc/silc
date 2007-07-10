@@ -24,6 +24,31 @@
 
 /************************** Private Message Send ****************************/
 
+typedef struct {
+  SilcClient client;
+  SilcClientConnection conn;
+  SilcClientEntry client_entry;
+} *SilcClientPrvmsgContext;
+
+/* Message payload encoding callback */
+
+static void silc_client_send_private_message_final(SilcBuffer message,
+						   void *context)
+{
+  SilcClientPrvmsgContext p = context;
+
+  /* Send the private message packet */
+  if (message)
+    silc_packet_send_ext(p->conn->stream, SILC_PACKET_PRIVATE_MESSAGE,
+			 p->client_entry->internal.send_key ?
+			 SILC_PACKET_FLAG_PRIVMSG_KEY : 0,
+			 0, NULL, SILC_ID_CLIENT, &p->client_entry->id,
+			 silc_buffer_datalen(message), NULL, NULL);
+
+  silc_client_unref_client(p->client, p->conn, p->client_entry);
+  silc_free(p);
+}
+
 /* Sends private message to remote client. */
 
 SilcBool silc_client_send_private_message(SilcClient client,
@@ -34,8 +59,7 @@ SilcBool silc_client_send_private_message(SilcClient client,
 					  unsigned char *data,
 					  SilcUInt32 data_len)
 {
-  SilcBuffer buffer;
-  SilcBool ret;
+  SilcClientPrvmsgContext p;
   SilcID sid, rid;
 
   if (silc_unlikely(!client || !conn || !client_entry))
@@ -52,29 +76,25 @@ SilcBool silc_client_send_private_message(SilcClient client,
   rid.type = SILC_ID_CLIENT;
   rid.u.client_id = client_entry->id;
 
-  /* Encode private message payload */
-  buffer =
-    silc_message_payload_encode(flags, data, data_len,
-				(!client_entry->internal.send_key ? FALSE :
-				 !client_entry->internal.generated),
-				TRUE, client_entry->internal.send_key,
-				client_entry->internal.hmac_send,
-				client->rng, NULL, conn->private_key,
-				hash, &sid, &rid, NULL);
-  if (silc_unlikely(!buffer)) {
-    SILC_LOG_ERROR(("Error encoding private message"));
+  p = silc_calloc(1, sizeof(*p));
+  if (!p)
     return FALSE;
-  }
 
-  /* Send the private message packet */
-  ret = silc_packet_send_ext(conn->stream, SILC_PACKET_PRIVATE_MESSAGE,
-			     client_entry->internal.send_key ?
-			     SILC_PACKET_FLAG_PRIVMSG_KEY : 0,
-			     0, NULL, SILC_ID_CLIENT, &client_entry->id,
-			     silc_buffer_datalen(buffer), NULL, NULL);
+  p->client = client;
+  p->conn = conn;
+  p->client_entry = silc_client_ref_client(client, conn, client_entry);
 
-  silc_buffer_free(buffer);
-  return ret;
+  /* Encode private message payload */
+  silc_message_payload_encode(flags, data, data_len,
+			      (!client_entry->internal.send_key ? FALSE :
+			       !client_entry->internal.generated),
+			      TRUE, client_entry->internal.send_key,
+			      client_entry->internal.hmac_send,
+			      client->rng, NULL, conn->private_key,
+			      hash, &sid, &rid, NULL,
+			      silc_client_send_private_message_final, p);
+
+  return TRUE;
 }
 
 /************************* Private Message Receive **************************/

@@ -185,7 +185,7 @@ static void silc_parse_channel_public_keys(SILC_SERVER_REC *server,
     if (silc_pkcs_get_type(pubkey) != SILC_PKCS_SILC)
       continue;
 
-    pk = silc_pkcs_public_key_encode(pubkey, &pk_len);
+    pk = silc_pkcs_public_key_encode(NULL, pubkey, &pk_len);
     if (!pk)
       continue;
 
@@ -236,6 +236,12 @@ void silc_say_error(char *msg, ...)
   va_end(va);
 }
 
+void static verify_message_signature_verified(SilcBool success,
+					      void *context)
+{
+  *(SilcBool *)context = success;
+}
+
 /* Try to verify a message using locally stored public key data */
 
 int verify_message_signature(SilcClientEntry sender,
@@ -248,6 +254,7 @@ int verify_message_signature(SilcClientEntry sender,
   SilcUInt32 pk_datalen;
   struct stat st;
   int ret = SILC_MSG_SIGNED_VERIFIED, i;
+  SilcBool verified = FALSE;
 
   /* get public key from the signature payload and compare it with the
      one stored in the client entry */
@@ -309,9 +316,12 @@ int verify_message_signature(SilcClientEntry sender,
   }
 
   /* the public key is now in pk, our "level of trust" in ret */
-  if ((pk) && silc_message_signed_verify(message, pk,
-			  		 sha1hash) != SILC_AUTH_OK)
-    ret = SILC_MSG_SIGNED_FAILED;
+  if (pk) {
+    silc_message_signed_verify(message, pk, sha1hash,
+			       verify_message_signature_verified, &verified);
+    if (!verified)
+      ret = SILC_MSG_SIGNED_FAILED;
+  }
 
   if (pk)
     silc_pkcs_public_key_free(pk);
@@ -2433,7 +2443,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   }
 
   /* Encode public key */
-  pk = silc_pkcs_public_key_encode(public_key, &pk_len);
+  pk = silc_pkcs_public_key_encode(NULL, public_key, &pk_len);
   if (!pk) {
     if (completion)
       completion(FALSE, context);
@@ -2574,7 +2584,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     }
 
     /* Encode the key data */
-    encpk = silc_pkcs_public_key_encode(local_pubkey, &encpk_len);
+    encpk = silc_pkcs_public_key_encode(NULL, local_pubkey, &encpk_len);
     if (!encpk) {
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_RECEIVED,verify->entity_name ?

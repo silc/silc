@@ -351,13 +351,22 @@ SILC Accelerator Library
 lib/silcmath
 ============
 
- o Import TFM.  Talk to Tom to add the missing functions.  Use TFM in
-   client and client library, but TMA in server, due to the significantly
-   increased memory consumption with TFM, and the rare need for public
-   key operations in server.
+ o Import TFM.  We want TFM's speed but its memory requirements are
+   just too much.  By default it uses large pre-allocated tables which 
+   will eat memory when there are thousands of public keys in system.
+   We probably want to change TFM's fp_int dynamic so that a specific
+   size can be allocated for the int.  We could have two new functions:
 
-   We want TFM's speed but not TFM's memory requirements.  Talk to Tom
-   about making the TFM mp dynamic just as it is in LTM.
+   SilcBool silc_mp_init_size(SilcMPInt *mp, SilcUInt32 bit_size);
+   SilcBool silc_mp_sinit_size(SilcStack stack, SilcMPInt *mp,
+			       SilcUInt32 bit_size);
+
+   Which by default allocates `bit_size' bits instead of some default
+   value.  silc_mp_init would allocate the default FP_SIZE with TFM
+   and do normal init with TMA and GMP.  _init_size with TMA and GMP
+   would be same as _init.
+
+ o Add AND, OR and XOR support to TFM or ask Tom to do it.
 
  o The SILC MP API function must start returning indication of success
    and failure of the operation.

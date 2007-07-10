@@ -560,6 +560,11 @@ typedef struct {
   bool nopk;
 } *AttrVerify;
 
+static void silc_query_attributes_verify(SilcBool success, void *context)
+{
+  *(SilcBool *)context = success;
+}
+
 void silc_query_attributes_print(SILC_SERVER_REC *server,
 				 SilcClient client,
 				 SilcClientConnection conn,
@@ -842,14 +847,16 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
     /* Verify the signature now */
     unsigned char *verifyd;
     SilcUInt32 verify_len;
+    SilcBool verified = FALSE;
 
     if (verify->public_key) {
       verifyd = silc_attribute_get_verify_data(attrs, FALSE, &verify_len);
-      if (verifyd && silc_pkcs_verify(verify->public_key,
-				      usersign.data,
-				      usersign.data_len,
-				      verifyd, verify_len,
-				      sha1hash)) {
+      if (verifyd)
+	silc_pkcs_verify(verify->public_key, usersign.data,
+			 usersign.data_len, verifyd, verify_len, sha1hash,
+			 silc_query_attributes_verify, &verified);
+
+      if (verified) {
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_ATTR_USER_SIGN_VERIFIED);
       } else {
@@ -873,6 +880,7 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
     SilcPKCSType type = 0;
     unsigned char *verifyd;
     SilcUInt32 verify_len;
+    SilcBool verified = FALSE;
 
     if (!strcmp(serverpk.type, "silc-rsa"))
       type = SILC_PKCS_SILC;
@@ -887,11 +895,11 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 				   serverpk.data_len,
 				   &public_key)) {
       verifyd = silc_attribute_get_verify_data(attrs, TRUE, &verify_len);
-      if (verifyd && silc_pkcs_verify(public_key,
-				      serversign.data,
-				      serversign.data_len,
-				      verifyd, verify_len,
-				      sha1hash)) {
+      if (verifyd)
+	silc_pkcs_verify(public_key, serversign.data,
+			 serversign.data_len, verifyd, verify_len, sha1hash,
+			 silc_query_attributes_verify, &verified);
+      if (verified) {
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_ATTR_SERVER_SIGN_VERIFIED);
       } else {

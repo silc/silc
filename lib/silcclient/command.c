@@ -721,7 +721,7 @@ SILC_FSM_STATE(silc_client_command_whois)
       goto out;
       break;
     }
-    obj.data = silc_pkcs_public_key_encode(pk, &obj.data_len);
+    obj.data = silc_pkcs_public_key_encode(NULL, pk, &obj.data_len);
 
     attrs = silc_attribute_payload_encode(attrs,
                                           SILC_ATTRIBUTE_USER_PUBLIC_KEY,
@@ -1084,7 +1084,7 @@ SILC_FSM_STATE(silc_client_command_invite)
 		       SILC_STR_UI_SHORT(1),
 		       SILC_STR_END);
     if (pubkey) {
-      chidp = silc_public_key_payload_encode(pubkey);
+      chidp = silc_public_key_payload_encode(NULL, pubkey);
       args = silc_argument_payload_encode_one(args, silc_buffer_data(chidp),
 					      silc_buffer_len(chidp), 2);
       silc_buffer_free(chidp);
@@ -1176,6 +1176,55 @@ SILC_FSM_STATE(silc_client_command_quit)
 
 /********************************** KILL ************************************/
 
+/* Signature callback */
+
+static void silc_client_command_kill_signed(const SilcBuffer buffer,
+					    void *context)
+{
+  SilcClientCommandContext cmd = context;
+
+  if (!buffer) {
+    silc_fsm_finish(&cmd->thread);
+    return;
+  }
+
+  silc_fsm_set_state_context(&cmd->thread, buffer);
+  SILC_FSM_CALL_CONTINUE_SYNC(&cmd->thread);
+}
+
+/* Send KILL command */
+
+SILC_FSM_STATE(silc_client_command_kill_send)
+{
+  SilcClientCommandContext cmd = fsm_context;
+  SilcClientConnection conn = cmd->conn;
+  SilcClient client = conn->client;
+  SilcBuffer idp, auth = state_context;
+  SilcClientEntry target = cmd->context;
+  char *comment = NULL;
+
+  if (cmd->argc >= 3)
+    if (strcasecmp(cmd->argv[2], "-pubkey"))
+      comment = cmd->argv[2];
+
+  /* Send the KILL command to the server */
+  idp = silc_id_payload_encode(&target->id, SILC_ID_CLIENT);
+  silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 3,
+			      1, silc_buffer_datalen(idp),
+			      2, comment, comment ? strlen(comment) : 0,
+			      3, silc_buffer_datalen(auth));
+
+  silc_buffer_free(idp);
+  silc_client_unref_client(client, conn, target);
+
+  /* Notify application */
+  COMMAND(SILC_STATUS_OK);
+
+  /** Wait for command reply */
+  silc_fsm_next(fsm, silc_client_command_reply_wait);
+  return SILC_FSM_CONTINUE;
+}
+
 /* Command KILL. Router operator can use this command to remove an client
    fromthe SILC Network. */
 
@@ -1184,10 +1233,9 @@ SILC_FSM_STATE(silc_client_command_kill)
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
   SilcClient client = conn->client;
-  SilcBuffer idp, auth = NULL;
   SilcClientEntry target;
   SilcDList clients;
-  char *nickname = NULL, *comment = NULL;
+  char *nickname = NULL;
 
   if (cmd->argc < 2) {
     SAY(conn->client, conn, SILC_CLIENT_MESSAGE_INFO,
@@ -1209,38 +1257,30 @@ SILC_FSM_STATE(silc_client_command_kill)
 					  cmd));
 
   target = silc_dlist_get(clients);
+  cmd->context = silc_client_ref_client(client, conn, target);
 
-  if (cmd->argc >= 3) {
-    if (strcasecmp(cmd->argv[2], "-pubkey"))
-      comment = cmd->argv[2];
-
-    if (!strcasecmp(cmd->argv[2], "-pubkey") ||
-	(cmd->argc >= 4 && !strcasecmp(cmd->argv[3], "-pubkey"))) {
-      /* Encode the public key authentication payload */
-      auth = silc_auth_public_key_auth_generate(conn->public_key,
-						conn->private_key,
-						conn->client->rng,
-						conn->internal->sha1hash,
-						&target->id, SILC_ID_CLIENT);
-    }
-  }
-
-  /* Send the KILL command to the server */
-  idp = silc_id_payload_encode(&target->id, SILC_ID_CLIENT);
-  silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 3,
-			      1, silc_buffer_datalen(idp),
-			      2, comment, comment ? strlen(comment) : 0,
-			      3, silc_buffer_datalen(auth));
-  silc_buffer_free(idp);
-  silc_buffer_free(auth);
   silc_free(nickname);
   silc_client_list_free(client, conn, clients);
 
-  /* Notify application */
-  COMMAND(SILC_STATUS_OK);
+  /** Send KILL */
+  silc_fsm_next(fsm, silc_client_command_kill_send);
 
-  /** Wait for command reply */
-  silc_fsm_next(fsm, silc_client_command_reply_wait);
+  if (cmd->argc >= 3) {
+    if (!strcasecmp(cmd->argv[2], "-pubkey") ||
+	(cmd->argc >= 4 && !strcasecmp(cmd->argv[3], "-pubkey"))) {
+      /* Encode the public key authentication payload */
+      SILC_FSM_CALL(silc_auth_public_key_auth_generate(
+					 conn->public_key,
+					 conn->private_key,
+					 conn->client->rng,
+					 conn->internal->sha1hash,
+					 &target->id, SILC_ID_CLIENT,
+					 silc_client_command_kill_signed,
+					 cmd));
+      /* NOT REACHED */
+    }
+  }
+
   return SILC_FSM_CONTINUE;
 }
 
@@ -1323,6 +1363,33 @@ SILC_FSM_STATE(silc_client_command_ping)
 
 /********************************** JOIN ************************************/
 
+typedef struct {
+  int type;
+  SilcBuffer auth;
+  SilcBuffer cauth;
+} *SilcClientJoinContext;
+
+/* Signature callback */
+
+static void silc_client_command_join_signed(const SilcBuffer buffer,
+					    void *context)
+{
+  SilcClientCommandContext cmd = context;
+  SilcClientJoinContext j = cmd->context;
+
+  if (!buffer) {
+    silc_fsm_finish(&cmd->thread);
+    return;
+  }
+
+  if (!j->type)
+    j->auth = silc_buffer_copy(buffer);
+  else
+    j->cauth = silc_buffer_copy(buffer);
+
+  SILC_FSM_CALL_CONTINUE(&cmd->thread);
+}
+
 /* Command JOIN. Joins to a channel. */
 
 SILC_FSM_STATE(silc_client_command_join)
@@ -1331,6 +1398,7 @@ SILC_FSM_STATE(silc_client_command_join)
   SilcClientConnection conn = cmd->conn;
   SilcClient client = conn->client;
   SilcChannelEntry channel = NULL;
+  SilcClientJoinContext j = cmd->context;
   SilcBuffer auth = NULL, cauth = NULL;
   char *name, *passphrase = NULL, *pu8, *cipher = NULL, *hmac = NULL;
   int i, passphrase_len = 0;
@@ -1369,46 +1437,76 @@ SILC_FSM_STATE(silc_client_command_join)
     } else if (!strcasecmp(cmd->argv[i], "-hmac") && cmd->argc > i + 1) {
       hmac = cmd->argv[++i];
     } else if (!strcasecmp(cmd->argv[i], "-founder")) {
-      auth = silc_auth_public_key_auth_generate(conn->public_key,
-						conn->private_key,
-						conn->client->rng,
-						conn->internal->sha1hash,
-						conn->local_id,
-						SILC_ID_CLIENT);
+      if (!j || !j->auth) {
+	if (!j) {
+	  j = silc_calloc(1, sizeof(*j));
+	  if (!j)
+	    goto out;
+	  cmd->context = j;
+	}
+	j->type = 0;
+	silc_free(passphrase);
+	silc_client_unref_channel(client, conn, channel);
+	SILC_FSM_CALL(silc_auth_public_key_auth_generate(
+					   conn->public_key,
+					   conn->private_key,
+					   conn->client->rng,
+					   conn->internal->sha1hash,
+					   conn->local_id,
+					   SILC_ID_CLIENT,
+					   silc_client_command_join_signed,
+					   cmd));
+	/* NOT REACHED */
+      }
     } else if (!strcasecmp(cmd->argv[i], "-auth")) {
       SilcPublicKey pubkey = conn->public_key;
       SilcPrivateKey privkey = conn->private_key;
-      unsigned char *pk, pkhash[SILC_HASH_MAXLEN], *pubdata;
+      unsigned char *pk, pkhash[SILC_HASH_MAXLEN], pubdata[128];
       SilcUInt32 pk_len;
 
-      if (cmd->argc >= i + 3) {
-	char *pass = "";
-	if (cmd->argc >= i + 4) {
-	  pass = cmd->argv[i + 3];
-	  i++;
+      if (!j || !j->cauth) {
+	if (!j) {
+	  j = silc_calloc(1, sizeof(*j));
+	  if (!j)
+	    goto out;
+	  cmd->context = j;
 	}
-	if (!silc_load_key_pair(cmd->argv[i + 1], cmd->argv[i + 2], pass,
-				&pubkey, &privkey)) {
-	  SAY(conn->client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
-	      "Could not load key pair, check your arguments");
-	  COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-	  goto out;
-	}
-	i += 2;
-      }
 
-      pk = silc_pkcs_public_key_encode(pubkey, &pk_len);
-      silc_hash_make(conn->internal->sha1hash, pk, pk_len, pkhash);
-      silc_free(pk);
-      pubdata = silc_rng_get_rn_data(conn->client->rng, 128);
-      memcpy(pubdata, pkhash, 20);
-      cauth = silc_auth_public_key_auth_generate_wpub(pubkey, privkey,
-						      pubdata, 128,
-						      conn->internal->sha1hash,
-						      conn->local_id,
-						      SILC_ID_CLIENT);
-      memset(pubdata, 0, 128);
-      silc_free(pubdata);
+	if (cmd->argc >= i + 3) {
+	  char *pass = "";
+	  if (cmd->argc >= i + 4) {
+	    pass = cmd->argv[i + 3];
+	    i++;
+	  }
+	  if (!silc_load_key_pair(cmd->argv[i + 1], cmd->argv[i + 2], pass,
+				  &pubkey, &privkey)) {
+	    SAY(conn->client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
+		"Could not load key pair, check your arguments");
+	    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	    goto out;
+	  }
+	  i += 2;
+	}
+
+	j->type = 1;
+	pk = silc_pkcs_public_key_encode(NULL, pubkey, &pk_len);
+	silc_hash_make(conn->internal->sha1hash, pk, pk_len, pkhash);
+	silc_free(pk);
+	silc_rng_get_rn_data(conn->client->rng, sizeof(pubdata), pubdata,
+			     sizeof(pubdata));
+	memcpy(pubdata, pkhash, 20);
+	silc_free(passphrase);
+	silc_client_unref_channel(client, conn, channel);
+	SILC_FSM_CALL(silc_auth_public_key_auth_generate_wpub(
+					   pubkey, privkey,
+					   pubdata, sizeof(pubdata),
+					   conn->internal->sha1hash,
+					   conn->local_id,
+					   SILC_ID_CLIENT,
+					   silc_client_command_join_signed,
+					   cmd));
+	/* NOT REACHED */
+      }
     } else {
       /* Passphrases must be UTF-8 encoded, so encode if it is not */
       if (!silc_utf8_valid(cmd->argv[i], cmd->argv_lens[i])) {
@@ -1436,12 +1534,15 @@ SILC_FSM_STATE(silc_client_command_join)
 			      6, silc_buffer_datalen(auth),
 			      7, silc_buffer_datalen(cauth));
 
-  silc_buffer_free(auth);
-  silc_buffer_free(cauth);
   if (passphrase)
     memset(passphrase, 0, strlen(passphrase));
   silc_free(passphrase);
   silc_client_unref_channel(client, conn, channel);
+  if (j) {
+    silc_buffer_free(j->auth);
+    silc_buffer_free(j->cauth);
+    silc_free(j);
+  }
 
   /* Notify application */
   COMMAND(SILC_STATUS_OK);
@@ -1630,6 +1731,22 @@ SILC_FSM_STATE(silc_client_command_umode)
 
 /********************************** CMODE ***********************************/
 
+/* Signature callback */
+
+static void silc_client_command_cmode_signed(const SilcBuffer buffer,
+					     void *context)
+{
+  SilcClientCommandContext cmd = context;
+
+  if (!buffer) {
+    silc_fsm_finish(&cmd->thread);
+    return;
+  }
+
+  silc_fsm_set_state_context(&cmd->thread, buffer);
+  SILC_FSM_CALL_CONTINUE_SYNC(&cmd->thread);
+}
+
 /* CMODE command. Sets channel mode. Modes that does not require any arguments
    can be set several at once. Those modes that require argument must be set
    separately (unless set with modes that does not require arguments). */
@@ -1639,8 +1756,9 @@ SILC_FSM_STATE(silc_client_command_cmode)
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
   SilcClient client = conn->client;
+  SilcBuffer auth = state_context;
   SilcChannelEntry channel = NULL;
-  SilcBuffer chidp, auth = NULL, pk = NULL;
+  SilcBuffer chidp, pk = NULL;
   unsigned char *name, *cp, modebuf[4], tmp[4], *arg = NULL;
   SilcUInt32 mode, add, type, len, arg_len = 0;
   int i;
@@ -1797,31 +1915,38 @@ SILC_FSM_STATE(silc_client_command_cmode)
       break;
     case 'f':
       if (add) {
-	SilcPublicKey pubkey = conn->public_key;
-	SilcPrivateKey privkey = conn->private_key;
+	if (!auth) {
+	  SilcPublicKey pubkey = conn->public_key;
+	  SilcPrivateKey privkey = conn->private_key;
 
-	mode |= SILC_CHANNEL_MODE_FOUNDER_AUTH;
-	type = 7;
+	  mode |= SILC_CHANNEL_MODE_FOUNDER_AUTH;
+	  type = 7;
 
-	if (cmd->argc >= 5) {
-	  char *pass = "";
-	  if (cmd->argc >= 6)
-	    pass = cmd->argv[5];
-	  if (!silc_load_key_pair(cmd->argv[3], cmd->argv[4], pass,
-				  &pubkey, &privkey)) {
-	    SAY(client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
-		"Could not load key pair, check your arguments");
-	    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-	    goto out;
+	  if (cmd->argc >= 5) {
+	    char *pass = "";
+	    if (cmd->argc >= 6)
+	      pass = cmd->argv[5];
+	    if (!silc_load_key_pair(cmd->argv[3], cmd->argv[4], pass,
+				    &pubkey, &privkey)) {
+	      SAY(client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
+		  "Could not load key pair, check your arguments");
+	      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	      goto out;
+	    }
 	  }
-	}
 
-	pk = silc_public_key_payload_encode(pubkey);
-	auth = silc_auth_public_key_auth_generate(pubkey, privkey,
-						  conn->client->rng,
-						  conn->internal->sha1hash,
-						  conn->local_id,
-						  SILC_ID_CLIENT);
+	  pk = silc_public_key_payload_encode(NULL, pubkey);
+	  silc_client_unref_channel(client, conn, channel);
+	  SILC_FSM_CALL(silc_auth_public_key_auth_generate(
+					     pubkey, privkey,
+					     conn->client->rng,
+					     conn->internal->sha1hash,
+					     conn->local_id,
+					     SILC_ID_CLIENT,
+					     silc_client_command_cmode_signed,
+					     cmd));
+	  /* NOT REACHED */
+	}
 	arg = silc_buffer_data(auth);
 	arg_len = silc_buffer_len(auth);
       } else {
@@ -1874,7 +1999,7 @@ SILC_FSM_STATE(silc_client_command_cmode)
 	  }
 
 	  if (chpk) {
-	    pk = silc_public_key_payload_encode(chpk);
+	    pk = silc_public_key_payload_encode(NULL, chpk);
 	    auth = silc_argument_payload_encode_one(auth,
 						    silc_buffer_datalen(pk),
 						    chadd ? 0x00 : 0x01);
@@ -1933,6 +2058,22 @@ SILC_FSM_STATE(silc_client_command_cmode)
 
 /********************************* CUMODE ***********************************/
 
+/* Signature callback */
+
+static void silc_client_command_cumode_signed(const SilcBuffer buffer,
+					      void *context)
+{
+  SilcClientCommandContext cmd = context;
+
+  if (!buffer) {
+    silc_fsm_finish(&cmd->thread);
+    return;
+  }
+
+  silc_fsm_set_state_context(&cmd->thread, buffer);
+  SILC_FSM_CALL_CONTINUE_SYNC(&cmd->thread);
+}
+
 /* CUMODE command. Changes client's mode on a channel. */
 
 SILC_FSM_STATE(silc_client_command_cumode)
@@ -1940,10 +2081,11 @@ SILC_FSM_STATE(silc_client_command_cumode)
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
   SilcClient client = conn->client;
+  SilcBuffer auth = state_context;
   SilcChannelEntry channel = NULL;
   SilcChannelUser chu;
   SilcClientEntry client_entry;
-  SilcBuffer clidp, chidp, auth = NULL;
+  SilcBuffer clidp, chidp;
   SilcDList clients = NULL;
   unsigned char *name, *cp, modebuf[4];
   SilcUInt32 mode = 0, add, len;
@@ -2017,27 +2159,38 @@ SILC_FSM_STATE(silc_client_command_cumode)
       break;
     case 'f':
       if (add) {
-	SilcPublicKey pubkey = conn->public_key;
-	SilcPrivateKey privkey = conn->private_key;
+	if (!auth) {
+	  SilcPublicKey pubkey = conn->public_key;
+	  SilcPrivateKey privkey = conn->private_key;
 
-	if (cmd->argc >= 6) {
-	  char *pass = "";
-	  if (cmd->argc >= 7)
-	    pass = cmd->argv[6];
-	  if (!silc_load_key_pair(cmd->argv[4], cmd->argv[5], pass,
-				  &pubkey, &privkey)) {
-	    SAY(conn->client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
-		"Could not load key pair, check your arguments");
-	    COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
-	    goto out;
+	  if (cmd->argc >= 6) {
+	    char *pass = "";
+	    if (cmd->argc >= 7)
+	      pass = cmd->argv[6];
+	    if (!silc_load_key_pair(cmd->argv[4], cmd->argv[5], pass,
+				    &pubkey, &privkey)) {
+	      SAY(conn->client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
+		  "Could not load key pair, check your arguments");
+	      COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
+	      goto out;
+	    }
 	  }
+
+	  silc_free(nickname);
+	  silc_client_list_free(client, conn, clients);
+	  silc_client_unref_channel(client, conn, channel);
+
+	  SILC_FSM_CALL(silc_auth_public_key_auth_generate(
+					     pubkey, privkey,
+					     conn->client->rng,
+					     conn->internal->sha1hash,
+					     conn->local_id,
+					     SILC_ID_CLIENT,
+					     silc_client_command_cumode_signed,
+					     cmd));
+	  /* NOT REACHED */
 	}
 
-	auth = silc_auth_public_key_auth_generate(pubkey, privkey,
-						  conn->client->rng,
-						  conn->internal->sha1hash,
-						  conn->local_id,
-						  SILC_ID_CLIENT);
 	mode |= SILC_CHANNEL_UMODE_CHANFO;
       } else {
 	mode &= ~SILC_CHANNEL_UMODE_CHANFO;
@@ -2211,6 +2364,7 @@ SILC_FSM_STATE(silc_client_command_kick)
 typedef struct {
   unsigned char *passphrase;
   SilcUInt32 passphrase_len;
+  SilcBuffer auth;
 } *SilcClientCommandOper;
 
 /* Ask passphrase callback */
@@ -2229,6 +2383,19 @@ static void silc_client_command_oper_cb(const unsigned char *data,
   SILC_FSM_CALL_CONTINUE(&cmd->thread);
 }
 
+static void silc_client_command_oper_sign_cb(const SilcBuffer data,
+					     void *context)
+{
+  SilcClientCommandContext cmd = context;
+  SilcClientCommandOper oper = cmd->context;
+
+  if (data)
+    oper->auth = silc_buffer_copy(data);
+
+  /* Continue */
+  SILC_FSM_CALL_CONTINUE(&cmd->thread);
+}
+
 /* Send OPER/SILCOPER command */
 
 SILC_FSM_STATE(silc_client_command_oper_send)
@@ -2236,21 +2403,7 @@ SILC_FSM_STATE(silc_client_command_oper_send)
   SilcClientCommandContext cmd = fsm_context;
   SilcClientConnection conn = cmd->conn;
   SilcClientCommandOper oper = cmd->context;
-  SilcBuffer auth;
-
-  if (!oper || !oper->passphrase) {
-    /* Encode the public key authentication payload */
-    auth = silc_auth_public_key_auth_generate(conn->public_key,
-					      conn->private_key,
-					      conn->client->rng,
-					      conn->internal->hash,
-					      conn->local_id,
-					      SILC_ID_CLIENT);
-  } else {
-    /* Encode the password authentication payload */
-    auth = silc_auth_payload_encode(SILC_AUTH_PASSWORD, NULL, 0,
-				    oper->passphrase, oper->passphrase_len);
-  }
+  SilcBuffer auth = oper ? oper->auth : NULL;
 
   silc_client_command_send_va(conn, cmd, cmd->cmd, NULL, NULL, 2,
 			      1, cmd->argv[1], strlen(cmd->argv[1]),
@@ -2271,6 +2424,36 @@ SILC_FSM_STATE(silc_client_command_oper_send)
   return SILC_FSM_CONTINUE;
 }
 
+/* Get authentication data */
+
+SILC_FSM_STATE(silc_client_command_oper_get_auth)
+{
+  SilcClientCommandContext cmd = fsm_context;
+  SilcClientConnection conn = cmd->conn;
+  SilcClientCommandOper oper = cmd->context;
+
+  silc_fsm_next(fsm, silc_client_command_oper_send);
+
+  if (!oper || !oper->passphrase) {
+    /* Encode the public key authentication payload */
+    SILC_FSM_CALL(silc_auth_public_key_auth_generate(
+				       conn->public_key,
+				       conn->private_key,
+				       conn->client->rng,
+				       conn->internal->hash,
+				       conn->local_id, SILC_ID_CLIENT,
+				       silc_client_command_oper_sign_cb,
+				       oper));
+    /* NOT REACHED */
+  }
+
+  /* Encode the password authentication payload */
+  oper->auth = silc_auth_payload_encode(NULL, SILC_AUTH_PASSWORD, NULL, 0,
+					oper->passphrase, oper->passphrase_len);
+
+  return SILC_FSM_CONTINUE;
+}
+
 /* OPER command. Used to obtain server operator privileges. */
 
 SILC_FSM_STATE(silc_client_command_oper)
@@ -2286,7 +2469,7 @@ SILC_FSM_STATE(silc_client_command_oper)
     return SILC_FSM_FINISH;
   }
 
-  silc_fsm_next(fsm, silc_client_command_oper_send);
+  silc_fsm_next(fsm, silc_client_command_oper_get_auth);
 
   /* Get passphrase */
   if (cmd->argc < 3) {
@@ -2393,7 +2576,7 @@ SILC_FSM_STATE(silc_client_command_ban)
 		       SILC_STR_UI_SHORT(1),
 		       SILC_STR_END);
     if (pubkey) {
-      chidp = silc_public_key_payload_encode(pubkey);
+      chidp = silc_public_key_payload_encode(NULL, pubkey);
       args = silc_argument_payload_encode_one(args,
 					      silc_buffer_datalen(chidp), 2);
       silc_buffer_free(chidp);
@@ -2492,7 +2675,7 @@ SILC_FSM_STATE(silc_client_command_watch)
     silc_buffer_format(args,
 		       SILC_STR_UI_SHORT(1),
 		       SILC_STR_END);
-    buffer = silc_public_key_payload_encode(pk);
+    buffer = silc_public_key_payload_encode(NULL, pk);
     args = silc_argument_payload_encode_one(args, silc_buffer_datalen(buffer),
 					    pubkey_add ? 0x00 : 0x01);
     silc_buffer_free(buffer);
@@ -2827,17 +3010,60 @@ void silc_client_commands_unregister(SilcClient client)
 
 /****************** Client Side Incoming Command Handling *******************/
 
-/* Reply to WHOIS command from server */
+typedef struct {
+  SilcClientConnection conn;
+  SilcUInt16 cmd_ident;
+} *SilcClientProcessWhois;
+
+/* Send reply to WHOIS from server */
+
+static void
+silc_client_command_process_whois_send(SilcBool success,
+				       const unsigned char *data,
+				       SilcUInt32 data_len, void *context)
+{
+  SilcClientProcessWhois w = context;
+  SilcBufferStruct buffer;
+  SilcBuffer packet;
+
+  if (!data) {
+    silc_free(w);
+    return;
+  }
+
+  silc_buffer_set(&buffer, (unsigned char *)data, data_len);
+
+  /* Send the attributes back in COMMAND_REPLY packet */
+  packet =
+    silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
+					 SILC_STATUS_OK, 0, w->cmd_ident,
+					 1, 11, buffer.data,
+					 silc_buffer_len(&buffer));
+  if (!packet) {
+    silc_free(w);
+    return;
+  }
+
+  SILC_LOG_DEBUG(("Sending back requested WHOIS attributes"));
+
+  silc_packet_send(w->conn->stream, SILC_PACKET_COMMAND_REPLY, 0,
+		   silc_buffer_datalen(packet));
+
+  silc_buffer_free(packet);
+  silc_free(w);
+}
+
+/* Process WHOIS command from server */
 
 static void silc_client_command_process_whois(SilcClient client,
 					      SilcClientConnection conn,
 					      SilcCommandPayload payload,
 					      SilcArgumentPayload args)
 {
+  SilcClientProcessWhois w;
   SilcDList attrs;
   unsigned char *tmp;
   SilcUInt32 tmp_len;
-  SilcBuffer buffer, packet;
 
   SILC_LOG_DEBUG(("Received WHOIS command"));
 
@@ -2850,32 +3076,18 @@ static void silc_client_command_process_whois(SilcClient client,
   if (!attrs)
     return;
 
-  /* Process requested attributes */
-  buffer = silc_client_attributes_process(client, conn, attrs);
-  if (!buffer) {
+  w = silc_calloc(1, sizeof(*w));
+  if (!w) {
     silc_attribute_payload_list_free(attrs);
     return;
   }
+  w->conn = conn;
+  w->cmd_ident = silc_command_get_ident(payload);
 
-  /* Send the attributes back in COMMAND_REPLY packet */
-  packet =
-    silc_command_reply_payload_encode_va(SILC_COMMAND_WHOIS,
-					 SILC_STATUS_OK, 0,
-					 silc_command_get_ident(payload),
-					 1, 11, buffer->data,
-					 silc_buffer_len(buffer));
-  if (!packet) {
-    silc_buffer_free(buffer);
-    return;
-  }
-
-  SILC_LOG_DEBUG(("Sending back requested WHOIS attributes"));
-
-  silc_packet_send(conn->stream, SILC_PACKET_COMMAND_REPLY, 0,
-		   silc_buffer_datalen(packet));
-
-  silc_buffer_free(packet);
-  silc_buffer_free(buffer);
+  /* Process requested attributes */
+  silc_client_attributes_process(client, conn, attrs,
+				 silc_client_command_process_whois_send, w);
+  silc_attribute_payload_list_free(attrs);
 }
 
 /* Client is able to receive some command packets even though they are

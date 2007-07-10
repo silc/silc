@@ -791,7 +791,7 @@ SilcClientEntry silc_client_add_client(SilcClient client,
     return NULL;
 
   silc_rwlock_alloc(&client_entry->internal.lock);
-  silc_atomic_init8(&client_entry->internal.refcnt, 0);
+  silc_atomic_init16(&client_entry->internal.refcnt, 0);
   client_entry->id = *id;
   client_entry->mode = mode;
   client_entry->realname = userinfo ? strdup(userinfo) : NULL;
@@ -995,7 +995,7 @@ void silc_client_del_client_entry(SilcClient client,
   silc_client_ftp_session_free_client(client, client_entry);
   if (client_entry->internal.ke)
     silc_client_abort_key_agreement(client, conn, client_entry);
-  silc_atomic_uninit8(&client_entry->internal.refcnt);
+  silc_atomic_uninit16(&client_entry->internal.refcnt);
   silc_rwlock_free(client_entry->internal.lock);
   silc_free(client_entry);
 }
@@ -1010,7 +1010,7 @@ SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
   if (!client_entry)
     return FALSE;
 
-  if (silc_atomic_sub_int8(&client_entry->internal.refcnt, 1) > 0)
+  if (silc_atomic_sub_int16(&client_entry->internal.refcnt, 1) > 0)
     return FALSE;
 
   SILC_LOG_DEBUG(("Deleting client %p", client_entry));
@@ -1072,10 +1072,10 @@ SilcClientEntry silc_client_ref_client(SilcClient client,
 				       SilcClientConnection conn,
 				       SilcClientEntry client_entry)
 {
-  silc_atomic_add_int8(&client_entry->internal.refcnt, 1);
+  silc_atomic_add_int16(&client_entry->internal.refcnt, 1);
   SILC_LOG_DEBUG(("Client %p refcnt %d->%d", client_entry,
-		  silc_atomic_get_int8(&client_entry->internal.refcnt) - 1,
-		  silc_atomic_get_int8(&client_entry->internal.refcnt)));
+		  silc_atomic_get_int16(&client_entry->internal.refcnt) - 1,
+		  silc_atomic_get_int16(&client_entry->internal.refcnt)));
   return client_entry;
 }
 
@@ -1086,8 +1086,8 @@ void silc_client_unref_client(SilcClient client, SilcClientConnection conn,
 {
   if (client_entry) {
     SILC_LOG_DEBUG(("Client %p refcnt %d->%d", client_entry,
-		    silc_atomic_get_int8(&client_entry->internal.refcnt),
-		    silc_atomic_get_int8(&client_entry->internal.refcnt) - 1));
+		    silc_atomic_get_int16(&client_entry->internal.refcnt),
+		    silc_atomic_get_int16(&client_entry->internal.refcnt) - 1));
     silc_client_del_client(client, conn, client_entry);
   }
 }

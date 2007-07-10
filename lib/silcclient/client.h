@@ -60,7 +60,7 @@ typedef struct SilcClientEntryInternalStruct {
   unsigned int prv_resp    : 1; /* TRUE if we are responder when using
 				   private message keys. */
   SilcUInt16 resolve_cmd_ident;	/* Command identifier when resolving */
-  SilcAtomic8 refcnt;		/* Reference counter */
+  SilcAtomic16 refcnt;		/* Reference counter */
 } SilcClientEntryInternal;
 
 /* Internal channel entry context */
