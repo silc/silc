@@ -6,7 +6,7 @@
 @LINK=silcbuffmt.html:Data Buffer Format Interface
 @LINK=silchashtable.html:Hash Table Interface
 @LINK=silcmemory.html:Memory Allocation Interface
-@LINK=silcstack.html:Data Stack (memory pool) Interface
+@LINK=silcstack.html:Data Stack and Memory Pool Interface
 @LINK=silcfsm.html:Finite State Machine Interface
 @LINK=silcthread.html:Thread Interface
 @LINK=silcmutex.html:Mutual Exclusion Lock Interface
@@ -28,6 +28,9 @@
 @LINK=silcdlist.html:Dynamic List Interface
 @LINK=silcmime.html:MIME Interface
 @LINK=silctime.html:Time Utility Functions
+@LINK=silctimer.html:Timer Functions
+@LINK=silcdll.html:Shared Object (DLL) Functions
+@LINK=silcenv.html:Environment Manipulation Functions
 @LINK=silclog.html:Logging Interface
 @LINK=silcconfig.html:Config File Interface
 -->
