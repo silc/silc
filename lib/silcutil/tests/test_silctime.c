@@ -6,6 +6,7 @@ int main(int argc, char **argv)
 {
   SilcBool success = FALSE;
   SilcTimeStruct curtime;
+  unsigned char ts[32];
 
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_log_debug(TRUE);
@@ -28,6 +29,11 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("utc_min   : %d", curtime.utc_minute));
   SILC_LOG_DEBUG(("utc_east  : %d", curtime.utc_east));
   SILC_LOG_DEBUG(("dst       : %d", curtime.dst));
+
+  silc_time_universal_string(&curtime, ts, sizeof(ts));
+  SILC_LOG_DEBUG(("Universal: %s", ts));
+  silc_time_generalized_string(&curtime, ts, sizeof(ts));
+  SILC_LOG_DEBUG(("Generaliz: %s", ts));
 
   success = TRUE;
 

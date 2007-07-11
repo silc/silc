@@ -231,6 +231,7 @@ extern "C" {
 
 /* More SILC util library includes */
 #include "silctime.h"
+#include "silctimer.h"
 #include "silccond.h"
 #include "silcthread.h"
 #include "silcschedule.h"

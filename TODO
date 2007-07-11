@@ -54,6 +54,8 @@ lib/silccore
 lib/silcclient, The Client Library
 ==================================
 
+ o UDP SILC connection support to SILC server
+
  o Giving WHOIS for nick that doesn't exist should remove any same
    named entries from the client cache.
 
@@ -161,9 +163,9 @@ Runtime library, lib/silcutil/
  o Structured log messages to Log API.  Allows machine readable log
    messages.  Would allow sending of any kind of data in a log message.
 
- o Base64 to an own API
+ o Base64 to an own API (***DONE)
 
- o Timer API
+ o Timer API (***DONE)
 
  o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
    SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
@@ -479,6 +481,9 @@ lib/silcserver
  o Library must support multiple threads and must be entirely thread safe.
 
  o Library must have support for SERVICE command.
+
+ o Both UDP and TCP support for incoming connecetions.  Maintaining long
+   term UDP sessions.
 
  o The server must be able to run behind NAT device.  This means that
    Server ID must be based on public IP instead of private IP.

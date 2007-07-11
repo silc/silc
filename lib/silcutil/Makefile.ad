@@ -66,6 +66,7 @@ libsilcutil_la_SOURCES = \
 	silcfsm.c	\
 	silcasync.c	\
 	silctime.c	\
+	silctimer.c	\
 	silcmime.c	\
 	silcstack.c	\
 	silcsnprintf.c  \
@@ -107,6 +108,8 @@ include_HEADERS =	\
 	silcfsm.h	\
 	silcfsm_i.h	\
 	silctime.h	\
+	silctimer.h	\
+	silctimer_i.h	\
 	silcmime.h	\
 	silcmime_i.h	\
 	silcasync.h	\
