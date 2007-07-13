@@ -24,5 +24,6 @@
 #include "twofish.h"
 #include "aes.h"
 #include "blowfish.h"
+#include "cast5.h"
 
 #endif

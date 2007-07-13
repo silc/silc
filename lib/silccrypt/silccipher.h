@@ -17,9 +17,6 @@
 
 */
 
-#ifndef SILCCIPHER_H
-#define SILCCIPHER_H
-
 /****h* silccrypt/SILC Cipher Interface
  *
  * DESCRIPTION
@@ -30,11 +27,17 @@
  *
  ***/
 
+#ifndef SILCCIPHER_H
+#define SILCCIPHER_H
+
+/* Forward declarations */
+typedef struct SilcCipherObjectStruct SilcCipherObject;
+
 /****s* silccrypt/SilcCipherAPI/SilcCipher
  *
  * NAME
  *
- *    typedef struct { ... } SilcCipher;
+ *    typedef struct SilcCipherStruct *SilcCipher;
  *
  * DESCRIPTION
  *
@@ -45,70 +48,6 @@
  *
  ***/
 typedef struct SilcCipherStruct *SilcCipher;
-
-/* The default SILC Cipher object to represent any cipher in SILC. */
-typedef struct {
-  char *name;
-  SilcBool (*set_key)(void *, const unsigned char *, SilcUInt32, SilcBool);
-  void (*set_iv)(void *, const unsigned char *);
-  SilcBool (*encrypt)(void *, const unsigned char *, unsigned char *,
-		      SilcUInt32, unsigned char *);
-  SilcBool (*decrypt)(void *, const unsigned char *, unsigned char *,
-		      SilcUInt32, unsigned char *);
-  SilcUInt32 (*context_len)();
-  unsigned int key_len   : 10;
-  unsigned int block_len : 8;
-  unsigned int iv_len    : 8;
-  unsigned int mode      : 6;
-} SilcCipherObject;
-
-#define SILC_CIPHER_MAX_IV_SIZE 16
-
-/* Marks for all ciphers in silc. This can be used in silc_cipher_unregister
-   to unregister all ciphers at once. */
-#define SILC_ALL_CIPHERS ((SilcCipherObject *)1)
-
-/* Static list of ciphers for silc_cipher_register_default(). */
-extern DLLAPI const SilcCipherObject silc_default_ciphers[];
-
-/* Default cipher in the SILC protocol */
-#define SILC_DEFAULT_CIPHER "aes-256-cbc"
-
-/* Macros */
-
-/* Function names in SILC Crypto modules. The name of the cipher
-   is appended into these names and used to the get correct symbol out
-   of the module. All SILC Crypto API compliant modules must support
-   these function names (use macros below to assure this). */
-#define SILC_CIPHER_SIM_SET_KEY "set_key"
-#define SILC_CIPHER_SIM_ENCRYPT "encrypt"
-#define SILC_CIPHER_SIM_DECRYPT "decrypt"
-#define SILC_CIPHER_SIM_CONTEXT_LEN "context_len"
-
-/* These macros can be used to implement the SILC Crypto API and to avoid
-   errors in the API these macros should be used always. */
-#define SILC_CIPHER_API_SET_KEY(cipher)				\
-SilcBool silc_##cipher##_set_key(void *context,			\
-				 const unsigned char *key,	\
-				 SilcUInt32 keylen,		\
-				 SilcBool encryption)
-#define SILC_CIPHER_API_SET_IV(cipher)				\
-void silc_##cipher##_set_iv(void *context,			\
-			    const unsigned char *iv)
-#define SILC_CIPHER_API_ENCRYPT(cipher)				\
-SilcBool silc_##cipher##_encrypt(void *context,			\
-				 const unsigned char *src,	\
-				 unsigned char *dst,		\
-				 SilcUInt32 len,		\
-				 unsigned char *iv)
-#define SILC_CIPHER_API_DECRYPT(cipher)				\
-SilcBool silc_##cipher##_decrypt(void *context,			\
-				 const unsigned char *src,	\
-				 unsigned char *dst,		\
-				 SilcUInt32 len,		\
-				 unsigned char *iv)
-#define SILC_CIPHER_API_CONTEXT_LEN(cipher)	\
-SilcUInt32 silc_##cipher##_context_len()
 
 /****d* silccrypt/SilcCipherAPI/SilcCipherMode
  *
@@ -130,6 +69,18 @@ typedef enum {
   SILC_CIPHER_MODE_OFB = 5,	/* OFB mode */
 } SilcCipherMode;
 /***/
+
+#define SILC_CIPHER_MAX_IV_SIZE 16		/* Maximum IV size */
+#define SILC_DEFAULT_CIPHER "aes-256-cbc"	/* Default cipher */
+
+/* Marks for all ciphers in silc. This can be used in silc_cipher_unregister
+   to unregister all ciphers at once. */
+#define SILC_ALL_CIPHERS ((SilcCipherObject *)1)
+
+#include "silccipher_i.h"
+
+/* Static list of ciphers for silc_cipher_register_default(). */
+extern DLLAPI const SilcCipherObject silc_default_ciphers[];
 
 /* Prototypes */
 
@@ -223,7 +174,9 @@ SilcBool silc_cipher_unregister_all(void);
  *    plaintext block is shorter the remaining bits of the key stream are
  *    used next time silc_cipher_encrypt is called.  If silc_cipher_set_iv
  *    is called it will reset the counter for a new block (discarding any
- *    remaining bits from previous key stream).
+ *    remaining bits from previous key stream).  The counter mode expects
+ *    MSB first ordered counter.  Note also, the counter is incremented when
+ *    silc_cipher_encrypt is called for the first time, before encrypting.
  *
  *    The CBC is mode is a standard CBC mode.  The plaintext length must be
  *    multiple by the cipher block size.  If it isn't the plaintext must be
@@ -262,14 +215,18 @@ SilcBool silc_cipher_is_supported(const unsigned char *name);
  *
  * SYNOPSIS
  *
- *    char *silc_cipher_get_supported(void);
+ *    char *silc_cipher_get_supported(SilcBool only_registered);
  *
  * DESCRIPTION
  *
- *    Returns comma separated list of supported ciphers.
+ *    Returns comma separated list of supported ciphers.  If `only_registered'
+ *    is TRUE only ciphers explicitly registered with silc_cipher_register
+ *    are returned.  If FALSE, then all registered and default builtin
+ *    ciphers are returned.  However, if there are no registered ciphers
+ *    and `only_registered' is TRUE, the builtin ciphers are returned.
  *
  ***/
-char *silc_cipher_get_supported(void);
+char *silc_cipher_get_supported(SilcBool only_registered);
 
 /****f* silccrypt/SilcCipherAPI/silc_cipher_encrypt
  *

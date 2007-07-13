@@ -41,164 +41,160 @@
  * SILC Crypto API for AES
  */
 
-/* CBC mode */
-
 /* Sets the key for the cipher. */
 
-SILC_CIPHER_API_SET_KEY(aes_cbc)
+SILC_CIPHER_API_SET_KEY(aes)
 {
-  if (encryption)
+  switch (cipher->mode) {
+  case SILC_CIPHER_MODE_CBC:
+    if (encryption)
+      aes_encrypt_key(key, keylen, &((AesContext *)context)->u.enc);
+    else
+      aes_decrypt_key(key, keylen, &((AesContext *)context)->u.dec);
+    break;
+
+  case SILC_CIPHER_MODE_CTR:
     aes_encrypt_key(key, keylen, &((AesContext *)context)->u.enc);
-  else
-    aes_decrypt_key(key, keylen, &((AesContext *)context)->u.dec);
+    break;
+
+  default:
+    return FALSE;
+  }
   return TRUE;
 }
 
 /* Sets IV for the cipher. */
 
-SILC_CIPHER_API_SET_IV(aes_cbc)
+SILC_CIPHER_API_SET_IV(aes)
 {
+  if (cipher->mode == SILC_CIPHER_MODE_CTR) {
+    AesContext *aes = context;
 
+    /* Starts new block. */
+    aes->u.enc.inf.b[2] = 0;
+  }
 }
 
 /* Returns the size of the cipher context. */
 
-SILC_CIPHER_API_CONTEXT_LEN(aes_cbc)
+SILC_CIPHER_API_CONTEXT_LEN(aes)
 {
   return sizeof(AesContext);
 }
 
-/* Encrypts with the cipher in CBC mode. Source and destination buffers
-   maybe one and same. */
+/* Encrypts with the cipher. Source and destination buffers maybe one and
+   same. */
 
-SILC_CIPHER_API_ENCRYPT(aes_cbc)
-{
-  int nb = len >> 4;
-
-  SILC_ASSERT((len & (16 - 1)) == 0);
-  if (len & (16 - 1))
-    return FALSE;
-
-  while(nb--) {
-    lp32(iv)[0] ^= lp32(src)[0];
-    lp32(iv)[1] ^= lp32(src)[1];
-    lp32(iv)[2] ^= lp32(src)[2];
-    lp32(iv)[3] ^= lp32(src)[3];
-    aes_encrypt(iv, iv, &((AesContext *)context)->u.enc);
-    memcpy(dst, iv, 16);
-    src += 16;
-    dst += 16;
-  }
-
-  return TRUE;
-}
-
-/* Decrypts with the cipher in CBC mode. Source and destination buffers
-   maybe one and same. */
-
-SILC_CIPHER_API_DECRYPT(aes_cbc)
-{
-  unsigned char tmp[16];
-  int nb = len >> 4;
-
-  if (len & (16 - 1))
-    return FALSE;
-
-  while(nb--) {
-    memcpy(tmp, src, 16);
-    aes_decrypt(src, dst, &((AesContext *)context)->u.dec);
-    lp32(dst)[0] ^= lp32(iv)[0];
-    lp32(dst)[1] ^= lp32(iv)[1];
-    lp32(dst)[2] ^= lp32(iv)[2];
-    lp32(dst)[3] ^= lp32(iv)[3];
-    memcpy(iv, tmp, 16);
-    src += 16;
-    dst += 16;
-  }
-
-  return TRUE;
-}
-
-/* CTR mode */
-
-/* Sets the key for the cipher. */
-
-SILC_CIPHER_API_SET_KEY(aes_ctr)
+SILC_CIPHER_API_ENCRYPT(aes)
 {
   AesContext *aes = context;
-  memset(&aes->u.enc, 0, sizeof(aes->u.enc));
-  aes_encrypt_key(key, keylen, &aes->u.enc);
-  return TRUE;
-}
-
-/* Sets IV for the cipher. */
-
-SILC_CIPHER_API_SET_IV(aes_ctr)
-{
-  AesContext *aes = context;
-
-  /* Starts new block. */
-  aes->u.enc.inf.b[2] = 0;
-}
-
-/* Returns the size of the cipher context. */
-
-SILC_CIPHER_API_CONTEXT_LEN(aes_ctr)
-{
-  return sizeof(AesContext);
-}
-
-/* Encrypts with the cipher in CTR mode. Source and destination buffers
-   may be one and same.  Assumes MSB first ordered counter. */
-
-SILC_CIPHER_API_ENCRYPT(aes_ctr)
-{
-  AesContext *aes = context;
-  SilcUInt32 ctr[4];
   int i;
 
-  SILC_GET32_MSB(ctr[0], iv);
-  SILC_GET32_MSB(ctr[1], iv + 4);
-  SILC_GET32_MSB(ctr[2], iv + 8);
-  SILC_GET32_MSB(ctr[3], iv + 12);
+  switch (cipher->mode) {
+  case SILC_CIPHER_MODE_CBC:
+    {
+      int nb = len >> 4;
 
-  i = aes->u.enc.inf.b[2];
-  if (!i)
-    i = 16;
+      SILC_ASSERT((len & (16 - 1)) == 0);
+      if (len & (16 - 1))
+	return FALSE;
 
-  while (len-- > 0) {
-    if (i == 16) {
-      if (++ctr[3] == 0)
-	if (++ctr[2] == 0)
-	  if (++ctr[1] == 0)
-	    ++ctr[0];
+      while(nb--) {
+	lp32(iv)[0] ^= lp32(src)[0];
+	lp32(iv)[1] ^= lp32(src)[1];
+	lp32(iv)[2] ^= lp32(src)[2];
+	lp32(iv)[3] ^= lp32(src)[3];
+	aes_encrypt(iv, iv, &aes->u.enc);
+	memcpy(dst, iv, 16);
+	src += 16;
+	dst += 16;
+      }
+    }
+    break;
+
+  case SILC_CIPHER_MODE_CTR:
+    {
+      SilcUInt32 ctr[4];
+
+      SILC_GET32_MSB(ctr[0], iv);
+      SILC_GET32_MSB(ctr[1], iv + 4);
+      SILC_GET32_MSB(ctr[2], iv + 8);
+      SILC_GET32_MSB(ctr[3], iv + 12);
+
+      i = aes->u.enc.inf.b[2];
+      if (!i)
+	i = 16;
+
+      while (len-- > 0) {
+	if (i == 16) {
+	  if (++ctr[3] == 0)
+	    if (++ctr[2] == 0)
+	      if (++ctr[1] == 0)
+		++ctr[0];
+
+	  SILC_PUT32_MSB(ctr[0], iv);
+	  SILC_PUT32_MSB(ctr[1], iv + 4);
+	  SILC_PUT32_MSB(ctr[2], iv + 8);
+	  SILC_PUT32_MSB(ctr[3], iv + 12);
+
+	  aes_encrypt(iv, iv, &aes->u.enc);
+	  i = 0;
+	}
+	*dst++ = *src++ ^ iv[i++];
+      }
+      aes->u.enc.inf.b[2] = i;
 
       SILC_PUT32_MSB(ctr[0], iv);
       SILC_PUT32_MSB(ctr[1], iv + 4);
       SILC_PUT32_MSB(ctr[2], iv + 8);
       SILC_PUT32_MSB(ctr[3], iv + 12);
-
-      aes_encrypt(iv, iv, &aes->u.enc);
-      i = 0;
     }
-    *dst++ = *src++ ^ iv[i++];
-  }
-  aes->u.enc.inf.b[2] = i;
+    break;
 
-  SILC_PUT32_MSB(ctr[0], iv);
-  SILC_PUT32_MSB(ctr[1], iv + 4);
-  SILC_PUT32_MSB(ctr[2], iv + 8);
-  SILC_PUT32_MSB(ctr[3], iv + 12);
+  default:
+    return FALSE;
+  }
 
   return TRUE;
 }
 
-/* Decrypts with the cipher in CTR mode. Source and destination buffers
-   maybe one and same. */
+/* Decrypts with the cipher. Source and destination buffers maybe one
+   and same. */
 
-SILC_CIPHER_API_DECRYPT(aes_ctr)
+SILC_CIPHER_API_DECRYPT(aes)
 {
-  return silc_aes_ctr_encrypt(context, src, dst, len, iv);
+  switch (cipher->mode) {
+  case SILC_CIPHER_MODE_CBC:
+    {
+      unsigned char tmp[16];
+      int nb = len >> 4;
+
+      if (len & (16 - 1))
+	return FALSE;
+
+      while(nb--) {
+	memcpy(tmp, src, 16);
+	aes_decrypt(src, dst, &((AesContext *)context)->u.dec);
+	lp32(dst)[0] ^= lp32(iv)[0];
+	lp32(dst)[1] ^= lp32(iv)[1];
+	lp32(dst)[2] ^= lp32(iv)[2];
+	lp32(dst)[3] ^= lp32(iv)[3];
+	memcpy(iv, tmp, 16);
+	src += 16;
+	dst += 16;
+      }
+    }
+    break;
+
+  case SILC_CIPHER_MODE_CTR:
+    return silc_aes_encrypt(cipher, context, src, dst, len, iv);
+    break;
+
+  default:
+    return FALSE;
+  }
+
+  return TRUE;
 }
 
 /****************************************************************************/

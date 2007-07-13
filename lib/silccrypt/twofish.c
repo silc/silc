@@ -49,7 +49,7 @@ Mean:          378 cycles =    67.8 mbits/sec
 
 /* Sets the key for the cipher. */
 
-SILC_CIPHER_API_SET_KEY(twofish_cbc)
+SILC_CIPHER_API_SET_KEY(twofish)
 {
   SilcUInt32 k[8];
 
@@ -61,70 +61,135 @@ SILC_CIPHER_API_SET_KEY(twofish_cbc)
 
 /* Sets IV for the cipher. */
 
-SILC_CIPHER_API_SET_IV(twofish_cbc)
+SILC_CIPHER_API_SET_IV(twofish)
 {
+  if (cipher->mode == SILC_CIPHER_MODE_CTR) {
+    TwofishContext *twofish = context;
 
+    /* Starts new block. */
+    twofish->padlen = 0;
+  }
 }
 
 /* Returns the size of the cipher context. */
 
-SILC_CIPHER_API_CONTEXT_LEN(twofish_cbc)
+SILC_CIPHER_API_CONTEXT_LEN(twofish)
 {
   return sizeof(TwofishContext);
 }
 
-/* Encrypts with the cipher in CBC mode. Source and destination buffers
-   maybe one and same. */
+/* Encrypts with the cipher. Source and destination buffers maybe one
+   and same. */
 
-SILC_CIPHER_API_ENCRYPT(twofish_cbc)
+SILC_CIPHER_API_ENCRYPT(twofish)
 {
-  SilcUInt32 tiv[4];
+  TwofishContext *twofish = context;
+  SilcUInt32 tmp[4], ctr[4];
   int i;
 
-  SILC_ASSERT((len & (16 - 1)) == 0);
-  if (len & (16 - 1))
+  switch (cipher->mode) {
+
+  case SILC_CIPHER_MODE_CBC:
+    SILC_ASSERT((len & (16 - 1)) == 0);
+    if (len & (16 - 1))
+      return FALSE;
+    SILC_CBC_GET_IV(tmp, iv);
+
+    SILC_CBC_ENC_PRE(tmp, src);
+    twofish_encrypt(twofish, tmp, tmp);
+    SILC_CBC_ENC_POST(tmp, dst, src);
+
+    for (i = 16; i < len; i += 16) {
+      SILC_CBC_ENC_PRE(tmp, src);
+      twofish_encrypt(twofish, tmp, tmp);
+      SILC_CBC_ENC_POST(tmp, dst, src);
+    }
+
+    SILC_CBC_PUT_IV(tmp, iv);
+    break;
+
+  case SILC_CIPHER_MODE_CTR:
+    SILC_GET32_MSB(ctr[0], iv);
+    SILC_GET32_MSB(ctr[1], iv + 4);
+    SILC_GET32_MSB(ctr[2], iv + 8);
+    SILC_GET32_MSB(ctr[3], iv + 12);
+
+    i = twofish->padlen;
+    if (!i)
+      i = 16;
+
+    while (len-- > 0) {
+      if (i == 16) {
+	if (++ctr[3] == 0)
+	  if (++ctr[2] == 0)
+	    if (++ctr[1] == 0)
+	      ++ctr[0];
+
+	tmp[0] = SILC_SWAB_32(ctr[0]);
+	tmp[1] = SILC_SWAB_32(ctr[1]);
+	tmp[2] = SILC_SWAB_32(ctr[2]);
+	tmp[3] = SILC_SWAB_32(ctr[3]);
+
+	twofish_encrypt(twofish, tmp, tmp);
+
+	SILC_PUT32_LSB(tmp[0], iv);
+	SILC_PUT32_LSB(tmp[1], iv + 4);
+	SILC_PUT32_LSB(tmp[2], iv + 8);
+	SILC_PUT32_LSB(tmp[3], iv + 12);
+	i = 0;
+      }
+      *dst++ = *src++ ^ iv[i++];
+    }
+    twofish->padlen = i;
+
+    SILC_PUT32_MSB(ctr[0], iv);
+    SILC_PUT32_MSB(ctr[1], iv + 4);
+    SILC_PUT32_MSB(ctr[2], iv + 8);
+    SILC_PUT32_MSB(ctr[3], iv + 12);
+    break;
+
+  default:
     return FALSE;
-  SILC_CBC_GET_IV(tiv, iv);
-
-  SILC_CBC_ENC_PRE(tiv, src);
-  twofish_encrypt((TwofishContext *)context, tiv, tiv);
-  SILC_CBC_ENC_POST(tiv, dst, src);
-
-  for (i = 16; i < len; i += 16) {
-    SILC_CBC_ENC_PRE(tiv, src);
-    twofish_encrypt((TwofishContext *)context, tiv, tiv);
-    SILC_CBC_ENC_POST(tiv, dst, src);
   }
-
-  SILC_CBC_PUT_IV(tiv, iv);
 
   return TRUE;
 }
 
-/* Decrypts with the cipher in CBC mode. Source and destination buffers
-   maybe one and same. */
+/* Decrypts with the cipher. Source and destination buffers maybe one
+   and same. */
 
-SILC_CIPHER_API_DECRYPT(twofish_cbc)
+SILC_CIPHER_API_DECRYPT(twofish)
 {
   SilcUInt32 tmp[4], tmp2[4], tiv[4];
   int i;
 
-  if (len & (16 - 1))
-    return FALSE;
+  switch (cipher->mode) {
 
-  SILC_CBC_GET_IV(tiv, iv);
+  case SILC_CIPHER_MODE_CBC:
+    if (len & (16 - 1))
+      return FALSE;
 
-  SILC_CBC_DEC_PRE(tmp, src);
-  twofish_decrypt((TwofishContext *)context, tmp, tmp2);
-  SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
+    SILC_CBC_GET_IV(tiv, iv);
 
-  for (i = 16; i < len; i += 16) {
     SILC_CBC_DEC_PRE(tmp, src);
     twofish_decrypt((TwofishContext *)context, tmp, tmp2);
     SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
-  }
 
-  SILC_CBC_PUT_IV(tiv, iv);
+    for (i = 16; i < len; i += 16) {
+      SILC_CBC_DEC_PRE(tmp, src);
+      twofish_decrypt((TwofishContext *)context, tmp, tmp2);
+      SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
+    }
+
+    SILC_CBC_PUT_IV(tiv, iv);
+
+  case SILC_CIPHER_MODE_CTR:
+    return silc_twofish_encrypt(cipher, context, src, dst, len, iv);
+    break;
+
+  default:
+    return FALSE;
+  }
 
   return TRUE;
 }

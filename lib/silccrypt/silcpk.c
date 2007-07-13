@@ -209,7 +209,7 @@ char *silc_pkcs_silc_encode_identifier(SilcStack stack,
 
   if (!username || !host)
     return NULL;
-  if (strlen(username) < 3 || strlen(host) < 3)
+  if (strlen(username) < 1 || strlen(host) < 1)
     return NULL;
 
   memset(&buf, 0, sizeof(buf));

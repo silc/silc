@@ -25,6 +25,7 @@ bin_PROGRAMS = 	test_sha1 	\
 		test_hmacmd5	\
 		test_aes	\
 		test_twofish	\
+		test_cast5	\
 		test_silcpkcs
 
 test_sha1_SOURCES = test_sha1.c
@@ -35,7 +36,8 @@ test_hmacsha256_SOURCES = test_hmacsha256.c
 test_hmacmd5_SOURCES = test_hmacmd5.c
 
 test_aes_SOURCES = test_aes.c
-test_twofish_SOURCES = test_aes.c
+test_twofish_SOURCES = test_twofish.c
+test_cast5_SOURCES = test_cast5.c
 
 test_silcpkcs_SOURCES = test_silcpkcs.c
 

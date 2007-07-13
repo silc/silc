@@ -1,10 +1,10 @@
 /*
 
-  twofish_internal.h
+  cast5_internal.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -17,25 +17,22 @@
 
 */
 
-#ifndef TWOFISH_INTERNAL_H
-#define TWOFISH_INTERNAL_H
+#ifndef CAST5_INTERNAL_H
+#define CAST5_INTERNAL_H
 
 #include "ciphers_def.h"
 
-/* Cipher's context */
 typedef struct {
-  u4byte l_key[40];
-  u4byte s_key[4];
-  SilcUInt16 k_len;
+  SilcUInt32 K[32];
+  SilcUInt16 keylen;
   SilcUInt16 padlen;
-} TwofishContext;
+} cast5_key;
 
-/* Prototypes */
-u4byte *twofish_set_key(TwofishContext *ctx,
-			const u4byte in_key[], const u4byte key_len);
-void twofish_encrypt(TwofishContext *ctx,
-		     const u4byte in_blk[4], u4byte out_blk[]);
-void twofish_decrypt(TwofishContext *ctx,
-		     const u4byte in_blk[4], u4byte out_blk[4]);
+int cast5_setup(const unsigned char *key, int keylen, int num_rounds,
+		cast5_key *skey);
+int cast5_encrypt(cast5_key *skey, const SilcUInt32 pt[2],
+		  SilcUInt32 ct[2]);
+int cast5_decrypt(cast5_key *skey, const SilcUInt32 ct[2],
+		  SilcUInt32 pt[2]);
 
-#endif
+#endif /* CAST5_INTERNAL_H */

@@ -39,7 +39,7 @@ do {						\
     SILC_GET32_LSB(d[_i], s + (_i * 4));	\
 } while(0);
 
-/* CBC mode macros. */
+/* CBC mode macros (LSB). */
 
 #define SILC_CBC_GET_IV(d, s) 			\
 do {						\
@@ -103,6 +103,88 @@ do {						\
 						\
   d += 16;					\
   p += 16;					\
+} while(0);
+
+/* CBC mode macros (MSB). */
+
+#define SILC_CBC_MSB_GET_IV(d, s, l)		\
+do {						\
+  SILC_GET32_MSB(d[0], &s[0]);			\
+  SILC_GET32_MSB(d[1], &s[4]);			\
+  if (l > 8) {					\
+    SILC_GET32_MSB(d[2], &s[8]);		\
+    SILC_GET32_MSB(d[3], &s[12]);		\
+  }						\
+} while(0);
+
+#define SILC_CBC_MSB_PUT_IV(s, d, l)		\
+do {						\
+  SILC_PUT32_MSB(s[0], &d[0]);			\
+  SILC_PUT32_MSB(s[1], &d[4]);			\
+  if (l > 8) {					\
+    SILC_PUT32_MSB(s[2], &d[8]);		\
+    SILC_PUT32_MSB(s[3], &d[12]);		\
+  }						\
+} while(0);
+
+#define SILC_CBC_MSB_ENC_PRE(d, s, l)		\
+do {						\
+  SILC_GET32_X_MSB(d[0], &s[0]);		\
+  SILC_GET32_X_MSB(d[1], &s[4]);		\
+  if (l > 8) {					\
+    SILC_GET32_X_MSB(d[2], &s[8]);		\
+    SILC_GET32_X_MSB(d[3], &s[12]);		\
+  }						\
+} while(0);
+
+#define SILC_CBC_MSB_ENC_POST(s, d, t, l)	\
+do {						\
+  SILC_PUT32_MSB(s[0], &d[0]);			\
+  SILC_PUT32_MSB(s[1], &d[4]);			\
+  if (l > 8) {					\
+    SILC_PUT32_MSB(s[2], &d[8]);		\
+    SILC_PUT32_MSB(s[3], &d[12]);		\
+  }						\
+						\
+  d += l;					\
+  t += l;					\
+} while(0);
+
+#define SILC_CBC_MSB_DEC_PRE(d, s, l)		\
+do {						\
+  SILC_GET32_MSB(d[0], &s[0]);			\
+  SILC_GET32_MSB(d[1], &s[4]);			\
+  if (l > 8) {					\
+    SILC_GET32_MSB(d[2], &s[8]);		\
+    SILC_GET32_MSB(d[3], &s[12]);		\
+  }						\
+} while(0);
+
+#define SILC_CBC_MSB_DEC_POST(s, d, p, t, siv, l)	\
+do {							\
+  s[0] ^= siv[0];					\
+  s[1] ^= siv[1];					\
+  if (l > 8) {						\
+    s[2] ^= siv[2];					\
+    s[3] ^= siv[3];					\
+  }							\
+  							\
+  SILC_PUT32_MSB(s[0], &d[0]);				\
+  SILC_PUT32_MSB(s[1], &d[4]);				\
+  if (l > 8) {						\
+    SILC_PUT32_MSB(s[2], &d[8]);			\
+    SILC_PUT32_MSB(s[3], &d[12]);			\
+  }							\
+  							\
+  siv[0] = t[0];					\
+  siv[1] = t[1];					\
+  if (l > 8) {						\
+    siv[2] = t[2];					\
+    siv[3] = t[3];					\
+  }							\
+  							\
+  d += l;						\
+  p += l;						\
 } while(0);
 
 #endif

@@ -24,10 +24,10 @@
  * SILC Crypto API for Twofish
  */
 
-SILC_CIPHER_API_SET_KEY(twofish_cbc);
-SILC_CIPHER_API_SET_IV(twofish_cbc);
-SILC_CIPHER_API_CONTEXT_LEN(twofish_cbc);
-SILC_CIPHER_API_ENCRYPT(twofish_cbc);
-SILC_CIPHER_API_DECRYPT(twofish_cbc);
+SILC_CIPHER_API_SET_KEY(twofish);
+SILC_CIPHER_API_SET_IV(twofish);
+SILC_CIPHER_API_CONTEXT_LEN(twofish);
+SILC_CIPHER_API_ENCRYPT(twofish);
+SILC_CIPHER_API_DECRYPT(twofish);
 
 #endif

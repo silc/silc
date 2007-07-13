@@ -34,7 +34,7 @@ SilcDList silc_cipher_list = NULL;
 #endif /* SILC_SYMBIAN */
 
 /* Macro to define cipher to cipher list */
-#define SILC_CIPHER_API_DEF(name, cipher, keylen, blocklen, ivlen, mode) \
+#define SILC_CDEF(name, cipher, keylen, blocklen, ivlen, mode)		\
 { name, silc_##cipher##_set_key, silc_##cipher##_set_iv,		\
   silc_##cipher##_encrypt, silc_##cipher##_decrypt,			\
   silc_##cipher##_context_len, keylen, blocklen, ivlen, mode }
@@ -42,26 +42,22 @@ SilcDList silc_cipher_list = NULL;
 /* Static list of ciphers for silc_cipher_register_default(). */
 const SilcCipherObject silc_default_ciphers[] =
 {
-  SILC_CIPHER_API_DEF("aes-256-ctr", aes_ctr, 256, 16, 16,
-		      SILC_CIPHER_MODE_CTR),
-  SILC_CIPHER_API_DEF("aes-192-ctr", aes_ctr, 192, 16, 16,
-		      SILC_CIPHER_MODE_CTR),
-  SILC_CIPHER_API_DEF("aes-128-ctr", aes_ctr, 128, 16, 16,
-		      SILC_CIPHER_MODE_CTR),
-  SILC_CIPHER_API_DEF("aes-256-cbc", aes_cbc, 256, 16, 16,
-		      SILC_CIPHER_MODE_CBC),
-  SILC_CIPHER_API_DEF("aes-192-cbc", aes_cbc, 192, 16, 16,
-		      SILC_CIPHER_MODE_CBC),
-  SILC_CIPHER_API_DEF("aes-128-cbc", aes_cbc, 128, 16, 16,
-		      SILC_CIPHER_MODE_CBC),
-  SILC_CIPHER_API_DEF("twofish-256-cbc", twofish_cbc, 256, 16, 16,
-		      SILC_CIPHER_MODE_CBC),
-  SILC_CIPHER_API_DEF("twofish-192-cbc", twofish_cbc, 192, 16, 16,
-		      SILC_CIPHER_MODE_CBC),
-  SILC_CIPHER_API_DEF("twofish-128-cbc", twofish_cbc, 128, 16, 16,
-		      SILC_CIPHER_MODE_CBC),
+  SILC_CDEF("aes-256-ctr", aes, 256, 16, 16, SILC_CIPHER_MODE_CTR),
+  SILC_CDEF("aes-192-ctr", aes, 192, 16, 16, SILC_CIPHER_MODE_CTR),
+  SILC_CDEF("aes-128-ctr", aes, 128, 16, 16, SILC_CIPHER_MODE_CTR),
+  SILC_CDEF("aes-256-cbc", aes, 256, 16, 16, SILC_CIPHER_MODE_CBC),
+  SILC_CDEF("aes-192-cbc", aes, 192, 16, 16, SILC_CIPHER_MODE_CBC),
+  SILC_CDEF("aes-128-cbc", aes, 128, 16, 16, SILC_CIPHER_MODE_CBC),
+  SILC_CDEF("twofish-256-ctr", twofish, 256, 16, 16, SILC_CIPHER_MODE_CTR),
+  SILC_CDEF("twofish-192-ctr", twofish, 192, 16, 16, SILC_CIPHER_MODE_CTR),
+  SILC_CDEF("twofish-128-ctr", twofish, 128, 16, 16, SILC_CIPHER_MODE_CTR),
+  SILC_CDEF("twofish-256-cbc", twofish, 256, 16, 16, SILC_CIPHER_MODE_CBC),
+  SILC_CDEF("twofish-192-cbc", twofish, 192, 16, 16, SILC_CIPHER_MODE_CBC),
+  SILC_CDEF("twofish-128-cbc", twofish, 128, 16, 16, SILC_CIPHER_MODE_CBC),
+  SILC_CDEF("cast5-128-ctr", cast5, 128, 8, 8, SILC_CIPHER_MODE_CTR),
+  SILC_CDEF("cast5-128-cbc", cast5, 128, 8, 8, SILC_CIPHER_MODE_CBC),
 #ifdef SILC_DEBUG
-  SILC_CIPHER_API_DEF("none", none, 0, 0, 0, 0),
+  SILC_CDEF("none", none, 0, 0, 0, 0),
 #endif /* SILC_DEBUG */
   { NULL, NULL, 0, 0, 0, 0 }
 };
@@ -260,7 +256,7 @@ SilcBool silc_cipher_is_supported(const unsigned char *name)
 
 /* Returns comma separated list of supported ciphers. */
 
-char *silc_cipher_get_supported(void)
+char *silc_cipher_get_supported(SilcBool only_registered)
 {
   SilcCipherObject *entry, *entry2;
   char *list = NULL;
@@ -281,26 +277,28 @@ char *silc_cipher_get_supported(void)
   }
 #endif /* SILC_SYMBIAN */
 
-  for (i = 0; silc_default_ciphers[i].name; i++) {
-    entry = (SilcCipherObject *)&(silc_default_ciphers[i]);
+  if (!only_registered || !silc_cipher_list) {
+    for (i = 0; silc_default_ciphers[i].name; i++) {
+      entry = (SilcCipherObject *)&(silc_default_ciphers[i]);
 
-    if (silc_cipher_list) {
-      silc_dlist_start(silc_cipher_list);
-      while ((entry2 = silc_dlist_get(silc_cipher_list))) {
-	if (!strcmp(entry2->name, entry->name))
-	  break;
+      if (silc_cipher_list) {
+	silc_dlist_start(silc_cipher_list);
+	while ((entry2 = silc_dlist_get(silc_cipher_list))) {
+	  if (!strcmp(entry2->name, entry->name))
+	    break;
+	}
+	if (entry2)
+	  continue;
       }
-      if (entry2)
-	continue;
+
+      len += strlen(entry->name);
+      list = silc_realloc(list, len + 1);
+
+      memcpy(list + (len - strlen(entry->name)),
+	     entry->name, strlen(entry->name));
+      memcpy(list + len, ",", 1);
+      len++;
     }
-
-    len += strlen(entry->name);
-    list = silc_realloc(list, len + 1);
-
-    memcpy(list + (len - strlen(entry->name)),
-	   entry->name, strlen(entry->name));
-    memcpy(list + len, ",", 1);
-    len++;
   }
 
   list[len - 1] = 0;
@@ -314,7 +312,7 @@ SilcBool silc_cipher_encrypt(SilcCipher cipher, const unsigned char *src,
 			     unsigned char *dst, SilcUInt32 len,
 			     unsigned char *iv)
 {
-  return cipher->cipher->encrypt(cipher->context, src, dst, len,
+  return cipher->cipher->encrypt(cipher->cipher, cipher->context, src, dst, len,
 				 iv ? iv : cipher->iv);
 }
 
@@ -324,7 +322,7 @@ SilcBool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
 			     unsigned char *dst, SilcUInt32 len,
 			     unsigned char *iv)
 {
-  return cipher->cipher->decrypt(cipher->context, src, dst, len,
+  return cipher->cipher->decrypt(cipher->cipher, cipher->context, src, dst, len,
 				 iv ? iv : cipher->iv);
 }
 
@@ -333,7 +331,8 @@ SilcBool silc_cipher_decrypt(SilcCipher cipher, const unsigned char *src,
 SilcBool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
 			     SilcUInt32 keylen, SilcBool encryption)
 {
-  return cipher->cipher->set_key(cipher->context, key, keylen, encryption);
+  return cipher->cipher->set_key(cipher->cipher, cipher->context, key, keylen,
+				 encryption);
 }
 
 /* Sets the IV (initial vector) for the cipher. */
@@ -342,7 +341,7 @@ void silc_cipher_set_iv(SilcCipher cipher, const unsigned char *iv)
 {
   if (iv)
     memmove(&cipher->iv, iv, cipher->cipher->iv_len);
-  cipher->cipher->set_iv(cipher->context, iv);
+  cipher->cipher->set_iv(cipher->cipher, cipher->context, iv);
 }
 
 /* Returns the IV (initial vector) of the cipher. */
