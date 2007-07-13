@@ -28,7 +28,7 @@ void *silc_malloc(size_t size)
 {
   void *addr;
   if (silc_unlikely(size <= 0 || size >= SILC_MAX_ALLOC)) {
-    SILC_LOG_ERROR(("Invalid memory allocation"));
+    SILC_LOG_ERROR(("Invalid memory allocation, allocation by %x", size));
     return NULL;
   }
   addr = malloc(size);
@@ -41,7 +41,7 @@ void *silc_calloc(size_t items, size_t size)
 {
   void *addr;
   if (silc_unlikely(size * items <= 0 || size * items >= SILC_MAX_ALLOC)) {
-    SILC_LOG_ERROR(("Invalid memory allocation"));
+    SILC_LOG_ERROR(("Invalid memory allocation, allocation by %x", size));
     return NULL;
   }
   addr = calloc(items, size);
@@ -54,7 +54,7 @@ void *silc_realloc(void *ptr, size_t size)
 {
   void *addr;
   if (silc_unlikely(size <= 0 || size >= SILC_MAX_ALLOC)) {
-    SILC_LOG_ERROR(("Invalid memory allocation"));
+    SILC_LOG_ERROR(("Invalid memory allocation, allocation by %x", size));
     return NULL;
   }
   addr = realloc(ptr, size);
