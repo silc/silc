@@ -9,61 +9,20 @@ Tue Jul 10 20:02:04 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 	  allocating new entry everytime new entry is needed.  Affected
 	  file is lib/silcutil/silcthread.c.
 
-	* Added support for new PKCS API and other API changes to
-	  client library.  Affected files are in lib/silcclient/.
-
 Mon Jul  9 20:21:13 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
-
-	* Added SILC Accelerator Library.  Provides generic way to
-	  use accelerators with crypto library.  Affected files are in
-	  lib/silcacc/.
-
-	* Added software accelerator, a thread pool system that off-loads
-	  public and private key operations to threads.  Affected files
-	  are lib/silcacc/softacc.[ch].
 
 	* Changed thread pool completion callback to SilcTaskCallback so
 	  that it can be given directly to destination scheduler.
 	  Affected files are lib/silcutil/silcthread.[ch].
-
-	* Added SilcPKCSAlgorithm context to SilcPublicKey and
-	  SilcPrivateKey contexts.  Affected files are 
-	  lib/silccrypt/silcpkcs.[ch], silcpk.c.
 
 Sun Jul  8 20:20:22 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* Moved Base64 routines to lib/silcutil/silcbase64.[ch].  Added
 	  SilcStack support to the API.
 
-	* Added allocation support from given stack with SILC_ASN1_ALLOC
-	  flag.  Added support for detecting if SILC_ASN1_NULL is present
-	  with SILC_ASN1_OPTIONAL flag.  Added support for getting th
-	  choice index with SILC_ASN1_CHOICE.  Affected files are
-	  lib/silcasn1/silcasn1.h, silcasn1_encode.c and silcasn1_decode.c.
-
-	* Crypto library changes.
-
-	  Rewrote and redesigned crypto library initialization.  Added
-	  silc_crypto_init and silc_crypto_uninit.
-
-	  Added SilcPKCSObject and SilcPKSCAlgorithm contexts to all
-	  SilcPKCSObject operation callbacks and SilcPKCSAlgorithm
-	  operation callbacks, respectively, as argument.
-
-	  Changed silc_pkcs_encrypt, silc_pkcs_decrypt, silc_pkcs_sign
-	  and silc_pkcs_verify APIs asynchronous.  They take callback
-	  functions now.  Added same callbacks to all SilcPKCSObject
-	  and SilcPKCSAlgorithm operation callbacks.
-
 	* Inherit the lock from parent in SilcStack child.  If child
 	  doesn't find stack blocks, check from parent.  Added
 	  silc_stack_purge.  Affected file is lib/silcutil/silcstack.c.
-
-	* Changed message payload encoding async, due to the PKCS API
-	  changes.  Affected files are lib/silccore/silcmessage.[ch].
-
-	* Added new PKCS API support for connauth and SKE.  Affected
-	  files are lib/silcske/silconnauth.c and silcske.c.
 
 Wed Jul  4 20:20:05 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
@@ -93,9 +52,6 @@ Tue Jul  3 22:45:56 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 	  memory.  The child's memory is returned back to parent when
 	  it is freed.  Affected files are lib/silcutil/silcstack.[ch],
 	  silcstack_i.h.
-
-	* Added user specified SilcStack support to SILC ASN.1 API.
-	  Affected files are lib/silcasn1/silcasn1.[ch].
 
 Tue Jul  3 18:17:54 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
