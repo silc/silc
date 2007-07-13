@@ -327,6 +327,13 @@ do {							\
 } while(0)
 /***/
 
+/* Same as upper but XOR the result always. Special purpose macro. */
+#define SILC_GET32_X_MSB(l, cp)				\
+  (l) ^= ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 16)		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 8)		\
+    | ((SilcUInt32)(SilcUInt8)(cp)[3]);
+
 /****d* silcutil/SILCTypes/SILC_GET64_MSB
  *
  * NAME
