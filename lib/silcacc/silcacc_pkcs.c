@@ -280,6 +280,11 @@ SilcPublicKey silc_acc_public_key(SilcAccelerator acc,
     return NULL;
   }
 
+  if (silc_acc_get_public_key(NULL, public_key)) {
+    SILC_LOG_DEBUG(("Pubilc key %p is already accelerated", public_key));
+    return NULL;
+  }
+
   /* Check that accelerator supports this public key algorithm */
   alg = silc_pkcs_get_algorithm(public_key);
   if (!alg)
@@ -360,6 +365,11 @@ SilcPrivateKey silc_acc_private_key(SilcAccelerator acc,
   if (!acc->pkcs) {
     SILC_LOG_ERROR(("Accelerator '%s' does not support private key "
 		    "acceleration", acc->name));
+    return NULL;
+  }
+
+  if (silc_acc_get_private_key(NULL, private_key)) {
+    SILC_LOG_DEBUG(("Private key %p is already accelerated", private_key));
     return NULL;
   }
 
