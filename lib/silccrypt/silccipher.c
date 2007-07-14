@@ -48,14 +48,21 @@ const SilcCipherObject silc_default_ciphers[] =
   SILC_CDEF("aes-256-cbc", aes, 256, 16, 16, SILC_CIPHER_MODE_CBC),
   SILC_CDEF("aes-192-cbc", aes, 192, 16, 16, SILC_CIPHER_MODE_CBC),
   SILC_CDEF("aes-128-cbc", aes, 128, 16, 16, SILC_CIPHER_MODE_CBC),
+  SILC_CDEF("aes-256-cfb", aes, 256, 16, 16, SILC_CIPHER_MODE_CFB),
+  SILC_CDEF("aes-192-cfb", aes, 192, 16, 16, SILC_CIPHER_MODE_CFB),
+  SILC_CDEF("aes-128-cfb", aes, 128, 16, 16, SILC_CIPHER_MODE_CFB),
   SILC_CDEF("twofish-256-ctr", twofish, 256, 16, 16, SILC_CIPHER_MODE_CTR),
   SILC_CDEF("twofish-192-ctr", twofish, 192, 16, 16, SILC_CIPHER_MODE_CTR),
   SILC_CDEF("twofish-128-ctr", twofish, 128, 16, 16, SILC_CIPHER_MODE_CTR),
   SILC_CDEF("twofish-256-cbc", twofish, 256, 16, 16, SILC_CIPHER_MODE_CBC),
   SILC_CDEF("twofish-192-cbc", twofish, 192, 16, 16, SILC_CIPHER_MODE_CBC),
   SILC_CDEF("twofish-128-cbc", twofish, 128, 16, 16, SILC_CIPHER_MODE_CBC),
+  SILC_CDEF("twofish-256-cfb", twofish, 256, 16, 16, SILC_CIPHER_MODE_CFB),
+  SILC_CDEF("twofish-192-cfb", twofish, 192, 16, 16, SILC_CIPHER_MODE_CFB),
+  SILC_CDEF("twofish-128-cfb", twofish, 128, 16, 16, SILC_CIPHER_MODE_CFB),
   SILC_CDEF("cast5-128-ctr", cast5, 128, 8, 8, SILC_CIPHER_MODE_CTR),
   SILC_CDEF("cast5-128-cbc", cast5, 128, 8, 8, SILC_CIPHER_MODE_CBC),
+  SILC_CDEF("cast5-128-cfb", cast5, 128, 8, 8, SILC_CIPHER_MODE_CFB),
 #ifdef SILC_DEBUG
   SILC_CDEF("none", none, 0, 0, 0, 0),
 #endif /* SILC_DEBUG */
@@ -341,7 +348,7 @@ void silc_cipher_set_iv(SilcCipher cipher, const unsigned char *iv)
 {
   if (iv)
     memmove(&cipher->iv, iv, cipher->cipher->iv_len);
-  cipher->cipher->set_iv(cipher->cipher, cipher->context, iv);
+  cipher->cipher->set_iv(cipher->cipher, cipher->context, cipher->iv);
 }
 
 /* Returns the IV (initial vector) of the cipher. */

@@ -22,11 +22,22 @@ SILC_CIPHER_API_SET_KEY(cast5)
 
 SILC_CIPHER_API_SET_IV(cast5)
 {
-  if (cipher->mode == SILC_CIPHER_MODE_CTR) {
-    cast5_key *cast5 = context;
+  cast5_key *cast5 = context;
 
-    /* Starts new block */
+  switch (cipher->mode) {
+
+  case SILC_CIPHER_MODE_CTR:
+    /* Starts new block. */
     cast5->padlen = 0;
+    break;
+
+  case SILC_CIPHER_MODE_CFB:
+    /* Starts new block. */
+    cast5->padlen = 8;
+    break;
+
+  default:
+    break;
   }
 }
 
@@ -46,49 +57,18 @@ SILC_CIPHER_API_ENCRYPT(cast5)
   switch (cipher->mode) {
 
   case SILC_CIPHER_MODE_CBC:
-    SILC_ASSERT((len & (8 - 1)) == 0);
-    if (len & (8 - 1))
-      return FALSE;
-    SILC_CBC_MSB_GET_IV(tmp, iv, 8);
-
-    SILC_CBC_MSB_ENC_PRE(tmp, src, 8);
-    cast5_encrypt(cast5, tmp, tmp);
-    SILC_CBC_MSB_ENC_POST(tmp, dst, src, 8);
-
-    for (i = 8; i < len; i += 8) {
-      SILC_CBC_MSB_ENC_PRE(tmp, src, 8);
-      cast5_encrypt(cast5, tmp, tmp);
-      SILC_CBC_MSB_ENC_POST(tmp, dst, src, 8);
-    }
-
-    SILC_CBC_MSB_PUT_IV(tmp, iv, 8);
+    SILC_CBC_ENC_MSB_64_32(len, iv, tmp, src, dst, i,
+			   cast5_encrypt(cast5, tmp, tmp));
     break;
 
   case SILC_CIPHER_MODE_CTR:
-    SILC_GET32_MSB(ctr[0], iv);
-    SILC_GET32_MSB(ctr[1], iv + 4);
+    SILC_CTR_MSB_64_32(iv, ctr, tmp, cast5->padlen, src, dst,
+		       cast5_encrypt(cast5, ctr, tmp));
+    break;
 
-    i = cast5->padlen;
-    if (!i)
-      i = 8;
-
-    while (len-- > 0) {
-      if (i == 8) {
-	if (++ctr[1] == 0)
-	  ++ctr[0];
-
-	cast5_encrypt(cast5, ctr, tmp);
-
-	SILC_PUT32_MSB(tmp[0], iv);
-	SILC_PUT32_MSB(tmp[1], iv + 4);
-	i = 0;
-      }
-      *dst++ = *src++ ^ iv[i++];
-    }
-    cast5->padlen = i;
-
-    SILC_PUT32_MSB(ctr[0], iv);
-    SILC_PUT32_MSB(ctr[1], iv + 4);
+  case SILC_CIPHER_MODE_CFB:
+    SILC_CFB_ENC_MSB_64_32(iv, tmp, cast5->padlen, src, dst,
+			   cast5_encrypt(cast5, tmp, tmp));
     break;
 
   default:
@@ -100,32 +80,24 @@ SILC_CIPHER_API_ENCRYPT(cast5)
 
 SILC_CIPHER_API_DECRYPT(cast5)
 {
+  cast5_key *cast5 = context;
   SilcUInt32 tmp[2], tmp2[2], tiv[2];
   int i;
 
   switch (cipher->mode) {
 
   case SILC_CIPHER_MODE_CBC:
-    if (len & (8 - 1))
-      return FALSE;
-
-    SILC_CBC_MSB_GET_IV(tiv, iv, 8);
-
-    SILC_CBC_MSB_DEC_PRE(tmp, src, 8);
-    cast5_decrypt((cast5_key *)context, tmp, tmp2);
-    SILC_CBC_MSB_DEC_POST(tmp2, dst, src, tmp, tiv, 8);
-
-    for (i = 8; i < len; i += 8) {
-      SILC_CBC_MSB_DEC_PRE(tmp, src, 8);
-      cast5_decrypt((cast5_key *)context, tmp, tmp2);
-      SILC_CBC_MSB_DEC_POST(tmp2, dst, src, tmp, tiv, 8);
-    }
-
-    SILC_CBC_MSB_PUT_IV(tiv, iv, 8);
+    SILC_CBC_DEC_MSB_64_32(len, iv, tiv, tmp, tmp2, src, dst, i,
+			   cast5_decrypt(cast5, tmp, tmp2));
     break;
 
   case SILC_CIPHER_MODE_CTR:
     return silc_cast5_encrypt(cipher, context, src, dst, len, iv);
+    break;
+
+  case SILC_CIPHER_MODE_CFB:
+    SILC_CFB_DEC_MSB_64_32(iv, tmp, cast5->padlen, src, dst,
+			   cast5_encrypt(cast5, tmp, tmp));
     break;
 
   default:

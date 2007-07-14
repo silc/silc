@@ -63,11 +63,22 @@ SILC_CIPHER_API_SET_KEY(twofish)
 
 SILC_CIPHER_API_SET_IV(twofish)
 {
-  if (cipher->mode == SILC_CIPHER_MODE_CTR) {
-    TwofishContext *twofish = context;
+  TwofishContext *twofish = context;
 
+  switch (cipher->mode) {
+
+  case SILC_CIPHER_MODE_CTR:
     /* Starts new block. */
     twofish->padlen = 0;
+    break;
+
+  case SILC_CIPHER_MODE_CFB:
+    /* Starts new block. */
+    twofish->padlen = 16;
+    break;
+
+  default:
+    break;
   }
 }
 
@@ -90,62 +101,18 @@ SILC_CIPHER_API_ENCRYPT(twofish)
   switch (cipher->mode) {
 
   case SILC_CIPHER_MODE_CBC:
-    SILC_ASSERT((len & (16 - 1)) == 0);
-    if (len & (16 - 1))
-      return FALSE;
-    SILC_CBC_GET_IV(tmp, iv);
-
-    SILC_CBC_ENC_PRE(tmp, src);
-    twofish_encrypt(twofish, tmp, tmp);
-    SILC_CBC_ENC_POST(tmp, dst, src);
-
-    for (i = 16; i < len; i += 16) {
-      SILC_CBC_ENC_PRE(tmp, src);
-      twofish_encrypt(twofish, tmp, tmp);
-      SILC_CBC_ENC_POST(tmp, dst, src);
-    }
-
-    SILC_CBC_PUT_IV(tmp, iv);
+    SILC_CBC_ENC_LSB_128_32(len, iv, tmp, src, dst, i,
+			    twofish_encrypt(twofish, tmp, tmp));
     break;
 
   case SILC_CIPHER_MODE_CTR:
-    SILC_GET32_MSB(ctr[0], iv);
-    SILC_GET32_MSB(ctr[1], iv + 4);
-    SILC_GET32_MSB(ctr[2], iv + 8);
-    SILC_GET32_MSB(ctr[3], iv + 12);
+    SILC_CTR_LSB_128_32(iv, ctr, tmp, twofish->padlen, src, dst,
+			twofish_encrypt(twofish, tmp, tmp));
+    break;
 
-    i = twofish->padlen;
-    if (!i)
-      i = 16;
-
-    while (len-- > 0) {
-      if (i == 16) {
-	if (++ctr[3] == 0)
-	  if (++ctr[2] == 0)
-	    if (++ctr[1] == 0)
-	      ++ctr[0];
-
-	tmp[0] = SILC_SWAB_32(ctr[0]);
-	tmp[1] = SILC_SWAB_32(ctr[1]);
-	tmp[2] = SILC_SWAB_32(ctr[2]);
-	tmp[3] = SILC_SWAB_32(ctr[3]);
-
-	twofish_encrypt(twofish, tmp, tmp);
-
-	SILC_PUT32_LSB(tmp[0], iv);
-	SILC_PUT32_LSB(tmp[1], iv + 4);
-	SILC_PUT32_LSB(tmp[2], iv + 8);
-	SILC_PUT32_LSB(tmp[3], iv + 12);
-	i = 0;
-      }
-      *dst++ = *src++ ^ iv[i++];
-    }
-    twofish->padlen = i;
-
-    SILC_PUT32_MSB(ctr[0], iv);
-    SILC_PUT32_MSB(ctr[1], iv + 4);
-    SILC_PUT32_MSB(ctr[2], iv + 8);
-    SILC_PUT32_MSB(ctr[3], iv + 12);
+  case SILC_CIPHER_MODE_CFB:
+    SILC_CFB_ENC_LSB_128_32(iv, tmp, twofish->padlen, src, dst,
+			    twofish_encrypt(twofish, tmp, tmp));
     break;
 
   default:
@@ -160,31 +127,23 @@ SILC_CIPHER_API_ENCRYPT(twofish)
 
 SILC_CIPHER_API_DECRYPT(twofish)
 {
+  TwofishContext *twofish = context;
   SilcUInt32 tmp[4], tmp2[4], tiv[4];
   int i;
 
   switch (cipher->mode) {
 
   case SILC_CIPHER_MODE_CBC:
-    if (len & (16 - 1))
-      return FALSE;
-
-    SILC_CBC_GET_IV(tiv, iv);
-
-    SILC_CBC_DEC_PRE(tmp, src);
-    twofish_decrypt((TwofishContext *)context, tmp, tmp2);
-    SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
-
-    for (i = 16; i < len; i += 16) {
-      SILC_CBC_DEC_PRE(tmp, src);
-      twofish_decrypt((TwofishContext *)context, tmp, tmp2);
-      SILC_CBC_DEC_POST(tmp2, dst, src, tmp, tiv);
-    }
-
-    SILC_CBC_PUT_IV(tiv, iv);
+    SILC_CBC_DEC_LSB_128_32(len, iv, tiv, tmp, tmp2, src, dst, i,
+			    twofish_decrypt(twofish, tmp, tmp2));
 
   case SILC_CIPHER_MODE_CTR:
     return silc_twofish_encrypt(cipher, context, src, dst, len, iv);
+    break;
+
+  case SILC_CIPHER_MODE_CFB:
+    SILC_CFB_DEC_LSB_128_32(iv, tmp, twofish->padlen, src, dst,
+			    twofish_encrypt(twofish, tmp, tmp));
     break;
 
   default:

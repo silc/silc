@@ -37,7 +37,6 @@
 #define KS_LENGTH       60
 
 typedef union {
-  uint_32t l;
   uint_8t b[4];
 } aes_inf;
 

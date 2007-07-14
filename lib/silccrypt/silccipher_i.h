@@ -32,10 +32,10 @@
 				 const unsigned char *key,		\
 				 SilcUInt32 keylen,			\
 				 SilcBool encryption)
-#define SILC_CIPHER_API_SET_IV(name)				\
+#define SILC_CIPHER_API_SET_IV(name)					\
   void silc_##name##_set_iv(struct SilcCipherObjectStruct *cipher,	\
-			    void *context,			\
-			    const unsigned char *iv)
+			    void *context,				\
+			    unsigned char *iv)
 #define SILC_CIPHER_API_ENCRYPT(name)					\
   SilcBool silc_##name##_encrypt(struct SilcCipherObjectStruct *cipher,	\
 				 void *context,				\
@@ -67,7 +67,7 @@ struct SilcCipherObjectStruct {
   /* Set IV.  The upper layer (SilcCipher) maintains the IV.  If the algorithm
      needs to set the IV itself, this should be implemented. */
   void (*set_iv)(struct SilcCipherObjectStruct *cipher,
-		 void *context, const unsigned char *iv);
+		 void *context, unsigned char *iv);
 
   /* Encrypt.  The `src' and `dst' may be same pointer.  The `iv' may be
      edited inside this function. */

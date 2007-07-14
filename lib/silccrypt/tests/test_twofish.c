@@ -45,6 +45,16 @@ const unsigned char p5[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C
 int p5_len = 36;
 const unsigned char c5[] = "\x71\x2F\x9C\xE1\x4F\xD5\x9E\xBF\x6A\x1E\x7D\x76\x0C\xBA\x70\xE9\x5E\xCE\x27\xAD\x5B\xE1\x38\xDB\x99\xEF\x46\x78\x4D\xCF\x99\x24\x63\x0E\x84\x58";
 
+/* CFB */
+
+/* 36 bytes plaintext, 256 bits key */
+const unsigned char key6[] = "\xFF\x7A\x61\x7C\xE6\x91\x48\xE4\xF1\x72\x6E\x2F\x43\x58\x1D\xE2\xAA\x62\xD9\xF8\x05\x53\x2E\xDF\xF1\xEE\xD6\x87\xFB\x54\x15\x3D";
+int key6_len = 32 * 8;
+const unsigned char iv6[] = "\x00\x1C\xC5\xB7\x51\xA5\x1D\x70\xA1\xC1\x11\x48\x00\x00\x00\x00";
+const unsigned char p6[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x20\x21\x22\x23";
+int p6_len = 36;
+const unsigned char c6[] = "\x2C\x0E\x4D\xEF\xE4\x71\xEB\x2A\x4B\x03\x21\x96\xD1\xCD\x73\xD7\x3A\xA9\xEB\x08\x87\xB2\xAB\x66\x28\x3A\xC2\x99\xB7\x13\x8C\x92\xEA\xD6\xFD\x41";
+
 int main(int argc, char **argv)
 {
   SilcBool success = FALSE;
@@ -142,7 +152,7 @@ int main(int argc, char **argv)
   }
 
   /* Third test vector */
-  SILC_LOG_DEBUG(("Third test vector"));
+  SILC_LOG_DEBUG(("CTR test vector"));
   memset(dst, 0, sizeof(dst));
   memset(pdst, 0, sizeof(pdst));
   silc_cipher_set_iv(cipher, iv3);
@@ -172,7 +182,7 @@ int main(int argc, char **argv)
 
 
   /* Fourth test vector */
-  SILC_LOG_DEBUG(("Fourth test vector"));
+  SILC_LOG_DEBUG(("CTR test vector"));
   memset(dst, 0, sizeof(dst));
   memset(pdst, 0, sizeof(pdst));
   silc_cipher_set_iv(cipher, iv4);
@@ -212,7 +222,7 @@ int main(int argc, char **argv)
   }
 
   /* Fifth test vector */
-  SILC_LOG_DEBUG(("Fifth test vector"));
+  SILC_LOG_DEBUG(("CTR test vector"));
   memset(dst, 0, sizeof(dst));
   memset(pdst, 0, sizeof(pdst));
   silc_cipher_set_iv(cipher, iv5);
@@ -236,6 +246,48 @@ int main(int argc, char **argv)
   SILC_LOG_HEXDUMP(("Decrypted plaintext"), (unsigned char *)pdst, p5_len);
   SILC_LOG_HEXDUMP(("Expected plaintext"), (unsigned char *)p5, p5_len);
   if (memcmp(pdst, p5, p5_len)) {
+    SILC_LOG_DEBUG(("Decrypt failed"));
+    goto err;
+  }
+  SILC_LOG_DEBUG(("Decrypt is successful"));
+  silc_cipher_free(cipher2);
+
+
+  SILC_LOG_DEBUG(("Allocating twofish-256-cfb cipher"));
+  if (!silc_cipher_alloc("twofish-256-cfb", &cipher)) {
+    SILC_LOG_DEBUG(("Allocating twofish-256-cfb cipher failed"));
+    goto err;
+  }
+  if (!silc_cipher_alloc("twofish-256-cfb", &cipher2)) {
+    SILC_LOG_DEBUG(("Allocating twofish-256-cfb cipher failed"));
+    goto err;
+  }
+
+  /* Fifth test vector */
+  SILC_LOG_DEBUG(("CFB test vector"));
+  memset(dst, 0, sizeof(dst));
+  memset(pdst, 0, sizeof(pdst));
+  silc_cipher_set_iv(cipher, iv6);
+  assert(silc_cipher_set_key(cipher, key6, key6_len, TRUE));
+  assert(silc_cipher_set_key(cipher2, key6, key6_len, FALSE));
+  assert(silc_cipher_encrypt(cipher, p6, dst, p6_len, NULL));
+  SILC_LOG_DEBUG(("block len %d, key len %d, name %s",
+		 silc_cipher_get_block_len(cipher),
+		 silc_cipher_get_key_len(cipher),
+		 silc_cipher_get_name(cipher)));
+  SILC_LOG_HEXDUMP(("Plaintext"), (unsigned char *)p6, p6_len);
+  SILC_LOG_HEXDUMP(("Ciphertext"), (unsigned char *)dst, p6_len);
+  SILC_LOG_HEXDUMP(("Expected ciphertext"), (unsigned char *)c6, p6_len);
+  if (memcmp(dst, c6, p6_len)) {
+    SILC_LOG_DEBUG(("Encrypt failed"));
+    goto err;
+  }
+  SILC_LOG_DEBUG(("Encrypt is successful"));
+  silc_cipher_set_iv(cipher2, iv6);
+  assert(silc_cipher_decrypt(cipher2, dst, pdst, p6_len, NULL));
+  SILC_LOG_HEXDUMP(("Decrypted plaintext"), (unsigned char *)pdst, p6_len);
+  SILC_LOG_HEXDUMP(("Expected plaintext"), (unsigned char *)p5, p6_len);
+  if (memcmp(pdst, p6, p6_len)) {
     SILC_LOG_DEBUG(("Decrypt failed"));
     goto err;
   }

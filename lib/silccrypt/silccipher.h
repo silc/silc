@@ -57,7 +57,43 @@ typedef struct SilcCipherStruct *SilcCipher;
  *
  * DESCRIPTION
  *
- *    Cipher modes.
+ *    Cipher modes.  Notes about cipher modes and implementation:
+ *
+ *    SILC_CIPHER_MODE_CBC
+ *
+ *      The Cipher-block Chaining mode.  The CBC is mode is a standard CBC
+ *      mode.  The plaintext length must be multiple by the cipher block size.
+ *      If it isn't the plaintext must be padded.
+ *
+ *    SILC_CIPHER_MODE_CTR
+ *
+ *      The Counter mode.  The CTR is normal counter mode.  The CTR mode does
+ *      not require the plaintext length to be multiple by the cipher block
+ *      size.  If the last plaintext block is shorter the remaining bits of
+ *      the key stream are used next time silc_cipher_encrypt is called.  If
+ *      silc_cipher_set_iv is called it will reset the counter for a new block
+ *      (discarding any remaining bits from previous key stream).  The counter
+ *      mode expects MSB first ordered counter.  Note also, the counter is
+ *      incremented when silc_cipher_encrypt is called for the first time,
+ *      before encrypting.
+ *
+ *    SILC_CIPHER_MODE_CFB
+ *
+ *      The Cipher Feedback mode.  The CFB mode is normal cipher feedback mode.
+ *      The CFB mode does not require the plaintext length to be multiple by
+ *      the cipher block size.  If the last plaintext block is shorter the
+ *      remaining bits of the stream are used next time silc_cipher_encrypt is
+ *      called.  If silc_cipher_set_iv is called it will reset the feedback
+ *      for a new block (discarding any remaining bits from previous stream).
+ *
+ *    SILC_CIPHER_MODE_OFB
+ *
+ *      The Output Feedback mode.
+ *
+ *    SILC_CIPHER_MODE_ECB
+ *
+ *      The Electronic Codebook mode.  This mode does not provide sufficient
+ *      security and should not be used.
  *
  * SOURCE
  */
@@ -168,19 +204,6 @@ SilcBool silc_cipher_unregister_all(void);
  *    twofish-128-cbc        Twofish-128, Cipher block chaining mode
  *
  *    Notes about modes:
- *
- *    The CTR is normal counter mode.  The CTR mode does not require the
- *    plaintext length to be multiple by the cipher block size.  If the last
- *    plaintext block is shorter the remaining bits of the key stream are
- *    used next time silc_cipher_encrypt is called.  If silc_cipher_set_iv
- *    is called it will reset the counter for a new block (discarding any
- *    remaining bits from previous key stream).  The counter mode expects
- *    MSB first ordered counter.  Note also, the counter is incremented when
- *    silc_cipher_encrypt is called for the first time, before encrypting.
- *
- *    The CBC is mode is a standard CBC mode.  The plaintext length must be
- *    multiple by the cipher block size.  If it isn't the plaintext must be
- *    padded.
  *
  ***/
 SilcBool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher);

@@ -54,6 +54,7 @@ SILC_CIPHER_API_SET_KEY(aes)
     break;
 
   case SILC_CIPHER_MODE_CTR:
+  case SILC_CIPHER_MODE_CFB:
     aes_encrypt_key(key, keylen, &((AesContext *)context)->u.enc);
     break;
 
@@ -67,11 +68,22 @@ SILC_CIPHER_API_SET_KEY(aes)
 
 SILC_CIPHER_API_SET_IV(aes)
 {
-  if (cipher->mode == SILC_CIPHER_MODE_CTR) {
-    AesContext *aes = context;
+  AesContext *aes = context;
 
+  switch (cipher->mode) {
+
+  case SILC_CIPHER_MODE_CTR:
     /* Starts new block. */
     aes->u.enc.inf.b[2] = 0;
+    break;
+
+  case SILC_CIPHER_MODE_CFB:
+    /* Starts new block. */
+    aes->u.enc.inf.b[2] = 16;
+    break;
+
+  default:
+    break;
   }
 }
 
@@ -88,7 +100,7 @@ SILC_CIPHER_API_CONTEXT_LEN(aes)
 SILC_CIPHER_API_ENCRYPT(aes)
 {
   AesContext *aes = context;
-  int i;
+  SilcUInt32 ctr[4];
 
   switch (cipher->mode) {
   case SILC_CIPHER_MODE_CBC:
@@ -113,42 +125,13 @@ SILC_CIPHER_API_ENCRYPT(aes)
     break;
 
   case SILC_CIPHER_MODE_CTR:
-    {
-      SilcUInt32 ctr[4];
+    SILC_CTR_MSB_128_8(iv, ctr, iv, aes->u.enc.inf.b[2], src, dst,
+		       aes_encrypt(iv, iv, &aes->u.enc));
+    break;
 
-      SILC_GET32_MSB(ctr[0], iv);
-      SILC_GET32_MSB(ctr[1], iv + 4);
-      SILC_GET32_MSB(ctr[2], iv + 8);
-      SILC_GET32_MSB(ctr[3], iv + 12);
-
-      i = aes->u.enc.inf.b[2];
-      if (!i)
-	i = 16;
-
-      while (len-- > 0) {
-	if (i == 16) {
-	  if (++ctr[3] == 0)
-	    if (++ctr[2] == 0)
-	      if (++ctr[1] == 0)
-		++ctr[0];
-
-	  SILC_PUT32_MSB(ctr[0], iv);
-	  SILC_PUT32_MSB(ctr[1], iv + 4);
-	  SILC_PUT32_MSB(ctr[2], iv + 8);
-	  SILC_PUT32_MSB(ctr[3], iv + 12);
-
-	  aes_encrypt(iv, iv, &aes->u.enc);
-	  i = 0;
-	}
-	*dst++ = *src++ ^ iv[i++];
-      }
-      aes->u.enc.inf.b[2] = i;
-
-      SILC_PUT32_MSB(ctr[0], iv);
-      SILC_PUT32_MSB(ctr[1], iv + 4);
-      SILC_PUT32_MSB(ctr[2], iv + 8);
-      SILC_PUT32_MSB(ctr[3], iv + 12);
-    }
+  case SILC_CIPHER_MODE_CFB:
+    SILC_CFB_ENC_MSB_128_8(iv, aes->u.enc.inf.b[2], src, dst,
+			   aes_encrypt(iv, iv, &aes->u.enc));
     break;
 
   default:
@@ -163,6 +146,8 @@ SILC_CIPHER_API_ENCRYPT(aes)
 
 SILC_CIPHER_API_DECRYPT(aes)
 {
+  AesContext *aes = context;
+
   switch (cipher->mode) {
   case SILC_CIPHER_MODE_CBC:
     {
@@ -174,7 +159,7 @@ SILC_CIPHER_API_DECRYPT(aes)
 
       while(nb--) {
 	memcpy(tmp, src, 16);
-	aes_decrypt(src, dst, &((AesContext *)context)->u.dec);
+	aes_decrypt(src, dst, &aes->u.dec);
 	lp32(dst)[0] ^= lp32(iv)[0];
 	lp32(dst)[1] ^= lp32(iv)[1];
 	lp32(dst)[2] ^= lp32(iv)[2];
@@ -188,6 +173,11 @@ SILC_CIPHER_API_DECRYPT(aes)
 
   case SILC_CIPHER_MODE_CTR:
     return silc_aes_encrypt(cipher, context, src, dst, len, iv);
+    break;
+
+  case SILC_CIPHER_MODE_CFB:
+    SILC_CFB_DEC_MSB_128_8(iv, aes->u.enc.inf.b[2], src, dst,
+			   aes_encrypt(iv, iv, &aes->u.enc));
     break;
 
   default:
@@ -244,7 +234,6 @@ AES_RETURN aes_encrypt_key128(const unsigned char *key, aes_encrypt_ctx cx[1])
     ke4(cx->ks, 6);  ke4(cx->ks, 7);
     ke4(cx->ks, 8);
     ke4(cx->ks, 9);
-    cx->inf.l = 0;
     cx->inf.b[0] = 10 * 16;
 }
 
@@ -276,7 +265,6 @@ AES_RETURN aes_encrypt_key192(const unsigned char *key, aes_encrypt_ctx cx[1])
     ke6(cx->ks, 4);  ke6(cx->ks, 5);
     ke6(cx->ks, 6);
     kef6(cx->ks, 7);
-    cx->inf.l = 0;
     cx->inf.b[0] = 12 * 16;
 }
 
@@ -311,7 +299,6 @@ AES_RETURN aes_encrypt_key256(const unsigned char *key, aes_encrypt_ctx cx[1])
     ke8(cx->ks, 2); ke8(cx->ks, 3);
     ke8(cx->ks, 4); ke8(cx->ks, 5);
     kef8(cx->ks, 6);
-    cx->inf.l = 0;
     cx->inf.b[0] = 14 * 16;
 }
 
@@ -377,7 +364,6 @@ AES_RETURN aes_decrypt_key128(const unsigned char *key, aes_decrypt_ctx cx[1])
      kd4(cx->ks, 4);  kd4(cx->ks, 5);
      kd4(cx->ks, 6);  kd4(cx->ks, 7);
      kd4(cx->ks, 8); kdl4(cx->ks, 9);
-    cx->inf.l = 0;
     cx->inf.b[0] = 10 * 16;
 }
 
@@ -436,7 +422,6 @@ AES_RETURN aes_decrypt_key192(const unsigned char *key, aes_decrypt_ctx cx[1])
     kd6(cx->ks, 2);  kd6(cx->ks, 3);
     kd6(cx->ks, 4);  kd6(cx->ks, 5);
     kd6(cx->ks, 6); kdl6(cx->ks, 7);
-    cx->inf.l = 0;
     cx->inf.b[0] = 12 * 16;
 }
 
@@ -504,7 +489,6 @@ AES_RETURN aes_decrypt_key256(const unsigned char *key, aes_decrypt_ctx cx[1])
     kd8(cx->ks, 2);  kd8(cx->ks, 3);
     kd8(cx->ks, 4);  kd8(cx->ks, 5);
     kdl8(cx->ks, 6);
-    cx->inf.l = 0;
     cx->inf.b[0] = 14 * 16;
 }
 
