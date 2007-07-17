@@ -529,10 +529,6 @@ void silc_log_output_hexdump(char *file, const char *function,
 			     int line, void *data_in,
 			     SilcUInt32 len, char *string)
 {
-  int i, k;
-  int off, pos, count;
-  unsigned char *data = (unsigned char *)data_in;
-
 #ifndef SILC_SYMBIAN
   if (!silclog.debug_hexdump)
     goto end;
@@ -550,60 +546,7 @@ void silc_log_output_hexdump(char *file, const char *function,
 
   fprintf(stderr, "%s:%d: %s\n", function, line, string);
 
-  k = 0;
-  pos = 0;
-  count = 16;
-  off = len % 16;
-  while (1) {
-    if (off) {
-      if ((len - pos) < 16 && (len - pos <= len - off))
-	count = off;
-    } else {
-      if (pos == len)
-	count = 0;
-    }
-    if (off == len)
-      count = len;
-
-    if (count)
-      fprintf(stderr, "%08X  ", k++ * 16);
-
-    for (i = 0; i < count; i++) {
-      fprintf(stderr, "%02X ", data[pos + i]);
-
-      if ((i + 1) % 4 == 0)
-	fprintf(stderr, " ");
-    }
-
-    if (count && count < 16) {
-      int j;
-
-      for (j = 0; j < 16 - count; j++) {
-	fprintf(stderr, "   ");
-
-	if ((j + count + 1) % 4 == 0)
-	  fprintf(stderr, " ");
-      }
-    }
-
-    for (i = 0; i < count; i++) {
-      char ch;
-
-      if (data[pos] < 32 || data[pos] >= 127)
-	ch = '.';
-      else
-	ch = data[pos];
-
-      fprintf(stderr, "%c", ch);
-      pos++;
-    }
-
-    if (count)
-      fprintf(stderr, "\n");
-
-    if (count < 16)
-      break;
-  }
+  silc_hexdump(data_in, len, stderr);
 
  end:
   silc_free(string);

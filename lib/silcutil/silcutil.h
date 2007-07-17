@@ -433,4 +433,20 @@ char *silc_get_real_name();
 #define silc_va_copy(dest, src) dest = src;
 #endif
 
+/****f* silcutil/SilcUtilAPI/silc_hexdump
+ *
+ * SYNOPSIS
+ *
+ *    void silc_hexdump(const unsigned char *data, SilcUInt32 data_len,
+ *                      FILE *output);
+ *
+ * DESCRIPTION
+ *
+ *    Dumps the `data' of length of `data_len' bytes as HEX.  The `output'
+ *    file specifies the destination.
+ *
+ ***/
+void silc_hexdump(const unsigned char *data, SilcUInt32 data_len,
+		  FILE *output);
+
 #endif	/* !SILCUTIL_H */
