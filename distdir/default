@@ -19,4 +19,7 @@ define SILC_DIST_SIM
 # SFTP is undefined in server, so force it here
 define SILC_DIST_SFTP
 
+# Apps
+define SILC_DIST_ASN1UTILS
+
 pre-hook distdir/pre-run

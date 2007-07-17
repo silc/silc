@@ -1,9 +1,9 @@
 #
-#  Makefile.ad
+#  Makefile.am
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2005 Pekka Riikonen
+#  Copyright (C) 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -17,21 +17,9 @@
 
 AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
-SUBDIRS = 		\
-#ifdef SILC_DIST_AUTODIST
-	autodist 	\
-#endif SILC_DIST_AUTODIST
-#ifdef SILC_DIST_SERVER
-	@SILCD_SUBDIR@ 	\
-#endif SILC_DIST_SERVER
-#ifdef SILC_DIST_CLIENT
-	@IRSSI_SUBDIR@ 	\
-#endif SILC_DIST_CLIENT
-#ifdef SILC_DIST_INPLACE
-#	silcstress	\
-#endif SILC_DIST_INPLACE
-#ifdef SILC_DIST_ASN1UTILS
-	asn1utils	\
-#endif SILC_DIST_ASN1UTILS
+bin_PROGRAMS = asn1dump
+asn1dump_SOURCES = asn1dump.c
 
+LIBS = $(SILC_COMMON_LIBS)
 
+include $(top_srcdir)/Makefile.defines.in
