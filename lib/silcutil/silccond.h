@@ -25,6 +25,25 @@
  * Condition variables enable threads to suspend execution and yield
  * the processors until some predicate on some shared data is satisfied.
  *
+ * EXAMPLE
+ *
+ * Thread 1:
+ *
+ * // Wait for signal
+ * silc_mutex_lock(lock);
+ * while (c->a == NULL)
+ *   silc_cond_wait(cond, lock);
+ * ...
+ * silc_mutex_unlock(lock);
+ *
+ * Thread 2:
+ *
+ * // Signal
+ * silc_mutex_lock(lock);
+ * c->a = context;
+ * silc_cond_signal(cond);
+ * silc_mutex_unlock(lock);
+ *
  ***/
 
 #ifndef SILCCOND_H

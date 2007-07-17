@@ -35,6 +35,32 @@
  * operation, no callback function will be called back to the upper layer.
  * This must be remembered when implementing the operation layer.
  *
+ * EXAMPLE
+ *
+ * SilcAsyncOperation async_call(Callback callback, void *cb_context)
+ * {
+ *   SilcAsyncOperation op;
+ *   OpContext ctx;
+ *
+ *   // Allocate async operation so that caller can control us, like abort
+ *   op = silc_async_alloc(async_call_abort, NULL, ctx);
+ *   ctx->callback = callback;
+ *
+ *   ...
+ *
+ *   // Return async operation for upper layer
+ *   return op;
+ * }
+ *
+ * // This callback is called when silc_async_abort is called by upper layer.
+ * // The callback given to async_call must not be called after this.
+ * void async_call_abort(SilcAsyncOperation op, void *context)
+ * {
+ *   OpContext ctx = context;
+ *   ctx->aborted = TRUE;
+ *   ctx->callback = NULL;
+ * }
+ *
  ***/
 
 #ifndef SILCASYNC_H

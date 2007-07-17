@@ -35,6 +35,19 @@
  *
  * Fast operations are supported on: x86, x86_64, ia64, PPC
  *
+ * EXAMPLE
+ *
+ * SilcAtomic32 refcnt;
+ *
+ * // Initialize atomic variable
+ * silc_atomic_init32(&refcnt, 0);
+ *
+ * // Increment referene counter by one
+ * silc_atomic_add_int32(&refcnt, 1);
+ *
+ * // Uninitialize atomic variable
+ * silc_atomic_uninit32(&refcnt);
+ *
  ***/
 
 #ifndef SILCATOMIC_H

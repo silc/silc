@@ -30,6 +30,21 @@
  * in multithreaded environment with a same SilcBuffer context without
  * concurrency control.
  *
+ * EXAMPLE
+ *
+ * SilcBufferStruct buffer;
+ *
+ * memset(&buffer, 0, sizeof(buffer));
+ * ret = silc_buffer_format(&buffer,
+ *                          SILC_STR_UI_INT(intval),
+ *                          SILC_STR_CHAR(charval),
+ *                          SILC_STR_UI_INT(intval),
+ *                          SILC_STR_SHORT(str_len),
+ *                          SILC_STR_DATA(str, str_len),
+ *                          SILC_STR_END);
+ * if (ret < 0)
+ *   error;
+ *
  ***/
 
 #ifndef SILCBUFFMT_H

@@ -36,6 +36,21 @@
  * SILC Dynamic List is not thread-safe.  If the same list context must be
  * used in multithreaded environment concurrency control must be employed.
  *
+ * EXAMPLE
+ *
+ * SilcDList list = silc_dlist_init();
+ *
+ * silc_dlist_add(list, entry1);
+ * silc_dlist_add(list, entry2);
+ *
+ * // Traverse the list from the beginning to the end
+ * silc_dlist_start(list)
+ * while ((entry = silc_dlist_get(list)) != SILC_LIST_END) {
+ *      ...
+ * }
+ *
+ * silc_dlist_uninit(list);
+ *
  ***/
 
 /****s* silcutil/SilcDListAPI/SilcDList

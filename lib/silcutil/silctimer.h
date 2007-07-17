@@ -19,8 +19,19 @@
 
 /****h* silcutil/SILC Timer Interface
  *
+ * DESCRIPTION
+ *
  * SILC Timer interface provides a simple way to measure time intervals.
  * The SILC Timer works with microsecond resolution, depending on platform.
+ *
+ * EXAMPLE
+ *
+ * SilcTimerStruct timer;
+ *
+ * silc_timer_start(&timer);
+ * ... time passes ...
+ * silc_timer_stop(&timer);
+ * silc_timer_value(&timer, &elapsed_sec, &elapsed_usec);
  *
  ***/
 

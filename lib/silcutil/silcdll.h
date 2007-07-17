@@ -24,6 +24,19 @@
  * Platform independent iterface for loading and using shared objects and
  * dynamically linked libraries (DLLs).
  *
+ * EXAMPLE
+ *
+ * SilcDll dll;
+ * SilcFuncCb function;
+ *
+ * dll = silc_dll_load("/path/to/my.so");
+ * function = silc_dll_getsym(dll, "my_function");
+ *
+ * // Call the funtion
+ * function(arg1, arg2);
+ *
+ * silc_dll_close(dll);
+ *
  ***/
 
 #ifndef SILCDLL_H
