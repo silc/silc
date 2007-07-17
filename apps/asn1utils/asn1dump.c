@@ -25,10 +25,6 @@ SilcBool dec_base64 = FALSE;
 const char *asn1_tag_name(SilcAsn1Tag tag)
 {
   switch (tag) {
-  case SILC_ASN1_END:
-    return "END";
-  case SILC_ASN1_TAG_OPTS:
-    return "";
   case SILC_ASN1_TAG_CHOICE:
     return "choice";
   case SILC_ASN1_TAG_ANY:
@@ -109,7 +105,7 @@ int asn1_dump(SilcAsn1 asn1, SilcBuffer src)
   const unsigned char *rdata;
   SilcUInt32 rdata_len, len = 0;
   SilcBool rindef;
-  char indent[64];
+  char indent[256];
   int depth = 0;
 
   SILC_LOG_DEBUG(("Dumping ASN.1"));
