@@ -21,6 +21,8 @@
 
 SilcBool hexdump = FALSE;
 SilcBool dec_base64 = FALSE;
+SilcBool parse_all = FALSE;
+SilcBool ignore_header = FALSE;
 
 const char *asn1_tag_name(SilcAsn1Tag tag)
 {
@@ -97,37 +99,54 @@ const char *asn1_tag_name(SilcAsn1Tag tag)
   return "unknown";
 }
 
-int asn1_dump(SilcAsn1 asn1, SilcBuffer src)
+int asn1_dump(SilcAsn1 asn1, SilcBuffer src, int depth)
 {
   SilcBool ret = FALSE;
   SilcBerEncoding renc;
   SilcUInt32 rtag;
   const unsigned char *rdata;
+  SilcBufferStruct buf;
+  SilcBerClass rclass;
   SilcUInt32 rdata_len, len = 0;
   SilcBool rindef;
   char indent[256];
-  int depth = 0;
 
-  SILC_LOG_DEBUG(("Dumping ASN.1"));
   memset(indent, 0, sizeof(indent));
 
   while (silc_buffer_len(src)) {
     /* Decode the BER block */
-    ret = silc_ber_decode(src, NULL, &renc, &rtag, &rdata,
+    ret = silc_ber_decode(src, &rclass, &renc, &rtag, &rdata,
 			  &rdata_len, &rindef, &len);
     if (!ret) {
-      fprintf(stderr, "Error: Cannot parse BER block, malformed ASN.1 data");
+      fprintf(stderr, "Error: Cannot parse BER block, malformed ASN.1 data\n");
       return -1;
     }
 
-    memset(indent, 32, depth);
+    /* If class is 0, encoding 0, tag 0 and data length 0 ignore them
+       as they are zero bytes, unless user wants to see them */
+    if (rclass == 0 && renc == 0 && rtag == 0 && rdata_len == 0 &&
+	!parse_all) {
+      if (len && silc_buffer_len(src) >= len)
+	silc_buffer_pull(src, len);
+      continue;
+    }
 
-    fprintf(stdout, "%04d: %s[%s] [%d]", depth, indent,
-	    asn1_tag_name(rtag), (int)rtag);
+    if (depth)
+      memset(indent, 32, depth);
 
-    if (rtag != SILC_ASN1_TAG_SEQUENCE) {
+    fprintf(stdout, "%04d: %s%s [%d] %s %s %s", depth, indent,
+	    asn1_tag_name(rtag), (int)rtag,
+	    rclass == SILC_BER_CLASS_UNIVERSAL   ? "univ" :
+	    rclass == SILC_BER_CLASS_APPLICATION ? "appl" :
+	    rclass == SILC_BER_CLASS_CONTEXT     ? "cont" : "priv",
+	    renc == SILC_BER_ENC_PRIMITIVE ? "primit" : "constr",
+	    rindef ? "indef" : "defin");
+
+    if (rtag != SILC_ASN1_TAG_SEQUENCE &&
+	rtag != SILC_ASN1_TAG_SET &&
+	rtag != SILC_ASN1_TAG_SEQUENCE_OF) {
       if (hexdump) {
-	fprintf(stdout, " [length %lu]\n", rdata_len);
+	fprintf(stdout, " [len %lu]\n", rdata_len);
 	silc_hexdump(rdata, rdata_len, stdout);
       } else {
 	fprintf(stdout, "\n");
@@ -136,16 +155,27 @@ int asn1_dump(SilcAsn1 asn1, SilcBuffer src)
       fprintf(stdout, "\n");
     }
 
-    if (rtag == SILC_ASN1_TAG_SEQUENCE && depth < sizeof(indent))
-      depth++;
-
     if (renc == SILC_BER_ENC_PRIMITIVE)
       len = len + rdata_len;
     else
       len = len;
 
-    if (len)
+    if (len && silc_buffer_len(src) >= len)
       silc_buffer_pull(src, len);
+
+    /* Decode sequences and sets recursively */
+    if ((rtag == SILC_ASN1_TAG_SEQUENCE ||
+	 rtag == SILC_ASN1_TAG_SET ||
+	 rtag == SILC_ASN1_TAG_SEQUENCE_OF) &&
+	depth + 1 < sizeof(indent) - 1) {
+      silc_buffer_set(&buf, (unsigned char *)rdata, rdata_len);
+      if (silc_buffer_len(src) >= rdata_len)
+	silc_buffer_pull(src, rdata_len);
+      if (asn1_dump(asn1, &buf, depth + 1) < 0)
+	return -1;
+      if (silc_buffer_len(src) == 0)
+	return 0;
+    }
   }
 
   return 0;
@@ -157,9 +187,25 @@ void usage(void)
 "Usage: asn1dump [OPTIONS] FILE\n"
 "\n"
 "Operation modes:\n"
-"  -h          Print this help, then exit\n"
-"  -x          HEX dump ASN.1 data\n"
-"  -b          Decode Base64 encoding\n"
+"  -h        Print this help, then exit\n"
+"  -x        HEX dump ASN.1 data\n"
+"  -b        Remove Base64 encoding before parsing\n"
+"  -i        Remove file header/footer that has at least four '-' characters\n"
+"  -a        Parse all data, including possible trailing zeroes\n"
+"\n"
+"ASN.1 classes:\n"
+"  univ      Universal\n"
+"  appl      Application\n"
+"  cont      Context\n"
+"  priv      Private\n"
+"\n"
+"ASN.1 length types:\n"
+"  defin     Definitive\n"
+"  indef     Indefinitive\n"
+"\n"
+"ASN.1 encoding types:\n"
+"  primit    Primitive\n"
+"  constr    Constructed\n"
 "\n"
 	    );
 }
@@ -177,8 +223,7 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  i = 1;
-  while ((opt = getopt(argc, argv, "hxb")) != EOF) {
+  while ((opt = getopt(argc, argv, "hxbai")) != EOF) {
     switch (opt) {
     case 'h':
       usage();
@@ -187,12 +232,18 @@ int main(int argc, char **argv)
 
     case 'x':
       hexdump = TRUE;
-      i++;
       break;
 
     case 'b':
       dec_base64 = TRUE;
-      i++;
+      break;
+
+    case 'i':
+      ignore_header = TRUE;
+      break;
+
+    case 'a':
+      parse_all = TRUE;
       break;
 
     default:
@@ -201,27 +252,55 @@ int main(int argc, char **argv)
     }
   }
 
-  data = tmp = silc_file_readfile(argv[i], &data_len, NULL);
+  data = tmp = silc_file_readfile(argv[argc - 1], &data_len, NULL);
   if (!data) {
-    fprintf(stderr, "Error: Cannot read file '%s': %s", argv[i],
+    fprintf(stderr, "Error: Cannot read file '%s': %s\n", argv[argc - 1],
 	    strerror(errno));
     return 1;
   }
 
+  silc_buffer_set(&buf, data, data_len);
+
+  if (ignore_header) {
+    SilcBool header = FALSE;
+    for (i = 0; i < data_len; i++) {
+      if (data_len > i + 4 &&
+	  data[i    ] == '-' && data[i + 1] == '-' &&
+	  data[i + 2] == '-' && data[i + 3] == '-') {
+
+	if (data_len > i + 5 && (data[i + 4] == '\r' ||
+				 tmp[i + 4] == '\n')) {
+	  /* End of line, header */
+	  if (data_len > i + 6 && data[i + 4] == '\r' &&
+	      data[i + 5] == '\n')
+	    i++;
+	  i += 5;
+	  silc_buffer_pull(&buf, i);
+	  header = TRUE;
+	} else if (i > 0 && data_len > i + 5 && data[i + 4] != '-' &&
+		   header) {
+	  /* Start of line, footer */
+	  silc_buffer_push_tail(&buf, silc_buffer_truelen(&buf) - i);
+	  break;
+	}
+      }
+    }
+  }
+
   if (dec_base64) {
-    data = silc_base64_decode(NULL, data, data_len, &data_len);
+    data = silc_base64_decode(NULL, silc_buffer_data(&buf),
+			      silc_buffer_len(&buf), &data_len);
     if (!data) {
       fprintf(stderr, "Error: Cannot decode Base64 encoding\n");
       return 1;
     }
+    silc_buffer_set(&buf, data, data_len);
     silc_free(tmp);
   }
 
-  silc_buffer_set(&buf, data, data_len);
-
   asn1 = silc_asn1_alloc(NULL);
 
-  ret = asn1_dump(asn1, &buf);
+  ret = asn1_dump(asn1, &buf, 0);
 
   silc_asn1_free(asn1);
   silc_free(data);
