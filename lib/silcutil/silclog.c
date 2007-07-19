@@ -183,7 +183,7 @@ void silc_log_output(SilcLogType type, char *string)
   if (!silclog.scheduled) {
     if (silclog.no_init == FALSE) {
       fprintf(stderr,
-	      "Warning, trying to output without log files initialization, "
+	      "Warning, log files not initialized, "
 	      "log output is going to stderr\n");
       silclog.no_init = TRUE;
     }

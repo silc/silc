@@ -526,12 +526,13 @@ static inline
 unsigned char *silc_buffer_pull(SilcBuffer sb, SilcUInt32 len)
 {
   unsigned char *old_data = sb->data;
-#if defined(SILC_DEBUG)
+
+#ifdef SILC_DIST_INPLACE
   SILC_ASSERT(len <= silc_buffer_len(sb));
-#else
+#endif /* SILC_DIST_INPLACE */
   if (silc_unlikely(len > silc_buffer_len(sb)))
     return NULL;
-#endif
+
   sb->data += len;
   return old_data;
 }
@@ -570,12 +571,13 @@ static inline
 unsigned char *silc_buffer_push(SilcBuffer sb, SilcUInt32 len)
 {
   unsigned char *old_data = sb->data;
-#if defined(SILC_DEBUG)
+
+#ifdef SILC_DIST_INPLACE
   SILC_ASSERT((sb->data - len) >= sb->head);
-#else
+#endif /* SILC_DIST_INPLACE */
   if (silc_unlikely((sb->data - len) < sb->head))
     return NULL;
-#endif
+
   sb->data -= len;
   return old_data;
 }
@@ -614,12 +616,13 @@ static inline
 unsigned char *silc_buffer_pull_tail(SilcBuffer sb, SilcUInt32 len)
 {
   unsigned char *old_tail = sb->tail;
-#if defined(SILC_DEBUG)
+
+#ifdef SILC_DIST_INPLACE
   SILC_ASSERT(len <= silc_buffer_taillen(sb));
-#else
+#endif /* SILC_DIST_INPLACE */
   if (silc_unlikely(len > silc_buffer_taillen(sb)))
     return NULL;
-#endif
+
   sb->tail += len;
   return old_tail;
 }
@@ -658,12 +661,13 @@ static inline
 unsigned char *silc_buffer_push_tail(SilcBuffer sb, SilcUInt32 len)
 {
   unsigned char *old_tail = sb->tail;
-#if defined(SILC_DEBUG)
+
+#ifdef SILC_DIST_INPLACE
   SILC_ASSERT((sb->tail - len) >= sb->data);
-#else
+#endif /* SILC_DIST_INPLACE */
   if (silc_unlikely((sb->tail - len) < sb->data))
     return NULL;
-#endif
+
   sb->tail -= len;
   return old_tail;
 }
@@ -699,12 +703,12 @@ unsigned char *silc_buffer_put_head(SilcBuffer sb,
 				    const unsigned char *data,
 				    SilcUInt32 len)
 {
-#if defined(SILC_DEBUG)
+#ifdef SILC_DIST_INPLACE
   SILC_ASSERT(len <= silc_buffer_headlen(sb));
-#else
+#endif /* SILC_DIST_INPLACE */
   if (silc_unlikely(len > silc_buffer_headlen(sb)))
     return NULL;
-#endif
+
   return (unsigned char *)memcpy(sb->head, data, len);
 }
 
@@ -739,12 +743,12 @@ unsigned char *silc_buffer_put(SilcBuffer sb,
 			       const unsigned char *data,
 			       SilcUInt32 len)
 {
-#if defined(SILC_DEBUG)
+#ifdef SILC_DIST_INPLACE
   SILC_ASSERT(len <= silc_buffer_len(sb));
-#else
+#endif /* SILC_DIST_INPLACE */
   if (silc_unlikely(len > silc_buffer_len(sb)))
     return NULL;
-#endif
+
   return (unsigned char *)memcpy(sb->data, data, len);
 }
 
@@ -779,12 +783,12 @@ unsigned char *silc_buffer_put_tail(SilcBuffer sb,
 				    const unsigned char *data,
 				    SilcUInt32 len)
 {
-#if defined(SILC_DEBUG)
+#ifdef SILC_DIST_INPLACE
   SILC_ASSERT(len <= silc_buffer_taillen(sb));
-#else
+#endif /* SILC_DIST_INPLACE */
   if (silc_unlikely(len > silc_buffer_taillen(sb)))
     return NULL;
-#endif
+
   return (unsigned char *)memcpy(sb->tail, data, len);
 }
 
@@ -1286,6 +1290,59 @@ SilcBool silc_buffer_senlarge(SilcStack stack, SilcBuffer sb, SilcUInt32 size)
     silc_buffer_pull_tail(sb, size - silc_buffer_len(sb));
   }
   return TRUE;
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_strchr
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    unsigned char *silc_buffer_strchr(SilcBuffer sb, int c, SilcBool first);
+ *
+ * DESCRIPTION
+ *
+ *    Returns pointer to the occurence of the character `c' in the buffer
+ *    `sb'.  If the `first' is TRUE this finds the first occurene of `c',
+ *    if it is FALSE this finds the last occurence of `c'.  If the character
+ *    is found the `sb' data area is moved to that location and its pointer
+ *    is returned.  The silc_buffer_data call will return the same pointer.
+ *    Returns NULL if such character could not be located and the buffer
+ *    remains unmodified.
+ *
+ *    This call is equivalent to strchr(), strrchr(), memchr() and memrchr()
+ *    except it works with SilcBuffer.
+ *
+ * NOTES
+ *
+ *    This searches only the data area of the buffer.  Head and tail area
+ *    are not searched.
+ *
+ *    The `sb' data need not be NULL terminated.
+ *
+ ***/
+
+static inline
+unsigned char *silc_buffer_strchr(SilcBuffer sb, int c, SilcBool first)
+{
+  int i;
+
+  if (first) {
+    for (i = 0; i < silc_buffer_len(sb); i++) {
+      if (sb->data[i] == (unsigned char)c) {
+	sb->data = &sb->data[i];
+	return sb->data;
+      }
+    }
+  } else {
+    for (i = silc_buffer_len(sb) - 1; 1 >= 0; i--) {
+      if (sb->data[i] == (unsigned char)c) {
+	sb->data = &sb->data[i];
+	return sb->data;
+      }
+    }
+  }
+
+  return NULL;
 }
 
 #endif /* SILCBUFFER_H */
