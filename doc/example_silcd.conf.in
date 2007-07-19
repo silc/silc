@@ -32,11 +32,6 @@ Include "@ETCDIR@/silcalgs.conf";
 # for different connections.
 #
 General {
-	# This is the default path where to search modules.  If omitted
-	# built-in modules will be used.  Built-in modules will also be
-	# used if a module file cannot be located.
-	module_path = "@MODULESDIR@";
-
 	# If both passphrase and public key authentication is set for a
 	# connection the public key authentication is the preferred one
 	# to use.  Set this to `true' to prefer passphrase authentication
