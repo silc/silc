@@ -74,17 +74,35 @@ SILC_CIPHER_API_CONTEXT_LEN(aes_cbc)
 SILC_CIPHER_API_ENCRYPT(aes_cbc)
 {
   int nb = len >> 4;
+  SilcUInt32 tmp[4], tmp2[4];
 
   SILC_ASSERT((len & (16 - 1)) == 0);
   if (len & (16 - 1))
     return FALSE;
 
   while(nb--) {
-    lp32(iv)[0] ^= lp32(src)[0];
-    lp32(iv)[1] ^= lp32(src)[1];
-    lp32(iv)[2] ^= lp32(src)[2];
-    lp32(iv)[3] ^= lp32(src)[3];
+    SILC_GET32_MSB(tmp[0], &iv[0]);
+    SILC_GET32_MSB(tmp[1], &iv[4]);
+    SILC_GET32_MSB(tmp[2], &iv[8]);
+    SILC_GET32_MSB(tmp[3], &iv[12]);
+
+    SILC_GET32_MSB(tmp2[0], &src[0]);
+    SILC_GET32_MSB(tmp2[1], &src[4]);
+    SILC_GET32_MSB(tmp2[2], &src[8]);
+    SILC_GET32_MSB(tmp2[3], &src[12]);
+
+    tmp[0] = tmp[0] ^ tmp2[0];
+    tmp[1] = tmp[1] ^ tmp2[1];
+    tmp[2] = tmp[2] ^ tmp2[2];
+    tmp[3] = tmp[3] ^ tmp2[3];
+
+    SILC_PUT32_MSB(tmp[0], &iv[0]);
+    SILC_PUT32_MSB(tmp[1], &iv[4]);
+    SILC_PUT32_MSB(tmp[2], &iv[8]);
+    SILC_PUT32_MSB(tmp[3], &iv[12]);
+
     aes_encrypt(iv, iv, &((AesContext *)context)->u.enc);
+
     memcpy(dst, iv, 16);
     src += 16;
     dst += 16;
@@ -100,6 +118,7 @@ SILC_CIPHER_API_DECRYPT(aes_cbc)
 {
   unsigned char tmp[16];
   int nb = len >> 4;
+  SilcUInt32 tmp2[4], tmp3[4];
 
   if (len & (16 - 1))
     return FALSE;
@@ -107,10 +126,27 @@ SILC_CIPHER_API_DECRYPT(aes_cbc)
   while(nb--) {
     memcpy(tmp, src, 16);
     aes_decrypt(src, dst, &((AesContext *)context)->u.dec);
-    lp32(dst)[0] ^= lp32(iv)[0];
-    lp32(dst)[1] ^= lp32(iv)[1];
-    lp32(dst)[2] ^= lp32(iv)[2];
-    lp32(dst)[3] ^= lp32(iv)[3];
+
+    SILC_GET32_MSB(tmp2[0], &iv[0]);
+    SILC_GET32_MSB(tmp2[1], &iv[4]);
+    SILC_GET32_MSB(tmp2[2], &iv[8]);
+    SILC_GET32_MSB(tmp2[3], &iv[12]);
+
+    SILC_GET32_MSB(tmp3[0], &dst[0]);
+    SILC_GET32_MSB(tmp3[1], &dst[4]);
+    SILC_GET32_MSB(tmp3[2], &dst[8]);
+    SILC_GET32_MSB(tmp3[3], &dst[12]);
+
+    tmp2[0] = tmp3[0] ^ tmp2[0];
+    tmp2[1] = tmp3[1] ^ tmp2[1];
+    tmp2[2] = tmp3[2] ^ tmp2[2];
+    tmp2[3] = tmp3[3] ^ tmp2[3];
+
+    SILC_PUT32_MSB(tmp2[0], &dst[0]);
+    SILC_PUT32_MSB(tmp2[1], &dst[4]);
+    SILC_PUT32_MSB(tmp2[2], &dst[8]);
+    SILC_PUT32_MSB(tmp2[3], &dst[12]);
+
     memcpy(iv, tmp, 16);
     src += 16;
     dst += 16;
