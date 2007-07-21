@@ -878,7 +878,7 @@ silc_message_signed_verify(SilcMessagePayload message,
   /* Verify the authentication data */
   op = silc_pkcs_verify(remote_public_key, sig->sign_data, sig->sign_len,
 			silc_buffer_data(sign), silc_buffer_len(sign),
-			hash, NULL, result, context);
+			hash, result, context);
 
   silc_buffer_clear(sign);
   silc_buffer_sfree(stack, sign);

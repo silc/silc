@@ -210,7 +210,7 @@ silc_connauth_verify_signature(SilcConnAuth connauth,
 
   /* Verify signature */
   op = silc_pkcs_verify(pub_key, sign, sign_len, auth->data,
-			silc_buffer_len(auth), ske->prop->hash, ske->rng,
+			silc_buffer_len(auth), ske->prop->hash,
 			silc_connauth_verify_signature_cb, connauth);
 
   silc_buffer_free(auth);

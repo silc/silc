@@ -675,7 +675,6 @@ SilcAsyncOperation silc_pkcs_sign(SilcPrivateKey private_key,
  *                                        unsigned char *data,
  *                                        SilcUInt32 data_len,
  *                                        SilcHash hash,
- *                                        SilcRng rng,
  *                                        SilcPKCSVerifyCb verify_cb,
  *                                        void *context);
  *
@@ -687,9 +686,8 @@ SilcAsyncOperation silc_pkcs_sign(SilcPrivateKey private_key,
  *    before verification.  If the `hash' is NULL, then the hash algorithm
  *    to be used is retrieved from the signature.  If it isn't present in the
  *    signature the verification is done as is without hashing.  The `rng'
- *    is usually not needed, however some algorithms might need it so it is
- *    wise to provide it.  If this returns NULL the asynchronous operation
- *    cannot be controlled.
+ *    is usually not needed and may be NULL.  If this returns NULL the
+ *    asynchronous operation cannot be controlled.
  *
  ***/
 SilcAsyncOperation silc_pkcs_verify(SilcPublicKey public_key,
@@ -698,7 +696,6 @@ SilcAsyncOperation silc_pkcs_verify(SilcPublicKey public_key,
 				    unsigned char *data,
 				    SilcUInt32 data_len,
 				    SilcHash hash,
-				    SilcRng rng,
 				    SilcPKCSVerifyCb verify_cb,
 				    void *context);
 

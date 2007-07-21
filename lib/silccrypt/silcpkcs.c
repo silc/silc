@@ -732,13 +732,12 @@ SilcAsyncOperation silc_pkcs_verify(SilcPublicKey public_key,
 				    unsigned char *data,
 				    SilcUInt32 data_len,
 				    SilcHash hash,
-				    SilcRng rng,
 				    SilcPKCSVerifyCb verify_cb,
 				    void *context)
 {
   return public_key->pkcs->verify(public_key->pkcs,
 				  public_key->public_key, signature,
-				  signature_len, data, data_len, hash, rng,
+				  signature_len, data, data_len, hash, NULL,
 				  verify_cb, context);
 }
 

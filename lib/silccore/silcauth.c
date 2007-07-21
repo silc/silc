@@ -409,7 +409,7 @@ silc_auth_public_key_auth_verify(SilcAuthPayload payload,
 
   /* Verify the authentication data */
   op = silc_pkcs_verify(public_key, payload->auth_data,
-			payload->auth_len, tmp, tmp_len, hash, NULL,
+			payload->auth_len, tmp, tmp_len, hash,
 			result, context);
 
   memset(tmp, 0, tmp_len);
