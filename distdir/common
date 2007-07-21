@@ -22,5 +22,7 @@ define SILC_DIST_ASN1
 # Accelerator library
 define SILC_DIST_ACC
 
+define SILC_DIST_SSH
+
 # Key Repository library
 define SILC_DIST_SKR

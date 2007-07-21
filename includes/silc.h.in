@@ -250,7 +250,12 @@ extern "C" {
 #include "silcpkcs.h"
 #include "silcpk.h"
 #include "silcpkcs1.h"
+#ifdef SILC_DIST_ACC
 #include "silcacc.h"
+#endif /* SILC_DIST_ACC */
+#ifdef SILC_DIST_SSH
+#include "silcssh.h"
+#endif /* SILC_DIST_SSH */
 
 /* More SILC util library includes */
 #include "silcenv.h"

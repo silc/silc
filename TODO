@@ -318,7 +318,9 @@ Crypto Library, lib/silccrypt/
    check the alg->hash, supported hash functions.  Maybe deliver it also
    to all other functions in SilcPKCSAlgorithm to be consistent. (***DONE)
 
- o Add DSS support.  Take implementation from Tom or make it yourself.
+ o Add DSA support to SILC public key.
+
+ o Add DSS support. (***DONE)
 
  o Implement the defined SilcDH API.  The definition is in
    lib/silccrypt/silcdh.h.  Make sure it is asynchronous so that it can
@@ -424,7 +426,7 @@ lib/silcssh
 ===========
 
  o SSH2 public key/private key support, allowing the use of SSH2 keys
-   in SILC.  RFC 4716.
+   in SILC.  RFC 4716.  (***DONE)
 
 
 lib/silcpkix
