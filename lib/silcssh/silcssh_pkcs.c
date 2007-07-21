@@ -845,6 +845,7 @@ SILC_PKCS_DECRYPT(silc_pkcs_ssh_decrypt)
 
 /* Sign context */
 typedef struct {
+  SilcStack stack;
   SilcSshPrivateKey privkey;
   SilcPKCSSignCb sign_cb;
   void *context;
@@ -859,31 +860,83 @@ static void silc_pkcs_ssh_sign_cb(SilcBool success,
 				  void *context)
 {
   SilcSshSign sign = context;
+  SilcStack stack = sign->stack;
+  unsigned char rbuf[20], sbuf[20];
   SilcBufferStruct sig;
-  const char *name;
-
-  if (!strcmp(sign->privkey->pkcs->name, "rsa"))
-    name = "ssh-rsa";
-  else
-    name = "ssh-dss";
+  SilcAsn1 asn1;
+  SilcMPInt r, s;
 
   memset(&sig, 0, sizeof(sig));
-  if (silc_buffer_format(&sig,
-			 SILC_STR_UI_INT(strlen(name)),
-			 SILC_STR_UI32_STRING(name),
-			 SILC_STR_UI_INT(signature_len),
-			 SILC_STR_DATA(signature, signature_len),
-			 SILC_STR_END) < 0) {
-    silc_free(sign);
-    sign->sign_cb(FALSE, NULL, 0, sign->context);
+
+  /* Format the signature.  RSA is easy because PKCS#1 is already in
+     correct format.  For DSA the returned signature is in PKIX compliant
+     format and we have reformat it for SSH2. */
+  if (!strcmp(sign->privkey->pkcs->name, "dsa")) {
+    asn1 = silc_asn1_alloc(stack);
+    if (!asn1) {
+      sign->sign_cb(FALSE, NULL, 0, sign->context);
+      silc_sfree(stack, sign);
+      silc_stack_free(stack);
+      return;
+    }
+
+    /* Decode the signature */
+    silc_buffer_set(&sig, (unsigned char *)signature, signature_len);
+    if (!silc_asn1_decode(asn1, &sig,
+			  SILC_ASN1_SEQUENCE,
+			    SILC_ASN1_INT(&r),
+			    SILC_ASN1_INT(&s),
+			  SILC_ASN1_END, SILC_ASN1_END)) {
+      sign->sign_cb(FALSE, NULL, 0, sign->context);
+      silc_asn1_free(asn1);
+      silc_sfree(stack, sign);
+      silc_stack_free(stack);
+      return;
+    }
+
+    /* Encode the integers */
+    memset(rbuf, 0, sizeof(rbuf));
+    memset(sbuf, 0, sizeof(sbuf));
+    silc_mp_mp2bin_noalloc(&r, rbuf, sizeof(rbuf));
+    silc_mp_mp2bin_noalloc(&s, sbuf, sizeof(sbuf));
+
+    silc_asn1_free(asn1);
+
+    /* Encode SSH2 DSS signature */
+    if (silc_buffer_sformat(stack, &sig,
+			    SILC_STR_UI_INT(7),
+			    SILC_STR_UI32_STRING("ssh-dss"),
+			    SILC_STR_UI_INT(sizeof(rbuf) + sizeof(sbuf)),
+			    SILC_STR_DATA(rbuf, sizeof(rbuf)),
+			    SILC_STR_DATA(sbuf, sizeof(sbuf)),
+			    SILC_STR_END) < 0) {
+      sign->sign_cb(FALSE, NULL, 0, sign->context);
+      silc_sfree(stack, sign);
+      silc_stack_free(stack);
+      return;
+    }
+  } else {
+    /* Encode SSH2 RSA signature */
+    if (silc_buffer_sformat(stack, &sig,
+			    SILC_STR_UI_INT(7),
+			    SILC_STR_UI32_STRING("ssh-rsa"),
+			    SILC_STR_UI_INT(signature_len),
+			    SILC_STR_DATA(signature, signature_len),
+			    SILC_STR_END) < 0) {
+      sign->sign_cb(FALSE, NULL, 0, sign->context);
+      silc_sfree(stack, sign);
+      silc_stack_free(stack);
+      return;
+    }
   }
 
   /* Deliver result */
   sign->sign_cb(TRUE, silc_buffer_data(&sig), silc_buffer_len(&sig),
 		sign->context);
 
-  silc_buffer_purge(&sig);
-  silc_free(sign);
+  silc_buffer_spurge(stack, &sig);
+  silc_sfree(stack, sign);
+  silc_stack_free(stack);
 }
 
 /* Sign */
@@ -891,6 +944,7 @@ static void silc_pkcs_ssh_sign_cb(SilcBool success,
 SILC_PKCS_SIGN(silc_pkcs_ssh_sign)
 {
   SilcSshPrivateKey privkey = private_key;
+  SilcStack stack;
   SilcSshSign sign;
 
   if (!privkey->pkcs->sign) {
@@ -898,12 +952,16 @@ SILC_PKCS_SIGN(silc_pkcs_ssh_sign)
     return NULL;
   }
 
-  sign = silc_calloc(1, sizeof(*sign));
+  stack = silc_stack_alloc(2048, silc_crypto_stack());
+
+  sign = silc_scalloc(stack, 1, sizeof(*sign));
   if (!sign) {
     sign_cb(FALSE, NULL, 0, context);
+    silc_stack_free(stack);
     return NULL;
   }
 
+  sign->stack = stack;
   sign->privkey = privkey;
   sign->sign_cb = sign_cb;
   sign->context = context;
