@@ -311,7 +311,7 @@ void silc_asn1_uninit(SilcAsn1 asn1);
  *    the `dest' is dynamically allocated and caller must free it by itself.
  *    If the `stack' was given to silc_asn1_alloc, the SILC_ASN1_ALLOC will
  *    allocate from that stack and consume the stack.  Alternatively if
- *    SILC_ASN1_ACCUMUL is given then memory is accumulated from `asn1' fo
+ *    SILC_ASN1_ACCUMUL is given then memory is accumulated from `asn1' for
  *    `dest' and it is freed only when silc_asn1_free or silc_asn1_uninit
  *    is called.  Next call to silc_asn1_encode will not cancel the previous
  *    result, but will accumulate more memory for new result.

@@ -51,6 +51,9 @@ SILCLIB_DIRS = 		\
 #ifdef SILC_DIST_ACC
 	silcacc		\
 #endif SILC_DIST_ACC
+#ifdef SILC_DIST_SSH
+	silcssh		\
+#endif SILC_DIST_SSH
 
 if SILC_ENABLE_SHARED
 LIBTOOL_OPTS= -release $(LIB_BASE_VERSION) -rpath $(DESTDIR)$(libdir)

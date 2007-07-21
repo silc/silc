@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ void silc_client_print_list(char *list)
 
 void silc_client_list_ciphers()
 {
-  char *ciphers = silc_cipher_get_supported();
+  char *ciphers = silc_cipher_get_supported(FALSE);
 #ifdef SILC_PLUGIN
   printformat_module("fe-common/silc", NULL, NULL,
 		     MSGLEVEL_CRAP, SILCTXT_CONFIG_ALGOS,

@@ -62,6 +62,12 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcvcard"
 #ifdef SILC_DIST_ACC
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcacc"
 #endif SILC_DIST_ACC
+#ifdef SILC_DIST_PGP
+SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcpgp"
+#endif SILC_DIST_PGP
+#ifdef SILC_DIST_SSH
+SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcssh"
+#endif SILC_DIST_SSH
 
 ##
 ## Library versioning.
@@ -319,6 +325,24 @@ lib/silcacc/tests/Makefile
 #endif SILC_DIST_INPLACE
 )
 #endif SILC_DIST_ACC
+
+#ifdef SILC_DIST_PGP
+AC_CONFIG_FILES(
+lib/silcpgp/Makefile
+#ifdef SILC_DIST_INPLACE
+lib/silcpgp/tests/Makefile
+#endif SILC_DIST_INPLACE
+)
+#endif SILC_DIST_PGP
+
+#ifdef SILC_DIST_SSH
+AC_CONFIG_FILES(
+lib/silcssh/Makefile
+#ifdef SILC_DIST_INPLACE
+lib/silcssh/tests/Makefile
+#endif SILC_DIST_INPLACE
+)
+#endif SILC_DIST_SSH
 
 fi	# compile_libs
 

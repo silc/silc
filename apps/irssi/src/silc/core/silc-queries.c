@@ -854,6 +854,7 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
       if (verifyd)
 	silc_pkcs_verify(verify->public_key, usersign.data,
 			 usersign.data_len, verifyd, verify_len, sha1hash,
+			 silc_client->rng,
 			 silc_query_attributes_verify, &verified);
 
       if (verified) {
@@ -898,6 +899,7 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
       if (verifyd)
 	silc_pkcs_verify(public_key, serversign.data,
 			 serversign.data_len, verifyd, verify_len, sha1hash,
+			 silc_client->rng,
 			 silc_query_attributes_verify, &verified);
       if (verified) {
 	printformat_module("fe-common/silc", server, NULL,

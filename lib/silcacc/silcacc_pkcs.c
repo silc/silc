@@ -242,7 +242,7 @@ SILC_PKCS_SIGN(silc_acc_pkcs_sign)
   /* Accelerate */
   return prv->acc->pkcs[prv->pkcs_index].sign(
 		       &prv->acc->pkcs[prv->pkcs_index], prv->context, src,
-		       src_len, compute_hash, hash, sign_cb, context);
+		       src_len, compute_hash, hash, rng, sign_cb, context);
 }
 
 SILC_PKCS_VERIFY(silc_acc_pkcs_verify)
@@ -252,7 +252,7 @@ SILC_PKCS_VERIFY(silc_acc_pkcs_verify)
   /* Accelerate */
   return pub->acc->pkcs[pub->pkcs_index].verify(
 		       &pub->acc->pkcs[pub->pkcs_index], pub->context,
-		       signature, signature_len, data, data_len, hash,
+		       signature, signature_len, data, data_len, hash, rng,
 		       verify_cb, context);
 }
 
@@ -330,8 +330,8 @@ SilcPublicKey silc_acc_public_key(SilcAccelerator acc,
   acc_pubkey->pkcs_index = i;
 
   /* Accelerate the public key.  Returns accelerator context. */
-  if (!acc->pkcs->import_public_key(&acc->pkcs[i], public_key, 0,
-				    &acc_pubkey->context)) {
+  if (!acc->pkcs[i].import_public_key(&acc->pkcs[i], public_key, 0,
+				      &acc_pubkey->context)) {
     SILC_LOG_ERROR(("Error accelerating public key with accelerator '%s'",
 		    acc->name));
     silc_free(acc_pubkey);
@@ -418,8 +418,8 @@ SilcPrivateKey silc_acc_private_key(SilcAccelerator acc,
   acc_privkey->pkcs_index = i;
 
   /* Accelerate the public key.  Returns accelerator context. */
-  if (!acc->pkcs->import_private_key(&acc->pkcs[i], private_key, 0,
-				     &acc_privkey->context)) {
+  if (!acc->pkcs[i].import_private_key(&acc->pkcs[i], private_key, 0,
+				       &acc_privkey->context)) {
     SILC_LOG_ERROR(("Error accelerating private key with accelerator '%s'",
 		    acc->name));
     silc_free(acc_privkey);

@@ -147,7 +147,7 @@ silc_connauth_get_signature(SilcConnAuth connauth)
 
   /* Compute signature */
   op = silc_pkcs_sign(private_key, auth->data, silc_buffer_len(auth),
-		      TRUE, ske->prop->hash,
+		      TRUE, ske->prop->hash, ske->rng,
 		      silc_connauth_get_signature_cb, connauth);
 
   silc_buffer_free(auth);
@@ -210,7 +210,7 @@ silc_connauth_verify_signature(SilcConnAuth connauth,
 
   /* Verify signature */
   op = silc_pkcs_verify(pub_key, sign, sign_len, auth->data,
-			silc_buffer_len(auth), ske->prop->hash,
+			silc_buffer_len(auth), ske->prop->hash, ske->rng,
 			silc_connauth_verify_signature_cb, connauth);
 
   silc_buffer_free(auth);

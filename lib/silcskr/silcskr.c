@@ -375,7 +375,7 @@ static SilcSKRStatus silc_skr_add_silc(SilcSKR skr,
 #endif /* SILC_DEBUG */
 
   /* Get the SILC public key */
-  silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
+  silc_pubkey = silc_pkcs_public_key_get_pkcs(SILC_PKCS_SILC, public_key);
   ident = &silc_pubkey->identifier;
 
   SILC_LOG_DEBUG(("Adding SILC public key %p [%s], context %p",
@@ -555,7 +555,7 @@ static SilcSKRStatus silc_skr_del_silc_public_key(SilcSKR skr,
   SilcDList entry;
 
   /* Get the SILC public key */
-  silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
+  silc_pubkey = silc_pkcs_public_key_get_pkcs(SILC_PKCS_SILC, public_key);
   ident = &silc_pubkey->identifier;
 
   SILC_LOG_DEBUG(("Deleting SILC public key [%s]", ident->username));

@@ -1074,7 +1074,8 @@ void silc_list_key(const char *pub_filename, int verbose)
   SilcUInt32 key_len = 0;
   int is_server_key = (strstr(pub_filename, "serverkeys") != NULL);
 
-  if (!silc_pkcs_load_public_key((char *)pub_filename, &public_key)) {
+  if (!silc_pkcs_load_public_key((char *)pub_filename, SILC_PKCS_ANY,
+				 &public_key)) {
     printformat_module("fe-common/silc", NULL, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_LISTKEY_LOADPUB,
 		       pub_filename);
@@ -1089,7 +1090,7 @@ void silc_list_key(const char *pub_filename, int verbose)
     return;
   }
 
-  silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
+  silc_pubkey = silc_pkcs_public_key_get_pkcs(SILC_PKCS_SILC, public_key);
   ident = &silc_pubkey->identifier;
 
   pk = silc_pkcs_public_key_encode(NULL, public_key, &pk_len);

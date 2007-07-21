@@ -863,7 +863,7 @@ silc_ske_assemble_security_properties(SilcSKE ske,
   rp->pkcs_alg_len = strlen(rp->pkcs_alg_list);
 
   /* Get supported encryption algorithms */
-  rp->enc_alg_list = silc_cipher_get_supported();
+  rp->enc_alg_list = silc_cipher_get_supported(TRUE);
   rp->enc_alg_len = strlen(rp->enc_alg_list);
 
   /* Get supported hash algorithms */
@@ -1507,7 +1507,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
     /* Sign the hash value */
     SILC_FSM_CALL(ske->key_op =
 		  silc_pkcs_sign(ske->private_key, hash, hash_len, FALSE,
-				 ske->prop->hash,
+				 ske->prop->hash, ske->rng,
 				 silc_ske_initiator_sign_cb, ske));
     /* NOT REACHED */
   }
@@ -1717,7 +1717,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
     SILC_FSM_CALL(ske->key_op =
 		  silc_pkcs_verify(ske->prop->public_key, payload->sign_data,
 				   payload->sign_len, hash, hash_len, NULL,
-				   silc_ske_verify_cb, ske));
+				   ske->rng, silc_ske_verify_cb, ske));
     /* NOT REACHED */
   }
 
@@ -2247,7 +2247,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
 		  silc_pkcs_verify(ske->prop->public_key,
 				   recv_payload->sign_data,
 				   recv_payload->sign_len,
-				   hash, hash_len, NULL,
+				   hash, hash_len, NULL, ske->rng,
 				   silc_ske_verify_cb, ske));
     /* NOT REACHED */
   }
@@ -2343,7 +2343,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
     /* Sign the hash value */
     SILC_FSM_CALL(ske->key_op =
 		  silc_pkcs_sign(ske->private_key, hash, hash_len, FALSE,
-				 ske->prop->hash,
+				 ske->prop->hash, ske->rng,
 				 silc_ske_responder_sign_cb, ske));
     /* NOT REACHED */
   }

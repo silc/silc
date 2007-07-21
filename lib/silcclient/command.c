@@ -696,7 +696,7 @@ SILC_FSM_STATE(silc_client_command_whois)
     SilcAttributeObjPk obj;
     SilcPublicKey pk;
 
-    if (!silc_pkcs_load_public_key(pubkey, &pk)) {
+    if (!silc_pkcs_load_public_key(pubkey, SILC_PKCS_ANY, &pk)) {
       SAY(client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
 	  "Could not load public key %s, check the filename",
 	  pubkey);
@@ -1071,7 +1071,7 @@ SILC_FSM_STATE(silc_client_command_invite)
 	action[0] = 0x01;
 
       /* Check if it is public key file to be added to invite list */
-      silc_pkcs_load_public_key(cmd->argv[2] + 1, &pubkey);
+      silc_pkcs_load_public_key(cmd->argv[2] + 1, SILC_PKCS_ANY, &pubkey);
       invite = cmd->argv[2];
       if (!pubkey)
 	invite++;
@@ -1501,6 +1501,7 @@ SILC_FSM_STATE(silc_client_command_join)
 					   pubkey, privkey,
 					   pubdata, sizeof(pubdata),
 					   conn->internal->sha1hash,
+					   client->rng,
 					   conn->local_id,
 					   SILC_ID_CLIENT,
 					   silc_client_command_join_signed,
@@ -1989,7 +1990,8 @@ SILC_FSM_STATE(silc_client_command_cmode)
 	for (k = 3; k < cmd->argc; k++) {
 	  if (cmd->argv[k][0] == '+')
 	    chadd = TRUE;
-	  if (!silc_pkcs_load_public_key(cmd->argv[k] + 1, &chpk)) {
+	  if (!silc_pkcs_load_public_key(cmd->argv[k] + 1, SILC_PKCS_ANY,
+					 &chpk)) {
 	    SAY(conn->client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
 		"Could not load public key %s, check the filename",
 		cmd->argv[k]);
@@ -2564,7 +2566,7 @@ SILC_FSM_STATE(silc_client_command_ban)
       action[0] = 0x01;
 
     /* Check if it is public key file to be added to invite list */
-    silc_pkcs_load_public_key(cmd->argv[2] + 1, &pubkey);
+    silc_pkcs_load_public_key(cmd->argv[2] + 1, SILC_PKCS_ANY, &pubkey);
     ban = cmd->argv[2];
     if (!pubkey)
       ban++;
@@ -2664,7 +2666,7 @@ SILC_FSM_STATE(silc_client_command_watch)
     SilcPublicKey pk;
     SilcBuffer buffer;
 
-    if (!silc_pkcs_load_public_key(pubkey, &pk)) {
+    if (!silc_pkcs_load_public_key(pubkey, SILC_PKCS_ANY, &pk)) {
       SAY(conn->client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
 	  "Could not load public key %s, check the filename", pubkey);
       COMMAND_ERROR(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);

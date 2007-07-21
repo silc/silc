@@ -294,12 +294,12 @@ void silc_softacc_thread(SilcSchedule schedule, void *context)
 
   case SILC_SOFTACC_SIGN:
     silc_pkcs_sign(e->key.private_key, e->src, e->src_len, e->compute_hash,
-		   e->hash, silc_softacc_data_cb, e);
+		   e->hash, e->rng, silc_softacc_data_cb, e);
     break;
 
   case SILC_SOFTACC_VERIFY:
     silc_pkcs_verify(e->key.public_key, e->src, e->src_len, e->data,
-		     e->data_len, e->hash, silc_softacc_verify_cb, e);
+		     e->data_len, e->hash, e->rng, silc_softacc_verify_cb, e);
     break;
   }
 }

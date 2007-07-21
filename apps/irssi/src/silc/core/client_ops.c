@@ -191,7 +191,7 @@ static void silc_parse_channel_public_keys(SILC_SERVER_REC *server,
 
     fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
     babbleprint = silc_hash_babbleprint(NULL, pk, pk_len);
-    silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, pubkey);
+    silc_pubkey = silc_pkcs_public_key_get_pkcs(SILC_PKCS_SILC, pubkey);
 
     printformat_module("fe-common/silc", server, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_CHANNEL_PK_LIST_ENTRY,
@@ -299,7 +299,7 @@ int verify_message_signature(SilcClientEntry sender,
     SilcPublicKey cached_pk=NULL;
 
     /* try to load the file */
-    if (!silc_pkcs_load_public_key(filename, &cached_pk)) {
+    if (!silc_pkcs_load_public_key(filename, SILC_PKCS_ANY, &cached_pk)) {
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_COULD_NOT_LOAD, "client");
       if (pk == NULL)
@@ -1427,7 +1427,7 @@ void silc_getkey_cb(bool success, void *context)
 			      ((SilcServerEntry)getkey->entry)->public_key);
   SilcSILCPublicKey silc_pubkey;
 
-  silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
+  silc_pubkey = silc_pkcs_public_key_get_pkcs(SILC_PKCS_SILC, public_key);
 
   if (success) {
     if (getkey->id_type == SILC_ID_CLIENT)
@@ -2450,7 +2450,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     return;
   }
 
-  silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
+  silc_pubkey = silc_pkcs_public_key_get_pkcs(SILC_PKCS_SILC, public_key);
 
   pw = getpwuid(getuid());
   if (!pw) {
@@ -2554,8 +2554,9 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     SilcUInt32 encpk_len;
 
     /* Load the key file, try for both IP filename and hostname filename */
-    if (!silc_pkcs_load_public_key(ipf, &local_pubkey) &&
-	(!hostf || (!silc_pkcs_load_public_key(hostf, &local_pubkey)))) {
+    if (!silc_pkcs_load_public_key(ipf, SILC_PKCS_ANY, &local_pubkey) &&
+	(!hostf || (!silc_pkcs_load_public_key(hostf, SILC_PKCS_ANY,
+					       &local_pubkey)))) {
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_RECEIVED,verify->entity_name ?
 			 verify->entity_name : entity);

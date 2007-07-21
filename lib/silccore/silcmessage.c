@@ -44,6 +44,7 @@ typedef struct {
   SilcMessageFlags flags;
   SilcPublicKey public_key;
   SilcPrivateKey private_key;
+  SilcRng rng;
   SilcHash hash;
   SilcCipher cipher;
   SilcHmac hmac;
@@ -292,6 +293,7 @@ silc_message_signed_payload_encode(SilcBuffer payload,
   SilcUInt32 pk_len = 0;
   SilcUInt16 pk_type;
   SilcStack stack = e->stack;
+  SilcRng rng = e->rng;
   SilcHash hash = e->hash;
   SilcPublicKey public_key = e->public_key;
   SilcPrivateKey private_key = e->private_key;
@@ -334,7 +336,8 @@ silc_message_signed_payload_encode(SilcBuffer payload,
 
   /* Compute signature */
   op = silc_pkcs_sign(private_key, sign->data, silc_buffer_len(sign),
-		      TRUE, hash, silc_message_signed_payload_encode_cb, e);
+		      TRUE, hash, rng,
+		      silc_message_signed_payload_encode_cb, e);
 
   return op;
 }
@@ -762,6 +765,7 @@ silc_message_payload_encode(SilcMessageFlags flags,
     e->flags = flags;
     e->public_key = public_key;
     e->private_key = private_key;
+    e->rng = rng;
     e->hash = hash;
     e->cipher = cipher;
     e->hmac = hmac;
@@ -873,8 +877,8 @@ silc_message_signed_verify(SilcMessagePayload message,
 
   /* Verify the authentication data */
   op = silc_pkcs_verify(remote_public_key, sig->sign_data, sig->sign_len,
-			silc_buffer_data(sign), silc_buffer_len(sign), hash,
-			result, context);
+			silc_buffer_data(sign), silc_buffer_len(sign),
+			hash, NULL, result, context);
 
   silc_buffer_clear(sign);
   silc_buffer_sfree(stack, sign);

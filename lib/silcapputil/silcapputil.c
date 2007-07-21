@@ -257,7 +257,8 @@ SilcBool silc_load_key_pair(const char *pub_filename,
 
   SILC_LOG_DEBUG(("Loading public and private keys"));
 
-  if (!silc_pkcs_load_public_key(pub_filename, return_public_key)) {
+  if (!silc_pkcs_load_public_key(pub_filename,
+				 SILC_PKCS_ANY, return_public_key)) {
     if (pass)
       memset(pass, 0, strlen(pass));
     silc_free(pass);
@@ -272,6 +273,7 @@ SilcBool silc_load_key_pair(const char *pub_filename,
 
   if (!silc_pkcs_load_private_key(prv_filename,
 				  (const unsigned char *)pass, strlen(pass),
+				  SILC_PKCS_ANY,
 				  return_private_key)) {
     silc_pkcs_public_key_free(*return_public_key);
     *return_public_key = NULL;
@@ -296,7 +298,7 @@ SilcBool silc_show_public_key(SilcPublicKey public_key)
   SilcUInt32 pk_len;
   SilcUInt32 key_len = 0;
 
-  silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
+  silc_pubkey = silc_pkcs_public_key_get_pkcs(SILC_PKCS_SILC, public_key);
   if (!silc_pubkey)
     return FALSE;
 
@@ -344,7 +346,8 @@ SilcBool silc_show_public_key_file(const char *pub_filename)
   SilcPublicKey public_key;
   SilcBool ret;
 
-  if (!silc_pkcs_load_public_key((char *)pub_filename, &public_key)) {
+  if (!silc_pkcs_load_public_key((char *)pub_filename,
+				 SILC_PKCS_ANY, &public_key)) {
     fprintf(stderr, "Could not load public key file `%s'\n", pub_filename);
     return FALSE;
   }
@@ -375,6 +378,7 @@ SilcBool silc_change_private_key_passphrase(const char *prv_filename,
 
   if (!silc_pkcs_load_private_key(prv_filename,
 				  (const unsigned char *)pass, strlen(pass),
+				  SILC_PKCS_ANY,
 				  &private_key)) {
     memset(pass, 0, strlen(pass));
     silc_free(pass);
