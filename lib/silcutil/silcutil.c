@@ -630,3 +630,61 @@ void silc_hexdump(const unsigned char *data, SilcUInt32 data_len,
       break;
   }
 }
+
+/* Convert hex string to data.  Each hex number must have two characters. */
+
+SilcBool silc_hex2data(const char *hex, unsigned char *data,
+		       SilcUInt32 data_size, SilcUInt32 *ret_data_len)
+{
+  char *cp = (char *)hex;
+  unsigned char l, h;
+  int i;
+
+  if (data_size < strlen(hex) / 2)
+    return FALSE;
+
+  for (i = 0; i < strlen(hex) / 2; i++) {
+    h = *cp++;
+    l = *cp++;
+
+    h -= h < 'A' ? '0' : 'A' - 10;
+    l -= l < 'A' ? '0' : 'A' - 10;
+
+    data[i] = (h << 4) | (l & 0xf);
+  }
+
+  if (ret_data_len)
+    *ret_data_len = i;
+
+  SILC_LOG_HEXDUMP(("len %d", i), data, i);
+
+  return TRUE;
+}
+
+/* Converts binary data to HEX string */
+
+SilcBool silc_data2hex(const unsigned char *data, SilcUInt32 data_len,
+		       char *hex, SilcUInt32 hex_size)
+{
+  unsigned char l, h;
+  char *cp = hex;
+  int i;
+
+  if (hex_size - 1 < data_len * 2)
+    return FALSE;
+
+  memset(hex, 0, hex_size);
+
+  for (i = 0; i < data_len; i++) {
+    l = data[i];
+    h = l >> 4;
+    l &= 0xf;
+
+    *cp++ = h + (h > 9 ? 'A' - 10 : '0');
+    *cp++ = l + (l > 9 ? 'A' - 10 : '0');
+  }
+
+  SILC_LOG_DEBUG(("HEX string: '%s'", hex));
+
+  return TRUE;
+}

@@ -449,4 +449,36 @@ char *silc_get_real_name();
 void silc_hexdump(const unsigned char *data, SilcUInt32 data_len,
 		  FILE *output);
 
+/****f* silcutil/SilcUtilAPI/silc_hex2data
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_hex2data(const char *hex, unsigned char *data,
+ *                           SilcUInt32 data_size, SilcUInt32 *ret_data_len);
+ *
+ * DESCRIPTION
+ *
+ *    Converts HEX character string to binary data.  Each HEX numbers must
+ *    have two characters in the `hex' string.
+ *
+ ***/
+SilcBool silc_hex2data(const char *hex, unsigned char *data,
+		       SilcUInt32 data_size, SilcUInt32 *ret_data_len);
+
+/****f* silcutil/SilcUtilAPI/silc_data2hex
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_data2hex(const unsigned char *data, SilcUInt32 data_len,
+ *                           char *hex, SilcUInt32 hex_size);
+ *
+ * DESCRIPTION
+ *
+ *    Converts binary data to HEX string.  This NULL terminates the `hex'
+ *    buffer automatically.
+ *
+ ***/
+SilcBool silc_data2hex(const unsigned char *data, SilcUInt32 data_len,
+		       char *hex, SilcUInt32 hex_size);
+
 #endif	/* !SILCUTIL_H */

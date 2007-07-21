@@ -53,9 +53,12 @@ int main(int argc, char **argv)
 {
   SilcBool success = FALSE;
   unsigned char *s1, *s2, *s3, *s4;
-  int l, opt;
+  unsigned char t[16];
+  char h[32 + 1];
+  int l, opt, i;
+  SilcUInt32 len;
 
-  while ((opt = getopt(argc, argv, "hVd")) != EOF) {
+  while ((opt = getopt(argc, argv, "hVd:")) != EOF) {
       switch(opt) {
         case 'h':
           printf("usage: test_silcstrutil\n");
@@ -161,6 +164,15 @@ int main(int argc, char **argv)
   if (silc_string_match(s1, "foobar"))
     goto err;
   SILC_LOG_DEBUG(("Regex not found (Ok)"));
+
+  /* HEX to data, data to HEX tests */
+  for (i = 0; i < sizeof(t); i++)
+    t[i] = i;
+  silc_data2hex(t, sizeof(t), h, sizeof(h));
+  silc_hex2data(h, t, sizeof(t), &len);
+  silc_snprintf(h, sizeof(h), "010203ffabdef9ab");
+  silc_hex2data(h, t, sizeof(t), &len);
+  silc_data2hex(t, sizeof(t), h, sizeof(h));
 
   success = TRUE;
 
