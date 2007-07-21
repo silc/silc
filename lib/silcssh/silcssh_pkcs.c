@@ -860,12 +860,17 @@ static void silc_pkcs_ssh_sign_cb(SilcBool success,
 {
   SilcSshSign sign = context;
   SilcBufferStruct sig;
+  const char *name;
+
+  if (!strcmp(sign->privkey->pkcs->name, "rsa"))
+    name = "ssh-rsa";
+  else
+    name = "ssh-dss";
 
   memset(&sig, 0, sizeof(sig));
   if (silc_buffer_format(&sig,
-			 SILC_STR_UI_INT(7),
-			 SILC_STR_UI32_STRING("ssh-"),
-			 SILC_STR_UI32_STRING(sign->privkey->pkcs->name),
+			 SILC_STR_UI_INT(strlen(name)),
+			 SILC_STR_UI32_STRING(name),
 			 SILC_STR_UI_INT(signature_len),
 			 SILC_STR_DATA(signature, signature_len),
 			 SILC_STR_END) < 0) {
