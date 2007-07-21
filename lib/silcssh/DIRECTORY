@@ -1,0 +1,32 @@
+<!--
+@LIBRARY=SILC SSH2 Library
+@FILENAME=silcsshlib.html
+@LINK=silcssh.html:SILC SSH2 Interface
+-->
+
+<big><b>SILC SSH2 Library</b></big>
+<br />
+<small>Directory: lib/silcssh/</small>
+<br />
+<small>Library: libsilc.a, libsilc.lib</small>
+<br /><br />
+<b>Introduction</b>
+
+<br /><br />
+SILC SSH2 Library provides SSH2 public key and private key support for 
+applications.  The SILC SSH Library has been integrated to the SILC Crypto 
+Toolkit allowing easy use of the SSH keys through the generic SILC PKCS 
+API.  The library also provides an interface for low level API to directly 
+manipulate the SSH keys.
+ 
+The library supports creation of new SSH2 key pairs, encryption, 
+decryption, signatures and verification.  Both RSA and DSS SSH2 keys are 
+supported.  The library supports the standard SSH2 public key file format 
+defined in RFC 4716 and the OpenSSH public key file format.  The private 
+key file format support includes OpenSSH private key files.
+
+The SILC SSH2 Library does not include any other aspect of SSH2 protocol.  
+Only the SSH2 public keys and private keys are supported.
+
+<br /><br />
+@LINKS@
