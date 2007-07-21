@@ -21,6 +21,10 @@
 #include "silc.h"
 #include "silcpk_i.h"
 #include "silcpkcs1_i.h"
+#include "dsa.h"
+#ifdef SILC_DIST_SSH
+#include "silcssh_pkcs.h"
+#endif /* SILC_DIST_SSH */
 
 #ifndef SILC_SYMBIAN
 /* Dynamically registered list of PKCS. */
@@ -59,6 +63,32 @@ const SilcPKCSObject silc_default_pkcs[] =
     silc_pkcs_silc_sign,
     silc_pkcs_silc_verify,
   },
+
+#ifdef SILC_DIST_SSH
+  /* SSH2 PKCS */
+  {
+    SILC_PKCS_SSH2,
+    silc_pkcs_ssh_get_algorithm,
+    silc_pkcs_ssh_import_public_key_file,
+    silc_pkcs_ssh_import_public_key,
+    silc_pkcs_ssh_export_public_key_file,
+    silc_pkcs_ssh_export_public_key,
+    silc_pkcs_ssh_public_key_bitlen,
+    silc_pkcs_ssh_public_key_copy,
+    silc_pkcs_ssh_public_key_compare,
+    silc_pkcs_ssh_public_key_free,
+    silc_pkcs_ssh_import_private_key_file,
+    silc_pkcs_ssh_import_private_key,
+    silc_pkcs_ssh_export_private_key_file,
+    silc_pkcs_ssh_export_private_key,
+    silc_pkcs_ssh_private_key_bitlen,
+    silc_pkcs_ssh_private_key_free,
+    silc_pkcs_ssh_encrypt,
+    silc_pkcs_ssh_decrypt,
+    silc_pkcs_ssh_sign,
+    silc_pkcs_ssh_verify,
+  },
+#endif /* SILC_DIST_SSH */
 
   {
     0, NULL, NULL, NULL, NULL, NULL,
@@ -112,6 +142,74 @@ const SilcPKCSAlgorithm silc_default_pkcs_alg[] =
     silc_pkcs1_sign,
     silc_pkcs1_verify
   },
+
+  /* DSS */
+  {
+    "dsa",
+    "dss",
+    "sha1",
+    silc_dsa_generate_key,
+    silc_dsa_import_public_key,
+    silc_dsa_export_public_key,
+    silc_dsa_public_key_bitlen,
+    silc_dsa_public_key_copy,
+    silc_dsa_public_key_compare,
+    silc_dsa_public_key_free,
+    silc_dsa_import_private_key,
+    silc_dsa_export_private_key,
+    silc_dsa_private_key_bitlen,
+    silc_dsa_private_key_free,
+    silc_dsa_encrypt,
+    silc_dsa_decrypt,
+    silc_dsa_sign,
+    silc_dsa_verify
+  },
+
+#ifdef SILC_DIST_SSH
+  /* PKCS #1, Version 1.5 without hash OIDs, SSH2 style public keys */
+  {
+    "rsa",
+    "ssh",
+    "sha1",
+    silc_pkcs1_generate_key,
+    silc_ssh_rsa_import_public_key,
+    silc_ssh_rsa_export_public_key,
+    silc_pkcs1_public_key_bitlen,
+    silc_pkcs1_public_key_copy,
+    silc_pkcs1_public_key_compare,
+    silc_pkcs1_public_key_free,
+    silc_pkcs1_import_private_key,
+    silc_pkcs1_export_private_key,
+    silc_pkcs1_private_key_bitlen,
+    silc_pkcs1_private_key_free,
+    silc_pkcs1_encrypt,
+    silc_pkcs1_decrypt,
+    silc_pkcs1_sign,
+    silc_pkcs1_verify
+  },
+
+  /* DSS, SSH2 style public keys */
+  {
+    "dsa",
+    "ssh",
+    "sha1",
+    silc_dsa_generate_key,
+    silc_ssh_dsa_import_public_key,
+    silc_ssh_dsa_export_public_key,
+    silc_dsa_public_key_bitlen,
+    silc_dsa_public_key_copy,
+    silc_dsa_public_key_compare,
+    silc_dsa_public_key_free,
+    silc_dsa_import_private_key,
+    silc_dsa_export_private_key,
+    silc_dsa_private_key_bitlen,
+    silc_dsa_private_key_free,
+    silc_dsa_encrypt,
+    silc_dsa_decrypt,
+    silc_dsa_sign,
+    silc_dsa_verify
+  },
+#endif /* SILC_DIST_SSH */
 
   {
     NULL, NULL, NULL, NULL,
@@ -472,7 +570,7 @@ SilcBool silc_pkcs_public_key_alloc(SilcPKCSType type,
   }
 
   /* Import the PKCS public key */
-  if (!pkcs->import_public_key(pkcs, key, key_len,
+  if (!pkcs->import_public_key(pkcs, NULL, key, key_len,
 			       &public_key->public_key,
 			       &public_key->alg)) {
     silc_free(public_key);
@@ -512,13 +610,23 @@ SilcUInt32 silc_pkcs_public_key_get_len(SilcPublicKey public_key)
 
 /* Returns internal PKCS public key context */
 
-void *silc_pkcs_get_context(SilcPKCSType type, SilcPublicKey public_key)
+void *silc_pkcs_public_key_get_pkcs(SilcPKCSType type,
+				    SilcPublicKey public_key)
 {
   if (public_key->pkcs->type != type)
     return NULL;
   return public_key->public_key;
 }
 
+/* Returns internal PKCS private key context */
+
+void *silc_pkcs_private_key_get_pkcs(SilcPKCSType type,
+				     SilcPrivateKey private_key)
+{
+  if (private_key->pkcs->type != type)
+    return NULL;
+  return private_key->private_key;
+}
 
 /* Allocates new private key from key data */
 
@@ -546,7 +654,7 @@ SilcBool silc_pkcs_private_key_alloc(SilcPKCSType type,
   }
 
   /* Import the PKCS private key */
-  if (!pkcs->import_private_key(pkcs, key, key_len,
+  if (!pkcs->import_private_key(pkcs, NULL, key, key_len,
 				&private_key->private_key,
 				&private_key->alg)) {
     silc_free(private_key);
@@ -607,12 +715,13 @@ SilcAsyncOperation silc_pkcs_sign(SilcPrivateKey private_key,
 				  SilcUInt32 src_len,
 				  SilcBool compute_hash,
 				  SilcHash hash,
+				  SilcRng rng,
 				  SilcPKCSSignCb sign_cb,
 				  void *context)
 {
   return private_key->pkcs->sign(private_key->pkcs,
 				 private_key->private_key, src, src_len,
-				 compute_hash, hash, sign_cb, context);
+				 compute_hash, hash, rng, sign_cb, context);
 }
 
 /* Verifies signature */
@@ -623,12 +732,13 @@ SilcAsyncOperation silc_pkcs_verify(SilcPublicKey public_key,
 				    unsigned char *data,
 				    SilcUInt32 data_len,
 				    SilcHash hash,
+				    SilcRng rng,
 				    SilcPKCSVerifyCb verify_cb,
 				    void *context)
 {
   return public_key->pkcs->verify(public_key->pkcs,
 				  public_key->public_key, signature,
-				  signature_len, data, data_len, hash,
+				  signature_len, data, data_len, hash, rng,
 				  verify_cb, context);
 }
 
@@ -667,12 +777,12 @@ SilcPublicKey silc_pkcs_public_key_copy(SilcPublicKey public_key)
 /* Loads any kind of public key */
 
 SilcBool silc_pkcs_load_public_key(const char *filename,
+				   SilcPKCSType type,
 				   SilcPublicKey *ret_public_key)
 {
   unsigned char *data;
   SilcUInt32 data_len;
   SilcPublicKey public_key;
-  SilcPKCSType type;
 
   SILC_LOG_DEBUG(("Loading public key file '%s'", filename));
 
@@ -680,8 +790,10 @@ SilcBool silc_pkcs_load_public_key(const char *filename,
     return FALSE;
 
   data = silc_file_readfile(filename, &data_len, NULL);
-  if (!data)
+  if (!data) {
+    SILC_LOG_ERROR(("No such file: %s", filename));
     return FALSE;
+  }
 
   /* Allocate public key context */
   *ret_public_key = public_key = silc_calloc(1, sizeof(*public_key));
@@ -690,11 +802,41 @@ SilcBool silc_pkcs_load_public_key(const char *filename,
     return FALSE;
   }
 
-  /* Try loading all types until one succeeds. */
-  for (type = SILC_PKCS_SILC; type <= SILC_PKCS_SPKI; type++) {
+  if (type == SILC_PKCS_ANY) {
+    /* Try loading all types until one succeeds. */
+    for (type = SILC_PKCS_SILC; type <= SILC_PKCS_SPKI; type++) {
+      public_key->pkcs = (SilcPKCSObject *)silc_pkcs_find_pkcs(type);
+      if (!public_key->pkcs)
+	continue;
+
+      if (public_key->pkcs->import_public_key_file(public_key->pkcs,
+						   data, data_len,
+						   SILC_PKCS_FILE_BASE64,
+						   &public_key->public_key,
+						   &public_key->alg)) {
+	silc_free(data);
+	return TRUE;
+      }
+
+      if (public_key->pkcs->import_public_key_file(public_key->pkcs,
+						   data, data_len,
+						   SILC_PKCS_FILE_BIN,
+						   &public_key->public_key,
+						   &public_key->alg)) {
+	silc_free(data);
+	return TRUE;
+      }
+    }
+  } else {
+    /* Load specific type */
     public_key->pkcs = (SilcPKCSObject *)silc_pkcs_find_pkcs(type);
-    if (!public_key->pkcs)
-      continue;
+    if (!public_key->pkcs) {
+      silc_free(data);
+      silc_free(public_key);
+      *ret_public_key = NULL;
+      SILC_LOG_ERROR(("Unsupported public key type"));
+      return FALSE;
+    }
 
     if (public_key->pkcs->import_public_key_file(public_key->pkcs,
 						 data, data_len,
@@ -718,6 +860,7 @@ SilcBool silc_pkcs_load_public_key(const char *filename,
   silc_free(data);
   silc_free(public_key);
   *ret_public_key = NULL;
+  SILC_LOG_ERROR(("Unsupported public key type"));
   return FALSE;
 }
 
@@ -760,12 +903,12 @@ SilcBool silc_pkcs_save_public_key(const char *filename,
 SilcBool silc_pkcs_load_private_key(const char *filename,
 				    const unsigned char *passphrase,
 				    SilcUInt32 passphrase_len,
+				    SilcPKCSType type,
 				    SilcPrivateKey *ret_private_key)
 {
   unsigned char *data;
   SilcUInt32 data_len;
   SilcPrivateKey private_key;
-  SilcPKCSType type;
 
   SILC_LOG_DEBUG(("Loading private key file '%s'", filename));
 
@@ -773,8 +916,10 @@ SilcBool silc_pkcs_load_private_key(const char *filename,
     return FALSE;
 
   data = silc_file_readfile(filename, &data_len, NULL);
-  if (!data)
+  if (!data) {
+    SILC_LOG_ERROR(("No such file: %s", filename));
     return FALSE;
+  }
 
   /* Allocate private key context */
   *ret_private_key = private_key = silc_calloc(1, sizeof(*private_key));
@@ -783,11 +928,47 @@ SilcBool silc_pkcs_load_private_key(const char *filename,
     return FALSE;
   }
 
-  /* Try loading all types until one succeeds. */
-  for (type = SILC_PKCS_SILC; type <= SILC_PKCS_SPKI; type++) {
+  if (type == SILC_PKCS_ANY) {
+    /* Try loading all types until one succeeds. */
+    for (type = SILC_PKCS_SILC; type <= SILC_PKCS_SPKI; type++) {
+      private_key->pkcs = (SilcPKCSObject *)silc_pkcs_find_pkcs(type);
+      if (!private_key->pkcs)
+	continue;
+
+      if (private_key->pkcs->import_private_key_file(
+					      private_key->pkcs,
+					      data, data_len,
+					      passphrase,
+					      passphrase_len,
+					      SILC_PKCS_FILE_BIN,
+					      &private_key->private_key,
+					      &private_key->alg)) {
+	silc_free(data);
+	return TRUE;
+      }
+
+      if (private_key->pkcs->import_private_key_file(
+					      private_key->pkcs,
+					      data, data_len,
+					      passphrase,
+					      passphrase_len,
+					      SILC_PKCS_FILE_BASE64,
+					      &private_key->private_key,
+					      &private_key->alg)) {
+	silc_free(data);
+	return TRUE;
+      }
+    }
+  } else {
+    /* Load specific type */
     private_key->pkcs = (SilcPKCSObject *)silc_pkcs_find_pkcs(type);
-    if (!private_key->pkcs)
-      continue;
+    if (!private_key->pkcs) {
+      silc_free(data);
+      silc_free(private_key);
+      *ret_private_key = NULL;
+      SILC_LOG_ERROR(("Unsupported private key type"));
+      return FALSE;
+    }
 
     if (private_key->pkcs->import_private_key_file(
 					      private_key->pkcs,

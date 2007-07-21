@@ -49,10 +49,11 @@ typedef struct SilcPKCSObjectStruct SilcPKCSObject;
  */
 typedef enum {
   SILC_PKCS_SILC    = 1,	/* SILC PKCS */
-  SILC_PKCS_SSH2    = 2,	/* SSH2 PKCS (not supported) */
-  SILC_PKCS_X509V3  = 3,	/* X.509v3 PKCS (not supported) */
-  SILC_PKCS_OPENPGP = 4,	/* OpenPGP PKCS (not supported) */
+  SILC_PKCS_SSH2    = 2,	/* SSH2 PKCS */
+  SILC_PKCS_X509V3  = 3,	/* X.509v3 PKCS */
+  SILC_PKCS_OPENPGP = 4,	/* OpenPGP PKCS */
   SILC_PKCS_SPKI    = 5,	/* SPKI PKCS (not supported) */
+  SILC_PKCS_ANY     = 0,
 } SilcPKCSType;
 /***/
 
@@ -67,7 +68,7 @@ typedef enum {
  *    This context represents any kind of PKCS public key.  It can be
  *    allocated by silc_pkcs_public_key_alloc and is freed by the
  *    silc_pkcs_public_key_free.  The PKCS specific public key context
- *    can be retrieved by calling silc_pkcs_get_context.
+ *    can be retrieved by calling silc_pkcs_public_key_get_pkcs.
  *
  * SOURCE
  */
@@ -86,7 +87,8 @@ typedef struct SilcPublicKeyStruct {
  *
  * DESCRIPTION
  *
- *    This context represents any kind of PKCS private key.
+ *    This context represents any kind of PKCS private key.  The PKCS specific
+ *    key context can be retrieved by calling silc_pkcs_private_key_get_pkcs.
  *
  * SOURCE
  */
@@ -396,11 +398,12 @@ const char *silc_pkcs_get_name(void *key);
  ***/
 SilcPKCSType silc_pkcs_get_type(void *key);
 
-/****f* silccrypt/SilcPKCSAPI/silc_pkcs_get_context
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_get_pkcs
  *
  * SYNOPSIS
  *
- *    void *silc_pkcs_get_context(SilcPKCSType type, SilcPublicKey public_key);
+ *    void *silc_pkcs_public_key_get_pkcs(SilcPKCSType type,
+ *                                        SilcPublicKey public_key);
  *
  * DESCRIPTION
  *
@@ -409,9 +412,31 @@ SilcPKCSType silc_pkcs_get_type(void *key);
  *    type.  Returns NULL on error.
  *
  *    For SILC_PKCS_SILC the returned context is SilcSILCPublicKey.
+ *    For SILC_PKCS_SSH2 the returned context is SilcSshPublicKey.
  *
  ***/
-void *silc_pkcs_get_context(SilcPKCSType type, SilcPublicKey public_key);
+void *silc_pkcs_public_key_get_pkcs(SilcPKCSType type,
+				    SilcPublicKey public_key);
+
+/****f* silccrypt/SilcPKCSAPI/silc_pkcs_private_key_get_pkcs
+ *
+ * SYNOPSIS
+ *
+ *    void *silc_pkcs_private_key_get_pkcs(SilcPKCSType type,
+ *                                        SilcPublicKey public_key);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the internal PKCS `type' specific private key context from the
+ *    `private_key'.  The caller needs to explicitly type cast it to correct
+ *    type.  Returns NULL on error.
+ *
+ *    For SILC_PKCS_SILC the returned context is SilcSILCPrivateKey.
+ *    For SILC_PKCS_SSH2 the returned context is SilcSshPrivateKey.
+ *
+ ***/
+void *silc_pkcs_private_key_get_pkcs(SilcPKCSType type,
+				     SilcPrivateKey private_key);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_public_key_alloc
  *
@@ -616,6 +641,7 @@ SilcAsyncOperation silc_pkcs_decrypt(SilcPrivateKey private_key,
  *                                      SilcUInt32 src_len,
  *                                      SilcBool compute_hash,
  *                                      SilcHash hash,
+ *                                      SilcRng rng,
  *                                      SilcPKCSSignCb sign_cb,
  *                                      void *context);
  *
@@ -624,9 +650,10 @@ SilcAsyncOperation silc_pkcs_decrypt(SilcPrivateKey private_key,
  *    Computes signature with the private key.  The `sign_cb' will be called
  *    to deliver the signature data.  If `compute_hash' is TRUE the `hash'
  *    will be used to compute a message digest over the `src'.  The `hash'
- *    must always be valid.  The signature operation may be asynchronous if
- *    the `private_key' is accelerated private key.  If this returns NULL the
- *    asynchronous operation cannot be controlled.
+ *    must always be valid.  The `rng' should always be provided.  The
+ *    signature operation may be asynchronous if the `private_key' is
+ *    accelerated private key.  If this returns NULL the asynchronous
+ *    operation cannot be controlled.
  *
  ***/
 SilcAsyncOperation silc_pkcs_sign(SilcPrivateKey private_key,
@@ -634,6 +661,7 @@ SilcAsyncOperation silc_pkcs_sign(SilcPrivateKey private_key,
 				  SilcUInt32 src_len,
 				  SilcBool compute_hash,
 				  SilcHash hash,
+				  SilcRng rng,
 				  SilcPKCSSignCb sign_cb,
 				  void *context);
 
@@ -647,6 +675,7 @@ SilcAsyncOperation silc_pkcs_sign(SilcPrivateKey private_key,
  *                                        unsigned char *data,
  *                                        SilcUInt32 data_len,
  *                                        SilcHash hash,
+ *                                        SilcRng rng,
  *                                        SilcPKCSVerifyCb verify_cb,
  *                                        void *context);
  *
@@ -657,8 +686,10 @@ SilcAsyncOperation silc_pkcs_sign(SilcPrivateKey private_key,
  *    the 'data'.  If the `hash' is non-NULL then the `data' will hashed
  *    before verification.  If the `hash' is NULL, then the hash algorithm
  *    to be used is retrieved from the signature.  If it isn't present in the
- *    signature the verification is done as is without hashing.  If this
- *    returns NULL the asynchronous operation cannot be controlled.
+ *    signature the verification is done as is without hashing.  The `rng'
+ *    is usually not needed, however some algorithms might need it so it is
+ *    wise to provide it.  If this returns NULL the asynchronous operation
+ *    cannot be controlled.
  *
  ***/
 SilcAsyncOperation silc_pkcs_verify(SilcPublicKey public_key,
@@ -667,6 +698,7 @@ SilcAsyncOperation silc_pkcs_verify(SilcPublicKey public_key,
 				    unsigned char *data,
 				    SilcUInt32 data_len,
 				    SilcHash hash,
+				    SilcRng rng,
 				    SilcPKCSVerifyCb verify_cb,
 				    void *context);
 
@@ -675,15 +707,19 @@ SilcAsyncOperation silc_pkcs_verify(SilcPublicKey public_key,
  * SYNOPSIS
  *
  *    SilcBool silc_pkcs_load_public_key(const char *filename,
+ *                                       SilcPKCSType type,
  *                                       SilcPublicKey *ret_public_key);
  *
  * DESCRIPTION
  *
  *    Loads public key from file and allocates new public key.  Returns TRUE
- *    if loading was successful.
+ *    if loading was successful.  If `type' is SILC_PKSC_ANY this attempts
+ *    to automatically detect the public key type.  If `type' is some other
+ *    PKCS type, the key is expected to be of that type.
  *
  ***/
 SilcBool silc_pkcs_load_public_key(const char *filename,
+				   SilcPKCSType type,
 				   SilcPublicKey *ret_public_key);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_save_public_key
@@ -711,18 +747,23 @@ SilcBool silc_pkcs_save_public_key(const char *filename,
  *    SilcBool silc_pkcs_load_private_key(const char *filename,
  *                                        const unsigned char *passphrase,
  *                                        SilcUInt32 passphrase_len,
+ *                                        SilcPKCSType type,
  *                                        SilcPrivateKey *ret_private_key);
  *
  * DESCRIPTION
  *
  *    Loads private key from file and allocates new private key.  Returns TRUE
  *    if loading was successful.  The `passphrase' is used as decryption
- *    key of the private key file, in case it is encrypted.
+ *    key of the private key file, in case it is encrypted.  If `type' is
+ *    SILC_PKSC_ANY this attempts to automatically detect the private key type.
+ *    If `type' is some other PKCS type, the key is expected to be of that
+ *    type.
  *
  ***/
 SilcBool silc_pkcs_load_private_key(const char *filename,
 				    const unsigned char *passphrase,
 				    SilcUInt32 passphrase_len,
+				    SilcPKCSType type,
 				    SilcPrivateKey *ret_private_key);
 
 /****f* silccrypt/SilcPKCSAPI/silc_pkcs_save_private_key

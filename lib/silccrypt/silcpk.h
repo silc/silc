@@ -64,7 +64,7 @@ typedef struct SilcPublicKeyIdentifierObject {
  *
  *    This structure defines the SILC protocol style public key.  User
  *    doesn't have to access this structure usually, except when access to
- *    the identifier is required.  The silc_pkcs_get_context for the
+ *    the identifier is required.  The silc_pkcs_public_key_get_pkcs for the
  *    PKCS type SILC_PKCS_SILC returns this context.
  *
  * SOURCE

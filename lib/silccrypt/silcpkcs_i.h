@@ -34,7 +34,7 @@
 
 #define SILC_PKCS_ALG_IMPORT_PUBLIC_KEY(name)				\
   int name(const struct SilcPKCSAlgorithmStruct *pkcs,			\
-	   void *key, SilcUInt32 key_len,				\
+	   void *key, SilcUInt32 key_len,			\
 	   void **ret_public_key)
 
 #define SILC_PKCS_ALG_EXPORT_PUBLIC_KEY(name)				\
@@ -60,7 +60,8 @@
 
 #define SILC_PKCS_ALG_IMPORT_PRIVATE_KEY(name)				\
   int name(const struct SilcPKCSAlgorithmStruct *pkcs,			\
-	   void *key, SilcUInt32 key_len, void **ret_private_key)
+	   void *key, SilcUInt32 key_len,				\
+	   void **ret_private_key)
 
 #define SILC_PKCS_ALG_EXPORT_PRIVATE_KEY(name)				\
   unsigned char *name(const struct SilcPKCSAlgorithmStruct *pkcs,	\
@@ -99,6 +100,7 @@
 			  SilcUInt32 src_len,				\
 			  SilcBool compute_hash,			\
 			  SilcHash hash,				\
+			  SilcRng rng,					\
 			  SilcPKCSSignCb sign_cb,			\
 			  void *context)
 
@@ -110,6 +112,7 @@
 			  unsigned char *data,				\
 			  SilcUInt32 data_len,				\
 			  SilcHash hash,				\
+			  SilcRng rng,					\
 			  SilcPKCSVerifyCb verify_cb,			\
 			  void *context)
 
@@ -189,9 +192,10 @@ struct SilcPKCSAlgorithmStruct {
 		SilcPKCSFileEncoding encoding, void **ret_public_key,	\
 		const struct SilcPKCSAlgorithmStruct **ret_alg)
 
-#define SILC_PKCS_IMPORT_PUBLIC_KEY(name)			\
-  int name(const struct SilcPKCSObjectStruct *pkcs, void *key,	\
-	   SilcUInt32 key_len, void **ret_public_key,		\
+#define SILC_PKCS_IMPORT_PUBLIC_KEY(name)				\
+  int name(const struct SilcPKCSObjectStruct *pkcs,			\
+	   const struct SilcPKCSAlgorithmStruct *alg,			\
+	   void *key, SilcUInt32 key_len, void **ret_public_key,	\
 	   const struct SilcPKCSAlgorithmStruct **ret_alg)
 
 #define SILC_PKCS_EXPORT_PUBLIC_KEY_FILE(name)			\
@@ -225,9 +229,10 @@ struct SilcPKCSAlgorithmStruct {
 		SilcPKCSFileEncoding encoding, void **ret_private_key,	\
 		const struct SilcPKCSAlgorithmStruct **ret_alg)
 
-#define SILC_PKCS_IMPORT_PRIVATE_KEY(name)			\
-  int name(const struct SilcPKCSObjectStruct *pkcs, void *key,	\
-	   SilcUInt32 key_len, void **ret_private_key,		\
+#define SILC_PKCS_IMPORT_PRIVATE_KEY(name)				\
+  int name(const struct SilcPKCSObjectStruct *pkcs,			\
+	   const struct SilcPKCSAlgorithmStruct *alg,			\
+	   void *key, SilcUInt32 key_len, void **ret_private_key,	\
 	   const struct SilcPKCSAlgorithmStruct **ret_alg)
 
 #define SILC_PKCS_EXPORT_PRIVATE_KEY_FILE(name)				\
@@ -271,6 +276,7 @@ struct SilcPKCSAlgorithmStruct {
 			  SilcUInt32 src_len,				\
 			  SilcBool compute_hash,			\
 			  SilcHash hash,				\
+			  SilcRng rng,					\
 			  SilcPKCSSignCb sign_cb,			\
 			  void *context)
 
@@ -282,6 +288,7 @@ struct SilcPKCSAlgorithmStruct {
 			  unsigned char *data,				\
 			  SilcUInt32 data_len,				\
 			  SilcHash hash,				\
+			  SilcRng rng,					\
 			  SilcPKCSVerifyCb verify_cb,			\
 			  void *context)
 
@@ -351,5 +358,9 @@ struct SilcPKCSObjectStruct {
   SILC_PKCS_SIGN((*sign));
   SILC_PKCS_VERIFY((*verify));
 };
+
+/* Backwards support for PKCS API */
+
+#define silc_pkcs_get_context silc_pkcs_public_key_get_pkcs
 
 #endif /* SILCPKCS_I_H */

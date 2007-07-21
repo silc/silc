@@ -324,12 +324,12 @@ SILC_PKCS_IMPORT_PUBLIC_KEY_FILE(silc_pkcs_silc_import_public_key_file)
   /* Check start of file and remove header from the data. */
   len = strlen(SILC_PKCS_PUBLIC_KEYFILE_BEGIN);
   if (filedata_len < len + strlen(SILC_PKCS_PUBLIC_KEYFILE_END)) {
-    SILC_LOG_ERROR(("Malformed SILC public key header"));
+    SILC_LOG_DEBUG(("Malformed SILC public key header"));
     return FALSE;
   }
   for (i = 0; i < len; i++) {
     if (*filedata != SILC_PKCS_PUBLIC_KEYFILE_BEGIN[i]) {
-      SILC_LOG_ERROR(("Malformed SILC public key header"));
+      SILC_LOG_DEBUG(("Malformed SILC public key header"));
       return FALSE;
     }
     filedata++;
@@ -349,7 +349,7 @@ SILC_PKCS_IMPORT_PUBLIC_KEY_FILE(silc_pkcs_silc_import_public_key_file)
     break;
   }
 
-  ret = silc_pkcs_silc_import_public_key(pkcs, filedata, filedata_len,
+  ret = silc_pkcs_silc_import_public_key(pkcs, NULL, filedata, filedata_len,
 					 ret_public_key, ret_alg);
   silc_free(data);
 
@@ -360,7 +360,6 @@ SILC_PKCS_IMPORT_PUBLIC_KEY_FILE(silc_pkcs_silc_import_public_key_file)
 
 SILC_PKCS_IMPORT_PUBLIC_KEY(silc_pkcs_silc_import_public_key)
 {
-  const SilcPKCSAlgorithm *alg;
   SilcBufferStruct buf, alg_key;
   SilcSILCPublicKey silc_pubkey = NULL;
   SilcAsn1 asn1 = NULL;
@@ -846,12 +845,12 @@ SILC_PKCS_IMPORT_PRIVATE_KEY_FILE(silc_pkcs_silc_import_private_key_file)
   /* Check start of file and remove header from the data. */
   len = strlen(SILC_PKCS_PRIVATE_KEYFILE_BEGIN);
   if (filedata_len < len + strlen(SILC_PKCS_PRIVATE_KEYFILE_END)) {
-    SILC_LOG_ERROR(("Malformed SILC private key header"));
+    SILC_LOG_DEBUG(("Malformed SILC private key header"));
     return FALSE;
   }
   for (i = 0; i < len; i++) {
     if (*filedata != SILC_PKCS_PRIVATE_KEYFILE_BEGIN[i]) {
-      SILC_LOG_ERROR(("Malformed SILC private key header"));
+      SILC_LOG_DEBUG(("Malformed SILC private key header"));
       return FALSE;
     }
     filedata++;
@@ -963,8 +962,8 @@ SILC_PKCS_IMPORT_PRIVATE_KEY_FILE(silc_pkcs_silc_import_private_key_file)
   silc_cipher_free(aes);
 
   /* Import the private key */
-  ret = silc_pkcs_silc_import_private_key(pkcs, filedata, len, ret_private_key,
-					  ret_alg);
+  ret = silc_pkcs_silc_import_private_key(pkcs, NULL, filedata,
+					  len, ret_private_key, ret_alg);
 
   silc_free(data);
 
@@ -980,7 +979,6 @@ SILC_PKCS_IMPORT_PRIVATE_KEY_FILE(silc_pkcs_silc_import_private_key_file)
 SILC_PKCS_IMPORT_PRIVATE_KEY(silc_pkcs_silc_import_private_key)
 {
   SilcBufferStruct buf;
-  const SilcPKCSAlgorithm *alg;
   SilcBufferStruct alg_key;
   SilcSILCPrivateKey silc_privkey = NULL;
   SilcAsn1 asn1 = NULL;
@@ -1636,7 +1634,7 @@ SILC_PKCS_SIGN(silc_pkcs_silc_sign)
   return silc_privkey->pkcs->sign(silc_privkey->pkcs,
 				  silc_privkey->private_key,
 				  src, src_len,
-				  compute_hash, hash,
+				  compute_hash, hash, rng,
 				  sign_cb, context);
 }
 
@@ -1654,6 +1652,6 @@ SILC_PKCS_VERIFY(silc_pkcs_silc_verify)
   return silc_pubkey->pkcs->verify(silc_pubkey->pkcs,
 				   silc_pubkey->public_key,
 				   signature, signature_len,
-				   data, data_len, hash,
+				   data, data_len, hash, rng,
 				   verify_cb, context);
 }

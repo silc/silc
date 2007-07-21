@@ -35,11 +35,13 @@ libsilccrypt_la_SOURCES = 	\
 	md5.c 			\
 	$(SILC_AES_S)		\
 	rsa.c 			\
+	dsa.c 			\
 	sha1.c 			\
 	sha256.c 		\
 	twofish.c 		\
 	blowfish.c 		\
 	cast5.c			\
+	des.c			\
 	silccrypto.c		\
 	silccipher.c 		\
 	silchash.c 		\
