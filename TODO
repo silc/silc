@@ -318,8 +318,6 @@ Crypto Library, lib/silccrypt/
    check the alg->hash, supported hash functions.  Maybe deliver it also
    to all other functions in SilcPKCSAlgorithm to be consistent. (***DONE)
 
- o Add DSA support to SILC public key.
-
  o Add DSS support. (***DONE)
 
  o Implement the defined SilcDH API.  The definition is in
