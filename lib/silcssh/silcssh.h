@@ -61,8 +61,9 @@
  * silc_pkcs_load_private_key("privkey.pub", passphrase, passphrase_len,
  *                            SILC_PKCS_SSH2, &public_key);
  *
- * // Compute signature
- * silc_pkcs_sign(private_key, src, src_len, TRUE, sha1, rng, sign_cb, ctx);
+ * // Free public and private key. Frees automatically the underlaying SSH keys.
+ * silc_pkcs_public_key_free(public_key);
+ * silc_pkcs_private_key_free(private_key);
  *
  ***/
 #ifndef SILCSSH_H
@@ -76,7 +77,7 @@
  *
  * DESCRIPTION
  *
- *    SSH2 public and private key types.  The default when new ke pair
+ *    SSH2 public and private key types.  The default when new key pair
  *    is created is SILC_SSH_KEY_OPENSSH.
  *
  * SOURCE
@@ -96,7 +97,7 @@ typedef enum {
  *
  *    This structure defines the SSH2 public key.  This context can be
  *    retrieved from SilcPublicKey by calling silc_pkcs_public_key_get_pkcs
- *    for the PKCS type SILC_PKCS_SSH2 type.
+ *    for the PKCS type SILC_PKCS_SSH2.
  *
  * SOURCE
  */
@@ -118,7 +119,7 @@ typedef struct SilcSshPublicKeyStruct  {
  *
  *    This structure defines the SSH2 private key.  This context can be
  *    retrieved from SilcPrivateKey by calling silc_pkcs_private_key_get_pkcs
- *    for the PKCS type SILC_PKCS_SSH2 type.
+ *    for the PKCS type SILC_PKCS_SSH2.
  *
  * SOURCE
  */
@@ -174,6 +175,8 @@ SilcBool silc_ssh_generate_key(const char *algorithm,
  *    function.  This function expects the public key to be in raw binary
  *    format, without any public key file markers or headers.
  *
+ *    This decodes SSH2 protocol compliant raw public key.
+ *
  *    This function returns the number of bytes decoded from the public
  *    key buffer or 0 on error.
  *
@@ -194,6 +197,8 @@ int silc_ssh_public_key_decode(unsigned char *key, SilcUInt32 key_len,
  *    Encodes SSH Public key and returns the encoded buffer.  Caller must
  *    free the returned buffer.
  *
+ *    This encodes SSH2 protocol compliant raw public key.
+ *
  *    If the `stack' is non-NULL the returned buffer is allocated from the
  *    `stack'.  This call will consume `stack' so caller should push the stack
  *    before calling and then later pop it.
@@ -211,7 +216,9 @@ unsigned char *silc_ssh_public_key_encode(SilcStack stack,
  *
  * DESCRIPTION
  *
- *    Frees the public key.
+ *    Frees the public key.  This need to be called only if you called
+ *    silc_ssh_public_key_decode.  SSH public keys allocated through the
+ *    SILC PKCS API can be freed by calling silc_pkcs_public_key_free.
  *
  ***/
 void silc_ssh_public_key_free(SilcSshPublicKey public_key);

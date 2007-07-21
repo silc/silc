@@ -469,7 +469,9 @@ SilcBool silc_pkcs_public_key_alloc(SilcPKCSType type,
  *
  * DESCRIPTION
  *
- *    Frees the public key.
+ *    Frees the public key.  This will also automatically free the underlaying
+ *    PKCS specific public key.  All public keys allocated through the
+ *    PKCS API must be freed by calling this function.
  *
  ***/
 void silc_pkcs_public_key_free(SilcPublicKey public_key);
@@ -580,7 +582,9 @@ SilcUInt32 silc_pkcs_private_key_get_len(SilcPrivateKey private_key);
  *
  * DESCRIPTION
  *
- *    Frees the private key.
+ *    Frees the public key.  This will also automatically free the underlaying
+ *    PKCS specific private key.  All private keys allocated through the
+ *    PKCS API must be freed by calling this function.
  *
  ***/
 void silc_pkcs_private_key_free(SilcPrivateKey private_key);

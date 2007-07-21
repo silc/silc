@@ -166,7 +166,7 @@ const SilcPKCSAlgorithm silc_default_pkcs_alg[] =
   },
 
 #ifdef SILC_DIST_SSH
-  /* PKCS #1, Version 1.5 without hash OIDs, SSH2 style public keys */
+  /* PKCS #1, SSH2 style public keys */
   {
     "rsa",
     "ssh",

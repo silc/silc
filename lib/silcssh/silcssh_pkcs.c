@@ -843,21 +843,71 @@ SILC_PKCS_DECRYPT(silc_pkcs_ssh_decrypt)
 				src, src_len, decrypt_cb, context);
 }
 
+/* Sign context */
+typedef struct {
+  SilcSshPrivateKey privkey;
+  SilcPKCSSignCb sign_cb;
+  void *context;
+} *SilcSshSign;
+
+/* Sign callback.  This formats the signature into SSH2 protocool compliant
+   format. */
+
+static void silc_pkcs_ssh_sign_cb(SilcBool success,
+				  const unsigned char *signature,
+				  SilcUInt32 signature_len,
+				  void *context)
+{
+  SilcSshSign sign = context;
+  SilcBufferStruct sig;
+
+  memset(&sig, 0, sizeof(sig));
+  if (silc_buffer_format(&sig,
+			 SILC_STR_UI_INT(7),
+			 SILC_STR_UI32_STRING("ssh-"),
+			 SILC_STR_UI32_STRING(sign->privkey->pkcs->name),
+			 SILC_STR_UI_INT(signature_len),
+			 SILC_STR_DATA(signature, signature_len),
+			 SILC_STR_END) < 0) {
+    silc_free(sign);
+    sign->sign_cb(FALSE, NULL, 0, sign->context);
+  }
+
+  /* Deliver result */
+  sign->sign_cb(TRUE, silc_buffer_data(&sig), silc_buffer_len(&sig),
+		sign->context);
+
+  silc_buffer_purge(&sig);
+  silc_free(sign);
+}
+
 /* Sign */
 
 SILC_PKCS_SIGN(silc_pkcs_ssh_sign)
 {
   SilcSshPrivateKey privkey = private_key;
+  SilcSshSign sign;
 
   if (!privkey->pkcs->sign) {
     sign_cb(FALSE, NULL, 0, context);
     return NULL;
   }
 
+  sign = silc_calloc(1, sizeof(*sign));
+  if (!sign) {
+    sign_cb(FALSE, NULL, 0, context);
+    return NULL;
+  }
+
+  sign->privkey = privkey;
+  sign->sign_cb = sign_cb;
+  sign->context = context;
+
+  /* Sign.  The callback will format it to SSH2 compliant format. */
   return privkey->pkcs->sign(privkey->pkcs, privkey->private_key,
 			     src, src_len,
 			     compute_hash, hash, rng,
-			     sign_cb, context);
+			     silc_pkcs_ssh_sign_cb, sign);
 }
 
 /* Verify */
@@ -865,12 +915,25 @@ SILC_PKCS_SIGN(silc_pkcs_ssh_sign)
 SILC_PKCS_VERIFY(silc_pkcs_ssh_verify)
 {
   SilcSshPublicKey pubkey = public_key;
+  SilcBufferStruct sig;
 
   if (!pubkey->pkcs->verify) {
     verify_cb(FALSE, context);
     return NULL;
   }
 
+  /* Decode the SSH2 protocol style signature encoding.  Ignore the
+     algorithm name.  We know the algorithm. */
+  silc_buffer_set(&sig, signature, signature_len);
+  if (silc_buffer_unformat(&sig,
+			   SILC_STR_UI32_NSTRING(NULL, NULL),
+			   SILC_STR_UI32_NSTRING(&signature, &signature_len),
+			   SILC_STR_END) < 0) {
+    verify_cb(FALSE, context);
+    return NULL;
+  }
+
+  /* Verify */
   return pubkey->pkcs->verify(pubkey->pkcs, pubkey->public_key,
 			      signature, signature_len,
 			      data, data_len, hash, rng,
