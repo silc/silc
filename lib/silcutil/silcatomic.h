@@ -766,7 +766,7 @@ SILC_ATOMIC_ADD_INT_F(bits)						\
 SILC_ATOMIC_ADD_INT_F(bits)						\
 {									\
   SilcUInt##bits ret;							\
-  SilcInt32 val = value;
+  SilcInt32 val = value;						\
   /* GCC + IA64 (GCC builtin atomic operations) */			\
   ret = __sync_fetch_and_add(&atomic->value, val);			\
   return ret + value;							\
@@ -1243,7 +1243,7 @@ SilcBool silc_atomic_cas_pointer(SilcAtomicPointer *atomic, void *old_val,
 
 #elif defined(__GNUC__) && defined(SILC_IA64)
   /* GCC + IA64 (GCC builtin atomic operations) */
-  return  __sync_bool_compare_and_swap((long)&atomic->value, (long)old_val,
+  return  __sync_bool_compare_and_swap((long *)&atomic->value, (long)old_val,
 				       (long)new_val);
 
 #elif defined(__GNUC__) && defined(SILC_POWERPC)
