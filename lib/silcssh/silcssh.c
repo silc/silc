@@ -251,7 +251,7 @@ SilcBool silc_ssh_generate_key(const char *algorithm,
   }
 
   if (subject)
-    silc_ssh_public_key_add_field(pubkey, "Subject", strdup(subject));
+    silc_ssh_public_key_add_field(pubkey, "Subject", subject);
 
   return TRUE;
 }
@@ -383,6 +383,8 @@ void silc_ssh_public_key_free(SilcSshPublicKey public_key)
 {
   if (public_key->fields)
     silc_hash_table_free(public_key->fields);
+  public_key->pkcs->public_key_free(public_key->pkcs,
+				    public_key->public_key);
   silc_free(public_key);
 }
 

@@ -37,6 +37,8 @@ int main(int argc, char **argv)
   if (!silc_pkcs_save_private_key("privkey.prv", private_key, "testi", 5,
        	                          SILC_PKCS_FILE_BASE64, rng))
     goto err;
+  silc_pkcs_public_key_free(public_key);
+  silc_pkcs_private_key_free(private_key);
 
   SILC_LOG_DEBUG(("Load public key"));
   if (!silc_pkcs_load_public_key("pubkey.pub", SILC_PKCS_ANY,  &public_key))
@@ -51,6 +53,7 @@ int main(int argc, char **argv)
   if (!silc_pkcs_load_private_key("privkey.prv", "testi", 5,
 			     	  SILC_PKCS_ANY, &private_key))
     goto err;
+  silc_pkcs_private_key_free(private_key);
 
   SILC_LOG_DEBUG(("Save as OpenSSH public key"));
   ssh_pubkey = silc_pkcs_public_key_get_pkcs(SILC_PKCS_SSH2, public_key);
@@ -58,13 +61,16 @@ int main(int argc, char **argv)
   if (!silc_pkcs_save_public_key("pubkey_openssh.pub", public_key,
 				 SILC_PKCS_FILE_BASE64))
     goto err;
+  silc_pkcs_public_key_free(public_key);
 
   SILC_LOG_DEBUG(("Load public key"));
   if (!silc_pkcs_load_public_key("pubkey_openssh.pub", SILC_PKCS_SSH2,
 				 &public_key))
     goto err;
+  silc_pkcs_public_key_free(public_key);
 
   silc_rng_free(rng);
+  silc_crypto_uninit();
 
   success = TRUE;
 
