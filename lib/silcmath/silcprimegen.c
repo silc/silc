@@ -341,8 +341,13 @@ SilcBool silc_math_prime_test(SilcMPInt *p)
     silc_mp_mod_ui(&tmp, p, primetable[i]);
 
     /* If mod is 0, the number is composite */
-    if (silc_mp_cmp_ui(&tmp, 0) == 0)
-      ret = -1;
+    if (silc_mp_cmp_ui(&tmp, 0) == 0) {
+      SILC_LOG_DEBUG(("Number is not prime"));
+      silc_mp_uninit(&r);
+      silc_mp_uninit(&tmp);
+      silc_mp_uninit(&base);
+      return FALSE;
+    }
   }
 
   /* Does the prime pass the Fermat's prime test.
@@ -356,8 +361,10 @@ SilcBool silc_math_prime_test(SilcMPInt *p)
   silc_mp_uninit(&tmp);
   silc_mp_uninit(&base);
 
-  if (ret)
+  if (ret) {
+    SILC_LOG_DEBUG(("Number is not prime"));
     return FALSE;
+  }
 
   /* Number is probably a prime */
   return TRUE;

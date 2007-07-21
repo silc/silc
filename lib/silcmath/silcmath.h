@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -43,8 +43,7 @@
  *
  *    Find appropriate prime. It generates a number by taking random bytes.
  *    It then tests the number that it's not divisible by any of the small
- *    primes and then it performs Fermat's prime test. I thank Rieks Joosten
- *    (r.joosten@pijnenburg.nl) for such a good help with prime tests.
+ *    primes and then it performs Fermat's prime test.
  *
  *    If argument verbose is TRUE this will display some status information
  *    about the progress of generation.  If the `rng' is NULL then global
