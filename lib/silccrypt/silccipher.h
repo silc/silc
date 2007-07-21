@@ -95,6 +95,11 @@ typedef struct SilcCipherStruct *SilcCipher;
  *      The Electronic Codebook mode.  This mode does not provide sufficient
  *      security and should not be used.
  *
+ *    Each mode modifies the IV (initialization vector) of the cipher when
+ *    silc_cipher_encrypt or silc_cipher_decrypt is called.  The IV may be
+ *    set/reset by calling silc_cipher_set_iv and the current IV can be
+ *    retrieved by calling silc_cipher_get_iv.
+ *
  * SOURCE
  */
 typedef enum {
@@ -316,12 +321,15 @@ SilcBool silc_cipher_set_key(SilcCipher cipher, const unsigned char *key,
  *
  * DESCRIPTION
  *
- *    Sets the IV (initial vector) for the cipher.  The `iv' must be
+ *    Sets the IV (initialization vector) for the cipher.  The `iv' must be
  *    the size of the block size of the cipher.  If `iv' is NULL this
  *    does not do anything.
  *
  *    If the encryption mode is CTR (Counter mode) this also resets the
  *    the counter for a new block.  This is done also if `iv' is NULL.
+ *
+ *    If the encryption mode is CFB (cipher feedback) this also resets the
+ *    the feedback stream for a new block.  This is done also if `iv' is NULL.
  *
  ***/
 void silc_cipher_set_iv(SilcCipher cipher, const unsigned char *iv);

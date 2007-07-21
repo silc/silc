@@ -1,10 +1,10 @@
 /*
 
-  ciphers.h
+  des.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -17,14 +17,23 @@
 
 */
 
-#ifndef CIPHERS_H
-#define CIPHERS_H
+#ifndef DES_H
+#define DES_H
 
-#include "none.h"
-#include "twofish.h"
-#include "aes.h"
-#include "blowfish.h"
-#include "cast5.h"
-#include "des.h"
+/*
+ * SILC Crypto API for DES and 3DES
+ */
 
-#endif
+SILC_CIPHER_API_SET_KEY(des);
+SILC_CIPHER_API_SET_IV(des);
+SILC_CIPHER_API_CONTEXT_LEN(des);
+SILC_CIPHER_API_ENCRYPT(des);
+SILC_CIPHER_API_DECRYPT(des);
+
+SILC_CIPHER_API_SET_KEY(3des);
+SILC_CIPHER_API_SET_IV(3des);
+SILC_CIPHER_API_CONTEXT_LEN(3des);
+SILC_CIPHER_API_ENCRYPT(3des);
+SILC_CIPHER_API_DECRYPT(3des);
+
+#endif /* DES_H */

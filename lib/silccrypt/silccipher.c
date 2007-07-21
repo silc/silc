@@ -63,6 +63,12 @@ const SilcCipherObject silc_default_ciphers[] =
   SILC_CDEF("cast5-128-ctr", cast5, 128, 8, 8, SILC_CIPHER_MODE_CTR),
   SILC_CDEF("cast5-128-cbc", cast5, 128, 8, 8, SILC_CIPHER_MODE_CBC),
   SILC_CDEF("cast5-128-cfb", cast5, 128, 8, 8, SILC_CIPHER_MODE_CFB),
+  SILC_CDEF("des-56-ctr", des, 56, 8, 8, SILC_CIPHER_MODE_CTR),
+  SILC_CDEF("des-56-cbc", des, 56, 8, 8, SILC_CIPHER_MODE_CBC),
+  SILC_CDEF("des-56-cfb", des, 56, 8, 8, SILC_CIPHER_MODE_CFB),
+  SILC_CDEF("3des-168-ctr", 3des, 168, 8, 8, SILC_CIPHER_MODE_CTR),
+  SILC_CDEF("3des-168-cbc", 3des, 168, 8, 8, SILC_CIPHER_MODE_CBC),
+  SILC_CDEF("3des-168-cfb", 3des, 168, 8, 8, SILC_CIPHER_MODE_CFB),
 #ifdef SILC_DEBUG
   SILC_CDEF("none", none, 0, 0, 0, 0),
 #endif /* SILC_DEBUG */
