@@ -22,14 +22,13 @@
 
 /* RSA Public Key */
 typedef struct {
-  int bits;			/* bits in key */
   SilcMPInt n;			/* modulus */
   SilcMPInt e;			/* public exponent */
+  int bits;			/* bits in key */
 } RsaPublicKey;
 
 /* RSA Private Key */
 typedef struct {
-  int bits;			/* bits in key */
   SilcMPInt n;			/* modulus */
   SilcMPInt e;			/* public exponent */
   SilcMPInt d;			/* private exponent */
@@ -38,6 +37,7 @@ typedef struct {
   SilcMPInt dP;			/* CRT, d mod p - 1 */
   SilcMPInt dQ;			/* CRT, d mod q - 1 */
   SilcMPInt qP;			/* CRT, q ^ -1 mod p (aka u, aka qInv) */
+  int bits;			/* bits in key */
 } RsaPrivateKey;
 
 SilcBool silc_rsa_generate_keys(SilcUInt32 bits, SilcMPInt *p, SilcMPInt *q,
