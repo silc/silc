@@ -41,12 +41,12 @@
  * SilcSshPrivateKey ssh_privkey;
  *
  * // Generate new SSH2 key pair, RSA algorithm, 2048 bits
- * silc_ssh_generate_key("rsa", 2048, rng, &public_key, &private_key);
+ * silc_ssh_generate_key("rsa", 2048, rng, "foo@example.com",
+ *                       &public_key, &private_key);
  *
  * // Add (optional) headers to the key before saving to a file
  * ssh_pubkey = silc_pkcs_public_key_get_pkcs(SILC_PKCS_SSH2, public_key);
  * silc_ssh_public_key_set_type(ssh_pubkey, SILC_SSH_KEY_SSH2);
- * silc_ssh_public_key_add_field(ssh_pubkey, "Subject", "foo@example.com");
  * silc_ssh_public_key_add_field(ssh_pubkey, "Comment", "My own key");
  *
  * // Rest of the operations use standard SILC PKCS API
@@ -62,30 +62,73 @@
  *                            SILC_PKCS_SSH2, &public_key);
  *
  * // Compute signature
- * silc_pkcs_sign(private_key, src, src_len, TRUE, sha1, sign_cb, ctx);
+ * silc_pkcs_sign(private_key, src, src_len, TRUE, sha1, rng, sign_cb, ctx);
  *
  ***/
 #ifndef SILCSSH_H
 #define SILCSSH_H
 
+/****d* silcssh/SilcSshAPI/SilcSshKeyType
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcSshKeyType;
+ *
+ * DESCRIPTION
+ *
+ *    SSH2 public and private key types.  The default when new ke pair
+ *    is created is SILC_SSH_KEY_OPENSSH.
+ *
+ * SOURCE
+ */
 typedef enum {
   SILC_SSH_KEY_OPENSSH   = 1,	   /* OpenSSH public/private key (default) */
   SILC_SSH_KEY_SSH2      = 2,	   /* SSH2 public key, RFC 4716 */
 } SilcSshKeyType;
 
+/****s* silcssh/SilcSshAPI/SilcSshPublicKey
+ *
+ * NAME
+ *
+ *    typedef struct { ... } *SilcSshPublicKey;
+ *
+ * DESCRIPTION
+ *
+ *    This structure defines the SSH2 public key.  This context can be
+ *    retrieved from SilcPublicKey by calling silc_pkcs_public_key_get_pkcs
+ *    for the PKCS type SILC_PKCS_SSH2 type.
+ *
+ * SOURCE
+ */
 typedef struct SilcSshPublicKeyStruct  {
   SilcHashTable fields;		   /* Public key headers */
   const SilcPKCSAlgorithm *pkcs;   /* PKCS Algorithm */
   void *public_key;		   /* PKCS Algorithm specific public key */
   SilcSshKeyType type;		   /* Public key type */
 } *SilcSshPublicKey;
+/***/
 
+/****s* silcssh/SilcSshAPI/SilcSshPrivateKey
+ *
+ * NAME
+ *
+ *    typedef struct { ... } *SilcSshPrivateKey;
+ *
+ * DESCRIPTION
+ *
+ *    This structure defines the SSH2 private key.  This context can be
+ *    retrieved from SilcPrivateKey by calling silc_pkcs_private_key_get_pkcs
+ *    for the PKCS type SILC_PKCS_SSH2 type.
+ *
+ * SOURCE
+ */
 typedef struct SilcSshPrivateKeyStruct  {
   SilcHashTable fields;		   /* Private key headers */
   const SilcPKCSAlgorithm *pkcs;   /* PKCS Algorithm */
   void *private_key;		   /* PKCS Algorithm specific private key */
   SilcSshKeyType type;		   /* Private key type */
 } *SilcSshPrivateKey;
+/***/
 
 /****f* silcssh/SilcSshAPI/silc_ssh_generate_key
  *
@@ -93,17 +136,26 @@ typedef struct SilcSshPrivateKeyStruct  {
  *
  *    SilcBool silc_ssh_generate_key(const char *algorithm,
  *                                   int bits_len, SilcRng rng,
+ *                                   const char *subject,
  *                                   SilcPublicKey *ret_public_key,
  *                                   SilcPrivateKey *ret_private_key);
  *
  * DESCRIPTION
  *
  *    Generates new SSH2 key pair.  The `algorithm' is either rsa or dsa.
- *    The `bits_len' specify the key length in bits.  Returns FALSE on error.
+ *    The `bits_len' specify the key length in bits.  The `subject' is
+ *    usually the email address of the user creating the key or some other
+ *    similar subject name.  Returns FALSE on error.
+ *
+ * EXAMPLE
+ *
+ *    silc_ssh_generate_key("dsa", 1024, rng, "foo@example.com",
+ *                          &pubkey, &privkey);
  *
  ***/
 SilcBool silc_ssh_generate_key(const char *algorithm,
 			       int bits_len, SilcRng rng,
+			       const char *subject,
 			       SilcPublicKey *ret_public_key,
 			       SilcPrivateKey *ret_private_key);
 

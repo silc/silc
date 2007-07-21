@@ -22,22 +22,22 @@ int main(int argc, char **argv)
   silc_rng_init(rng);
 
   SILC_LOG_DEBUG(("Generate key pair"));
-  silc_ssh_generate_key("dsa", 1024, rng, &public_key, &private_key);
+  silc_ssh_generate_key("dsa", 1024, rng, "foo@example.com",
+			&public_key, &private_key);
 
   SILC_LOG_DEBUG(("Set SSH2 public key headers"));
   ssh_pubkey = silc_pkcs_public_key_get_pkcs(SILC_PKCS_SSH2, public_key);
   silc_ssh_public_key_set_type(ssh_pubkey, SILC_SSH_KEY_SSH2);
-  silc_ssh_public_key_add_field(ssh_pubkey, "Subject", "foo@example.com");
   silc_ssh_public_key_add_field(ssh_pubkey, "Comment", "My own key");
 
   SILC_LOG_DEBUG(("Save public and private key"));
-  if (!silc_pkcs_save_public_key("pubkey.pub", public_key, 
+  if (!silc_pkcs_save_public_key("pubkey.pub", public_key,
 				 SILC_PKCS_FILE_BASE64))
     goto err;
   if (!silc_pkcs_save_private_key("privkey.prv", private_key, "testi", 5,
        	                          SILC_PKCS_FILE_BASE64, rng))
     goto err;
- 
+
   SILC_LOG_DEBUG(("Load public key"));
   if (!silc_pkcs_load_public_key("pubkey.pub", SILC_PKCS_ANY,  &public_key))
     goto err;
@@ -55,12 +55,12 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("Save as OpenSSH public key"));
   ssh_pubkey = silc_pkcs_public_key_get_pkcs(SILC_PKCS_SSH2, public_key);
   silc_ssh_public_key_set_type(ssh_pubkey, SILC_SSH_KEY_OPENSSH);
-  if (!silc_pkcs_save_public_key("pubkey_openssh.pub", public_key, 
+  if (!silc_pkcs_save_public_key("pubkey_openssh.pub", public_key,
 				 SILC_PKCS_FILE_BASE64))
     goto err;
 
   SILC_LOG_DEBUG(("Load public key"));
-  if (!silc_pkcs_load_public_key("pubkey_openssh.pub", SILC_PKCS_SSH2, 
+  if (!silc_pkcs_load_public_key("pubkey_openssh.pub", SILC_PKCS_SSH2,
 				 &public_key))
     goto err;
 

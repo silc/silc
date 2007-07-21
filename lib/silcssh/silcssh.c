@@ -174,6 +174,7 @@ SilcHashTable silc_ssh_parse_headers(SilcBuffer key)
 
 SilcBool silc_ssh_generate_key(const char *algorithm,
 			       int bits_len, SilcRng rng,
+			       const char *subject,
 			       SilcPublicKey *ret_public_key,
 			       SilcPrivateKey *ret_private_key)
 {
@@ -248,6 +249,9 @@ SilcBool silc_ssh_generate_key(const char *algorithm,
     silc_free(*ret_private_key);
     return FALSE;
   }
+
+  if (subject)
+    silc_ssh_public_key_add_field(pubkey, "Subject", strdup(subject));
 
   return TRUE;
 }
