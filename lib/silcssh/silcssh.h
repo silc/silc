@@ -53,12 +53,12 @@
  *
  * // Save new key pair to file
  * silc_pkcs_save_public_key("pubkey.pub", public_key, SILC_PKCS_FILE_BASE64);
- * silc_pkcs_save_private_key("privkey.pub", private_key, passphrase,
+ * silc_pkcs_save_private_key("privkey.prv", private_key, passphrase,
  *                            passphrase_len, SILC_PKCS_FILE_BASE64, rng);
  *
  * // Load SSH2 key pair
  * silc_pkcs_load_public_key("pubkey.pub", SILC_PKCS_SSH2, &public_key);
- * silc_pkcs_load_private_key("privkey.pub", passphrase, passphrase_len,
+ * silc_pkcs_load_private_key("privkey.prv", passphrase, passphrase_len,
  *                            SILC_PKCS_SSH2, &public_key);
  *
  * // Free public and private key. Frees automatically the underlaying SSH keys.

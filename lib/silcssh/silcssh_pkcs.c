@@ -952,7 +952,7 @@ SILC_PKCS_SIGN(silc_pkcs_ssh_sign)
     return NULL;
   }
 
-  stack = silc_stack_alloc(2048, silc_crypto_stack());
+  stack = silc_stack_alloc(0, silc_crypto_stack());
 
   sign = silc_scalloc(stack, 1, sizeof(*sign));
   if (!sign) {
@@ -978,29 +978,81 @@ SILC_PKCS_SIGN(silc_pkcs_ssh_sign)
 SILC_PKCS_VERIFY(silc_pkcs_ssh_verify)
 {
   SilcSshPublicKey pubkey = public_key;
-  SilcBufferStruct sig;
+  SilcAsyncOperation op;
+  SilcBufferStruct sig, r, s;
+  unsigned char *signame;
+  SilcStack stack = NULL;
+  SilcAsn1 asn1;
 
   if (!pubkey->pkcs->verify) {
     verify_cb(FALSE, context);
     return NULL;
   }
 
-  /* Decode the SSH2 protocol style signature encoding.  Ignore the
-     algorithm name.  We know the algorithm. */
+  /* Decode the SSH2 protocol style signature encoding. */
   silc_buffer_set(&sig, signature, signature_len);
   if (silc_buffer_unformat(&sig,
-			   SILC_STR_UI32_NSTRING(NULL, NULL),
+			   SILC_STR_UI32_STRING_ALLOC(&signame),
 			   SILC_STR_UI32_NSTRING(&signature, &signature_len),
 			   SILC_STR_END) < 0) {
     verify_cb(FALSE, context);
     return NULL;
   }
+  memset(&sig, 0, sizeof(sig));
+
+  /* DSS signature must be formatted to PKIX compliant format since our
+     implementation expects that. */
+  if (!strcmp(signame, "ssh-dss")) {
+    /* The integers must be 160 bits each */
+    if (signature_len != 40) {
+      verify_cb(FALSE, context);
+      silc_free(signame);
+      return NULL;
+    }
+
+    silc_buffer_set(&r, signature, 20);
+    silc_buffer_set(&s, signature + 20, 20);
+
+    stack = silc_stack_alloc(0, silc_crypto_stack());
+
+    asn1 = silc_asn1_alloc(stack);
+    if (!asn1) {
+      verify_cb(FALSE, context);
+      silc_free(signame);
+      silc_stack_free(stack);
+      return NULL;
+    }
+
+    /* Encode signature to PKIX compliant format. */
+    if (!silc_asn1_encode(asn1, &sig,
+			  SILC_ASN1_OPTS(SILC_ASN1_ALLOC),
+			  SILC_ASN1_SEQUENCE,
+			    SILC_ASN1_ANY_PRIMITIVE(SILC_ASN1_TAG_INTEGER, &r),
+			    SILC_ASN1_ANY_PRIMITIVE(SILC_ASN1_TAG_INTEGER, &s),
+			  SILC_ASN1_END, SILC_ASN1_END)) {
+      verify_cb(FALSE, context);
+      silc_free(signame);
+      silc_asn1_free(asn1);
+      silc_stack_free(stack);
+      return NULL;
+    }
+
+    signature = silc_buffer_steal(&sig, &signature_len);
+
+    silc_asn1_free(asn1);
+  }
 
   /* Verify */
-  return pubkey->pkcs->verify(pubkey->pkcs, pubkey->public_key,
-			      signature, signature_len,
-			      data, data_len, hash, rng,
-			      verify_cb, context);
+  op = pubkey->pkcs->verify(pubkey->pkcs, pubkey->public_key,
+			    signature, signature_len,
+			    data, data_len, hash, rng,
+			    verify_cb, context);
+
+  silc_free(signame);
+  silc_buffer_spurge(stack, &sig);
+  silc_stack_free(stack);
+
+  return op;
 }
 
 /************************** SSH2 PKCS RSA Alg API ***************************/

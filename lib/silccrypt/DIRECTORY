@@ -1,14 +1,14 @@
 <!--
 @LIBRARY=SILC Crypto Library
 @FILENAME=silccryptlib.html
-@LINK=silcrng_intro.html:Introduction to SILC RNG
-@LINK=silcrng.html:SILC RNG Interface
-@LINK=silccipher.html:SILC Cipher API
 @LINK=silcpkcs.html:SILC PKCS API
-@LINK=silcpk.html:SILC Public Key API
-@LINK=silcpkcs1.html:SILC PKCS #1 API
+@LINK=silccipher.html:SILC Cipher API
 @LINK=silchash.html:SILC Hash Interface
 @LINK=silchmac.html:SILC HMAC Interface
+@LINK=silcrng_intro.html:Introduction to SILC RNG
+@LINK=silcrng.html:SILC RNG Interface
+@LINK=silcpkcs1.html:SILC PKCS #1 API
+@LINK=silcpk.html:SILC Public Key API
 -->
 
 <big><b>SILC Crypto Library</b></big>
