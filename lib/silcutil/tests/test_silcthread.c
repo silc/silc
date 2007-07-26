@@ -46,13 +46,13 @@ int main(int argc, char **argv)
   tp = silc_thread_pool_alloc(NULL, 0, 2, FALSE);
   if (!tp)
     goto err;
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < 6; i++) {
     SILC_LOG_DEBUG(("Run thread %d", i + 1));
     if (!silc_thread_pool_run(tp, TRUE, NULL, func, (void *) i + 1,
 			      compl, (void *)i + 1))
       goto err;
   }
-  sleep(4);
+  sleep(6);
   SILC_LOG_DEBUG(("Stop thread pool"));
   silc_thread_pool_free(tp, TRUE);
 

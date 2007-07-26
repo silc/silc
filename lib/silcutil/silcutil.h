@@ -156,8 +156,7 @@ char *silc_format(char *fmt, ...);
  *
  *    Basic has function to hash strings. May be used with the SilcHashTable.
  *    Note that this lowers the characters of the string (with tolower()) so
- *    this is used usually with nicknames, channel and server names to provide
- *    case insensitive keys.
+ *    this can be used to provide case-insensitive hashing.
  *
  ***/
 SilcUInt32 silc_hash_string(void *key, void *user_context);
@@ -251,8 +250,8 @@ SilcUInt32 silc_hash_data(void *key, void *user_context);
  *
  * DESCRIPTION
  *
- *    Compares two strings. It may be used as SilcHashTable comparison
- *    function.
+ *    Compares two strings. This ignores the case while comparing.  It may
+ *    be used as SilcHashTable comparison function.
  *
  ***/
 SilcBool silc_hash_string_compare(void *key1, void *key2, void *user_context);
