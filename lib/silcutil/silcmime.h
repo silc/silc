@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 - 2006 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -115,6 +115,29 @@ SilcMimeAssembler silc_mime_assembler_alloc(void);
  ***/
 void silc_mime_assembler_free(SilcMimeAssembler assembler);
 
+/****f* silcutil/SILCMIMEAPI/silc_mime_assembler_purge
+ *
+ * SYNOPSIS
+ *
+ *    void silc_mime_assembler_purge(SilcMimeAssembler assembler,
+ *                                   SilcUInt32 purge_minutes);
+ *
+ * DESCRIPTION
+ *
+ *    Purges the MIME fragment assembler from old fragments that have never
+ *    completed into a full MIME message.  This function may be called
+ *    periodically to purge MIME fragments.  The `purge_minutes' specify
+ *    how old fragments are purged.  If it is 0, fragments older than 5 minutes
+ *    are purged, by default.  The value is in minutes.
+ *
+ *    It is usefull to call this periodically to assure that memory is not
+ *    consumed needlessly by keeping old unfinished fragments in a long
+ *    running assembler.
+ *
+ ***/
+void silc_mime_assembler_purge(SilcMimeAssembler assembler,
+			       SilcUInt32 purge_minutes);
+
 /****f* silcutil/SILCMIMEAPI/silc_mime_decode
  *
  * SYNOPSIS
@@ -176,7 +199,7 @@ unsigned char *silc_mime_encode(SilcMime mime, SilcUInt32 *encoded_len);
  *
  *    Processes and attempts to assemble the received MIME fragment `partial'.
  *    To check if a received MIME message is a fragment use the
- *    silc_mime_is_partial function.  Returns NULL if all fragments has not
+ *    silc_mime_is_partial function.  Returns NULL if all fragments have not
  *    yet been received, or the newly allocated completed MIME message if
  *    all fragments were received.  The caller must free the returned
  *    SilcMime context.  The caller must not free the `partial'.

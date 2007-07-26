@@ -19,6 +19,14 @@
 
 #include "silc.h"
 
+/************************** Types and definitions ***************************/
+
+/* MIME fragment ID context */
+typedef struct {
+  char *id;
+  SilcInt64 starttime;
+} SilcMimeFragmentIdStruct, *SilcMimeFragmentId;
+
 /************************ Static utility functions **************************/
 
 /* MIME fields destructor */
@@ -34,16 +42,38 @@ static void silc_mime_field_dest(void *key, void *context, void *user_context)
 static void silc_mime_assembler_dest(void *key, void *context,
 				     void *user_context)
 {
-  silc_free(key);
+  SilcMimeFragmentId id = key;
+
+  silc_free(id->id);
+  silc_free(id);
+
+  /* Free all fragments */
   silc_hash_table_free(context);
 }
 
-/* Assembler partial MIME destructor */
+/* Assembler partial MIME fragmentn destructor */
 
 static void silc_mime_assemble_dest(void *key, void *context,
 				    void *user_context)
 {
   silc_mime_free(context);
+}
+
+/* MIME fragment ID hashing */
+
+static SilcUInt32 silc_mime_hash_id(void *key, void *user_context)
+{
+  SilcMimeFragmentId id = key;
+  return silc_hash_string(id->id, user_context);
+}
+
+/* MIME fragment ID comparing */
+
+static SilcBool silc_mime_id_compare(void *key1, void *key2,
+				     void *user_context)
+{
+  SilcMimeFragmentId id1 = key1, id2 = key2;
+  return silc_hash_string_compare(id1->id, id2->id, user_context);
 }
 
 
@@ -102,8 +132,8 @@ SilcMimeAssembler silc_mime_assembler_alloc(void)
     return NULL;
 
   assembler->fragments =
-    silc_hash_table_alloc(NULL, 0, silc_hash_string, NULL,
-			  silc_hash_string_compare, NULL,
+    silc_hash_table_alloc(NULL, 0, silc_mime_hash_id, NULL,
+			  silc_mime_id_compare, NULL,
 			  silc_mime_assembler_dest, assembler, TRUE);
   if (!assembler->fragments) {
     silc_mime_assembler_free(assembler);
@@ -119,6 +149,31 @@ void silc_mime_assembler_free(SilcMimeAssembler assembler)
 {
   silc_hash_table_free(assembler->fragments);
   silc_free(assembler);
+}
+
+/* Purge assembler from old unfinished fragments */
+
+void silc_mime_assembler_purge(SilcMimeAssembler assembler,
+			       SilcUInt32 purge_minutes)
+{
+  SilcMimeFragmentId id;
+  SilcHashTableList htl;
+  SilcInt64 curtime = silc_time();
+  SilcUInt32 timeout = purge_minutes ? purge_minutes * 60 : 5 * 60;
+
+  SILC_LOG_DEBUG(("Purge MIME assembler"));
+
+  silc_hash_table_list(assembler->fragments, &htl);
+  while (silc_hash_table_get(&htl, (void *)&id, NULL)) {
+    if (curtime - id->starttime <= timeout)
+      continue;
+
+    SILC_LOG_DEBUG(("Purge partial MIME id %s", id->id));
+
+    /* Purge */
+    silc_hash_table_del(assembler->fragments, id);
+  }
+  silc_hash_table_list_reset(&htl);
 }
 
 /* Decode MIME message */
@@ -412,6 +467,7 @@ unsigned char *silc_mime_encode(SilcMime mime, SilcUInt32 *encoded_len)
 SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
 {
   char *type, *id = NULL, *tmp;
+  SilcMimeFragmentIdStruct *fragid, query;
   SilcHashTable f;
   SilcMime p, complete;
   int i, number, total = -1;
@@ -465,15 +521,23 @@ SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
   SILC_LOG_DEBUG(("Fragment number %d", number));
 
   /* Find fragments with this ID. */
-  if (!silc_hash_table_find(assembler->fragments, (void *)id,
+  query.id = id;
+  if (!silc_hash_table_find(assembler->fragments, (void *)&query,
 			    NULL, (void *)&f)) {
     /* This is new fragment to new message.  Add to hash table and return. */
     f = silc_hash_table_alloc(NULL, 0, silc_hash_uint, NULL, NULL, NULL,
 			      silc_mime_assemble_dest, NULL, TRUE);
     if (!f)
-	 goto err;
+      goto err;
+
+    fragid = silc_calloc(1, sizeof(*fragid));
+    if (!fragid)
+      goto err;
+    fragid->id = id;
+    fragid->starttime = silc_time();
+
     silc_hash_table_add(f, SILC_32_TO_PTR(number), partial);
-    silc_hash_table_add(assembler->fragments, id, f);
+    silc_hash_table_add(assembler->fragments, fragid, f);
     return NULL;
   }
 
@@ -499,14 +563,17 @@ SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
   /* If more fragments to come, add to hash table */
   if (number != total) {
     silc_hash_table_add(f, SILC_32_TO_PTR(number), partial);
+    silc_free(id);
     return NULL;
   }
 
   silc_hash_table_add(f, SILC_32_TO_PTR(number), partial);
 
   /* Verify that we really have all the fragments */
-  if (silc_hash_table_count(f) < total)
+  if (silc_hash_table_count(f) < total) {
+    silc_free(id);
     return NULL;
+  }
 
   /* Assemble the complete MIME message now. We get them in order from
      the hash table. */
@@ -542,7 +609,7 @@ SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
     goto err;
 
   /* Delete the hash table entry. Destructors will free memory */
-  silc_hash_table_del(assembler->fragments, (void *)id);
+  silc_hash_table_del(assembler->fragments, (void *)&query);
   silc_free(id);
   silc_buffer_free(compbuf);
 

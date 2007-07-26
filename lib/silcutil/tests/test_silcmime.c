@@ -267,6 +267,7 @@ int main(int argc, char **argv)
         SILC_LOG_DEBUG(("Error encoding"));
       SILC_LOG_DEBUG(("Encoded MIME message: \n%s", enc));
       silc_free(enc);
+      silc_mime_free(part);
     }
   }
   silc_mime_partial_free(frag);
