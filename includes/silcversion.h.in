@@ -26,7 +26,7 @@ extern "C" {
 
 /* Version check macro.  Use this to check that package is of specific
    version compile time.  Use the __SILC_XXX_VERSION below in comparison. */
-#define SILC_VERSION(a, b, c) (((a) << 24) + ((b) << 16) + ((c) << 8)
+#define SILC_VERSION(a, b, c) (((a) << 24) + ((b) << 16) + ((c) << 8))
 @__SILC_PACKAGE_VERSION@
 
 #define SILC_VERSION_STRING "@VERSION@"
