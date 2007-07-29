@@ -75,7 +75,8 @@ typedef struct SilcCondStruct *SilcCond;
  *    Allocates SILC Condition variable context.  The condition must
  *    be allocated before it can be used.  It is freed by the
  *    silc_cond_free function.  This returns TRUE and allocated
- *    condition in to the `cond' pointer and FALSE on error.
+ *    condition in to the `cond' pointer and FALSE if system is out of
+ *    memory.
  *
  ***/
 SilcBool silc_cond_alloc(SilcCond *cond);

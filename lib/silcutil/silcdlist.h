@@ -90,7 +90,8 @@ typedef struct SilcDListEntryStruct {
  *
  * DESCRIPTION
  *
- *    Initializes SilcDList.  Returns the SilcDList context or NULL on error.
+ *    Initializes SilcDList.  Returns the SilcDList context or NULL if system
+ *    is out of memory.
  *
  ***/
 

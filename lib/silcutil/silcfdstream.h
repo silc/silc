@@ -44,7 +44,7 @@
  *
  *    Creates file descriptor stream for the open file descriptor indicated
  *    by `fd'.  The stream is closed with the silc_stream_close and destroyed
- *    with the silc_stream_destroy.
+ *    with the silc_stream_destroy.  Returns NULL if system is out of memory.
  *
  *    If the silc_stream_set_notifier is called the stream is set to
  *    non-blocking mode.
@@ -67,7 +67,8 @@ SilcStream silc_fd_stream_create(int fd, SilcStack stack);
  *    Creates file descriptor stream for the open file descriptors indicated
  *    by `read_fd' and `write_fd'.  The `read_fd' must be opened for reading
  *    and `write_fd' opened for writing.  The stream is closed with the
- *    silc_stream_close and destroyed with the silc_stream_destroy.
+ *    silc_stream_close and destroyed with the silc_stream_destroy.  Returns
+ *    NULL if system is out of memory.
  *
  *    If the silc_stream_set_notifier is called the stream is set to
  *    non-blocking mode.
@@ -90,7 +91,7 @@ SilcStream silc_fd_stream_create2(int read_fd, int write_fd, SilcStack stack);
  *    Same as silc_fd_stream_create but creates the stream by opening the
  *    file indicated by `filename'.  If the `reading' is TRUE the file is
  *    opened for reading.  If the `writing' is TRUE the file is opened
- *    for writing.
+ *    for writing.  Returns NULL if system is out of memory.
  *
  *    If the silc_stream_set_notifier is called the stream is set to
  *    non-blocking mode.
@@ -113,7 +114,8 @@ SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
  * DESCRIPTION
  *
  *    Same as silc_fd_stream_file but creates the stream by opening `read_file'
- *    for reading and `write_file' for writing.
+ *    for reading and `write_file' for writing.  Returns NULL if system is
+ *    out of memory.
  *
  *    If the silc_stream_set_notifier is called the stream is set to
  *    non-blocking mode.
@@ -136,7 +138,7 @@ SilcStream silc_fd_stream_file2(const char *read_file, const char *write_file,
  *
  *    Returns the file descriptors associated with the stream.  The 'write_fd'
  *    is available only if the stream was created with silc_fd_stream_create2
- *    function.
+ *    function.  Returns FALSE if the information is not available.
  *
  ***/
 SilcBool silc_fd_stream_get_info(SilcStream stream,

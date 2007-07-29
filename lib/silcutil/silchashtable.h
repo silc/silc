@@ -192,7 +192,7 @@ typedef void (*SilcHashForeach)(void *key, void *context, void *user_context);
  *    it should be a prime. The `hash', `compare' and `destructor' are
  *    the hash function, the key comparison function and key and context
  *    destructor function, respectively. The `hash' is mandatory, the others
- *    are optional.
+ *    are optional.  Returns NULL if system is out of memory.
  *
  ***/
 SilcHashTable silc_hash_table_alloc(SilcStack stack,

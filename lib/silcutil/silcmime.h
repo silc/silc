@@ -71,7 +71,8 @@ typedef struct SilcMimeAssemblerStruct *SilcMimeAssembler;
  *
  * DESCRIPTION
  *
- *    Allocates SILC Mime message context.
+ *    Allocates SILC Mime message context.  Returns NULL if system is out of
+ *    memory.
  *
  ***/
 SilcMime silc_mime_alloc(void);
@@ -97,7 +98,8 @@ void silc_mime_free(SilcMime mime);
  *
  * DESCRIPTION
  *
- *    Allocates MIME fragment assembler.
+ *    Allocates MIME fragment assembler.  Returns NULL if system is out of
+ *    memory.
  *
  ***/
 SilcMimeAssembler silc_mime_assembler_alloc(void);

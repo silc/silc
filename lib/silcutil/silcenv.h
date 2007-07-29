@@ -41,7 +41,7 @@
  *    Sets the environment variable named `variable' with value `value'
  *    to the environment.  If the `variable' already exists in the
  *    environment its value is changed to `value'.  Returns FALSE if the
- *    value could not be set or if environment variable are not supported.
+ *    value could not be set or if environment variables are not supported.
  *
  ***/
 SilcBool silc_setenv(const char *variable, const char *value);

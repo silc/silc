@@ -278,7 +278,7 @@ SilcAsyncOperation silc_async_alloc(SilcAsyncOperationAbort abort_cb,
  *    silc_async_abort.  Since this use pre-allocated context, the function
  *    silc_async_free need not be called.  This function is equivalent
  *    to silc_async_alloc except this does not allocate any memory.  The `op'
- *    needs not be uninitialized.
+ *    needs not be uninitialized.  This returns always TRUE.
  *
  *    If the `pause_cb' is provided then the upper layer may also halt and
  *    then later resume the execution of the operation, by calling the

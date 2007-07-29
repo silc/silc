@@ -403,6 +403,7 @@ do {						\
  *    caller must free the returned context with silc_fsm_free.  The
  *    `fsm_context' is delivered to every FSM state function.  The `schedule'
  *    is the caller's scheduler and the FSM will be run in the scheduler.
+ *    Returns NULL if system is out of memory.
  *
  * EXAMPLE
  *
@@ -481,7 +482,7 @@ SilcBool silc_fsm_init(SilcFSM fsm,
  *    thread context with silc_fsm_free.  If the 'real_thread' is TRUE
  *    then the thread will actually be executed in real thread, if platform
  *    supports them.  The `thread_context' is delivered to every state
- *    function in the thread.
+ *    function in the thread.  Returns NULL if the system is out of memory.
  *
  * NOTES
  *
@@ -905,7 +906,8 @@ typedef struct SilcFSMEventObject SilcFSMEventStruct;
  *    some event happens, some thread moves to a specific state or similar.
  *    The FSM Events may also be used in FSM threads that are executed in
  *    real system threads.  It is safe to wait and signal the event from
- *    threads.  The `fsm' must be the machine, not a thread.
+ *    threads.  The `fsm' must be the machine, not a thread.  Returns NULL
+ *    if system is out of memory or `fsm' is not FSM machine.
  *
  *    Use the macros SILC_FSM_EVENT_WAIT and SILC_FSM_EVENT_TIMEDWAIT to wait
  *    for the event.  Use the SILC_FSM_EVENT_SIGNAL macro to signal all the

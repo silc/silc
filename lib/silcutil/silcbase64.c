@@ -36,6 +36,8 @@ char *silc_base64_encode(SilcStack stack, unsigned char *data, SilcUInt32 len)
   j = 0;
 
   pem = silc_scalloc(stack, ((len * 8 + 5) / 6) + 5, sizeof(*pem));
+  if (!pem)
+    return NULL;
 
   for (i = 0; i < len; i++) {
     c = data[i];
@@ -127,6 +129,8 @@ unsigned char *silc_base64_decode(SilcStack stack,
     len = base64_len;
 
   data = silc_scalloc(stack, ((len * 6) / 8), sizeof(*data));
+  if (!data)
+    return NULL;
 
   for (i = 0; i < len; i++) {
     c = base64[i];

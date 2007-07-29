@@ -238,7 +238,8 @@ SilcUInt32 silc_buffer_taillen(SilcBuffer x)
  *
  * DESCRIPTION
  *
- *    Allocates new SilcBuffer and returns it.  Returns NULL on error.
+ *    Allocates new SilcBuffer and returns it.  Returns NULL if system is
+ *    out of memory.
  *
  ***/
 
@@ -276,7 +277,8 @@ SilcBuffer silc_buffer_alloc(SilcUInt32 len)
  *
  * DESCRIPTION
  *
- *    Allocates new SilcBuffer and returns it.
+ *    Allocates new SilcBuffer and returns it.  Returns NULL if system is
+ *    out of memory.
  *
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
@@ -503,7 +505,8 @@ void silc_buffer_set(SilcBuffer sb, unsigned char *data, SilcUInt32 data_len)
  *
  *    Pulls current data area towards end. The length of the currently
  *    valid data area is also decremented. Returns pointer to the data
- *    area before pulling. Returns NULL on error.
+ *    area before pulling. Returns NULL if the pull would lead to buffer
+ *    overflow or would go beyond the valid data area.
  *
  * EXAMPLE
  *
@@ -548,7 +551,8 @@ unsigned char *silc_buffer_pull(SilcBuffer sb, SilcUInt32 len)
  *
  *    Pushes current data area towards beginning. Length of the currently
  *    valid data area is also incremented. Returns a pointer to the
- *    data area before pushing. Returns NULL on error.
+ *    data area before pushing. Returns NULL if the push would lead to
+ *    buffer underflow or would go under the valid data area.
  *
  * EXAMPLE
  *
@@ -593,7 +597,7 @@ unsigned char *silc_buffer_push(SilcBuffer sb, SilcUInt32 len)
  *
  *    Pulls current tail section towards end. Length of the current valid
  *    data area is also incremented. Returns a pointer to the data area
- *    before pulling. Returns NULL on error.
+ *    before pulling. Returns NULL if the pull would lead to buffer overflow.
  *
  * EXAMPLE
  *
@@ -638,7 +642,8 @@ unsigned char *silc_buffer_pull_tail(SilcBuffer sb, SilcUInt32 len)
  *
  *    Pushes current tail section towards beginning. Length of the current
  *    valid data area is also decremented. Returns a pointer to the
- *    tail section before pushing. Returns NULL on error.
+ *    tail section before pushing. Returns NULL if the push would lead to
+ *    buffer underflow or go under valid tail area.
  *
  * EXAMPLE
  *
@@ -684,7 +689,8 @@ unsigned char *silc_buffer_push_tail(SilcBuffer sb, SilcUInt32 len)
  * DESCRIPTION
  *
  *    Puts data at the head of the buffer. Returns pointer to the copied
- *    data area. Returns NULL on error.
+ *    data area. Returns NULL if the data is longer that the current head
+ *    area.
  *
  * EXAMPLE
  *
@@ -724,7 +730,8 @@ unsigned char *silc_buffer_put_head(SilcBuffer sb,
  * DESCRIPTION
  *
  *    Puts data at the start of the valid data area. Returns a pointer
- *    to the copied data area.  Returns NULL on error.
+ *    to the copied data area.  Returns NULL if the data is longer than the
+ *    current data area.
  *
  * EXAMPLE
  *
@@ -764,7 +771,8 @@ unsigned char *silc_buffer_put(SilcBuffer sb,
  * DESCRIPTION
  *
  *    Puts data at the tail of the buffer. Returns pointer to the copied
- *    data area.  Returns NULL on error.
+ *    data area.  Returns NULL if the data is longer than the current tail
+ *    area.
  *
  * EXAMPLE
  *
@@ -803,7 +811,7 @@ unsigned char *silc_buffer_put_tail(SilcBuffer sb,
  *
  *    Allocates `len' bytes size buffer and moves the tail area automatically
  *    `len' bytes so that the buffer is ready to use without calling the
- *    silc_buffer_pull_tail.  Returns NULL on error.
+ *    silc_buffer_pull_tail.  Returns NULL if system is out of memory.
  *
  ***/
 
@@ -828,7 +836,7 @@ SilcBuffer silc_buffer_alloc_size(SilcUInt32 len)
  *
  *    Allocates `len' bytes size buffer and moves the tail area automatically
  *    `len' bytes so that the buffer is ready to use without calling the
- *    silc_buffer_pull_tail.
+ *    silc_buffer_pull_tail.  Returns NULL if system is out of memory.
  *
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
@@ -943,7 +951,7 @@ void silc_buffer_end(SilcBuffer sb)
  *
  *    Generates copy of a SilcBuffer. This copies everything inside the
  *    currently valid data area, nothing more. Use silc_buffer_clone to
- *    copy entire buffer.  Returns NULL on error.
+ *    copy entire buffer.  Returns NULL if system is out of memory.
  *
  ***/
 
@@ -971,7 +979,7 @@ SilcBuffer silc_buffer_copy(SilcBuffer sb)
  *
  *    Generates copy of a SilcBuffer. This copies everything inside the
  *    currently valid data area, nothing more. Use silc_buffer_clone to
- *    copy entire buffer.
+ *    copy entire buffer.  Returns NULL if system is out of memory.
  *
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
@@ -1005,7 +1013,7 @@ SilcBuffer silc_buffer_scopy(SilcStack stack, SilcBuffer sb)
  *
  *    Clones SilcBuffer. This generates new SilcBuffer and copies
  *    everything from the source buffer. The result is exact clone of
- *    the original buffer.  Returns NULL on error.
+ *    the original buffer.  Returns NULL if system is out of memory.
  *
  ***/
 
@@ -1035,7 +1043,7 @@ SilcBuffer silc_buffer_clone(SilcBuffer sb)
  *
  *    Clones SilcBuffer. This generates new SilcBuffer and copies
  *    everything from the source buffer. The result is exact clone of
- *    the original buffer.
+ *    the original buffer.  Returns NULL if system is out of memory.
  *
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
@@ -1072,7 +1080,7 @@ SilcBuffer silc_buffer_sclone(SilcStack stack, SilcBuffer sb)
  *    Reallocates buffer. Old data is saved into the new buffer. The buffer
  *    is exact clone of the old one except that there is now more space
  *    at the end of buffer.  This always returns the same `sb' unless `sb'
- *    was NULL. Returns NULL on error.
+ *    was NULL. Returns NULL if system is out of memory.
  *
  ***/
 
@@ -1113,7 +1121,7 @@ SilcBuffer silc_buffer_realloc(SilcBuffer sb, SilcUInt32 newsize)
  *
  *    Reallocates buffer. Old data is saved into the new buffer. The buffer
  *    is exact clone of the old one except that there is now more space
- *    at the end of buffer.
+ *    at the end of buffer.  Returns NULL if system is out of memory.
  *
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
@@ -1171,7 +1179,7 @@ SilcBuffer silc_buffer_srealloc(SilcStack stack,
  *
  *    Same as silc_buffer_realloc but moves moves the tail area
  *    automatically so that the buffer is ready to use without calling the
- *    silc_buffer_pull_tail.  Returns NULL on error.
+ *    silc_buffer_pull_tail.  Returns NULL if system is out of memory.
  *
  ***/
 
@@ -1197,7 +1205,7 @@ SilcBuffer silc_buffer_realloc_size(SilcBuffer sb, SilcUInt32 newsize)
  *
  *    Same as silc_buffer_srealloc but moves moves the tail area
  *    automatically so that the buffer is ready to use without calling the
- *    silc_buffer_pull_tail.
+ *    silc_buffer_pull_tail.  Returns NULL if system is out of memory.
  *
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
@@ -1233,7 +1241,7 @@ SilcBuffer silc_buffer_srealloc_size(SilcStack stack,
  *    is at least the size of `size'.  If there is more space than `size'
  *    in the data area this does not do anything.  If there is enough
  *    space in the tail area this merely moves the tail area to reveal
- *    the extra space.  Returns FALSE on error.
+ *    the extra space.  Returns FALSE if system is out of memory.
  *
  ***/
 
@@ -1267,7 +1275,7 @@ SilcBool silc_buffer_enlarge(SilcBuffer sb, SilcUInt32 size)
  *    is at least the size of `size'.  If there is more space than `size'
  *    in the data area this does not do anything.  If there is enough
  *    space in the tail area this merely moves the tail area to reveal
- *    the extra space.  Returns FALSE on error.
+ *    the extra space.  Returns FALSE if system is out of memory.
  *
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.

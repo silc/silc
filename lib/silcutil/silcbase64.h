@@ -38,7 +38,7 @@
  * DESCRIPTION
  *
  *    Encodes data into Base 64 (PEM) encoding. Returns NULL terminated
- *    Base 64 encoded data string.
+ *    Base 64 encoded data string.  Returns NULL if system is out of memory.
  *
  *    If `stack' is non-NULL the returned buffer is allocated from `stack'.
  *
@@ -55,7 +55,7 @@ char *silc_base64_encode(SilcStack stack, unsigned char *data, SilcUInt32 len);
  * DESCRIPTION
  *
  *    Same as silc_base64_encode() but puts newline ('\n') every 72
- *    characters.
+ *    characters.  Returns NULL if system is out of memory.
  *
  *    If `stack' is non-NULL the returned buffer is allocated from `stack'.
  *
@@ -74,7 +74,8 @@ char *silc_base64_encode_file(SilcStack stack,
  *
  * DESCRIPTION
  *
- *    Decodes Base 64 (PEM) into data. Returns the decoded data.
+ *    Decodes Base 64 (PEM) into data. Returns the decoded data.  Returns
+ *    NULL if the data is not valid Base 64 encoded data.
  *
  *    If `stack' is non-NULL the returned buffer is allocated from `stack'.
  *
