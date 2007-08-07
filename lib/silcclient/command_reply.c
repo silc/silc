@@ -1208,7 +1208,6 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   /* Add clients we received in the reply to the channel */
   for (i = 0; i < list_count; i++) {
     SilcUInt16 idp_len;
-    SilcUInt32 mode;
     SilcID id;
     SilcClientEntry client_entry;
 
@@ -1851,8 +1850,8 @@ SILC_FSM_STATE(silc_client_command_reply_users)
   SilcCommandPayload payload = state_context;
   SilcArgumentPayload args = silc_command_get_args(payload);
   unsigned char *tmp;
-  SilcUInt32 tmp_len, list_count;
-  SilcUInt16 idp_len, mode;
+  SilcUInt32 tmp_len, list_count, mode;
+  SilcUInt16 idp_len;
   SilcHashTableList htl;
   SilcBufferStruct client_id_list, client_mode_list;
   SilcChannelEntry channel = NULL;
