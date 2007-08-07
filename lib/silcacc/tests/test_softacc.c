@@ -29,7 +29,7 @@ SILC_TASK_CALLBACK(quit)
 
 SILC_TASK_CALLBACK(sign)
 {
-  silc_pkcs_sign(accprv, data, data_len, TRUE, hash, sign_compl, NULL);
+  silc_pkcs_sign(accprv, data, data_len, TRUE, hash, NULL, sign_compl, NULL);
   if (--s > 0)
     silc_schedule_task_add_timeout(schedule, sign, NULL, 0, 60000);
 }
