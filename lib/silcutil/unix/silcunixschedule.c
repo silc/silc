@@ -121,11 +121,13 @@ int silc_poll(SilcSchedule schedule, void *context)
   struct pollfd *fds = internal->fds;
   SilcUInt32 fds_count = internal->fds_count;
   int fd, ret, i = 0, timeout = -1;
+  void *fdp;
 
   silc_hash_table_list(schedule->fd_queue, &htl);
-  while (silc_hash_table_get(&htl, (void *)&fd, (void *)&task)) {
+  while (silc_hash_table_get(&htl, &fdp, (void *)&task)) {
     if (!task->events)
       continue;
+    fd = SILC_PTR_TO_32(fdp);
 
     /* Allocate larger fd table if needed */
     if (i >= fds_count) {
@@ -198,14 +200,16 @@ int silc_select(SilcSchedule schedule, void *context)
   SilcTaskFd task;
   fd_set in, out;
   int fd, max_fd = 0, ret;
+  void *fdp;
 
   FD_ZERO(&in);
   FD_ZERO(&out);
 
   silc_hash_table_list(schedule->fd_queue, &htl);
-  while (silc_hash_table_get(&htl, (void *)&fd, (void *)&task)) {
+  while (silc_hash_table_get(&htl, &fdp, (void *)&task)) {
     if (!task->events)
       continue;
+    fd = SILC_PTR_TO_32(fdp);
 
 #ifdef FD_SETSIZE
     if (fd >= FD_SETSIZE)
@@ -233,9 +237,10 @@ int silc_select(SilcSchedule schedule, void *context)
     return ret;
 
   silc_hash_table_list(schedule->fd_queue, &htl);
-  while (silc_hash_table_get(&htl, (void *)&fd, (void *)&task)) {
+  while (silc_hash_table_get(&htl, &fdp, (void *)&task)) {
     if (!task->header.valid || !task->events)
       continue;
+    fd = SILC_PTR_TO_32(fdp);
 
 #ifdef FD_SETSIZE
     if (fd >= FD_SETSIZE)

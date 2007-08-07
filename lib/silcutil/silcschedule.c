@@ -201,12 +201,12 @@ static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
   if (silc_unlikely(task == SILC_ALL_TASKS)) {
     SilcTask task;
     SilcHashTableList htl;
-    SilcUInt32 fd;
+    void *fd;
 
     /* Delete from fd queue */
     silc_hash_table_list(schedule->fd_queue, &htl);
-    while (silc_hash_table_get(&htl, (void *)&fd, (void *)&task))
-      silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(fd));
+    while (silc_hash_table_get(&htl, &fd, (void *)&task))
+      silc_hash_table_del(schedule->fd_queue, fd);
     silc_hash_table_list_reset(&htl);
 
     /* Delete from timeout queue */
