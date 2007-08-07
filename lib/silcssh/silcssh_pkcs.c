@@ -706,15 +706,15 @@ SILC_PKCS_EXPORT_PRIVATE_KEY_FILE(silc_pkcs_ssh_export_private_key_file)
     silc_hash_final(md5, enc + 16);
 
     /* Pad */
-    pad_len = 8 - (key_len % 8);
+    pad_len = (-key_len) % 8;
     if (pad_len) {
       keyenc = silc_smalloc(stack, (key_len + pad_len) * sizeof(*keyenc));
-      if (!key)
+      if (!keyenc)
 	goto err;
       memset(keyenc + key_len, 'F', pad_len);
       memcpy(keyenc, key, key_len);
     } else {
-      keyenc = silc_memdup(key, key_len);
+      keyenc = silc_smemdup(stack, key, key_len);
       if (!keyenc)
 	goto err;
     }
@@ -870,7 +870,7 @@ static void silc_pkcs_ssh_sign_cb(SilcBool success,
 
   /* Format the signature.  RSA is easy because PKCS#1 is already in
      correct format.  For DSA the returned signature is in PKIX compliant
-     format and we have reformat it for SSH2. */
+     format and we have to reformat it for SSH2. */
   if (!strcmp(sign->privkey->pkcs->name, "dsa")) {
     asn1 = silc_asn1_alloc(stack);
     if (!asn1) {
