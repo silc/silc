@@ -186,7 +186,7 @@ SilcBool silc_cipher_unregister_all(void);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_cipher_alloc(const unsigned char *name,
+ *    SilcBool silc_cipher_alloc(const char *name,
  *                               SilcCipher *new_cipher);
  *
  * DESCRIPTION
@@ -211,7 +211,7 @@ SilcBool silc_cipher_unregister_all(void);
  *    Notes about modes:
  *
  ***/
-SilcBool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher);
+SilcBool silc_cipher_alloc(const char *name, SilcCipher *new_cipher);
 
 /****f* silccrypt/SilcCipherAPI/silc_cipher_free
  *
@@ -230,14 +230,14 @@ void silc_cipher_free(SilcCipher cipher);
  *
  * SYNOPSIS
  *
- * SilcBool silc_cipher_is_supported(const unsigned char *name);
+ * SilcBool silc_cipher_is_supported(const char *name);
  *
  * DESCRIPTION
  *
  *    Returns TRUE if cipher `name' is supported.
  *
  ***/
-SilcBool silc_cipher_is_supported(const unsigned char *name);
+SilcBool silc_cipher_is_supported(const char *name);
 
 /****f* silccrypt/SilcCipherAPI/silc_cipher_get_supported
  *

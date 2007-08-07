@@ -164,7 +164,7 @@ SilcBool silc_hash_unregister_all(void)
 /* Allocates a new SilcHash object. New object is returned into new_hash
    argument. */
 
-SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash)
+SilcBool silc_hash_alloc(const char *name, SilcHash *new_hash)
 {
   SilcHashObject *entry = NULL;
   int i;
@@ -294,7 +294,7 @@ const char *silc_hash_get_oid(SilcHash hash)
 
 /* Returns TRUE if hash algorithm `name' is supported. */
 
-SilcBool silc_hash_is_supported(const unsigned char *name)
+SilcBool silc_hash_is_supported(const char *name)
 {
   SilcHashObject *entry;
   int i;

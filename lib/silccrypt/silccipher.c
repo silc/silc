@@ -186,7 +186,7 @@ SilcBool silc_cipher_unregister_all(void)
    caller must set the key to the cipher after this function has returned
    by calling the ciphers set_key function. */
 
-SilcBool silc_cipher_alloc(const unsigned char *name, SilcCipher *new_cipher)
+SilcBool silc_cipher_alloc(const char *name, SilcCipher *new_cipher)
 {
   SilcCipherObject *entry = NULL;
   int i;
@@ -243,7 +243,7 @@ void silc_cipher_free(SilcCipher cipher)
 
 /* Returns TRUE if cipher `name' is supported. */
 
-SilcBool silc_cipher_is_supported(const unsigned char *name)
+SilcBool silc_cipher_is_supported(const char *name)
 {
   SilcCipherObject *entry;
   int i;

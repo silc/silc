@@ -187,7 +187,7 @@ SilcBool silc_hash_unregister_all(void);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash);
+ *    SilcBool silc_hash_alloc(const char *name, SilcHash *new_hash);
  *
  * DESCRIPTION
  *
@@ -196,7 +196,7 @@ SilcBool silc_hash_unregister_all(void);
  *    returns FALSE if such hash function does not exist.
  *
  ***/
-SilcBool silc_hash_alloc(const unsigned char *name, SilcHash *new_hash);
+SilcBool silc_hash_alloc(const char *name, SilcHash *new_hash);
 
 /****f* silccrypt/SilcHashAPI/silc_hash_alloc_by_oid
  *
@@ -230,14 +230,14 @@ void silc_hash_free(SilcHash hash);
  *
  * SYNOPSIS
  *
- *    SilcBool silc_hash_is_supported(const unsigned char *name);
+ *    SilcBool silc_hash_is_supported(const char *name);
  *
  * DESCRIPTION
  *
  *    Returns TRUE if the hash function indicated by the `name' exists.
  *
  ***/
-SilcBool silc_hash_is_supported(const unsigned char *name);
+SilcBool silc_hash_is_supported(const char *name);
 
 /****f* silccrypt/SilcHashAPI/silc_hash_get_supported
  *
