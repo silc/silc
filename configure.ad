@@ -53,36 +53,66 @@ esac
 
 # Get CPU
 cpu_i386=false
-cpu_ix86=false
+cpu_i486=false
+cpu_i586=false
+cpu_i686=false
+cpu_i786=false
 cpu_x86_64=false
 cpu_ppc=false
 cpu_ia64=false
 case "$host_cpu" in
-  i386)
+  # All following Intels are considered 32-bit CPUs.
+  i?86)
     AC_DEFINE([SILC_I386], [], [SILC_I386])
     AC_DEFINE([SILC_I486], [], [SILC_I486])
     cpu_i386=true
-    cpu_ix86=true
+    cpu_i486=true
+
+    if test "x$host_cpu" = "xi586"; then
+      AC_DEFINE([SILC_I586], [], [SILC_I586])
+      cpu_i586=true
+    fi
+
+    if test "x$host_cpu" = "xi686"; then
+      AC_DEFINE([SILC_I586], [], [SILC_I586])
+      AC_DEFINE([SILC_I686], [], [SILC_I686])
+      cpu_i586=true
+      cpu_i686=true
+    fi
+
+    if test "x$host_cpu" = "xi786"; then
+      AC_DEFINE([SILC_I586], [], [SILC_I586])
+      AC_DEFINE([SILC_I686], [], [SILC_I686])
+      AC_DEFINE([SILC_I786], [], [SILC_I786])
+      cpu_i586=true
+      cpu_i686=true
+      cpu_i786=true
+    fi
     ;;
-  i?86)
-    AC_DEFINE([SILC_I486], [], [SILC_I486])
-    cpu_ix86=true
-    ;;
-  x86_64)
-    AC_DEFINE([SILC_X86_64], [], [SILC_X86_64])
-    cpu_x86_64=true
-    ;;
-  powerpc*)
-    AC_DEFINE([SILC_POWERPC], [], [SILC_POWERPC])
-    cpu_ppc=true
-    ;;
+
+  # Intel IA-64, 64-bit CPU (not x86_64 compatible)
   ia64)
     AC_DEFINE([SILC_IA64], [], [SILC_IA64])
     cpu_ia64=true
     ;;
+
+  # AMD/Intel x86_64, 64-bit CPU
+  x86_64)
+    AC_DEFINE([SILC_X86_64], [], [SILC_X86_64])
+    cpu_x86_64=true
+    ;;
+
+  # PowerPC, 32-bit and 64-bit CPUs
+  powerpc*)
+    AC_DEFINE([SILC_POWERPC], [], [SILC_POWERPC])
+    cpu_ppc=true
+    ;;
 esac
 AM_CONDITIONAL(SILC_I386, test x$cpu_i386 = xtrue)
-AM_CONDITIONAL(SILC_I486, test x$cpu_ix86 = xtrue)
+AM_CONDITIONAL(SILC_I486, test x$cpu_i486 = xtrue)
+AM_CONDITIONAL(SILC_I586, test x$cpu_i586 = xtrue)
+AM_CONDITIONAL(SILC_I686, test x$cpu_i686 = xtrue)
+AM_CONDITIONAL(SILC_7686, test x$cpu_i786 = xtrue)
 AM_CONDITIONAL(SILC_X86_64, test x$cpu_x86_64 = xtrue)
 AM_CONDITIONAL(SILC_POWERPC, test x$cpu_ppc = xtrue)
 AM_CONDITIONAL(SILC_IA64, test x$cpu_ia64 = xtrue)

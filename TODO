@@ -218,6 +218,9 @@ Runtime library, lib/silcutil/
 
    silc_snprintf(buf, sizeof(buf), "Client ID %@", id_renderer, client_id);
 
+ o Change silc_gettimeofday on Unix to use clock_gettime with REALTIME
+   clock if it is available, otherwise use gettimeofday().
+
  (o Generic SilcStatus or SilcResult that includes all possible status and
     error conditions, including those of SILC protocol.  Though, the SILC
     protocol related status (currently in silcstatus.h) cannot be in
@@ -318,6 +321,8 @@ Crypto Library, lib/silccrypt/
    check the alg->hash, supported hash functions.  Maybe deliver it also
    to all other functions in SilcPKCSAlgorithm to be consistent. (***DONE)
 
+ o Add DSA support to SILC public key.
+
  o Add DSS support. (***DONE)
 
  o Implement the defined SilcDH API.  The definition is in
@@ -325,10 +330,12 @@ Crypto Library, lib/silccrypt/
    be accelerated.  Also take into account that it could use elliptic
    curves.
 
- o ECDSA and ECDH
+ o Add ECDSA support.
+
+ o Add ECDH support.
 
  o All cipher, hash, hmac etc. allocation routines should take their name
-   in as const char * not const unsigned char *.
+   in as const char * not const unsigned char *. (***DONE)
 
 
 SILC Accelerator Library
@@ -416,15 +423,14 @@ lib/silcasn1
 lib/silcpgp
 ===========
 
- o OpenPGP certificate support, allowing the use of PGP public keys
-   in SILC.
+ o OpenPGP certificate support, allowing the use of PGP public keys.
 
 
 lib/silcssh
 ===========
 
- o SSH2 public key/private key support, allowing the use of SSH2 keys
-   in SILC.  RFC 4716.  (***DONE)
+ o SSH2 public key/private key support, allowing the use of SSH2 keys.
+   RFC 4716.  (***DONE)
 
 
 lib/silcpkix

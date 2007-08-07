@@ -29,6 +29,12 @@ point.
    the one that actually WANTs to establish the keys.  So no need for
    responder to retransmit.  Define this clearly in the specs.
 
+ o Define clearly that the DSS signature format is the the Dss-Sig-Value
+   ASN.1 encoding defined for PKIX.
+
+ o Define clearly the SSH2 signature format is the one specified for SSH2
+   protocol.
+
  o Dynamic server and router connections, ala Jabber.  SILC has allowed 
    this from the beginning.  It should be written out clearly in the
    specs.  Connection would be created with nick strings (which are of
