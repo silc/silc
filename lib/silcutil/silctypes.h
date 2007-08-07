@@ -21,10 +21,8 @@
  *
  * DESCRIPTION
  *
- *    This header includes the most basic types used in the SILC source
- *    tree, such as arithmetic types and their manipulation macros.  This
- *    file is included in the silcincludes.h and is automatically available
- *    for application.
+ * This header file includes basic types and definitions used in SILC Toolkits.
+ * It contains all types, and many utility macros and functions.
  *
  ***/
 
@@ -282,16 +280,26 @@ typedef void * SilcSocket;
 
 /* Macros */
 
+#if (defined(SILC_I486) || defined(SILC_X86_64)) && defined(__GNUC__)
+#define SILC_GET_WORD(cp)						\
+({									\
+  SilcUInt32 _result_;							\
+  asm volatile ("movl (%1), %0; bswapl %0"				\
+		: "=q" (_result_) : "q" (cp));				\
+  _result_;								\
+})
+#else
 #define SILC_GET_WORD(cp) ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24	\
 		    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 16)		\
 		    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 8)		\
 		    | ((SilcUInt32)(SilcUInt8)(cp)[3])
+#endif /* (SILC_I486 || SILC_X86_64) && __GNUC__ */
 
 /****d* silcutil/SILCTypes/SILC_GET16_MSB
  *
  * NAME
  *
- *    #define SILC_GET16_MSB ...
+ *    #define SILC_GET16_MSB(dest, src)
  *
  * DESCRIPTION
  *
@@ -299,18 +307,24 @@ typedef void * SilcSocket;
  *
  * SOURCE
  */
+#if (defined(SILC_I386) || defined(SILC_X86_64)) && defined(__GNUC__)
+#define SILC_GET16_MSB(l, cp)				\
+asm volatile ("movw (%1), %w0; rolw $8, %w0"		\
+	      : "=q" (l) : "q" (cp) : "memory", "cc");
+#else
 #define SILC_GET16_MSB(l, cp)				\
 do {							\
   (l) = ((SilcUInt32)(SilcUInt8)(cp)[0] << 8)		\
     | ((SilcUInt32)(SilcUInt8)(cp)[1]);			\
 } while(0)
+#endif /* (SILC_I386 || SILC_X86_64) && __GNUC__ */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_GET32_MSB
  *
  * NAME
  *
- *    #define SILC_GET32_MSB ...
+ *    #define SILC_GET32_MSB(dest, src)
  *
  * DESCRIPTION
  *
@@ -318,6 +332,11 @@ do {							\
  *
  * SOURCE
  */
+#if (defined(SILC_I486) || defined(SILC_X86_64)) && defined(__GNUC__)
+#define SILC_GET32_MSB(l, cp)				\
+asm volatile ("movl (%1), %0; bswapl %0"		\
+	      : "=q" (l) : "q" (cp) : "memory", "cc");
+#else
 #define SILC_GET32_MSB(l, cp)				\
 do {							\
   (l) = ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24		\
@@ -325,20 +344,32 @@ do {							\
     | ((SilcUInt32)(SilcUInt8)(cp)[2] << 8)		\
     | ((SilcUInt32)(SilcUInt8)(cp)[3]);			\
 } while(0)
+#endif /* (SILC_I486 || SILC_X86_64) && __GNUC__ */
 /***/
 
 /* Same as upper but XOR the result always. Special purpose macro. */
+#if (defined(SILC_I486) || defined(SILC_X86_64)) && defined(__GNUC__)
+#define SILC_GET32_X_MSB(l, cp)						\
+do {									\
+  register volatile SilcUInt32 _x_;					\
+  asm volatile ("movl %1, %3; movl (%2), %0;\n\t"			\
+		"bswapl %0; xorl %3, %0"				\
+		: "=r" (l) : "0" (l), "r" (cp), "r" (_x_)		\
+		: "memory", "cc");					\
+} while(0)
+#else
 #define SILC_GET32_X_MSB(l, cp)				\
   (l) ^= ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24		\
     | ((SilcUInt32)(SilcUInt8)(cp)[1] << 16)		\
     | ((SilcUInt32)(SilcUInt8)(cp)[2] << 8)		\
     | ((SilcUInt32)(SilcUInt8)(cp)[3]);
+#endif /* (SILC_I486 || SILC_X86_64) && __GNUC__ */
 
 /****d* silcutil/SILCTypes/SILC_GET64_MSB
  *
  * NAME
  *
- *    #define SILC_GET64_MSB ...
+ *    #define SILC_GET64_MSB(dest, src)
  *
  * DESCRIPTION
  *
@@ -346,18 +377,24 @@ do {							\
  *
  * SOURCE
  */
+#if defined(SILC_X86_64) && defined(__GNUC__)
+#define SILC_GET64_MSB(l, cp)					\
+asm volatile ("movq (%1), %0; bswapq %0"			\
+	      : "=r" (l) : "r" (cp) : "memory", "cc");
+#else
 #define SILC_GET64_MSB(l, cp)					\
 do {								\
   (l) = ((((SilcUInt64)SILC_GET_WORD((cp))) << 32) |		\
 	 ((SilcUInt64)SILC_GET_WORD((cp) + 4)));		\
 } while(0)
+#endif /* SILC_X86_64 && __GNUC__ */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_GET16_LSB
  *
  * NAME
  *
- *    #define SILC_GET16_MSB ...
+ *    #define SILC_GET16_MSB(dest, src)
  *
  * DESCRIPTION
  *
@@ -365,7 +402,7 @@ do {								\
  *
  * SOURCE
  */
-#if defined(SILC_I486) && defined(__GNUC__)
+#if defined(SILC_I386) || defined(SILC_X86_64)
 #define SILC_GET16_LSB(l, cp) (l) = (*(SilcUInt16 *)(cp))
 #else
 #define SILC_GET16_LSB(l, cp)				\
@@ -373,14 +410,14 @@ do {							\
   (l) = ((SilcUInt32)(SilcUInt8)(cp)[0])		\
     | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8);		\
 } while(0)
-#endif /* SILC_I486 && __GNUC__ */
+#endif /* SILC_I386 || SILC_X86_64 */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_GET32_LSB
  *
  * NAME
  *
- *    #define SILC_GET32_LSB ...
+ *    #define SILC_GET32_LSB(dest, src)
  *
  * DESCRIPTION
  *
@@ -388,7 +425,7 @@ do {							\
  *
  * SOURCE
  */
-#if defined(SILC_I486) && defined(__GNUC__)
+#if defined(SILC_I386) || defined(SILC_X86_64)
 #define SILC_GET32_LSB(l, cp) (l) = (*(SilcUInt32 *)(cp))
 #else
 #define SILC_GET32_LSB(l, cp)				\
@@ -398,10 +435,11 @@ do {							\
     | ((SilcUInt32)(SilcUInt8)(cp)[2] << 16)		\
     | ((SilcUInt32)(SilcUInt8)(cp)[3] << 24);		\
 } while(0)
-#endif /* SILC_I486 && __GNUC__ */
+#endif /* SILC_I386 || SILC_X86_64 */
+/***/
 
 /* Same as upper but XOR the result always. Special purpose macro. */
-#if defined(SILC_I486) && defined(__GNUC__)
+#if defined(SILC_I386) || defined(SILC_X86_64)
 #define SILC_GET32_X_LSB(l, cp) (l) ^= (*(SilcUInt32 *)(cp))
 #else
 #define SILC_GET32_X_LSB(l, cp)				\
@@ -409,14 +447,13 @@ do {							\
     | ((SilcUInt32)(SilcUInt8)(cp)[1] << 8)		\
     | ((SilcUInt32)(SilcUInt8)(cp)[2] << 16)		\
     | ((SilcUInt32)(SilcUInt8)(cp)[3] << 24)
-#endif /* SILC_I486 && __GNUC__ */
-/***/
+#endif /* SILC_I386 || SILC_X86_64 */
 
 /****d* silcutil/SILCTypes/SILC_PUT16_MSB
  *
  * NAME
  *
- *    #define SILC_PUT16_MSB ...
+ *    #define SILC_PUT16_MSB(dest, src)
  *
  * DESCRIPTION
  *
@@ -424,18 +461,24 @@ do {							\
  *
  * SOURCE
  */
+#if (defined(SILC_I386) || defined(SILC_X86_64)) && defined(__GNUC__)
+#define SILC_PUT16_MSB(l, cp)				\
+asm volatile ("rolw $8, %w1; movw %w1, (%0)"		\
+	      : : "q" (cp), "q" (l) : "memory", "cc");
+#else
 #define SILC_PUT16_MSB(l, cp)			\
 do {						\
   (cp)[0] = (SilcUInt8)((l) >> 8);		\
   (cp)[1] = (SilcUInt8)(l);			\
 } while(0)
+#endif /* (SILC_I386 || SILC_X86_64) && __GNUC__ */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_PUT32_MSB
  *
  * NAME
  *
- *    #define SILC_PUT32_MSB ...
+ *    #define SILC_PUT32_MSB(dest, src)
  *
  * DESCRIPTION
  *
@@ -443,6 +486,11 @@ do {						\
  *
  * SOURCE
  */
+#if (defined(SILC_I486) || defined(SILC_X86_64)) && defined(__GNUC__)
+#define SILC_PUT32_MSB(l, cp)				\
+asm volatile ("bswapl %1; movl %1, (%0); bswapl %1"	\
+	      : : "q" (cp), "q" (l) : "memory", "cc");
+#else
 #define SILC_PUT32_MSB(l, cp)			\
 do {						\
   (cp)[0] = (SilcUInt8)((l) >> 24);		\
@@ -450,13 +498,14 @@ do {						\
   (cp)[2] = (SilcUInt8)((l) >> 8);		\
   (cp)[3] = (SilcUInt8)(l);			\
 } while(0)
+#endif /* (SILC_I486 || SILC_X86_64) && __GNUC__ */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_PUT64_MSB
  *
  * NAME
  *
- *    #define SILC_PUT64_MSB ...
+ *    #define SILC_PUT64_MSB(dest, src)
  *
  * DESCRIPTION
  *
@@ -464,18 +513,24 @@ do {						\
  *
  * SOURCE
  */
+#if defined(SILC_X86_64) && defined(__GNUC__)
+#define SILC_PUT64_MSB(l, cp)				\
+asm volatile ("bswapq %1; movq %1, (%0); bswapq %1"	\
+	      : : "r" (cp), "r" (l) : "memory", "cc");
+#else
 #define SILC_PUT64_MSB(l, cp)					\
 do {								\
   SILC_PUT32_MSB((SilcUInt32)((SilcUInt64)(l) >> 32), (cp));	\
   SILC_PUT32_MSB((SilcUInt32)(l), (cp) + 4);			\
 } while(0)
+#endif /* SILC_X86_64 && __GNUC__ */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_PUT16_LSB
  *
  * NAME
  *
- *    #define SILC_PUT16_LSB ...
+ *    #define SILC_PUT16_LSB(dest, src)
  *
  * DESCRIPTION
  *
@@ -483,7 +538,7 @@ do {								\
  *
  * SOURCE
  */
-#if defined(SILC_I486) && defined(__GNUC__)
+#if defined(SILC_I386) || defined(SILC_X86_64)
 #define SILC_PUT16_LSB(l, cp) (*(SilcUInt16 *)(cp)) = (l)
 #else
 #define SILC_PUT16_LSB(l, cp)			\
@@ -491,14 +546,14 @@ do  {						\
   (cp)[0] = (SilcUInt8)(l);			\
   (cp)[1] = (SilcUInt8)((l) >> 8);		\
 } while(0)
-#endif /* SILC_I486 && __GNUC__ */
+#endif /* SILC_I386 || SILC_X86_64 */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_PUT32_LSB
  *
  * NAME
  *
- *    #define SILC_PUT32_LSB ...
+ *    #define SILC_PUT32_LSB(dest, src)
  *
  * DESCRIPTION
  *
@@ -506,7 +561,7 @@ do  {						\
  *
  * SOURCE
  */
-#if defined(SILC_I486) && defined(__GNUC__)
+#if defined(SILC_I386) || defined(SILC_X86_64)
 #define SILC_PUT32_LSB(l, cp) (*(SilcUInt32 *)(cp)) = (l)
 #else
 #define SILC_PUT32_LSB(l, cp)			\
@@ -516,50 +571,70 @@ do {						\
   (cp)[2] = (SilcUInt8)((l) >> 16);		\
   (cp)[3] = (SilcUInt8)((l) >> 24);		\
 } while(0)
-#endif /* SILC_I486 && __GNUC__ */
+#endif /* SILC_I386 || SILC_X86_64 */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_SWAB_16
  *
  * NAME
  *
- *    #define SILC_SWAB_16 ...
+ *    #define SILC_SWAB_16(integer)
  *
  * DESCRIPTION
  *
- *    Swabs 16-bit unsigned integer byte order.
+ *    Swabs 16-bit unsigned integer byte order.  Returns the new value.
  *
  * SOURCE
  */
+#if (defined(SILC_I386) || defined(SILC_X86_64)) && defined(__GNUC__)
+#define SILC_SWAB_16(l)				\
+({						\
+  SilcUInt16 _result_;				\
+  asm volatile ("movw %w1, %w0; rolw $8, %w0"	\
+		: "=q" (_result_): "q" (l));	\
+  _result_;					\
+})
+#else
 #define SILC_SWAB_16(l)						\
   ((SilcUInt16)(((SilcUInt16)(l) & (SilcUInt16)0x00FFU) << 8) |	\
                (((SilcUInt16)(l) & (SilcUInt16)0xFF00U) >> 8))
+#endif /* (SILC_I386 || SILC_X86_64) && __GNUC__ */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_SWAB_32
  *
  * NAME
  *
- *    #define SILC_SWAB_32 ...
+ *    #define SILC_SWAB_32(integer)
  *
  * DESCRIPTION
  *
- *    Swabs 32-bit unsigned integer byte order.
+ *    Swabs 32-bit unsigned integer byte order.  Returns the new value.
  *
  * SOURCE
  */
+#if (defined(SILC_I486) || defined(SILC_X86_64)) && defined(__GNUC__)
+#define SILC_SWAB_32(l)				\
+({						\
+  SilcUInt32 _result_;				\
+  asm volatile ("movl %1, %0; bswapl %0"	\
+		: "=q" (_result_): "q" (l));	\
+  _result_;					\
+})
+#else
 #define SILC_SWAB_32(l)							\
   ((SilcUInt32)(((SilcUInt32)(l) & (SilcUInt32)0x000000FFUL) << 24) |	\
                (((SilcUInt32)(l) & (SilcUInt32)0x0000FF00UL) << 8)  |	\
                (((SilcUInt32)(l) & (SilcUInt32)0x00FF0000UL) >> 8)  |	\
                (((SilcUInt32)(l) & (SilcUInt32)0xFF000000UL) >> 24))
+#endif /* (SILC_I486 || SILC_X86_64) && __GNUC__ */
 /***/
 
 /****d* silcutil/SILCTypes/SILC_PTR_TO_32
  *
  * NAME
  *
- *    #define SILC_PTR_TO_32 ...
+ *    #define SILC_PTR_TO_32(ptr)
  *
  * DESCRIPTION
  *
@@ -581,7 +656,7 @@ do {						\
  *
  * NAME
  *
- *    #define SILC_PTR_TO_64 ...
+ *    #define SILC_PTR_TO_64(ptr)
  *
  * DESCRIPTION
  *
@@ -602,7 +677,7 @@ do {						\
  *
  * NAME
  *
- *    #define SILC_32_TO_PTR ...
+ *    #define SILC_32_TO_PTR(ptr)
  *
  * DESCRIPTION
  *
@@ -623,7 +698,7 @@ do {						\
  *
  * NAME
  *
- *    #define SILC_64_TO_PTR ...
+ *    #define SILC_64_TO_PTR(ptr)
  *
  * DESCRIPTION
  *
@@ -640,5 +715,101 @@ do {						\
 #define SILC_64_TO_PTR(_ival__) ((void *)((SilcUInt64)(_ival__)))
 #endif
 /***/
+
+/****d* silcutil/SILCTypes/silc_rol
+ *
+ * NAME
+ *
+ *    static inline SilcUInt32 silc_rol(SilcUInt32 val, int num);
+ *
+ * DESCRIPTION
+ *
+ *    Rotate 32-bit integer's bits to left `num' times.  Bits pushed to the
+ *    left will appear from the right side of the integer, thus rotating.
+ *    Returns the rotated value.
+ *
+ ***/
+static inline SilcUInt32 silc_rol(SilcUInt32 val, int num)
+{
+#if (defined(SILC_I386) || defined(SILC_X86_64)) && defined(__GNUC__)
+  asm volatile ("roll %%cl, %0"
+		: "=q" (val) : "0" (val), "c" (num));
+  return val;
+#else
+  return ((val << (SilcUInt32)num) | (val >> (32 - (SilcUInt32)num)));
+#endif /* (SILC_I486 || SILC_X86_64) && __GNUC__ */
+}
+
+/****d* silcutil/SILCTypes/silc_ror
+ *
+ * NAME
+ *
+ *    static inline SilcUInt32 silc_ror(SilcUInt32 val, int num);
+ *
+ * DESCRIPTION
+ *
+ *    Rotate 32-bit integer's bits to right `num' times.  Bits pushed to the
+ *    right will appear from the left side of the integer, thus rotating.
+ *    Returns the rotated value.
+ *
+ ***/
+static inline SilcUInt32 silc_ror(SilcUInt32 val, int num)
+{
+#if (defined(SILC_I386) || defined(SILC_X86_64)) && defined(__GNUC__)
+  asm volatile ("rorl %%cl, %0"
+		: "=q" (val) : "0" (val), "c" (num));
+  return val;
+#else
+  return ((val >> (SilcUInt32)num) | (val << (32 - (SilcUInt32)num)));
+#endif /* (SILC_I486 || SILC_X86_64) && __GNUC__ */
+}
+
+/****d* silcutil/SILCTypes/silc_rol64
+ *
+ * NAME
+ *
+ *    static inline SilcUInt64 silc_rol64(SilcUInt64 val, int num);
+ *
+ * DESCRIPTION
+ *
+ *    Rotate 64-bit integer's bits to left `num' times.  Bits pushed to the
+ *    left will appear from the right side of the integer, thus rotating.
+ *    Returns the rotated value.
+ *
+ ***/
+static inline SilcUInt64 silc_rol64(SilcUInt64 val, int num)
+{
+#if defined(SILC_X86_64) && defined(__GNUC__)
+  asm volatile ("rolq %%cl, %0"
+		: "=q" (val) : "0" (val), "c" (num));
+  return val;
+#else
+  return ((val << (SilcUInt64)num) | (val >> (64 - (SilcUInt64)num)));
+#endif /* SILC_X86_64 && __GNUC__ */
+}
+
+/****d* silcutil/SILCTypes/silc_ror64
+ *
+ * NAME
+ *
+ *    static inline SilcUInt64 silc_ror64(SilcUInt64 val, int num);
+ *
+ * DESCRIPTION
+ *
+ *    Rotate 64-bit integer's bits to right `num' times.  Bits pushed to the
+ *    right will appear from the left side of the integer, thus rotating.
+ *    Returns the rotated value.
+ *
+ ***/
+static inline SilcUInt64 silc_ror64(SilcUInt64 val, int num)
+{
+#if defined(SILC_X86_64) && defined(__GNUC__)
+  asm volatile ("rorq %%cl, %0"
+		: "=q" (val) : "0" (val), "c" (num));
+  return val;
+#else
+  return ((val >> (SilcUInt64)num) | (val << (64 - (SilcUInt64)num)));
+#endif /* SILC_X86_64 && __GNUC__ */
+}
 
 #endif /* SILCTYPES_H */
