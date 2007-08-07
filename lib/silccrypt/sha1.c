@@ -9,7 +9,7 @@ By Steve Reid <steve@edmweb.com>
 #include "sha1_internal.h"
 #include "sha1.h"
 
-/* 
+/*
  * SILC Hash API for SHA1
  */
 
@@ -49,14 +49,9 @@ void SHA1Init(SHA1_CTX* context)
   context->count[0] = context->count[1] = 0;
 }
 
-#define rol(x, nr) (((x) << ((SilcUInt32)(nr))) | ((x) >> (32 - (SilcUInt32)(nr))))
+#define rol(x, nr) silc_rol(x, nr)
 
-#define GET_WORD(cp) ((SilcUInt32)(SilcUInt8)(cp)[0]) << 24	\
-		    | ((SilcUInt32)(SilcUInt8)(cp)[1] << 16)	\
-		    | ((SilcUInt32)(SilcUInt8)(cp)[2] << 8)	\
-		    | ((SilcUInt32)(SilcUInt8)(cp)[3])
-
-#define blk0(i) (W[i] = GET_WORD(data))
+#define blk0(i) (W[i] = SILC_GET_WORD(data))
 #define blk1(i) (W[i&15] = rol(W[(i+13)&15]^W[(i+8)&15]^W[(i+2)&15]^W[i&15],1))
 
 #define f1(x,y,z) (z^(x&(y^z)))
@@ -74,14 +69,14 @@ void SHA1Init(SHA1_CTX* context)
 void SHA1Transform(SilcUInt32 *state, const unsigned char *data)
 {
   SilcUInt32 W[16];
-  
+
   /* Copy context->state[] to working vars */
   SilcUInt32 a = state[0];
   SilcUInt32 b = state[1];
   SilcUInt32 c = state[2];
   SilcUInt32 d = state[3];
   SilcUInt32 e = state[4];
-  
+
   /* 4 rounds of 20 operations each. Loop unrolled. */
   R0(a,b,c,d,e, 0); R0(e,a,b,c,d, 1); R0(d,e,a,b,c, 2); R0(c,d,e,a,b, 3);
   R0(b,c,d,e,a, 4); R0(a,b,c,d,e, 5); R0(e,a,b,c,d, 6); R0(d,e,a,b,c, 7);
@@ -103,14 +98,14 @@ void SHA1Transform(SilcUInt32 *state, const unsigned char *data)
   R4(c,d,e,a,b,68); R4(b,c,d,e,a,69); R4(a,b,c,d,e,70); R4(e,a,b,c,d,71);
   R4(d,e,a,b,c,72); R4(c,d,e,a,b,73); R4(b,c,d,e,a,74); R4(a,b,c,d,e,75);
   R4(e,a,b,c,d,76); R4(d,e,a,b,c,77); R4(c,d,e,a,b,78); R4(b,c,d,e,a,79);
-  
+
   /* Add the working vars back into context.state[] */
   state[0] += a;
   state[1] += b;
   state[2] += c;
   state[3] += d;
   state[4] += e;
-  
+
   /* Wipe variables */
   a = b = c = d = e = 0;
   memset(W, 0, sizeof(W));
@@ -143,22 +138,22 @@ void SHA1Final(unsigned char digest[20], SHA1_CTX* context)
 {
   SilcUInt32 i, j;
   unsigned char finalcount[8];
-  
+
   for (i = 0; i < 8; i++) {
-    finalcount[i] = (unsigned char)((context->count[(i >= 4 ? 0 : 1)] 
+    finalcount[i] = (unsigned char)((context->count[(i >= 4 ? 0 : 1)]
 				     >> ((3 - (i & 3)) * 8)) & 255);
   }
   SHA1Update(context, (unsigned char *)"\200", 1);
   while ((context->count[0] & 504) != 448) {
     SHA1Update(context, (unsigned char *)"\0", 1);
   }
-  
+
   SHA1Update(context, finalcount, 8);  /* Should cause a SHA1Transform() */
   for (i = 0; i < 20; i++) {
     digest[i] = (unsigned char)
       ((context->state[i>>2] >> ((3 - (i & 3)) * 8)) & 255);
   }
-  
+
   /* Wipe variables */
   i = j = 0;
   memset(context->buffer, 0, 64);

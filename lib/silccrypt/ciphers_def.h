@@ -27,8 +27,8 @@ typedef SilcUInt32 u32;
 typedef SilcUInt32 uint_32t;
 typedef SilcUInt8 uint_8t;
 
-#define rotr(x, nr) (((x) >> ((int)(nr))) | ((x) << (32 - (int)(nr))))
-#define rotl(x, nr) (((x) << ((int)(nr))) | ((x) >> (32 - (int)(nr))))
+#define rotr(x, nr) silc_ror(x, nr)
+#define rotl(x, nr) silc_rol(x, nr)
 #define byte(x, nr) ((x) >> (nr * 8) & 255)
 
 /* Byte key to words */

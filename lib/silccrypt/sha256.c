@@ -46,19 +46,8 @@ SILC_HASH_API_CONTEXT_LEN(sha256)
 #if defined(_MSC_VER)
 #pragma intrinsic(_lrotr,_lrotl)
 #define RORc(x,n) _lrotr(x,n)
-
-#elif defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__)) && !defined(INTEL_CC)
-
-static inline unsigned RORc(unsigned word, int i)
-{
-   asm ("rorl %%cl,%0"
-      :"=r" (word)
-      :"0" (word),"c" (i));
-   return word;
-}
-
 #else
-#define RORc(x, y) ( ((((unsigned long)(x)&0xFFFFFFFFUL)>>(unsigned long)((y)&31)) | ((unsigned long)(x)<<(unsigned long)(32-((y)&31)))) &0xFFFFFFFFUL)
+#define RORc(x, y) silc_ror(x, y)
 #endif /* _MSC_VER */
 
 /* Various logical functions */

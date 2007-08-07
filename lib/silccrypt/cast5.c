@@ -542,8 +542,7 @@ int cast5_setup(const unsigned char *key, int keylen, int num_rounds,
    return TRUE;
 }
 
-#define __ROL(x, y) ( (((unsigned long)(x)<<(unsigned long)((y)&31)) | (((unsigned long)(x)&0xFFFFFFFFUL)>>(unsigned long)(32-((y)&31)))) & 0xFFFFFFFFUL)
-
+#define __ROL(x, y) silc_rol(x, y)
 
 static inline SilcUInt32 FI(SilcUInt32 R, SilcUInt32 Km, SilcUInt32 Kr)
 {
