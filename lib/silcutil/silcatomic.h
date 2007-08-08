@@ -53,9 +53,6 @@
 #ifndef SILCATOMIC_H
 #define SILCATOMIC_H
 
-/* For now we always assume SMP */
-#define SILC_SMP 1
-
 /* Use lock prefix only on true SMP systems */
 #ifdef SILC_SMP
 #define SILC_SMP_LOCK "lock; "

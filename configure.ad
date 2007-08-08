@@ -30,6 +30,7 @@ AC_SUBST(LN_S)
 AC_PATH_PROG(sedpath, sed)
 
 #ifdef SILC_DIST_COMPILER
+
 # Put here any platform specific stuff
 #
 case "$target" in
@@ -52,6 +53,7 @@ case "$target" in
 esac
 
 # Get CPU
+SILC_SYSTEM_IS_SMP(AC_DEFINE([SILC_SMP], [], [SILC_SMP]), [])
 cpu_i386=false
 cpu_i486=false
 cpu_i586=false
@@ -88,18 +90,33 @@ case "$host_cpu" in
       cpu_i686=true
       cpu_i786=true
     fi
+
+    # Check for specific CPU features
+    SILC_CPU_FLAG(sse2, AC_DEFINE([SILC_CPU_SSE2], [], [SILC_CPU_SSE2]), [])
+    SILC_CPU_FLAG(sse3, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
+    SILC_CPU_FLAG(ssse3, AC_DEFINE([SILC_CPU_SSSE3], [], [SILC_CPU_SSSE3]), [])
     ;;
 
   # Intel IA-64, 64-bit CPU (not x86_64 compatible)
   ia64)
     AC_DEFINE([SILC_IA64], [], [SILC_IA64])
     cpu_ia64=true
+
+    # Check for specific CPU features
+    SILC_CPU_FLAG(sse2, AC_DEFINE([SILC_CPU_SSE2], [], [SILC_CPU_SSE2]), [])
+    SILC_CPU_FLAG(sse3, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
+    SILC_CPU_FLAG(ssse3, AC_DEFINE([SILC_CPU_SSSE3], [], [SILC_CPU_SSSE3]), [])
     ;;
 
   # AMD/Intel x86_64, 64-bit CPU
   x86_64)
     AC_DEFINE([SILC_X86_64], [], [SILC_X86_64])
     cpu_x86_64=true
+
+    # Check for specific CPU features
+    SILC_CPU_FLAG(sse2, AC_DEFINE([SILC_CPU_SSE2], [], [SILC_CPU_SSE2]), [])
+    SILC_CPU_FLAG(sse3, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
+    SILC_CPU_FLAG(ssse3, AC_DEFINE([SILC_CPU_SSSE3], [], [SILC_CPU_SSSE3]), [])
     ;;
 
   # PowerPC, 32-bit and 64-bit CPUs
@@ -197,30 +214,6 @@ AC_CHECK_SIZEOF(void *, 0)
 AC_SUBST(SILC_SIZEOF_VOID_P, $ac_cv_sizeof_void_p)
 AC_CHECK_TYPES(long long)
 AC_CHECK_TYPES(long double)
-
-# Function to check if compiler flag works
-# Usage: SILC_ADD_CFLAGS(FLAGS, [ACTION-IF-FAILED])
-AC_DEFUN([SILC_ADD_CFLAGS],
-[ tmp_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS $1"
-  AC_MSG_CHECKING(whether $CC accepts $1 flag)
-  AC_TRY_LINK([], [], [AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no)
-				       CFLAGS="$tmp_CFLAGS"
-				       $2])
-  unset tmp_CFLAGS
-])
-
-# Function to check if compiler flag works, destination specifiable
-# Usage: SILC_ADD_CC_FLAGS(VAR, FLAGS, [ACTION-IF-FAILED])
-AC_DEFUN([SILC_ADD_CC_FLAGS],
-[ tmp_CFLAGS="$1_CFLAGS"
-  $1_CFLAGS="${$1_CFLAGS} $2"
-  AC_MSG_CHECKING(whether $CC accepts $2 flag)
-  AC_TRY_LINK([], [], [AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no)
-				       $1_CFLAGS="$tmp_CFLAGS"
-				       $3])
-  unset tmp_CFLAGS
-])
 
 # Function and library checking
 #
