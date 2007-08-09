@@ -53,7 +53,8 @@ case "$target" in
 esac
 
 # Get CPU
-SILC_SYSTEM_IS_SMP(AC_DEFINE([SILC_SMP], [], [SILC_SMP]), [])
+SILC_SYSTEM_IS_SMP(AC_DEFINE([SILC_SMP], [], [SILC_SMP]), [],
+                   AC_DEFINE([SILC_SMP], [], [SILC_SMP]))
 cpu_i386=false
 cpu_i486=false
 cpu_i586=false
@@ -140,6 +141,17 @@ CFLAGS=`echo $CFLAGS | sed 's/-O[ 0123456789s]*//g'`
 AC_PROG_CC
 AC_C_INLINE
 AC_C_CONST
+
+# Set some compiler options based on CPU
+if test x$x_have_cpu_sse2 = xtrue; then
+  SILC_ADD_CFLAGS(-msse2)
+fi
+if test x$x_have_cpu_sse3 = xtrue; then
+  SILC_ADD_CFLAGS(-msse3)
+fi
+if test x$x_have_cpu_ssse3 = xtrue; then
+  SILC_ADD_CFLAGS(-mssse3)
+fi
 
 __SILC_HAVE_PTHREAD=""
 __SILC_HAVE_SIM=""

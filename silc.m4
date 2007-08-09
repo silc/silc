@@ -16,10 +16,21 @@
 #
 
 # Function to check if system has SMP kernel.
-# Usage: SILC_SYSTEM_IS_SMP([ACTION-IF-FOUND] [, ACTION-IF-NOT-FOUND])
+#
+# Usage: SILC_SYSTEM_IS_SMP([ACTION-IF-FOUND] [, ACTION-IF-NOT-FOUND]
+#                           [, ACTION-IF-NOT-DETECTED])
+#
+# The ACTION-IF-NOT-DETECTED is called if we could not detect whether or 
+# not the system is SMP.
+#
+# x_is_smp variable is set to true or false as a result for calling this
+# function.  Caller may use the variable to check for the result in the 
+# code.
+#
 AC_DEFUN([SILC_SYSTEM_IS_SMP],
 [
   AC_MSG_CHECKING(whether system has SMP kernel)
+  x_is_smp=false
 
   case "$target" in
     *-*-linux*)
@@ -29,6 +40,7 @@ AC_DEFUN([SILC_SYSTEM_IS_SMP],
         if test $cpucount -gt 1; then
           AC_DEFINE([SILC_SMP], [], [SILC_SMP])
           AC_MSG_RESULT(yes)
+          x_is_smp=true
           ifelse([$1], , :, [$1])
         else
           AC_MSG_RESULT(no)
@@ -42,11 +54,13 @@ AC_DEFUN([SILC_SYSTEM_IS_SMP],
 
     *-*-*bsd*)
       # BSDs can have SMP info in sysctl 'kern.smp.cpus' variable
-      cpucount=`/sbin/sysctl kern.smp.cpus 2> /dev/null | \
-         cut -d'=' -f2 | cut -d' ' -f2`
+      sysctl="sysctl -n kern.smp.cpus"
+      cpucount=`(/sbin/$sysctl 2> /dev/null || \
+                 /usr/sbin/$sysctl 2> /dev/null || echo -n 0)`
       if test $cpucount -gt 1; then
         AC_DEFINE([SILC_SMP], [], [SILC_SMP])
         AC_MSG_RESULT(yes)
+         x_is_smp=true
         ifelse([$1], , :, [$1])
       else
         AC_MSG_RESULT(no)
@@ -55,17 +69,24 @@ AC_DEFUN([SILC_SYSTEM_IS_SMP],
       ;;
 
     *)
-      AC_MSG_RESULT(no)
-      ifelse([$2], , :, [$2])
+      AC_MSG_RESULT(cannot detect on this system)
+      ifelse([$3], , :, [$3])
       ;;
   esac
 ])
 
 # Function to check for CPU feature flags.
+#
 # Usage: SILC_CPU_FLAG(flag [, ACTION-IF-FOUND] [, ACTION-IF-NOT-FOUND])
+#
+# x_have_cpu_<flag> variable is set to true or false value as a result for
+# calling this function for the <flag>.  Caller may use the variable to
+# check the result in the code.
+#
 AC_DEFUN([SILC_CPU_FLAG],
 [
   AC_MSG_CHECKING(whether CPU supports $1)
+  x_have_cpu_$1=false
 
   case "$target" in
     *-*-linux*)
@@ -77,6 +98,7 @@ AC_DEFUN([SILC_CPU_FLAG],
           ifelse([$3], , :, [$3])
         else
           AC_MSG_RESULT(yes)
+          x_have_cpu_$1=true
           ifelse([$2], , :, [$2])
         fi
       else
@@ -93,19 +115,24 @@ AC_DEFUN([SILC_CPU_FLAG],
         ifelse([$3], , :, [$3])
       else
         AC_MSG_RESULT(yes)
+          x_have_cpu_$1=true
         ifelse([$2], , :, [$2])
       fi
       ;;
 
     *)
-      AC_MSG_RESULT(no)
+      AC_MSG_RESULT(no, cannot detect on this system)
       ifelse([$3], , :, [$3])
       ;;
   esac
 ])
 
-# Function to check if compiler flag works
+# Function to check if compiler option works with the compiler.  If you
+# want the option added to some other than CFLAGS variable use the
+# SILC_ADD_CC_FLAGS which supports to specifiable destination variable.
+#
 # Usage: SILC_ADD_CFLAGS(FLAGS, [ACTION-IF-FAILED])
+#
 AC_DEFUN([SILC_ADD_CFLAGS],
 [ tmp_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $1"
@@ -116,8 +143,11 @@ AC_DEFUN([SILC_ADD_CFLAGS],
   unset tmp_CFLAGS
 ])
 
-# Function to check if compiler flag works, destination specifiable
+# Function to check if compiler option works with the compiler,
+# destination variable specifiable
+#
 # Usage: SILC_ADD_CC_FLAGS(VAR, FLAGS, [ACTION-IF-FAILED])
+#
 AC_DEFUN([SILC_ADD_CC_FLAGS],
 [ tmp_CFLAGS="$1_CFLAGS"
   $1_CFLAGS="${$1_CFLAGS} $2"
