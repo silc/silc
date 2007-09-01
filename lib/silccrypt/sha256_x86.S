@@ -29,6 +29,8 @@
 
 */
 
+#include "silcdefs.h"
+
 #ifdef SILC_SHA256_ASM
 
 #define STACK_STATE	(8 * 4)
