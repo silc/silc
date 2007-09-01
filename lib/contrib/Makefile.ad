@@ -27,11 +27,7 @@ endif
 
 STRINGPREP = nfkc.c rfc3454.c stringprep.c
 
-if SILC_WIN32
-libcontrib_la_SOURCES = getopti.c $(STRINGPREP)
-else
 libcontrib_la_SOURCES = getopti.c $(STRINGPREP) $(REGEX)
-endif
 
 EXTRA_DIST = *.c *.h
 
