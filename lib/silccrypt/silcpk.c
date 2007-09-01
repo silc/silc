@@ -124,7 +124,7 @@ SilcBool silc_pkcs_silc_decode_identifier(const char *identifier,
   int len;
 
   /* Protocol says that at least UN and HN must be provided as identifier */
-  if (!strstr(identifier, "UN=") && !strstr(identifier, "HN=")) {
+  if (!strstr(identifier, "UN=") || !strstr(identifier, "HN=")) {
     SILC_LOG_DEBUG(("The public does not have the required UN= and HN= "
 		    "identifiers"));
     return FALSE;
