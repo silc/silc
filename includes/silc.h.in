@@ -67,6 +67,7 @@ extern "C" {
 @__SILC_ENABLE_DEBUG@
 
 #if defined(HAVE_SILCDEFS_H)
+
 /* Automatically generated configuration header */
 #ifndef SILC_SYMBIAN
 #include "silcdefs.h"
@@ -74,6 +75,37 @@ extern "C" {
 #include "../symbian/silcdefs.h"
 #endif /* SILC_SYMBIAN */
 #include "silcdistdefs.h"
+
+#else
+
+/* Autodetect CPU so that inline assembly in headers are enabled */
+
+#if defined(__i386__)
+#undef SILC_I386
+#define SILC_I386
+#undef SILC_I486
+#define SILC_I486
+#endif /* __i386__ */
+
+#if defined(__x86_64__)
+#undef SILC_X86_64
+#define SILC_X86_64
+#endif /* __x86_64__ */
+
+#if defined(__ia64__)
+#undef SILC_IA64
+#define SILC_IA64
+#endif /* __ia64__ */
+
+#if defined(__ppc__) || defined(__ppc64__)
+#undef SILC_POWERPC
+#define SILC_POWERPC
+#endif /* __ppc__ || __ppc64__ */
+
+#ifndef SILC_ALIGNMENT
+#define SILC_ALIGNMENT SILC_SIZEOF_VOID_P
+#endif /* SILC_ALIGNMENT */
+
 #endif /* HAVE_SILCDEFS_H */
 
 /* Platform specific includes */

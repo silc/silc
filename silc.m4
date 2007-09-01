@@ -115,7 +115,7 @@ AC_DEFUN([SILC_CPU_FLAG],
         ifelse([$3], , :, [$3])
       else
         AC_MSG_RESULT(yes)
-          x_have_cpu_$1=true
+        x_have_cpu_$1=true
         ifelse([$2], , :, [$2])
       fi
       ;;

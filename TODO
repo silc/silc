@@ -198,6 +198,8 @@ Runtime library, lib/silcutil/
    _ua unaligned memory allocation routines.  Remove unaligned memory
    allocation possibility. (***DONE)
 
+ o silc_malloc et. al. to respect --with-alignment.
+
  o Add '%@' format to silc_snprintf functions.  It marks for external
    rendering function of following type:
 
@@ -219,7 +221,7 @@ Runtime library, lib/silcutil/
    silc_snprintf(buf, sizeof(buf), "Client ID %@", id_renderer, client_id);
 
  o Change silc_gettimeofday on Unix to use clock_gettime with REALTIME
-   clock if it is available, otherwise use gettimeofday().
+   clock if it is available, otherwise use gettimeofday(). (***DONE)
 
  (o Generic SilcStatus or SilcResult that includes all possible status and
     error conditions, including those of SILC protocol.  Though, the SILC
