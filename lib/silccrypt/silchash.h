@@ -72,7 +72,7 @@ typedef struct {
   void (*init)(void *);
   void (*update)(void *, const unsigned char *, SilcUInt32);
   void (*final)(void *, unsigned char *);
-  void (*transform)(SilcUInt32 *, const unsigned char *);
+  void (*transform)(void *, const unsigned char *);
   SilcUInt32 (*context_len)();
 } SilcHashObject;
 
@@ -111,7 +111,7 @@ void silc_##hash##_update(void *context, const unsigned char *data,	\
 #define SILC_HASH_API_FINAL(hash)					\
 void silc_##hash##_final(void *context, unsigned char *digest)
 #define SILC_HASH_API_TRANSFORM(hash)					\
-void silc_##hash##_transform(SilcUInt32 *state,	const unsigned char *buffer)
+void silc_##hash##_transform(void *state, const unsigned char *buffer)
 #define SILC_HASH_API_CONTEXT_LEN(hash)					\
 SilcUInt32 silc_##hash##_context_len()
 
@@ -396,7 +396,7 @@ void silc_hash_final(SilcHash hash, unsigned char *return_hash);
  *
  * SYNOPSIS
  *
- *    void silc_hash_transform(SilcHash hash, SilcUInt32 *state,
+ *    void silc_hash_transform(SilcHash hash, void *state,
  *                             const unsigned char *data);
  *
  * DESCRIPTION
@@ -407,7 +407,7 @@ void silc_hash_final(SilcHash hash, unsigned char *return_hash);
  *    known by the caller.  Usually this function is not needed.
  *
  ***/
-void silc_hash_transform(SilcHash hash, SilcUInt32 *state,
+void silc_hash_transform(SilcHash hash, void *state,
 			 const unsigned char *data);
 
 /****f* silccrypt/SilcHashAPI/silc_hash_fingerprint

@@ -23,6 +23,7 @@
 #include "md5.h"
 #include "sha1.h"
 #include "sha256.h"
+#include "sha512.h"
 
 /* The main SILC hash structure. */
 struct SilcHashStruct {
@@ -41,6 +42,9 @@ const SilcHashObject silc_default_hash[] =
   { "sha256", "2.16.840.1.101.3.4.2.1",
     32, 64, silc_sha256_init, silc_sha256_update, silc_sha256_final,
     silc_sha256_transform, silc_sha256_context_len },
+  { "sha512", "2.16.840.1.101.3.4.2.3",
+    32, 64, silc_sha512_init, silc_sha512_update, silc_sha512_final,
+    silc_sha512_transform, silc_sha512_context_len },
   { "sha1", "1.3.14.3.2.26",
     20, 64, silc_sha1_init, silc_sha1_update, silc_sha1_final,
     silc_sha1_transform, silc_sha1_context_len },
@@ -392,7 +396,7 @@ void silc_hash_final(SilcHash hash, unsigned char *return_hash)
   hash->hash->final(hash->context, return_hash);
 }
 
-void silc_hash_transform(SilcHash hash, SilcUInt32 *state,
+void silc_hash_transform(SilcHash hash, void *state,
 			 const unsigned char *data)
 {
   hash->hash->transform(state, data);
