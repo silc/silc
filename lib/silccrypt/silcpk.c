@@ -126,7 +126,7 @@ SilcBool silc_pkcs_silc_decode_identifier(const char *identifier,
   int len;
 
   /* Protocol says that at least UN and HN must be provided as identifier */
-  if (!strstr(identifier, "UN=") && !strstr(identifier, "HN=")) {
+  if (!strstr(identifier, "UN=") || !strstr(identifier, "HN=")) {
     SILC_LOG_DEBUG(("The public does not have the required UN= and HN= "
 		    "identifiers"));
     return FALSE;
@@ -207,8 +207,10 @@ char *silc_pkcs_silc_encode_identifier(SilcStack stack,
   SilcBufferStruct buf;
   char *identifier;
 
-  if (!username || !host)
+  if (!username || !host) {
+    SILC_LOG_ERROR(("Public key identifier is missing UN and/or HN"));
     return NULL;
+  }
   if (strlen(username) < 1 || strlen(host) < 1)
     return NULL;
 
@@ -264,6 +266,7 @@ char *silc_pkcs_silc_encode_identifier(SilcStack stack,
   if (version) {
     if (strlen(version) > 1 || !isdigit(version[0])) {
       silc_buffer_spurge(stack, &buf);
+      SILC_LOG_ERROR(("Public key identifier has invalid version (V)"));
       return NULL;
     }
     silc_buffer_sformat(stack, &buf,
