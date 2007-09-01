@@ -21,13 +21,30 @@
  *
  * DESCRIPTION
  *
- * This header file includes basic types and definitions used in SILC Toolkits.
- * It contains all types, and many utility macros and functions.
+ * This header file includes basic types and definitions, and various system
+ * specific macros and functions used in SILC Toolkits.  Application programmer
+ * may use them when needed.
  *
  ***/
 
 #ifndef SILCTYPES_H
 #define SILCTYPES_H
+
+/* The bool macro is deprecated.  Use SilcBool instead. */
+#ifdef SILC_MACOSX
+#define bool _Bool
+#endif
+#ifndef __cplusplus
+#ifndef bool
+#define bool unsigned char
+#endif
+#endif
+
+#if SILC_SIZEOF_SHORT > 2
+#error "size of the short must be 2 bytes"
+#endif
+
+/******************************* Public API *********************************/
 
 /****d* silcutil/SILCTypes/SilcBool
  *
@@ -41,16 +58,6 @@
  *
  ***/
 typedef unsigned char SilcBool;
-
-/* The bool macro is deprecated.  Use SilcBool instead. */
-#ifdef SILC_MACOSX
-#define bool _Bool
-#endif
-#ifndef __cplusplus
-#ifndef bool
-#define bool unsigned char
-#endif
-#endif
 
 /****d* silcutil/SILCTypes/TRUE
  *
@@ -85,23 +92,6 @@ typedef unsigned char SilcBool;
 #define FALSE 0
 #endif
 /***/
-
-/* Our offsetof macro */
-#define silc_offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
-
-/* silc_likely and silc_unlikely GCC branch prediction macros. Use only if
-   you have profiled the code first. */
-#if __GNUC__ >= 3
-#define silc_likely(expr) __builtin_expect(!!(expr), 1)
-#define silc_unlikely(expr) __builtin_expect(!!(expr), 0)
-#else
-#define silc_likely(expr) (expr)
-#define silc_unlikely(expr) (expr)
-#endif /* __GNUC__ >= 3 */
-
-#if SILC_SIZEOF_SHORT > 2
-#error "size of the short must be 2 bytes"
-#endif
 
 /****d* silcutil/SILCTypes/SilcUInt8
  *
@@ -591,7 +581,7 @@ do {						\
 ({						\
   SilcUInt16 _result_;				\
   asm volatile ("movw %w1, %w0; rolw $8, %w0"	\
-		: "=q" (_result_): "q" (l));	\
+		: "=q" (_result_) : "q" (l));	\
   _result_;					\
 })
 #else
@@ -618,7 +608,7 @@ do {						\
 ({						\
   SilcUInt32 _result_;				\
   asm volatile ("movl %1, %0; bswapl %0"	\
-		: "=q" (_result_): "q" (l));	\
+		: "=q" (_result_) : "q" (l));	\
   _result_;					\
 })
 #else
@@ -810,6 +800,245 @@ static inline SilcUInt64 silc_ror64(SilcUInt64 val, int num)
 #else
   return ((val >> (SilcUInt64)num) | (val << (64 - (SilcUInt64)num)));
 #endif /* SILC_X86_64 && __GNUC__ */
+}
+
+/****d* silcutil/SILCTypes/silc_offsetof
+ *
+ * NAME
+ *
+ *    #define silc_offsetof(TYPE, MEMBER)
+ *
+ * DESCRIPTION
+ *
+ *    offsetof() macro replacement.  Use this instead of offsetof().
+ *
+ ***/
+#define silc_offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+
+/****d* silcutil/SILCTypes/silc_attribute
+ *
+ * NAME
+ *
+ *    #define silc_attribute(attrlist)
+ *
+ * DESCRIPTION
+ *
+ *    Compiler attributes.  If compiler doesn't support attributes this macro
+ *    doesn't do anything.  Currently this works only with GCC compiler.
+ *    See GCC documentation for specified attributes.
+ *
+ * EXAMPLE
+ *
+ *    int printf(const char *fmt, ...) silc_attribute((format(printf, 1, 2)));
+ *
+ ***/
+#if defined(__GNUC__)
+#define silc_attribute(attrlist) __attribute__(attrlist)
+#else
+#define silc_attribute(attrlist)
+#endif /* __GNUC__ */
+
+/****d* silcutil/SILCTypes/silc_likely
+ *
+ * NAME
+ *
+ *    #define silc_likely(expression)
+ *
+ * DESCRIPTION
+ *
+ *    Brach prediction macro.  It specifies that it is likely that the brach
+ *    where silc_likely is applied is taken.  Compiler will optimize the
+ *    code based on this prediction.  Never use this before you have profiled
+ *    the code first.
+ *
+ ***/
+
+/****d* silcutil/SILCTypes/silc_unlikely
+ *
+ * NAME
+ *
+ *    #define silc_unlikely(expression)
+ *
+ * DESCRIPTION
+ *
+ *    Brach prediction macro.  It specifies that it is unlikely that the brach
+ *    where silc_unlikely is applied is taken.  Compiler will optimize the
+ *    code based on this prediction.  Never use this before you have profiled
+ *    the code first.
+ *
+ ***/
+#if __GNUC__ >= 3
+#define silc_likely(expr) __builtin_expect(!!(expr), 1)
+#define silc_unlikely(expr) __builtin_expect(!!(expr), 0)
+#else
+#define silc_likely(expr) (expr)
+#define silc_unlikely(expr) (expr)
+#endif /* __GNUC__ >= 3 */
+
+/* Prefetch operations.  Use these to prefetch data to CPU cache before
+   reading or writing if you think that the data will be needed soon after
+   prefetching. */
+
+/****d* silcutil/SILCTypes/silc_prefetch
+ *
+ * NAME
+ *
+ *    static inline void silc_prefetch(void *addr, int rw, int locality);
+ *
+ * DESCRIPTION
+ *
+ *    Simple prefetch.  Loads memory from specified address to CPU cache.
+ *    The amount of data loaded is CPU dependant (cache line length).  The
+ *    `rw' argument defines the reason for prefetch: 0=read, 1=write.  The
+ *    `locality' argument defines the locality of the prefetch, 0=non-temporal
+ *    (non-temporal cache, cache closest to CPU, data will not stay long in
+ *    the cache), 1=temporal (L2+ cache), 2=temporal (L2, L3+ cache),
+ *    3=temporal (fetch to all caches, data stays longer time in cache).
+ *
+ * NOTES
+ *
+ *    This produces only a hint for CPU.  CPU doesn't have to actually
+ *    prefetch the data.  Use silc_prefetch_block to ensure CPU always
+ *    prefetches.
+ *
+ ***/
+
+static inline silc_attribute((always_inline))
+void silc_prefetch(void *addr, int rw, int locality)
+{
+#if __GNUC__ > 3
+  __builtin_prefetch(addr, rw, locality);
+#endif /* __GNUC__ */
+}
+
+/****d* silcutil/SILCTypes/silc_prefetch_block
+ *
+ * NAME
+ *
+ *    static inline void silc_prefetch_block(void *addr,
+ *                                           int prefetch_length,
+ *                                           const int cache_line_length)
+ *
+ * DESCRIPTION
+ *
+ *    Enforced block prefetch.  This function loads the specified amount
+ *    `prefetch_length' of memory from the specified address `addr' to CPU
+ *    cache with each loaded cache line being the size of `cache_line_length'.
+ *    If you don't know the cache line size use 32 bytes.  Note that, the
+ *    `cache_line_length' is a const int.  In this context this mean its
+ *    value must not come from a variable but must be a constant (the code
+ *    won't compile if it comes from a variable).
+ *
+ *    The `prefetch_length' must be multiple of twice of the
+ *    `cache_line_length' or 64 if you don't know the cache line size, hence
+ *    the minimum length for `prefetch_length' is 64 bytes when the
+ *    `cache_line_length' is 32 bytes.
+ *
+ *    You should use the correct `cache_line_length' value for your CPU or
+ *    the value of the CPU for which you want to optimize your code.  Intel
+ *    CPUs usually have cache size of 32 or 64 bytes, or both when there are
+ *    multiple caches.  The most optimal prefetch is achieved if the
+ *    `cache_line_length' is the actual CPU cache line size.  Always do
+ *    performance testing with and without prefetching to make sure the
+ *    prefetch actually helps.  If used improperly, it may slow down your
+ *    program.
+ *
+ *    The difference to silc_prefetch is that this function always performs
+ *    the prefetch and has the ability to prefetch more than one cache line
+ *    worth of memory, whereas silc_prefetch can prefetch only one cache line
+ *    and may not do the prefetch at all.
+ *
+ ***/
+
+static inline silc_attribute((always_inline))
+void silc_prefetch_block(void *addr,
+			 int prefetch_length,
+			 const int cache_line_length)
+{
+#if 0
+  SILC_ASSERT(cache_line_length >= 32);
+  SILC_ASSERT(cache_line_length % 32 == 0);
+  SILC_ASSERT(prefetch_length >= cache_line_length);
+  SILC_ASSERT(prefetch_length % (cache_line_length * 2) == 0);
+#endif
+
+#if SILC_SIZEOF_VOID_P < 8
+#define SILC_PREFETCH_UINT SilcUInt32
+#else
+#define SILC_PREFETCH_UINT SilcUInt64
+#endif /* SILC_SIZEOF_VOID_P < 8 */
+
+#if defined(__GNUC__) && (defined(SILC_I386) || defined(SILC_X86_64))
+
+  /* Assembler implementation.
+
+     The idea here is to simply enforce the CPU to load the requested amount
+     of bytes to cache.  We simply mov data from the memory to a register.
+     Each mov will load a full cache line worth of data from the memory.
+
+     We expect the `cache_line_length' to be the actual cache line size.
+     It doesn't matter if it is.  If it is smaller the prefetch is a bit
+     slower as there is redundancy.  If it is larger we skip some of the
+     data and don't prefetch everything.
+
+     The loop is unrolled to handle two mov's at once, this why we expect
+     the `prefetch_length' to be multiple of twice the length of
+     `cache_line_length`.  We also mov the data from end to beginning instead
+     of from the beginning to assure CPU doesn't prefetch the data before
+     we actually want to do it.
+
+     This technique is described by AMD in:
+     http://cdrom.amd.com/devconn/events/AMD_block_prefetch_paper.pdf */
+
+  {
+    SILC_PREFETCH_UINT temp;
+
+#define SILC_PREFETCH_ASM(ip, rp)					\
+    asm volatile ("1:					\n\t"		\
+		  "mov" ip " -%c4(%2, %" rp "3), %0	\n\t"		\
+		  "mov" ip " -%c5(%2, %" rp "3), %0	\n\t"		\
+		  "sub" ip " %5, %" rp "3		\n\t"		\
+		  "jnz 1b				"		\
+		  : "=&r" (temp), "=r" (prefetch_length)		\
+		  : "r" (addr), "1" (prefetch_length),			\
+		    "Z" (cache_line_length),				\
+		    "Z" (cache_line_length * 2)				\
+		  : "memory", "cc");
+
+#if defined(SILC_I386)
+    /* 32-bit prefetch */
+    SILC_PREFETCH_ASM("l", "");
+#else
+    /* 64-bit prefetch */
+    SILC_PREFETCH_ASM("q", "q");
+#endif /* SILC_I386 */
+  }
+
+#else
+  /* C implementation.	Yes, you can do it in C too.  In fact, we'll try to
+     make the compiler generate nearly identical code to the above assembler
+     code.  Note that, the memory access must be volatile, otherwise the
+     compiler will optimize them away because the temp variable isn't actually
+     used for anything.  This should be as fast as the assembler code above,
+     unless the compiler decides to start meddling with it (don't use
+     -funroll-loops with this code). */
+
+  {
+    register unsigned char *a = addr;
+    register int len = prefetch_length;
+    register SILC_PREFETCH_UINT temp;
+
+    do {
+      temp = *(SILC_PREFETCH_UINT volatile *)
+	(a + (len - cache_line_length));
+      temp = *(SILC_PREFETCH_UINT volatile *)
+	(a + (len - (cache_line_length * 2)));
+      len -= (cache_line_length * 2);
+    } while (len != 0);
+  }
+#endif /* __GNUC__ */
+#undef SILC_PREFETCH_UINT
+#undef SILC_PREFETCH_ASM
 }
 
 #endif /* SILCTYPES_H */
