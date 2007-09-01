@@ -26,11 +26,6 @@
  * Various utility functions for resolving various information is also
  * provided.
  *
- * On WIN32 systems the SILC Net API must initialized by calling the
- * silc_net_win32_init and uninitialized when the application ends by
- * calling the silc_net_win32_uninit function. The initializing must be
- * done in order to assure that the SILC Net API works correctly.
- *
  ***/
 
 #ifndef SILCNET_H
