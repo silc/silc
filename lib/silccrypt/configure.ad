@@ -23,26 +23,31 @@ SILC_CRYPTO_CFLAGS=
 
 aes_asm=false
 
-if test "${pic_mode:-default}" != "yes" ; then
 case "$host_cpu" in
   i?86)
-    # Don't enable ASM AES with shared libs as the code doesn't support PIC.
-    if test x$have_assembler = xtrue -a "$enable_shared" != "yes"; then
-      aes_asm=true
-      AC_DEFINE([SILC_AES_ASM], [], [SILC_AES_ASM])
+    AC_DEFINE([SILC_SHA256_ASM], [], [SILC_SHA256_ASM])
+
+    if test "${pic_mode:-default}" != "yes" ; then
+      # Don't enable ASM AES with shared libs as the code doesn't support PIC.
+      if test x$have_assembler = xtrue -a "$enable_shared" != "yes"; then
+        aes_asm=true
+        AC_DEFINE([SILC_AES_ASM], [], [SILC_AES_ASM])
+      fi
     fi
     ;;
   x86_64)
-    if test x$have_assembler = xtrue -a "$enable_shared" != "yes"; then
-      aes_asm=true
-      AC_DEFINE([SILC_AES_ASM], [], [SILC_AES_ASM])
+
+    if test "${pic_mode:-default}" != "yes" ; then
+      if test x$have_assembler = xtrue -a "$enable_shared" != "yes"; then
+        aes_asm=true
+        AC_DEFINE([SILC_AES_ASM], [], [SILC_AES_ASM])
+      fi
     fi
     ;;
   default)
     aes_asm=false
     ;;
 esac
-fi
 
 SILC_ADD_CC_FLAGS(SILC_CRYPTO, -fno-regmove)
 if test x$summary_debug = xno -a x$want_cc_optimizations = xtrue; then
