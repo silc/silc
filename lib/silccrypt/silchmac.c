@@ -40,9 +40,11 @@ SilcDList silc_hmac_list = NULL;
 const SilcHmacObject silc_default_hmacs[] =
 {
   { "hmac-sha256-96", 12 },
+  { "hmac-sha512-96", 12 },
   { "hmac-sha1-96", 12 },
   { "hmac-md5-96", 12 },
   { "hmac-sha256", 32 },
+  { "hmac-sha512", 64 },
   { "hmac-sha1", 20 },
   { "hmac-md5", 16 },
 
