@@ -176,54 +176,54 @@
     (defined(SILC_I486) || defined(SILC_X86_64) || defined(SILC_IA64) ||    \
      defined(SILC_POWERPC)))
 typedef struct {
-  volatile SilcUInt32 value;
+  SilcUInt32 value;
 } SilcAtomic32;
 typedef struct {
-  volatile void *value;
+  void *value;
 } SilcAtomicPointer;
 #else
 #define SILC_ATOMIC_MUTEX
 typedef struct {
   SilcMutex lock;
-  volatile SilcUInt32 value;
+  SilcUInt32 value;
 } SilcAtomic32;
 typedef struct {
   SilcMutex lock;
-  volatile void *value;
+  void *value;
 } SilcAtomicPointer;
 #endif
 
 #if !defined(SILC_THREADS) || (defined(__GNUC__) && (defined(SILC_I486) ||  \
 						     defined(SILC_X86_64)))
 typedef struct {
-  volatile SilcUInt16 value;
+  SilcUInt16 value;
 } SilcAtomic16;
 #elif defined(SILC_WIN32) || (defined(__GNUC__) && (defined(SILC_IA64) ||   \
 						    defined(SILC_POWERPC)))
 typedef struct {
-  volatile SilcUInt32 value;
+  SilcUInt32 value;
 } SilcAtomic16;
 #else
 typedef struct {
   SilcMutex lock;
-  volatile SilcUInt16 value;
+  SilcUInt16 value;
 } SilcAtomic16;
 #endif
 
 #if !defined(SILC_THREADS) || (defined(__GNUC__) && (defined(SILC_I486) ||  \
 						     defined(SILC_X86_64)))
 typedef struct {
-  volatile SilcUInt8 value;
+  SilcUInt8 value;
 } SilcAtomic8;
 #elif defined(SILC_WIN32) || (defined(__GNUC__) && (defined(SILC_IA64) ||   \
 						    defined(SILC_POWERPC)))
 typedef struct {
-  volatile SilcUInt32 value;
+  SilcUInt32 value;
 } SilcAtomic8;
 #else
 typedef struct {
   SilcMutex lock;
-  volatile SilcUInt8 value;
+  SilcUInt8 value;
 } SilcAtomic8;
 #endif
 
@@ -296,14 +296,14 @@ SilcBool silc_atomic_init##name(SilcAtomic##bits *atomic, type value)
 #define SILC_ATOMIC_INIT(name, bits, type)				\
 SILC_ATOMIC_INIT_F(name, bits, type)					\
 {									\
-  atomic->value = value;						\
+  *(type volatile *)&atomic->value = value;				\
   return silc_mutex_alloc(&atomic->lock);				\
 }
 #else
 #define SILC_ATOMIC_INIT(name, bits, type)				\
 SILC_ATOMIC_INIT_F(name, bits, type)					\
 {									\
-  atomic->value = value;						\
+  *(type volatile *)&atomic->value = value;				\
   return TRUE;								\
 }
 #endif /* SILC_ATOMIC_MUTEX */
@@ -465,7 +465,7 @@ SILC_ATOMIC_SET_INT_F(bits)						\
 SILC_ATOMIC_SET_INT_F(bits)						\
 {									\
   /* IA64, memory barrier needed */					\
-  atomic->value = value;						\
+  *(volatile SilcUInt##bits *)&atomic->value = value;			\
   __sync_synchronize();							\
 }
 
@@ -474,7 +474,7 @@ SILC_ATOMIC_SET_INT_F(bits)						\
 SILC_ATOMIC_SET_INT_F(bits)						\
 {									\
   /* PowerPC, memory barrier needed */					\
-  atomic->value = value;						\
+  *(volatile SilcUInt##bits *)&atomic->value = &value;			\
   __asm("sync" : : : "memory");						\
 }
 
@@ -512,19 +512,19 @@ void silc_atomic_set_pointer(SilcAtomicPointer *atomic, void *pointer)
 #if !defined(SILC_THREADS) ||			 \
      (defined(__GNUC__) && (defined(SILC_I486) || defined(SILC_X86_64)))
   /* No threads, Windows, i486 or x86_64, no memory barrier needed */
-  atomic->value = pointer;
+  *(void * volatile *)&atomic->value = pointer;
 
 #elif defined(SILC_WIN32)
   InterlockedExchangePointer(&atomic->value, pointer);
 
 #elif defined(__GNUC__) && defined(SILC_IA64)
   /* IA64, memory barrier needed */
-  atomic->value = pointer;
+  *(void * volatile *)&atomic->value = pointer;
   __sync_synchronize();
 
 #elif defined(__GNUC__) && defined(SILC_POWERPC)
   /* PowerPC, memory barrier needed */
-  atomic->value = pointer;
+  *(void * volatile *)&atomic->value = pointer;
   __asm("sync" : : : "memory");
 
 #else
@@ -586,7 +586,7 @@ SILC_ATOMIC_GET_INT_F(bits)						\
   SilcUInt##bits ret;							\
 									\
   /* No threads, Windows, i486 or x86_64, no memory barrier needed */	\
-  ret = atomic->value;							\
+  ret = *(volatile SilcUInt##bits *)&atomic->value;			\
   return ret;								\
 }
 
@@ -598,7 +598,7 @@ SILC_ATOMIC_GET_INT_F(bits)						\
 									\
   /* IA64, memory barrier needed */					\
   __sync_synchronize();							\
-  ret = atomic->value;							\
+  ret = *(volatile SilcUInt##bits *)&atomic->value;			\
   return ret;								\
 }
 
@@ -610,7 +610,7 @@ SILC_ATOMIC_GET_INT_F(bits)						\
 									\
   /* PowerPC, memory barrier needed */					\
   __asm("sync" : : : "memory");						\
-  ret = atomic->value;							\
+  ret = *(volatile SilcUInt##bits *)&atomic->value;			\
   return ret;								\
 }
 
@@ -653,19 +653,19 @@ void *silc_atomic_get_pointer(SilcAtomicPointer *atomic)
 #if !defined(SILC_THREADS) || defined(SILC_WIN32) ||			 \
      (defined(__GNUC__) && (defined(SILC_I486) || defined(SILC_X86_64)))
   /* No threads, Windows, i486 or x86_64, no memory barrier needed */
-  ret = (void *)atomic->value;
+  ret = (void *)*(void * volatile *)&atomic->value;
   return ret;
 
 #elif defined(__GNUC__) && defined(SILC_IA64)
   /* IA64, memory barrier needed */
   __sync_synchronize();
-  ret = (void *)atomic->value;
+  ret = (void *)*(void * volatile *)&atomic->value;
   return ret;
 
 #elif defined(__GNUC__) && defined(SILC_POWERPC)
   /* PowerPC, memory barrier needed */
   __asm("sync" : : : "memory");
-  ret = (void *)atomic->value;
+  ret = (void *)*(void * volatile *)&atomic->value;
   return ret;
 
 #else
@@ -730,8 +730,8 @@ SILC_ATOMIC_ADD_INT_F(bits)						\
 {									\
   SilcUInt##bits ret;							\
   /* No atomic operations */						\
-  ret = atomic->value;							\
-  atomic->value += value;						\
+  ret = *(volatile SilcUInt##bits *)&atomic->value;			\
+  *(volatile SilcUInt##bits *)&atomic->value += value;			\
   return ret + value;							\
 }
 
@@ -742,7 +742,8 @@ SILC_ATOMIC_ADD_INT_F(bits)						\
   SilcUInt##bits ret;							\
   LONG val = value;							\
   /* Windows */								\
-  ret = InterlockedExchangeAdd(&atomic->value, val);			\
+  ret = InterlockedExchangeAdd((volatile SilcUInt##bits *)&atomic->value, \
+			       val);					\
   return ret + value;							\
 }
 
@@ -753,8 +754,7 @@ SILC_ATOMIC_ADD_INT_F(bits)						\
   SilcUInt##bits ret;							\
   /* GCC + i486 or x86_64 */						\
   __asm __volatile(SILC_SMP_LOCK "xadd" bp " %0, %1"			\
-		   : "=r" (ret), "+m" (atomic->value)			\
-		   : "0" (value));					\
+		   : "=r" (ret), "+m" (atomic->value) : "0" (value));	\
   return ret + value;							\
 }
 
@@ -763,9 +763,9 @@ SILC_ATOMIC_ADD_INT_F(bits)						\
 SILC_ATOMIC_ADD_INT_F(bits)						\
 {									\
   SilcUInt##bits ret;							\
-  SilcInt32 val = value;						\
+  SilcUInt32 val = value;						\
   /* GCC + IA64 (GCC builtin atomic operations) */			\
-  ret = __sync_fetch_and_add(&atomic->value, val);			\
+  ret = __sync_fetch_and_add((volatile SilcUInt32 *)&atomic->value, val); \
   return ret + value;							\
 }
 
@@ -774,7 +774,7 @@ SILC_ATOMIC_ADD_INT_F(bits)						\
 SILC_ATOMIC_ADD_INT_F(bits)						\
 {									\
   SilcUInt32 ret;   							\
-  SilcInt32 val = value;						\
+  SilcUInt32 val = value;						\
   /* GCC + PowerPC (code adapted from IBM's documentation) */		\
   __asm __volatile("0: lwarx  %0,  0, %2\n"				\
 		   "   add    %0, %1, %0\n"				\
@@ -922,7 +922,7 @@ SILC_ATOMIC_INC_F(bits)				   			\
 SILC_ATOMIC_INC_F(bits)				   			\
 {									\
   /* GCC + IA64 (GCC builtin atomic operations) */			\
-  __sync_fetch_and_add(&atomic->value, 1);				\
+  __sync_fetch_and_add((volatile SilcUInt##bits *)&atomic->value, 1);	\
 }
 
 #elif defined(__GNUC__) && defined(SILC_POWERPC)
@@ -1028,7 +1028,7 @@ SILC_ATOMIC_DEC_F(bits)				   			\
 SILC_ATOMIC_DEC_F(bits)				   			\
 {									\
   /* GCC + IA64 (GCC builtin atomic operations) */			\
-  __sync_fetch_and_sub(&atomic->value, 1);				\
+  __sync_fetch_and_sub((volatile SilcUInt##bits *)&atomic->value, 1);	\
 }
 
 #elif defined(__GNUC__) && defined(SILC_POWERPC)
@@ -1136,7 +1136,7 @@ SILC_ATOMIC_CAS_F(bits)							\
 {									\
   /* Windows */								\
   LONG o = old_val, n = new_val;					\
-  return InterlockedCompareExchange(&atomic->value, n, o) == o;		\
+  return InterlockedCompareExchange(&atomic->value, n, o) == o;	\
 }
 
 #elif defined(__GNUC__) && (defined(SILC_I486) || defined(SILC_X86_64))
@@ -1147,7 +1147,8 @@ SILC_ATOMIC_CAS_F(bits)							\
   SilcUInt##bits ret;							\
   __asm __volatile(SILC_SMP_LOCK "cmpxchg" bp " %2, %1"			\
 		   : "=a" (ret), "=m" (atomic->value)			\
-		   : "r" (new_val), "m" (atomic->value), "0" (old_val)); \
+		   : "r" (new_val), "m" (atomic->value),		\
+		   "0" (old_val));					\
   return ret == (SilcUInt##bits)old_val;				\
 }
 
@@ -1157,7 +1158,8 @@ SILC_ATOMIC_CAS_F(bits)							\
 {									\
   /* GCC + IA64 (GCC builtin atomic operations) */			\
   SilcUInt32 o = old_val, n = new_val;					\
-  return __sync_bool_compare_and_swap(&atomic->value, o, n);		\
+  return __sync_bool_compare_and_swap((volatile SilcUInt32 *)&atomic->value, \
+				      o, n);				\
 }
 
 #elif defined(__GNUC__) && defined(SILC_POWERPC)
