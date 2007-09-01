@@ -56,9 +56,14 @@ static void silc_client_notify_resolved(SilcClient client,
   /* If entry is still invalid, resolving failed.  Finish notify processing. */
   if (notify->client_entry && !notify->client_entry->internal.valid) {
     /* If resolving timedout try it again many times. */
-    if (status != SILC_STATUS_ERR_TIMEDOUT || ++notify->resolve_retry > 1000)
+    if (status != SILC_STATUS_ERR_TIMEDOUT || ++notify->resolve_retry > 1000) {
       silc_fsm_next(notify->fsm, silc_client_notify_processed);
-    silc_client_unref_client(client, conn, notify->client_entry);
+
+      /* Unref client only in case of non-timeout error.  In case of timeout
+	 occurred, the routine reprocessing the notify is expected not to
+	 create new references of the entry. */
+      silc_client_unref_client(client, conn, notify->client_entry);
+    }
   }
 
   /* If no entries found, just finish the notify processing */

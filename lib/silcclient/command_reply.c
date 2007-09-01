@@ -1997,6 +1997,8 @@ SILC_FSM_STATE(silc_client_command_reply_getkey)
     goto out;
   }
   if (!silc_public_key_payload_decode(tmp, len, &public_key)) {
+    SAY(client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
+        "Cannot decode public key: malformed/unsupported public key");
     ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
