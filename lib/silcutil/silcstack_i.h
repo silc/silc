@@ -32,7 +32,7 @@
 #define SILC_STACK_DEFAULT_NUM 32
 
 /* Default alignment */
-#define SILC_STACK_DEFAULT_ALIGN sizeof(unsigned long)
+#define SILC_STACK_DEFAULT_ALIGN SILC_ALIGNMENT
 
 /* Maximum allocation that can be made with SilcStack. */
 #define SILC_STACK_BLOCK_NUM 21

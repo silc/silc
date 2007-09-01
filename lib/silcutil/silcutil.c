@@ -165,7 +165,7 @@ void silc_parse_command_line(unsigned char *buffer,
 {
   int i, len = 0;
   int argc = 0;
-  const char *cp = buffer;
+  const char *cp = (const char *)buffer;
   char *tmp;
 
   *parsed = silc_calloc(1, sizeof(**parsed));

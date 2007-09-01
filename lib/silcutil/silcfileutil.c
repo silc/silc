@@ -128,7 +128,7 @@ char *silc_file_readfile(const char *filename, SilcUInt32 *return_len,
 			 SilcStack stack)
 {
   int fd;
-  char *buffer;
+  unsigned char *buffer;
   int filelen;
 
   fd = silc_file_open(filename, O_RDONLY);
@@ -155,7 +155,7 @@ char *silc_file_readfile(const char *filename, SilcUInt32 *return_len,
     return NULL;
   }
 
-  buffer = silc_calloc(filelen + 1, sizeof(char));
+  buffer = silc_calloc(filelen + 1, sizeof(*buffer));
 
   if ((silc_file_read(fd, buffer, filelen)) == -1) {
     memset(buffer, 0, sizeof(buffer));
@@ -171,7 +171,7 @@ char *silc_file_readfile(const char *filename, SilcUInt32 *return_len,
   if (return_len)
     *return_len = filelen;
 
-  return buffer;
+  return (char *)buffer;
 }
 
 /* Returns the size of `filename'. Returns 0 on error. */

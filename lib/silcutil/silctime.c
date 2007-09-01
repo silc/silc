@@ -224,9 +224,9 @@ SilcBool silc_time_universal(const char *universal_time, SilcTime ret_time)
       return FALSE;
     }
 
-    if (hour < 0 || hour > 23)
+    if (hour > 23)
       return FALSE;
-    if (minute < 0 || minute > 60)
+    if (minute > 60)
       return FALSE;
 
     ret_time->utc_hour   = hour;
@@ -342,9 +342,9 @@ SilcBool silc_time_generalized(const char *generalized_time, SilcTime ret_time)
       return FALSE;
     }
 
-    if (hour < 0 || hour > 23)
+    if (hour > 23)
       return FALSE;
-    if (minute < 0 || minute > 60)
+    if (minute > 60)
       return FALSE;
 
     ret_time->utc_hour   = hour;

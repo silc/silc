@@ -276,7 +276,7 @@ int silc_gettimeofday(struct timeval *p);
  *
  * SYNOPSIS
  *
- *    void silc_usleep(long microseconds);
+ *    void silc_usleep(unsigned long microseconds);
  *
  * DESCRIPTION
  *
@@ -290,7 +290,7 @@ int silc_gettimeofday(struct timeval *p);
  *
  ***/
 static inline
-void silc_usleep(long microseconds)
+void silc_usleep(unsigned long microseconds)
 {
 #ifdef SILC_UNIX
 #ifdef HAVE_NANOSLEEP
