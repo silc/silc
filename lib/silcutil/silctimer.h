@@ -165,4 +165,125 @@ SilcBool silc_timer_is_running(SilcTimer timer);
 
 #include "silctimer_i.h"
 
+/****f* silcutil/SilcTimerAPI/silc_timer_tick
+ *
+ * SYNOPSIS
+ *
+ *    SilcUInt64 silc_timer_tick(SilcTimer &timer, SilcBool adjust)
+ *
+ * DESCRIPTION
+ *
+ *    Returns the current CPU tick count.  You should call the
+ *    silc_timer_synchronize before using this function to make sure the
+ *    overhead of measuring the CPU tick count is not included in the
+ *    tick count.  If the `adjust' is TRUE and the silc_timer_synchronize
+ *    has been called the returned value is adjusted to be more accurate.
+ *
+ * EXAMPLES
+ *
+ *    // Synchronize timer for more accurate CPU tick counts
+ *    silc_timer_synchronize(&timer);
+ *    start = silc_timer_tick(&timer, FALSE);
+ *    do_something();
+ *    stop = silc_tiemr_tick(&timer, TRUE);
+ *
+ ***/
+
+static inline
+SilcUInt64 silc_timer_tick(SilcTimer timer, SilcBool adjust)
+{
+#if defined(__GNUC__) || defined(__ICC)
+#ifdef SILC_I486
+  SilcUInt64 x;
+  asm volatile ("rdtsc" : "=A" (x));
+  return adjust ? x - timer->sync_tdiff : x;
+
+#elif SILC_X86_64
+  SilcUInt64 x;
+  SilcUInt32 hi, lo;
+  asm volatile ("rdtsc" : "=a" (lo), "=d" (hi));
+  x = ((SilcUInt64)lo | ((SilcUInt64)hi << 32));
+  return adjust ? x - timer->sync_tdiff : x;
+
+#elif SILC_POWERPC
+  SilcUInt32 hi, lo, tmp;
+  asm volatile ("0:            \n\t"
+                "mftbu   %0    \n\t"
+                "mftb    %1    \n\t"
+                "mftbu   %2    \n\t"
+                "cmpw    %2,%0 \n\t"
+                "bne     0b    \n"
+                : "=r" (hi), "=r" (lo), "=r" (tmp));
+  x = ((SilcUInt64)lo | ((SilcUInt64)hi << 32));
+  return adjust ? x - timer->sync_tdiff : x;
+#endif /* SILC_I486 */
+
+#elif defined(SILC_WIN32)
+  __asm rdtsc
+
+#else
+  return 0;
+#endif /* __GNUC__ || __ICC */
+}
+
+/****f* silcutil/SilcTimerAPI/silc_timer_synchronize
+ *
+ * SYNOPSIS
+ *
+ *    void silc_timer_synchronize(SilcTimer timer);
+ *
+ * DESCRIPTION
+ *
+ *    Synchronizes the `timer'.  This call will attempt to synchronize the
+ *    timer for more accurate results with high resolution timing.  Call
+ *    this before you start using time `timer'.
+ *
+ * EXAMPLE
+ *
+ *    // Synchronized timer
+ *    silc_timer_synchronize(&timer);
+ *    silc_timer_start(&timer);
+ *    ... time passes ...
+ *    silc_timer_stop(&timer);
+ *    silc_timer_value(&timer, &elapsed_sec, &elapsed_usec);
+ *
+ ***/
+
+static inline
+void silc_timer_synchronize(SilcTimer timer)
+{
+  SilcUInt32 tdiff, cumu, i;
+  SilcUInt64 t1, t2;
+
+  /* Sync normal timer */
+  for (i = 0, cumu = 0; i < 5; i++) {
+    silc_timer_start(timer);
+    silc_timer_stop(timer);
+    silc_timer_value(timer, NULL, &tdiff);
+    cumu += (int)tdiff;
+  }
+
+  timer->sync_diff = cumu;
+  if (timer->sync_diff > 5)
+    timer->sync_diff /= 5;
+
+  /* Sync CPU tick count */
+  cumu = 0;
+  t1 = silc_timer_tick(timer, FALSE);
+  t2 = silc_timer_tick(timer, FALSE);
+  cumu += (t2 - t1);
+  t1 = silc_timer_tick(timer, FALSE);
+  t2 = silc_timer_tick(timer, FALSE);
+  cumu += (t2 - t1);
+  t1 = silc_timer_tick(timer, FALSE);
+  t2 = silc_timer_tick(timer, FALSE);
+  cumu += (t2 - t1);
+
+  timer->sync_tdiff = cumu / 3;
+
+  t1 = silc_timer_tick(timer, FALSE);
+  t2 = silc_timer_tick(timer, TRUE);
+  timer->sync_tdiff += (int)(t2 - t1);
+}
+
 #endif /* SILCTIMER_H */

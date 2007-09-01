@@ -16,47 +16,9 @@ typedef struct {
 SilcMutex mutex;
 SilcUInt64 cpu_freq = 0;
 int max_locks, max_locks2;
+SilcTimerStruct timer;
 
-/* RDTSC */
-#ifdef SILC_I486
-static __inline__ unsigned long long rdtsc(void)
-{
-  unsigned long long int x;
-  __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
-  return x;
-}
-
-#elif SILC_X86_64
-typedef unsigned long long int unsigned long long;
-static __inline__ unsigned long long rdtsc(void)
-{
-  unsigned hi, lo;
-  __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
-  return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
-}
-
-#elif SILC_POWERPC
-typedef unsigned long long int unsigned long long;
-static __inline__ unsigned long long rdtsc(void)
-{
-  unsigned long long int result = 0;
-  unsigned long int upper, lower,tmp;
-  __asm__ volatile(
-                "0:                  \n"
-                "\tmftbu   %0           \n"
-                "\tmftb    %1           \n"
-                "\tmftbu   %2           \n"
-                "\tcmpw    %2,%0        \n"
-                "\tbne     0b         \n"
-                : "=r"(upper),"=r"(lower),"=r"(tmp)
-                );
-  result = upper;
-  result = result << 32;
-  result = result | lower;
-
-  return result;
-}
-#endif
+#define rdtsc() silc_timer_tick(&timer)
 
 void *mutex_thread(void *context)
 {
@@ -117,13 +79,12 @@ int main(int argc, char **argv)
   int k, i, j, o = 0;
   SilcBool success;
 
-  if (argc <= 1) {
-    fprintf(stderr, "Usage: ./test_silcmutex <cpu_freq_mhz>\n");
-    fprintf(stderr, "Example: ./test_silcmutex 3000\n");
-    exit(1);
-  }
-  cpu_freq = (SilcUInt64)atoi(argv[1]);
-  cpu_freq *= 1000;	/* Will give us milliseconds */
+  silc_timer_synchronize(&timer);
+  val = rdtsc();
+  sleep(1);
+  val = rdtsc() - val;
+  val /= 1000;			/* Gives us milliseconds */
+  fprintf(stderr, "CPU frequency: %llu\n", val);
 
   max_locks = MAX_LOCKS;
 

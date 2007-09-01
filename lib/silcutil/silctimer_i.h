@@ -29,7 +29,9 @@ struct SilcTimerObject {
   SilcUInt64 timer_sec;		/* Timer seconds */
   SilcUInt32 start_usec;	/* Start microseconds */
   SilcUInt32 timer_usec;	/* Timer microseconds */
-  unsigned int running  : 1;	/* Set when timer is running */
+  unsigned int running    : 1;	/* Set when timer is running */
+  unsigned int sync_diff  : 15;	/* Synchronization delta */
+  unsigned int sync_tdiff : 16;	/* Synchronization tick delta */
 };
 
 #endif /* SILCTIMER_I_H */

@@ -25,12 +25,13 @@ void silc_timer_start(SilcTimer timer)
 {
   struct timeval curtime;
 
-  memset(timer, 0, sizeof(timer));
-
   silc_gettimeofday(&curtime);
   timer->start_sec = curtime.tv_sec;
   timer->start_usec = curtime.tv_usec;
-
+  timer->timer_sec = 0;
+  timer->timer_usec = 0;
+  timer->sync_diff = 0;
+  timer->sync_tdiff = 0;
   timer->running = TRUE;
 }
 
@@ -48,6 +49,7 @@ void silc_timer_stop(SilcTimer timer)
   }
   timer->timer_sec = curtime.tv_sec - timer->start_sec;
   timer->timer_usec = curtime.tv_usec - timer->start_usec;
+  timer->timer_usec -= timer->sync_diff;
 
   timer->running = FALSE;
 }
@@ -90,6 +92,7 @@ void silc_timer_value(SilcTimer timer,
     }
     timer->timer_sec = curtime.tv_sec - timer->start_sec;
     timer->timer_usec = curtime.tv_usec - timer->start_usec;
+    timer->timer_usec -= timer->sync_diff;
   }
 
   if (elapsed_time_seconds)
@@ -125,3 +128,40 @@ SilcBool silc_timer_is_running(SilcTimer timer)
 {
   return timer->running;
 }
+
+#if 0
+void silc_timer_synchronize(SilcTimer timer)
+{
+  SilcUInt32 tdiff, cumu, i;
+  SilcUInt64 t1, t2, tcumu;
+
+  /* Sync normal timer */
+  for (i = 0, cumu = 0; i < 5; i++) {
+    silc_timer_start(timer);
+    silc_timer_stop(timer);
+    silc_timer_value(timer, NULL, &tdiff);
+    cumu += tdiff;
+  }
+
+  timer->sync_diff = cumu;
+  if (timer->sync_diff > 5)
+    timer->sync_diff /= 5;
+
+  /* Sync CPU tick count */
+  tcumu = 0;
+  t1 = silc_timer_tick(timer, FALSE);
+  t2 = silc_timer_tick(timer, FALSE);
+  tcumu += (t2 - t1);
+  t1 = silc_timer_tick(timer, FALSE);
+  t2 = silc_timer_tick(timer, FALSE);
+  tcumu += (t2 - t1);
+  t1 = silc_timer_tick(timer, FALSE);
+  t2 = silc_timer_tick(timer, FALSE);
+  tcumu += (t2 - t1);
+  timer->sync_tdiff = tcumu / 3;
+
+  t1 = silc_timer_tick(timer, FALSE);
+  t2 = silc_timer_tick(timer, TRUE);
+  timer->sync_tdiff += (int)(t2 - t1);
+}
+#endif

@@ -73,6 +73,10 @@ int main(int argc, char **argv)
   if (!schedule)
     goto err;
 
+  silc_timer_synchronize(&timer);
+  SILC_LOG_DEBUG(("sync_diff: %d", timer.sync_diff));
+  SILC_LOG_DEBUG(("sync_tdiff: %d", timer.sync_tdiff));
+
   SILC_LOG_DEBUG(("Start timer"));
   silc_timer_start(&timer);
 
