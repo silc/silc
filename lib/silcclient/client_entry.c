@@ -517,7 +517,6 @@ SilcUInt16 silc_client_get_clients_by_list(SilcClient client,
   SilcUInt32 *res_argv_lens = NULL, *res_argv_types = NULL, res_argc = 0;
   SilcUInt16 idp_len, cmd_ident;
   SilcID id;
-  va_list tmp;
   int i;
 
   SILC_LOG_DEBUG(("Resolve clients from Client ID list"));
@@ -585,7 +584,7 @@ SilcUInt16 silc_client_get_clients_by_list(SilcClient client,
 
   /* We have the clients in cache, get them and call the completion */
   silc_client_get_clients_list_cb(client, conn, SILC_COMMAND_WHOIS,
-				  SILC_STATUS_OK, SILC_STATUS_OK, in, tmp);
+				  SILC_STATUS_OK, SILC_STATUS_OK, in, NULL);
   return 0;
 
  err:
