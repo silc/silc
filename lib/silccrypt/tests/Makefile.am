@@ -28,8 +28,10 @@ bin_PROGRAMS = 	test_sha1 	\
 		test_cast5	\
 		test_des	\
 		test_silcpkcs	\
-		test_dsa
+		test_dsa	\
+		test_hash
 
+test_hash_SOURCES = test_hash.c
 test_sha1_SOURCES = test_sha1.c
 test_sha256_SOURCES = test_sha256.c
 test_md5_SOURCES = test_md5.c
