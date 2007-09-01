@@ -96,6 +96,7 @@ case "$host_cpu" in
     SILC_CPU_FLAG(sse2, AC_DEFINE([SILC_CPU_SSE2], [], [SILC_CPU_SSE2]), [])
     SILC_CPU_FLAG(sse3, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
     SILC_CPU_FLAG(ssse3, AC_DEFINE([SILC_CPU_SSSE3], [], [SILC_CPU_SSSE3]), [])
+    SILC_CPU_FLAG(sse4, AC_DEFINE([SILC_CPU_SSE4], [], [SILC_CPU_SSE4]), [])
     ;;
 
   # Intel IA-64, 64-bit CPU (not x86_64 compatible)
@@ -107,6 +108,7 @@ case "$host_cpu" in
     SILC_CPU_FLAG(sse2, AC_DEFINE([SILC_CPU_SSE2], [], [SILC_CPU_SSE2]), [])
     SILC_CPU_FLAG(sse3, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
     SILC_CPU_FLAG(ssse3, AC_DEFINE([SILC_CPU_SSSE3], [], [SILC_CPU_SSSE3]), [])
+    SILC_CPU_FLAG(sse4, AC_DEFINE([SILC_CPU_SSE4], [], [SILC_CPU_SSE4]), [])
     ;;
 
   # AMD/Intel x86_64, 64-bit CPU
@@ -118,6 +120,7 @@ case "$host_cpu" in
     SILC_CPU_FLAG(sse2, AC_DEFINE([SILC_CPU_SSE2], [], [SILC_CPU_SSE2]), [])
     SILC_CPU_FLAG(sse3, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
     SILC_CPU_FLAG(ssse3, AC_DEFINE([SILC_CPU_SSSE3], [], [SILC_CPU_SSSE3]), [])
+    SILC_CPU_FLAG(sse4, AC_DEFINE([SILC_CPU_SSE4], [], [SILC_CPU_SSE4]), [])
     ;;
 
   # PowerPC, 32-bit and 64-bit CPUs
@@ -143,14 +146,34 @@ AC_C_INLINE
 AC_C_CONST
 
 # Set some compiler options based on CPU
-if test x$x_have_cpu_sse2 = xtrue; then
-  SILC_ADD_CFLAGS(-msse2)
-fi
-if test x$x_have_cpu_sse3 = xtrue; then
-  SILC_ADD_CFLAGS(-msse3)
-fi
-if test x$x_have_cpu_ssse3 = xtrue; then
-  SILC_ADD_CFLAGS(-mssse3)
+if test "x$CC" = "xicc"; then
+  # ICC flags
+  if test x$x_have_cpu_sse2 = xtrue; then
+    SILC_ADD_CFLAGS(-axW)
+  fi
+  if test x$x_have_cpu_sse3 = xtrue; then
+    SILC_ADD_CFLAGS(-axP)
+  fi
+  if test x$x_have_cpu_ssse3 = xtrue; then
+    SILC_ADD_CFLAGS(-axT)
+  fi
+  if test x$x_have_cpu_sse4 = xtrue; then
+    SILC_ADD_CFLAGS(-axS)
+  fi
+else
+  # Other compilers
+  if test x$x_have_cpu_sse2 = xtrue; then
+    SILC_ADD_CFLAGS(-msse2)
+  fi
+  if test x$x_have_cpu_sse3 = xtrue; then
+    SILC_ADD_CFLAGS(-msse3)
+  fi
+  if test x$x_have_cpu_ssse3 = xtrue; then
+    SILC_ADD_CFLAGS(-mssse3)
+  fi
+  if test x$x_have_cpu_sse4 = xtrue; then
+    SILC_ADD_CFLAGS(-msse3)
+  fi
 fi
 
 __SILC_HAVE_PTHREAD=""
@@ -239,6 +262,12 @@ AC_CHECK_FUNC(gethostbyname, [],
 AC_CHECK_FUNC(socket, [],
   AC_CHECK_LIB(socket, socket, LIBS="$LIBS -lsocket")
 )
+AC_CHECK_FUNC(clock_gettime, [],
+  [
+    AC_CHECK_LIB(rt, clock_gettime,
+                 [ LIBS="$LIBS -lrt"
+                   AC_DEFINE([HAVE_CLOCK_GETTIME], [], [HAVE_CLOCK_GETTIME])])
+  ])
 AC_CHECK_FUNCS(gethostname gethostbyaddr getservbyname getservbyport)
 AC_CHECK_FUNCS(poll select listen bind shutdown close connect setsockopt)
 AC_CHECK_FUNCS(setrlimit time ctime utime gettimeofday getrusage)
@@ -539,9 +568,13 @@ else
       ;;
   esac
 
-  # Intel C++ Compiler needs -restrict
+  # Intel C++ Compiler flags
   if test "x$CC" = "xicc"; then
     SILC_ADD_CFLAGS(-restrict)
+    SILC_ADD_CFLAGS(-finline-functions)
+
+    # Don't define __GNUC__ except for system includes
+    SILC_ADD_CFLAGS(-gcc-sys)
   fi
 fi
 
@@ -690,6 +723,7 @@ else
     LDFLAGS="-L\$(silc_top_srcdir)/lib $LDFLAGS"
   fi
 fi
+
 #else SILC_DIST_TOOLKIT
 LDFLAGS="-L\$(silc_top_srcdir)/lib $LDFLAGS"
 #endif SILC_DIST_TOOLKIT

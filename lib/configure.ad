@@ -18,6 +18,8 @@
 
 if test x$compile_libs = xtrue; then
 
+AM_PROG_AS
+
 ##
 ## Will compile included libs
 ##
@@ -141,6 +143,21 @@ AC_CHECK_FUNC(epoll_wait,
       ],
     )
   ])
+
+#
+# Memory alignment.  User can specify what alignment memory allocation and
+# SilcStack allocation use.  Default is system default alignemnt.
+#
+AC_ARG_WITH(alignment,
+  [  --with-alignment=NUMBER  Memory alignment in bytes],
+  [
+    AC_DEFINE_UNQUOTED([SILC_ALIGNMENT], [$withval], [SILC_ALIGNMENT])
+    AC_MSG_RESULT(Memory allocation alignment is $withval bytes)
+  ],
+  [
+    AC_DEFINE([SILC_ALIGNMENT], SILC_SIZEOF_VOID_P, [SILC_ALIGNMENT])
+  ])
+
 
 MODULESDIR="$silc_prefix/lib/modules"
 #ifdef SILC_DIST_SIM
