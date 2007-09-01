@@ -38,6 +38,8 @@ libsilccrypt_la_SOURCES = 	\
 	dsa.c 			\
 	sha1.c 			\
 	sha256.c 		\
+	sha256_x86.S 		\
+	sha512.c 		\
 	twofish.c 		\
 	blowfish.c 		\
 	cast5.c			\
