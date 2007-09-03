@@ -53,7 +53,7 @@ SILC_HASH_API_CONTEXT_LEN(sha256)
 #define Gamma0(x)       (S(x, 7) ^ S(x, 18) ^ R(x, 3))
 #define Gamma1(x)       (S(x, 17) ^ S(x, 19) ^ R(x, 10))
 
-#ifndef SILC_SHA256_ASM
+#ifndef SILC_SHA256_X86
 
 /* Transform 512-bits */
 void  sha256_transform(SilcUInt32 *state, unsigned char *buf)
@@ -155,7 +155,7 @@ void  sha256_transform(SilcUInt32 *state, unsigned char *buf)
   }
 }
 
-#endif /* !SILC_SHA256_ASM */
+#endif /* !SILC_SHA256_X86 */
 
 int sha256_init(sha256_state * md)
 {

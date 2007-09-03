@@ -25,7 +25,7 @@ aes_asm=false
 
 case "$host_cpu" in
   i?86)
-    AC_DEFINE([SILC_SHA256_ASM], [], [SILC_SHA256_ASM])
+    AC_DEFINE([SILC_SHA256_X86], [], [SILC_SHA256_X86])
 
     if test "${pic_mode:-default}" != "yes" ; then
       # Don't enable ASM AES with shared libs as the code doesn't support PIC.

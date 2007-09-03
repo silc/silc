@@ -27,11 +27,28 @@
    when loading the W.  This is about as fast as we can get with less than
    8 32-bit registers on 32-bit CPU.
 
+   Benchmarks (megabytes (MB) per second), bigger is better:
+
+   Code            Pentium 4 3.60 GHz   Pentium M 1.60 GHz
+   -----------------------------------------------------------------------
+   SHA-256, asm    110.57 MB/sec        58.50 MB/sec
+   SHA-256, gcc     49.07 MB/sec        39.55 MB/sec
+   SHA-256, icc    109.97 MB/sec        55.69 MB/sec
+
+   Notes:
+   - Test program was lib/silccrypt/tests/test_hash
+   - nice -n -20 was used with test_hash running as root
+   - ICC generates significantly better code compared to GCC for SSE2
+     capable CPU, and the generated code uses SSE registers.  Hence the
+     comparable speed with the assembler code.  Note that, the GCC code
+     was also compiled with -msse2.  Note that, this assembler code
+     specifically does not use SSE or MMX, for better compatibility.
+
 */
 
 #include "silcdefs.h"
 
-#ifdef SILC_SHA256_ASM
+#ifdef SILC_SHA256_X86
 
 #define STACK_STATE	(8 * 4)
 #define STACK_W		(64 * 4)
@@ -75,9 +92,9 @@
   	andl    e,   r5;		/* Ch &= e */			\
   	xorl    r3,  r5;		/* Ch ^= g */			\
 									\
+  	leal    ki(r4, r5), r4;		/* t0 = Sigma1 + Ch + ki */	\
 	movl    h(%ebp), r3;						\
   	movl    d(%ebp), r1;						\
-  	leal    ki(r4, r5), r4;		/* t0 = Sigma1 + Ch + ki */	\
   	addl    W * 4(%esp), r4;	/* t0 += W[i] */		\
   	addl    r4, r3;			/* h += t0 */			\
   	addl    r3, r1;			/* d += h (t0) */		\
@@ -124,9 +141,6 @@
 	shrl	$10, r2;		/* w-2 >> 10 */			\
 	xorl    r5,  r2;		/* Gamma1 = w-2 ^ temp */	\
 									\
-	addl    (i - 7) * 4(%esp), r2;	/* Gamma1 += w-7 */		\
-	addl	(i - 16) * 4(%esp), r2;	/* Gamma1 += w-16 */		\
-									\
   	movl    (i - 15) * 4(%esp), r3;					\
 	movl    r3,  r4;		/* w-15 to Gamma0 */		\
 	rorl    $7,  r4;		/* Gamma0 >>= 7 */		\
@@ -136,6 +150,8 @@
 	shrl	$3,  r3;		/* w-15 >> 3 */			\
 	xorl    r5,  r3;		/* Gamma0 = w-15 ^ temp */	\
 									\
+	addl    (i - 7) * 4(%esp), r2;	/* Gamma1 += w-7 */		\
+	addl	(i - 16) * 4(%esp), r2;	/* Gamma1 += w-16 */		\
 	addl    r2,  r3;		/* Gamma0 += Gamma1 */		\
 	movl    r3, i * 4(%esp);
 
@@ -295,4 +311,4 @@ sha256_transform:
 
 	ret
 
-#endif /* SILC_SHA256_ASM */
+#endif /* SILC_SHA256_X86 */
