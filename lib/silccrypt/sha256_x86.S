@@ -29,15 +29,17 @@
 
    Benchmarks (megabytes (MB) per second), bigger is better:
 
-   Code            Pentium 4 3.60 GHz   Pentium M 1.60 GHz
-   -----------------------------------------------------------------------
-   SHA-256, asm    110.57 MB/sec        58.50 MB/sec
-   SHA-256, gcc     49.07 MB/sec        39.55 MB/sec
-   SHA-256, icc    109.97 MB/sec        55.69 MB/sec
+   Code           P4 3.60 GHz      PM 1.60 GHz     Xeon 5160 3.00 GHz
+   ----------------------------------------------------------------------
+   SHA-256, asm   110.57 MB/sec    58.50 MB/sec    146.43 MB/sec
+   SHA-256, gcc    49.07 MB/sec    39.55 MB/sec     82.14 MB/sec
+   SHA-256, icc   109.97 MB/sec    55.69 MB/sec     N/A
 
    Notes:
    - Test program was lib/silccrypt/tests/test_hash
    - nice -n -20 was used with test_hash running as root
+   - P4 is Pentium 4, PM is Pentium M, Xeon 5160 is 64-bit CPU but the OS
+     had 32-bit kernel in the test.
    - ICC generates significantly better code compared to GCC for SSE2
      capable CPU, and the generated code uses SSE registers.  Hence the
      comparable speed with the assembler code.  Note that, the GCC code
