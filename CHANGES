@@ -1,5 +1,7 @@
 Sun Sep  9 17:52:49 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
+	* SILC Toolkit 1.1.3.
+
 	* Fixed possible buffer overflows from SILC Config code.
 	  Patch from Jérémy Bobbio.  Affected file is
 	  lib/silcutil/silcconfig.c.
