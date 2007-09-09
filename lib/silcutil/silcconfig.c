@@ -27,6 +27,8 @@
 #define SILC_CONFIG_DEBUG(fmt)
 #endif
 
+#define BUF_SIZE 255
+
 /* this is the option struct and currently it is only used internally to
  * the module and other structs. */
 typedef struct SilcConfigOptionStruct {
@@ -112,11 +114,14 @@ static void my_skip_line(SilcConfigFile *file)
  * a separator is any non alphanumeric character nor "_" or "-" */
 static char *my_next_token(SilcConfigFile *file, char *to)
 {
+  unsigned int count = 0;
   register char *o;
   my_trim_spaces(file);
   o = file->p;
-  while (isalnum((int)*o) || (*o == '_') || (*o == '-'))
+  while ((isalnum((int)*o) || (*o == '_') || (*o == '-')) && count < BUF_SIZE) {
+    count++;
     *to++ = *o++;
+  }
   *to = '\0';
   file->p = o;
   return to;
@@ -130,24 +135,30 @@ static char *my_get_string(SilcConfigFile *file, char *to)
   my_trim_spaces(file);
   o = file->p;
   if (*o == '"') {
-    char *quot = strchr(++o, '"');
-    int len = quot - o;
-    if (!quot) { /* XXX FIXME: gotta do something here */
-      printf("Bullshit, missing matching \"");
+    unsigned int count = 0;
+    char *d = to;
+    while (count < BUF_SIZE) {
+      o++;
+      if (*o == '"') {
+          break;
+      }
+      if (*o == '\\') {
+          o++;
+      }
+      count++;
+      *d++ = *o;
+    }
+    if (count >= BUF_SIZE) { /* XXX FIXME: gotta do something here */
+      fprintf(stderr, "Bullshit, missing matching \"");
       exit(1);
     }
-    if (len <= 0)
-      *to = '\0';
-    else {
-      strncpy(to, o, len);
-      to[len] = '\0';
-    }
+    *d = '\0';
     /* update stream pointer */
-    file->p = quot + 1;
-    return to;
+    file->p = o + 1;
+  } else {
+    /* we don't need quote parsing, fall-back to token extractor */
+    my_next_token(file, to);
   }
-  /* we don't need quote parsing, fall-back to token extractor */
-  my_next_token(file, to);
   return to;
 }
 
@@ -454,7 +465,7 @@ static int silc_config_main_internal(SilcConfigEntity ent)
 
   /* loop throught statements */
   while (1) {
-    char buf[255];
+    char buf[BUF_SIZE];
     SilcConfigOption *thisopt;
 
     /* makes it pointing to the next interesting char */
