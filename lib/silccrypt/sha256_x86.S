@@ -48,7 +48,7 @@
 
 */
 
-#include "silcdefs.h"
+#include "../../silcdefs.h"
 
 #ifdef SILC_SHA256_X86
 
@@ -168,7 +168,7 @@
 
 
 .text
-.align 4
+.balign 32
 .globl sha256_transform
 sha256_transform:
 	pushl	%ebp
