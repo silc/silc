@@ -179,12 +179,13 @@ SilcStack silc_stack_alloc(SilcUInt32 stack_size, SilcStack parent)
 
   if (parent) {
     /* Get stack from parent.  The stack itself is allocated from the
-       parent. */
+       parent (but does not consume parent's own stack). */
     e = silc_stack_ref_stack(parent, stack_size, &si, &bsize);
     if (!e)
       return NULL;
 
-    /* Allocate stack from the parent */
+    /* Allocate stack from the returned stack.  We allocate ourselves from
+       our own stack. */
     stack = silc_stack_alloc_block(parent, e, 1, sizeof(*stack));
     if (!stack) {
       silc_stack_unref_stack(parent, e);
@@ -199,8 +200,8 @@ SilcStack silc_stack_alloc(SilcUInt32 stack_size, SilcStack parent)
     stack->lock = parent->lock;
     silc_list_init(stack->stacks, struct SilcStackDataEntryStruct, next);
 
-    /* Allocate stack frames from the parent */
-    stack->frames = silc_stack_alloc_block(parent, e, SILC_STACK_BLOCK_NUM,
+    /* Allocate stack frames from the stack itself */
+    stack->frames = silc_stack_alloc_block(stack, e, SILC_STACK_BLOCK_NUM,
 					   sizeof(*stack->frames));
     if (!stack->frames) {
       silc_stack_unref_stack(parent, e);
