@@ -1,3 +1,13 @@
+Thu Sep 13 18:50:00 EEST 2007 Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed prerequisite version checking to work on all shells.
+
+	* Fixed parameter shifting on some shells when no arguments
+	  are given to autodist.
+
+	* Added support for source file distdef processing for the
+	  following files: .mm .M .S .F .F90 .F95 .fpp .FPP
+
 Thu May 31 23:34:00 EEST 2007 Pekka Riikonen <priikone@silcnet.org>
 
 	* Autodist 1.3.2.
