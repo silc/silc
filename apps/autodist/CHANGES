@@ -6,7 +6,7 @@ Thu Sep 13 18:50:00 EEST 2007 Pekka Riikonen <priikone@silcnet.org>
 	  are given to autodist.
 
 	* Added support for source file distdef processing for the
-	  following files: .mm .M .S .F .F90 .F95 .fpp .FPP
+	  following files: .mm .M .S
 
 Thu May 31 23:34:00 EEST 2007 Pekka Riikonen <priikone@silcnet.org>
 

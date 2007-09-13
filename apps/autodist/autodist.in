@@ -833,6 +833,9 @@ ad_process_tree()
  	\! -name \*\.[cC][pP][pP] -a \
  	\! -name \*\.[cC]++ -a \
  	\! -name \*\.m -a \
+ 	\! -name \*\.mm -o \
+ 	\! -name \*\.M -o \
+ 	\! -name \*\.S -o \
  	\! -name \*\.[hH] -a \
  	\! -name \*\.hh -a \
  	\! -name \*\.[cC]\.in -a \
@@ -885,10 +888,6 @@ ad_process_source_tree()
  	-name \*\.mm -o \
  	-name \*\.M -o \
  	-name \*\.S -o \
- 	-name \*\.F -o \
- 	-name \*\.F90 -o \
- 	-name \*\.F95 -o \
- 	-name \*\.[fF][pP][pP] -o \
  	-name \*\.[hH] -o \
  	-name \*\.hh -o \
  	-name \*\.[cC]\.in -o \
