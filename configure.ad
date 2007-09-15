@@ -66,6 +66,7 @@ cpu_ia64=false
 case "$host_cpu" in
   # All following Intels are considered 32-bit CPUs.
   i?86)
+    # All CPUs of today are considered i386 and i486 compatible */
     AC_DEFINE([SILC_I386], [], [SILC_I386])
     AC_DEFINE([SILC_I486], [], [SILC_I486])
     cpu_i386=true
@@ -93,6 +94,7 @@ case "$host_cpu" in
     fi
 
     # Check for specific CPU features
+    SILC_CPU_FLAG(mmx, AC_DEFINE([SILC_CPU_MMX], [], [SILC_CPU_MMX]), [])
     SILC_CPU_FLAG(sse2, AC_DEFINE([SILC_CPU_SSE2], [], [SILC_CPU_SSE2]), [])
     SILC_CPU_FLAG(sse3, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
     SILC_CPU_FLAG(ssse3, AC_DEFINE([SILC_CPU_SSSE3], [], [SILC_CPU_SSSE3]), [])
@@ -105,6 +107,7 @@ case "$host_cpu" in
     cpu_ia64=true
 
     # Check for specific CPU features
+    SILC_CPU_FLAG(mmx, AC_DEFINE([SILC_CPU_MMX], [], [SILC_CPU_MMX]), [])
     SILC_CPU_FLAG(sse2, AC_DEFINE([SILC_CPU_SSE2], [], [SILC_CPU_SSE2]), [])
     SILC_CPU_FLAG(sse3, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
     SILC_CPU_FLAG(ssse3, AC_DEFINE([SILC_CPU_SSSE3], [], [SILC_CPU_SSSE3]), [])
@@ -117,6 +120,7 @@ case "$host_cpu" in
     cpu_x86_64=true
 
     # Check for specific CPU features
+    SILC_CPU_FLAG(mmx, AC_DEFINE([SILC_CPU_MMX], [], [SILC_CPU_MMX]), [])
     SILC_CPU_FLAG(sse2, AC_DEFINE([SILC_CPU_SSE2], [], [SILC_CPU_SSE2]), [])
     SILC_CPU_FLAG(sse3, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
     SILC_CPU_FLAG(ssse3, AC_DEFINE([SILC_CPU_SSSE3], [], [SILC_CPU_SSSE3]), [])
@@ -426,13 +430,21 @@ have_assembler=false
 if test x$want_asm = xtrue; then
   AC_PATH_PROG([NASM], [nasm], [no])
   if test "x$NASM" != "xno"; then
-    SILC_ASSEMBLER="$NASM -O2 -felf"
+    if test x$cpu_x86_64 = xtrue; then
+      SILC_ASSEMBLER="$NASM -O2 -felf64"
+    else
+      SILC_ASSEMBLER="$NASM -O2 -felf"
+    fi
     have_assembler=true
   fi
 
   AC_PATH_PROG([YASM], [yasm], [no])
   if test "x$YASM" != "xno"; then
-    SILC_ASSEMBLER="$YASM -Xgnu -felf"
+    if test x$cpu_x86_64 = xtrue; then
+      SILC_ASSEMBLER="$YASM -Xgnu -felf64"
+    else
+      SILC_ASSEMBLER="$YASM -Xgnu -felf64"
+    fi
     have_assembler=true
   fi
 fi
