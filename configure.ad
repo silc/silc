@@ -361,13 +361,21 @@ have_assembler=false
 if test x$want_asm = xtrue; then
   AC_PATH_PROG([NASM], [nasm], [no])
   if test "x$NASM" != "xno"; then
-    SILC_ASSEMBLER="$NASM -O2 -felf"
+    if test x$cpu_x86_64 = xtrue; then
+      SILC_ASSEMBLER="$NASM -O2 -felf64"
+    else
+      SILC_ASSEMBLER="$NASM -O2 -felf"
+    fi
     have_assembler=true
   fi
 
   AC_PATH_PROG([YASM], [yasm], [no])
   if test "x$YASM" != "xno"; then
-    SILC_ASSEMBLER="$YASM -Xgnu -felf"
+    if test x$cpu_x86_64 = xtrue; then
+      SILC_ASSEMBLER="$YASM -Xgnu -felf64"
+    else
+      SILC_ASSEMBLER="$YASM -Xgnu -felf64"
+    fi
     have_assembler=true
   fi
 fi
