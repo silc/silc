@@ -68,6 +68,11 @@ lib/silcclient, The Client Library
    never joined the channel if this happens.  What to do if message is
    received from user that hasn't been resolved/joined?
 
+ o Add the SilcStream (socket stream) from the SilcPacketStream and
+   SilcSocket from the socket stream to SilcClientConnection for easier
+   access to them for programmers.  Currently these have to be digged up
+   from the packet stream.
+
  o Message ACKing support.
 
  o in /cmode and /cumode with +r, maybe the public key and private key
@@ -96,7 +101,6 @@ Runtime library, lib/silcutil/
 
  o Add silc_stream_get_root and add get_root stream operation.  It 
    returns the root of the stream or NULL if stream doesn't have root.
-   Like SilcPacketStream might return SilcSocketStream.
 
  o Change some stream routines (like socket stream API) to accept ANY
    stream and use silc_stream_get_root to get the socket stream from the
@@ -231,6 +235,9 @@ Runtime library, lib/silcutil/
 
  o Change silc_gettimeofday on Unix to use clock_gettime with REALTIME
    clock if it is available, otherwise use gettimeofday(). (***DONE)
+
+ (o SilcIpAddr abstraction.  Ipv4 and Ipv6 support to the abstaction.) 
+  maybe
 
  (o Generic SilcStatus or SilcResult that includes all possible status and
     error conditions, including those of SILC protocol.  Though, the SILC
