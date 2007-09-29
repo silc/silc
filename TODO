@@ -94,6 +94,15 @@ Runtime library, lib/silcutil/
 
  o silc_getopt routines
 
+ o Add silc_stream_get_root and add get_root stream operation.  It 
+   returns the root of the stream or NULL if stream doesn't have root.
+   Like SilcPacketStream might return SilcSocketStream.
+
+ o Change some stream routines (like socket stream API) to accept ANY
+   stream and use silc_stream_get_root to get the socket stream from the
+   given stream.  This will make various stream APIs more easier to use
+   when user doesn't have to dig up the correct stream.
+
  o The SILC Event signals.  Asynchronous events that can be created,
    connected to and signalled.  Either own event routines or glued into
    SilcSchedule:
@@ -335,6 +344,8 @@ Crypto Library, lib/silccrypt/
  o Add ECDSA support.
 
  o Add ECDH support.
+
+ o AES CBC is missing proper alignment code (see silc_1_1_branch).
 
  o All cipher, hash, hmac etc. allocation routines should take their name
    in as const char * not const unsigned char *. (***DONE)
