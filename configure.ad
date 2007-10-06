@@ -374,7 +374,7 @@ if test x$want_asm = xtrue; then
     if test x$cpu_x86_64 = xtrue; then
       SILC_ASSEMBLER="$YASM -Xgnu -felf64"
     else
-      SILC_ASSEMBLER="$YASM -Xgnu -felf64"
+      SILC_ASSEMBLER="$YASM -Xgnu -felf"
     fi
     have_assembler=true
   fi
