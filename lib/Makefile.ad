@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2005 Pekka Riikonen
+#  Copyright (C) 2000 - 2005, 2007 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -60,17 +60,17 @@ LIBTOOL_SILCCLIENT_VERSION = -version-info $(LIBSILCCLIENT_CURRENT):$(LIBSILCCLI
 LIBTOOL_SILCSERVER_VERSION = -version-info $(LIBSILCSERVER_CURRENT):$(LIBSILCSERVER_REVISION):$(LIBSILCSERVER_AGE)
 else
 LIBTOOL_OPTS=
-LIBTOOL_SILC_VERSION = 
-LIBTOOL_SILCCLIENT_VERSION = 
-LIBTOOL_SILCSERVER_VERSION = 
+LIBTOOL_SILC_VERSION =
+LIBTOOL_SILCCLIENT_VERSION =
+LIBTOOL_SILCSERVER_VERSION =
 endif
 
 if SILC_WIN32
-SILC_LIBS=$(LIBS)
+SILC_LINK_LIBS=$(LIBS)
 SILCCLIENT_LIBS=$(LIBS) -lsilc
 SILCSERVER_LIBS=$(LIBS) -lsilc
 else
-SILC_LIBS=
+SILC_LINK_LIBS=
 SILCCLIENT_LIBS=
 SILCSERVER_LIBS=
 endif
@@ -142,7 +142,7 @@ LIBSILC_AGE=@LIBSILC_AGE@
 
 libsilc.a:
 	find $(SILCLIB_DIRS) -type f -name *.lo | xargs \
-	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) $(SILC_LIBS) \
+	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) $(SILC_LINK_LIBS) \
 	$(LIBTOOL_SILC_VERSION) \
 	$(LIBTOOL_OPTS) -o libsilc.la
 
