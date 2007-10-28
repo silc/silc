@@ -130,7 +130,7 @@ int silc_select(SilcSchedule schedule, void *context)
 static LRESULT CALLBACK
 silc_schedule_wnd_proc(HWND hwnd, UINT wMsg, WPARAM wParam, LPARAM lParam)
 {
-  SilcSchedule schedule = (SilcSchedule)GetWindowLong(hwnd, GWL_USERDATA);
+  SilcSchedule schedule = (SilcSchedule)GetWindowLongPtr(hwnd, GWL_USERDATA);
   SilcWin32Scheduler internal;
   SilcUInt32 fd;
   SilcTaskFd task;
@@ -268,7 +268,7 @@ void *silc_schedule_internal_init(SilcSchedule schedule, void *app_context)
   }
 
   /* Set the scheduler as the window's context */
-  SetWindowLong(internal->window, GWL_USERDATA, (void *)schedule);
+  SetWindowLongPtr(internal->window, GWL_USERDATA, (void *)schedule);
   SetWindowPos(internal->window, HWND_BOTTOM, 0, 0, 0, 0, SWP_FRAMECHANGED);
 
   internal->wakeup_sema = CreateSemaphore(NULL, 0, 100, NULL);
