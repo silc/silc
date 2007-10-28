@@ -73,6 +73,10 @@ lib/silcclient, The Client Library
    access to them for programmers.  Currently these have to be digged up
    from the packet stream.
 
+ o Connection option that attemps to connect to remot host with various 
+   different mechanisms: UDP 706, TCP 706, TCP 80, TCP 443, UDP 7706 and
+   TCP 7706.  This is the so called hole punching mechanism.
+
  o Message ACKing support.
 
  o in /cmode and /cumode with +r, maybe the public key and private key
@@ -210,6 +214,9 @@ Runtime library, lib/silcutil/
    silc_stack_realloc from silcstack_i.h to silcstack.h.  Remove the
    _ua unaligned memory allocation routines.  Remove unaligned memory
    allocation possibility. (***DONE)
+
+ o silc_stack_alloc shouldn't require multiple by 8 size argument, it 
+   should figure it out itself.
 
  o silc_malloc et. al. to respect --with-alignment.
 
@@ -524,9 +531,23 @@ lib/silcserver
  o Do inccoming packet processing in an own FSM thread in the
    server-threads FSM.  Same as in client library.
 
+ o Binding to other ports than 706 too.  To allow easier traversing
+   through NATs and firewalls server should bind to 80, 443 and 7706
+   by default (at least try to bind).  Connections must work normally
+   even if they were established to some other port other than 706.
+
+   Connection option that attemps to connect to remot server with various 
+   different mechanisms: UDP 706, TCP 706, TCP 80, TCP 443, UDP 7706 and
+   TCP 7706.  This is the so called hole punching mechanism.
+
  o Reference count all Silc*Entry structures.
 
  Some issues that must be kept in mind from 1.0 and 1.1 silcd's:
+
+ o The server and router software MUST work out of the box.  After 
+   installation the server must not require any configuration to run the
+   most basic working configuration.  No defining IP addresses, etc.
+   The server must work just by running it.
 
  o The SERVER_SIGNOFF notify handing is not optimal, because it'll
    cause sending of multiple SIGNOFF notify's instead of the one
