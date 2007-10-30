@@ -40,6 +40,10 @@ point.
    specs.  Connection would be created with nick strings (which are of
    format nick@server).
 
+ o NAT detection protocool during SKE so that party behind NAT can 
+   detect if it is behind NAT and receive the public IP address and port
+   that it may need (servers need it to create valid Server ID).  (***DONE)
+
  o Counter block send/receive IV 64 bits instead of 32 bits, and the
    value itself is used as 64-bit MSB ordered counter, which must
    be reset before the packet sequence counter wraps.  It's basically
