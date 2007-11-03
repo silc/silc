@@ -399,6 +399,8 @@ void silc_server_packet_send_to_channel(SilcServer server,
 static SilcBool
 silc_server_packet_relay_to_channel_encrypt(SilcServer server,
 					    SilcPacketStream sender,
+					    void *sender_id,
+					    SilcIdType sender_type,
 					    SilcChannelEntry channel,
 					    unsigned char *data,
 					    unsigned int data_len)
@@ -451,8 +453,9 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
 
     memcpy(iv, data + (data_len - iv_len - mac_len), iv_len);
 
-    src_id.type = SILC_ID_SERVER;
-    src_id.u.server_id = *((SilcServerEntry)idata)->id;
+    SILC_ASSERT(sender_type == SILC_ID_CLIENT);
+    src_id.type = SILC_ID_CLIENT;
+    src_id.u.client_id = *((SilcClientID *)sender_id);
     dst_id.type = SILC_ID_CHANNEL;
     dst_id.u.channel_id = *channel->id;
 
@@ -502,6 +505,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
      channel key. If the channel key does not exist, then we know we
      don't have a single local user on the channel. */
   if (!silc_server_packet_relay_to_channel_encrypt(server, sender_sock,
+						   sender_id, sender_type,
 						   channel, data,
 						   data_len))
     return;
