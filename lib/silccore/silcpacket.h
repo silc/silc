@@ -402,6 +402,12 @@ const char *silc_packet_error_string(SilcPacketError error);
  *    Returns list of packet streams added to the packet engine.  The caller
  *    must free the list with silc_packet_engine_free_streams_list.
  *
+ * NOTES
+ *
+ *    This function may also return disconnected and destroyed streams.  The
+ *    caller should use silc_packet_stream_is_valid to check if the stream
+ *    is valid.
+ *
  ***/
 SilcDList silc_packet_engine_get_streams(SilcPacketEngine engine);
 

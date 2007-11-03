@@ -785,6 +785,8 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
     return NULL;
   }
 
+  SILC_LOG_DEBUG(("Created packet stream %p", ps));
+
   return ps;
 }
 
@@ -886,6 +888,8 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
 
   if (silc_atomic_sub_int8(&stream->refcnt, 1) > 0) {
     stream->destroyed = TRUE;
+
+    SILC_LOG_DEBUG(("Marking packet stream %p destroyed", stream));
 
     /* Close the underlaying stream */
     if (!stream->udp && stream->stream)
