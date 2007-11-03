@@ -397,11 +397,11 @@ void silc_server_query_send_router_reply(void *context, void *reply)
        returned error. */
     if (query->nick_server[0] && !query->dynamic_retry &&
 	!silc_server_num_sockets_by_remote(server, query->nick_server,
-					   query->nick_server, 1334, type)) {
+					   query->nick_server, 706, type)) {
       SILC_LOG_DEBUG(("Retry query by connecting to %s:%d",
 		      query->nick_server, 706));
       silc_server_create_connection(server, FALSE, TRUE, query->nick_server,
-				    1334, silc_server_query_connected,
+				    706, silc_server_query_connected,
 				    query);
       query->dynamic_retry = TRUE;
       query->resolved = FALSE;

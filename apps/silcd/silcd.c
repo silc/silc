@@ -245,9 +245,7 @@ SILC_TASK_CALLBACK(got_hup)
 
 SILC_TASK_CALLBACK(stop_server)
 {
-  /* Stop scheduler, the program will stop eventually after noticing
-     that the scheduler is down. */
-  silc_schedule_stop(silcd->schedule);
+  silc_server_stop(silcd);
 }
 
 /* Dump server statistics into a file into /tmp directory */
@@ -754,8 +752,7 @@ int main(int argc, char **argv)
      and we will exit. */
   silc_server_run(silcd);
 
-  /* Stop the server and free it. */
-  silc_server_stop(silcd);
+  /* Free server */
   silc_server_config_destroy(silcd->config);
   silc_server_free(silcd);
 

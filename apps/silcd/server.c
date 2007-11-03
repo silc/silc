@@ -130,7 +130,8 @@ static SilcBool silc_server_packet_receive(SilcPacketEngine engine,
 	silc_id_str2id(packet->src_id, packet->src_id_len,
 		       packet->src_id_type, &client_id, sizeof(client_id))) {
       if (!SILC_ID_CLIENT_COMPARE(client->id, &client_id)) {
-	SILC_LOG_DEBUG(("Packet source is not same as sender"));
+	SILC_LOG_DEBUG(("Packet source is not same as sender, packet %s",
+			silc_get_packet_name(packet->type)));
 	return FALSE;
       }
     }
@@ -666,6 +667,10 @@ void silc_server_free(SilcServer server)
     }
   }
 
+  silc_schedule_task_del_by_context(server->schedule, server);
+  silc_schedule_uninit(server->schedule);
+  server->schedule = NULL;
+
   silc_idcache_free(server->local_list->clients);
   silc_idcache_free(server->local_list->servers);
   silc_idcache_free(server->local_list->channels);
@@ -682,10 +687,6 @@ void silc_server_free(SilcServer server)
   silc_dlist_uninit(server->expired_clients);
   silc_skr_free(server->repository);
   silc_packet_engine_stop(server->packet_engine);
-
-  silc_schedule_task_del_by_context(server->schedule, server);
-  silc_schedule_uninit(server->schedule);
-  server->schedule = NULL;
 
   silc_free(server->local_list);
   silc_free(server->global_list);
@@ -915,14 +916,18 @@ SilcBool silc_server_init(SilcServer server)
     }
   }
 
+  if (server->server_type != SILC_ROUTER) {
+    server->stat.servers = 1;
+    server->stat.cell_servers = 1;
+  } else {
+    server->stat.routers = 1;
+  }
+
   /* If we are normal server we'll retrieve network statisticial information
      once in a while from the router. */
   if (server->server_type != SILC_ROUTER)
     silc_schedule_task_add_timeout(server->schedule, silc_server_get_stats,
 				   server, 10, 0);
-
-  if (server->server_type == SILC_ROUTER)
-    server->stat.routers++;
 
   /* Start packet engine */
   server->packet_engine =
@@ -1202,6 +1207,9 @@ void silc_server_stop(SilcServer server)
     while ((ps = silc_dlist_get(list))) {
       SilcIDListData idata = silc_packet_get_context(ps);
 
+      if (!silc_packet_stream_is_valid(ps))
+	continue;
+
       if (idata)
 	idata->status &= ~SILC_IDLIST_STATUS_DISABLED;
 
@@ -1227,6 +1235,8 @@ void silc_server_stop(SilcServer server)
 				     silc_server_connect_router);
   silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_connect_to_router_retry);
+  silc_schedule_task_del_by_callback(server->schedule,
+				     silc_server_connect_to_router);
 
   silc_schedule_stop(server->schedule);
 
@@ -1373,6 +1383,12 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
       return;
     }
 
+    /* Statistics */
+    server->stat.my_servers++;
+    if (server->server_type == SILC_ROUTER)
+      server->stat.servers++;
+    SILC_LOG_DEBUG(("my_servers %d", server->stat.my_servers));
+
     silc_idlist_add_data(id_entry, (SilcIDListData)entry);
     break;
 
@@ -1442,6 +1458,12 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
     idata->status |= (SILC_IDLIST_STATUS_REGISTERED |
 		      SILC_IDLIST_STATUS_LOCAL);
     idata->sconn = sconn;
+
+    /* Statistics */
+    server->stat.my_routers++;
+    if (server->server_type == SILC_ROUTER)
+      server->stat.routers++;
+    SILC_LOG_DEBUG(("my_routers %d", server->stat.my_routers));
 
     if (!sconn->backup) {
       /* Mark this router our primary router if we're still standalone */
@@ -1528,7 +1550,6 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
   /* Set the entry as packet stream context */
   silc_packet_set_context(sconn->sock, id_entry);
 
- out:
   /* Call the completion callback to indicate that we've connected to
      the router */
   if (sconn && sconn->callback)
