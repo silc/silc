@@ -1722,6 +1722,7 @@ SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
     return FALSE;
 
   silc_client_empty_channel(client, conn, channel);
+  silc_client_del_channel_private_keys(client, conn, channel);
   silc_hash_table_free(channel->user_list);
   silc_free(channel->channel_name);
   silc_free(channel->topic);
@@ -1748,7 +1749,6 @@ SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
   if (channel->channel_pubkeys)
     silc_argument_list_free(channel->channel_pubkeys,
 			    SILC_ARGUMENT_PUBLIC_KEY);
-  silc_client_del_channel_private_keys(client, conn, channel);
   silc_atomic_uninit16(&channel->internal.refcnt);
   silc_rwlock_free(channel->internal.lock);
   silc_schedule_task_del_by_context(conn->client->schedule, channel);

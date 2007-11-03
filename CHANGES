@@ -1,3 +1,8 @@
+Sun Sep 30 15:16:18 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed channel private key deleting when deleting the channel.
+	  Affected file is lib/silcclient/client_channel.c.
+
 Sun Sep  9 17:52:49 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* SILC Toolkit 1.1.3.
