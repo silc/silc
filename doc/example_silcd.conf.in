@@ -74,6 +74,17 @@ General {
 	# with ConnectionParams.
 	keepalive_secs = 300;
 
+	# Dynamic router connections.  If this is set for normal SILC server
+	# the connection to primary router is not created untill it is actually
+	# needed.  Giving for example /WHOIS foobar@silcnet.org would then
+	# create connection to the primary router to resolve user foobar.
+	# On the other hand giving /WHOIS foobar would try to search the
+	# user foobar locally, without creating the connection.  Note that
+	# giving /JOIN foobar will also created the connection as current
+	# SILC Server version supports only global channels (all JOINs require
+	# connection to router, if one is configured).
+	#dynamic_server = true;
+
 	# Default reconnection parameters defines how the server reconnect
 	# to the remote if the connection was lost.  The reconnection phase
 	# use so called exponential backoff algorithm;  The reconnect
