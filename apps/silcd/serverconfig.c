@@ -233,11 +233,7 @@ SILC_CONFIG_CALLBACK(fetch_generic)
   SilcServerConfig config = (SilcServerConfig) context;
   int got_errno = 0;
 
-  if (!strcmp(name, "module_path")) {
-    CONFIG_IS_DOUBLE(config->module_path);
-    config->module_path = (*(char *)val ? strdup((char *) val) : NULL);
-  }
-  else if (!strcmp(name, "prefer_passphrase_auth")) {
+  if (!strcmp(name, "prefer_passphrase_auth")) {
     config->prefer_passphrase_auth = *(SilcBool *)val;
   }
   else if (!strcmp(name, "require_reverse_lookup")) {
@@ -380,10 +376,6 @@ SILC_CONFIG_CALLBACK(fetch_cipher)
     CONFIG_IS_DOUBLE(tmp->name);
     tmp->name = strdup((char *) val);
   }
-  else if (!strcmp(name, "module")) {
-    CONFIG_IS_DOUBLE(tmp->module);
-    tmp->module = (*(char *)val ? strdup((char *) val) : NULL);
-  }
   else if (!strcmp(name, "keylength")) {
     tmp->key_length = *(SilcUInt32 *)val;
   }
@@ -396,7 +388,6 @@ SILC_CONFIG_CALLBACK(fetch_cipher)
 
  got_err:
   silc_free(tmp->name);
-  silc_free(tmp->module);
   silc_free(tmp);
   config->tmp = NULL;
   return got_errno;
@@ -428,10 +419,6 @@ SILC_CONFIG_CALLBACK(fetch_hash)
     CONFIG_IS_DOUBLE(tmp->name);
     tmp->name = strdup((char *) val);
   }
-  else if (!strcmp(name, "module")) {
-    CONFIG_IS_DOUBLE(tmp->module);
-    tmp->module = (*(char *)val ? strdup((char *) val) : NULL);
-  }
   else if (!strcmp(name, "blocklength")) {
     tmp->block_length = *(int *)val;
   }
@@ -444,7 +431,6 @@ SILC_CONFIG_CALLBACK(fetch_hash)
 
  got_err:
   silc_free(tmp->name);
-  silc_free(tmp->module);
   silc_free(tmp);
   config->tmp = NULL;
   return got_errno;
@@ -1188,7 +1174,6 @@ SILC_CONFIG_CALLBACK(fetch_router)
 
 /* known config options tables */
 static const SilcConfigTable table_general[] = {
-  { "module_path",		SILC_CONFIG_ARG_STRE,	fetch_generic,	NULL },
   { "prefer_passphrase_auth",	SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
   { "require_reverse_lookup",	SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
   { "connections_max",		SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
@@ -1225,7 +1210,6 @@ static const SilcConfigTable table_general[] = {
 
 static const SilcConfigTable table_cipher[] = {
   { "name",		SILC_CONFIG_ARG_STR,	fetch_cipher,	NULL },
-  { "module",		SILC_CONFIG_ARG_STRE,	fetch_cipher,	NULL },
   { "keylength",	SILC_CONFIG_ARG_INT,	fetch_cipher,	NULL },
   { "blocklength",	SILC_CONFIG_ARG_INT,	fetch_cipher,	NULL },
   { 0, 0, 0, 0 }
@@ -1233,7 +1217,6 @@ static const SilcConfigTable table_cipher[] = {
 
 static const SilcConfigTable table_hash[] = {
   { "name",		SILC_CONFIG_ARG_STR,	fetch_hash,	NULL },
-  { "module",		SILC_CONFIG_ARG_STRE,	fetch_hash,	NULL },
   { "blocklength",	SILC_CONFIG_ARG_INT,	fetch_hash,	NULL },
   { "digestlength",	SILC_CONFIG_ARG_INT,	fetch_hash,	NULL },
   { 0, 0, 0, 0 }
@@ -1612,7 +1595,6 @@ void silc_server_config_destroy(SilcServerConfig config)
   SILC_LOG_DEBUG(("Freeing config context"));
 
   /* Destroy general config stuff */
-  silc_free(config->module_path);
   silc_free(config->debug_string);
   silc_free(config->param.version_protocol);
   silc_free(config->param.version_software);
@@ -1666,12 +1648,10 @@ void silc_server_config_destroy(SilcServerConfig config)
   SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigCipher,
 				  config->cipher)
     silc_free(di->name);
-    silc_free(di->module);
     silc_free(di);
   }
   SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigHash, config->hash)
     silc_free(di->name);
-    silc_free(di->module);
     silc_free(di);
   }
   SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigHmac, config->hmac)
