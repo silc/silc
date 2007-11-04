@@ -9,9 +9,9 @@ tested.
 apps/silcd, The SILC Server	****PARTLY DONE****
 ===========================
 
- o Fix/test GETKEY.
+ o Fix/test GETKEY. (***DONE)
 
- o Fix/test MOTD.
+ o Fix/test MOTD. (***DONE)
 
  o Rewrite rehash, HUP.
 
