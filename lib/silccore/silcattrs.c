@@ -57,6 +57,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
 
     case SILC_ATTRIBUTE_USER_INFO:
       {
+#ifdef SILC_DIST_VCARD
 	SilcVCard vcard = object;
 	if (object_size != sizeof(*vcard))
 	  return NULL;
@@ -64,6 +65,7 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
 	if (!str)
 	  return NULL;
 	object = str;
+#endif /* SILC_DIST_VCARD */
       }
       break;
 
@@ -502,12 +504,14 @@ SilcBool silc_attribute_get_object(SilcAttributePayload payload,
   switch (payload->attribute) {
   case SILC_ATTRIBUTE_USER_INFO:
     {
+#ifdef SILC_DIST_VCARD
       SilcVCard vcard = object;
       if (object_size != sizeof(*vcard))
 	break;
       if (!silc_vcard_decode(payload->data, payload->data_len, vcard))
 	break;
       ret = TRUE;
+#endif /* SILC_DIST_VCARD */
     }
     break;
 
