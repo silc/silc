@@ -9,38 +9,32 @@ tested.
 apps/silcd, The SILC Server	****PARTLY DONE****
 ===========================
 
- o Port all code to use SILC Toolkit 1.1 APIs.
-
- o Dynamic connection support for INFO and MOTD commands.
-
- o Dynamic connection support for JOIN command.  Accept channel name
-   strings of format channel@server.
-
  o Fix/test GETKEY.
 
  o Fix/test MOTD.
-
- o Remove protocol.[ch].  (***DONE)
-
- o Rewrite connecting accepting. (***TESTING NEEDED)
-
- o Rewrite async connecting. (***TESTING NEEDED)
-
- o Connecting from SILC router to SILC server.
 
  o Rewrite rehash, HUP.
 
  o Heartbeat-keepalive.
 
- o Test backup router resuming protocol.
+ o Port all code to use SILC Toolkit 1.1 APIs. (***DONE)
 
- o Check all packet receive routines that they call silc_packet_free.
+ o Remove protocol.[ch].  (***DONE)
+
+ o Rewrite connecting accepting. (***DONE)
+
+ o Rewrite async connecting. (***DONE)
+
+ o Test backup router resuming protocol. (***DONE)
+
+ o Check all packet receive routines that they call silc_packet_free. 
+   (***DONE)
 
  o Add Web statistics module using lib/silchttp.  Give out server
    statistics. (***DONE)
 
 
-SILC Client	****PARTLY DONE****
+SILC Client	****DONE****
 ===========
 
  o Porting to new Toolkit API and new Client Library API (***DONE)
@@ -48,7 +42,7 @@ SILC Client	****PARTLY DONE****
  o Improve help files, especially /cmode, /cumode and /key. (***DONE)
 
 
-lib/silcclient, The Client Library	***PARTLY DONE****
+lib/silcclient, The Client Library	***DONE****
 ==================================
 
  o silcclient.h clean up and API rewrites. (***DONE)
@@ -59,8 +53,6 @@ lib/silcclient, The Client Library	***PARTLY DONE****
  o SilcChannelEntry, SilcServerEntry, SilcChannelUser, allocating,
    freeing, finding, etc. rewrite.  Also making them reference counted for
    multi threads use. (***DONE)
-
- o Rewrite silc_client_get_clients_by_channel.
 
  o Rewrite client side WHOIS command (for whois -details). (***DONE)
 
@@ -85,25 +77,25 @@ lib/silcclient, The Client Library	***PARTLY DONE****
  o Starting key exchange directly, rewrite. (***DONE)
 
  o Channel messages, channel private keys, channel entires, channel
-   search, etc. rewrite. (***TESTING NEEDED)
+   search, etc. rewrite. (***DONE)
 
  o For many APIs leave the hash context allocations to the caller instead
    of using client->sha1hash and client->md5hash, or some kind of thread
    safe (no locking) concept. (***DONE)
 
- o Key agreement rewrite. (***TESTING NEEDED)
+ o Key agreement rewrite. (***DONE)
 
  o Connecting to remote client (***DONE)
 
- o Private message waiting API (in threads) (***TESING NEEDED)
+ o Private message waiting API (in threads) (***TESTING NEEDED)
 
- o client_attrs.c, attributes rewrite. (***TESTING NEEDED)
+ o client_attrs.c, attributes rewrite. (***DONE)
 
  o No SilcBuffer lists back to application in command_reply operations.
    Convert them all to real lists and/or structures for easier use.
    (***DONE)
 
- o Nickname formatting rewrite. (***TESTING NEEDED)
+ o Nickname formatting rewrite. (***DONE)
 
  o UDP connections. (***TESTING NEEDED)
 
@@ -114,7 +106,7 @@ lib/silcsftp			****DONE****
  o Porting to use the new util library. (***DONE)
 
 
-lib/silccore/silcpacket.[ch]	****PARTLY DONE****
+lib/silccore/silcpacket.[ch]	****DONE****
 ============================
 
  o SilcPacketEngine. (***DONE)
@@ -143,10 +135,10 @@ lib/silcskr	****DONE****
    be. (***DONE)
 
 
-lib/silcske/silcske.[ch] 	***PARTLY DONE****
+lib/silcske/silcske.[ch] 	***DONE****
 ========================
 
- o Responder rekey (***TESTING NEEDED)
+ o Responder rekey (***DONE)
 
  o IV Included flag support in SKE (***DONE)
 
@@ -156,7 +148,7 @@ lib/silcske/silcske.[ch] 	***PARTLY DONE****
  o SilcConnAuth header file documentation. (***DONE)
 
 
-lib/silccrypt			****PARTLY DONE****
+lib/silccrypt			****DONE****
 =============
 
  o Implement PKCS #1 sign/verify with hash OID. (***TESTING NEEDED)
@@ -176,12 +168,12 @@ lib/silccrypt			****PARTLY DONE****
  o Assembler AES (***DONE)
 
 
-lib/silcutil			****PARTLY DONE****
+lib/silcutil			****DONE****
 ============
 
  o The regex code from lib/contrib might compile fine on all platforms.
    No need to make it silcutil/unix/ specific.  Add them to generic
-   silcutil.c. (***TESTNG NEEDED)
+   silcutil.c. (***DONE)
 
  o Silc FD Stream to WIN32 (lib/silcutil/silcfdstream.h) (***TESTING NEEDED)
 
@@ -224,7 +216,7 @@ lib/silcutil/silcstream.[ch]	****DONE****
  o Add abstract SilcStream. (***DONE)
 
 
-lib/silcutil/silcsocketstream.[ch]	****PARTY DONE****
+lib/silcutil/silcsocketstream.[ch]	****DONE****
 ==================================
 
  o Add SilcSocketStream (***DONE)
@@ -234,7 +226,7 @@ lib/silcutil/silcsocketstream.[ch]	****PARTY DONE****
  o Test QoS after the changes made to socket stream
 
 
-lib/silcutil/silcschedule*.[ch]		****PARTLY DONE****
+lib/silcutil/silcschedule*.[ch]		****DONE****
 ===============================
 
  o Scheduler can be optimized for FD tasks by changing the fd_queue
@@ -262,7 +254,7 @@ lib/silcutil/silcschedule*.[ch]		****PARTLY DONE****
  o Change SILC_TASK_CALLBACK to non-static, and remove the macro
    SILC_TASK_CALLBACK_GLOBAL. (***DONE)
 
- o SILC Schedule API changes to WIN32. (***TESTING NEEDED)
+ o SILC Schedule API changes to WIN32. (***DONE)
 
 
 lib/silcutil/silcasync.[ch]	****DONE****
@@ -287,7 +279,7 @@ lib/silcutil/silcfsm.[ch]	****DONE****
  o SILC Finite State Machine API.  Replaces SILC Protocol API (***DONE)
 
 
-lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****PARTLY DONE****
+lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****DONE****
 ===============================================
 
  o Add UDP interface (***DONE)
@@ -297,17 +289,17 @@ lib/silcutil/silcnet*, lib/silcutil/*/silc*net*		****PARTLY DONE****
  o New network interfaces (***DONE)
 
 
-lib/silcmath			****PARTLY DONE****
+lib/silcmath			****DONE****
 ============
 
- o Test on x86_64.
+ o Test on x86_64. (***TESTING NEEDED)
 
  o Change LTM and TFM function names when importing to SILC tree to avoid
    rare linking problems on system that has same named symbols already in
    the system. (***DONE)
 
 
-lib/silcutil/symbian/		****PARTLY DONE****
+lib/silcutil/symbian/		****DONE****
 =====================
 
   o lib/silcutil/symbian routines missing or not completed.

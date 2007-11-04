@@ -21,15 +21,20 @@ nsect(SECTION: General)
 
 em(General) section contains global settings for the silcd.
 
-bf(module_path)
-quote(Defines where SIM modules are located. If definition is omitted,
-built-in modules will be used. Also, if a module can not be located, a built-in
-module will be used in its place. The argument is a path to the directory the
-modules are in, for example bf("/usr/local/silc/modules").)
+bf(dynamic_server)
+quote(Dynamic router connections.  If this is set for normal SILC server
+the connection to primary router is not created untill it is actually
+needed.  Giving for example em(/WHOIS foobar@silcnet.org) would then
+create connection to the primary router to resolve user foobar.
+On the other hand giving em(/WHOIS foobar) would try to search the
+user foobar locally, without creating the connection.  Note that
+giving em(/JOIN foobar) will also created the connection as current
+SILC Server version supports only global channels (all JOINs require
+connection to router, if one is configured).)
 
 bf(prefer_passphrase_auth)
-quote(If both public key and passphrase authentication are set for a 
-connection, public key authentication is by default preferred. Setting this 
+quote(If both public key and passphrase authentication are set for a
+connection, public key authentication is by default preferred. Setting this
 value to em(true) causes silcd to prefer passphrase authentication in these
 cases.)
 
@@ -44,7 +49,7 @@ connections are refused.)
 
 bf(connections_max_per_host)
 quote(Maximum number of incoming connections from any single host. This
-setting can be overridden on a connection-specific basis with 
+setting can be overridden on a connection-specific basis with
 em(ConnectionParams).)
 
 bf(version_protocol)
@@ -71,13 +76,13 @@ bf(key_exchange_rekey)
 quote(Defines the interval, in seconds, how often the session key will be
 regenerated. This setting only applies to the connection initiator, as rekey
 is always performed by the initiating party. Setting has effect only when
-the server acts as an initiator, and can be overridden with 
+the server acts as an initiator, and can be overridden with
 em(ConnectionParams).)
 
 bf(key_exchange_pfs)
 quote(Boolean value to determine, whether key-exchange is performed with
 Perfect Forward Secrecy (PFS) or without. If set to em(true), the rekey
-process will be somewhat slower, but more secure since the key is 
+process will be somewhat slower, but more secure since the key is
 entirely regenerated. Can be overridden with em(ConnectionParams).)
 
 bf(key_exchange_timeout)
@@ -121,11 +126,11 @@ bf(qos_bytes_limit)
 quote(Limits incoming SILC data to the specified number of bytes per second.)
 
 bf(qos_limit_sec)
-quote(This value defines the timeout, in seconds, for the delay of received 
+quote(This value defines the timeout, in seconds, for the delay of received
 data in case it was left in a QoS queue.)
 
 bf(qos_limit_usec)
-quote(This value defines the timeout, in microseconds, for the delay of 
+quote(This value defines the timeout, in microseconds, for the delay of
 received data for received data in case it was left in a QoS queue.)
 
 nsect(SECTION: ServerInfo)
@@ -222,7 +227,7 @@ nsubsect(SUBSECTION: Errors)
 nsubsect(SUBSECTION: Fatals)
 Each of these subsections has the same attributes, em(File) and em(Size).
 Different levels of problems are logged to their respective channels
-(em(Info), em(Warnings), em(Errors), em(Fatals)), depending on their need 
+(em(Info), em(Warnings), em(Errors), em(Fatals)), depending on their need
 of attention.
 
 bf(File)
@@ -236,19 +241,19 @@ size within given limit.)
 nsect(SECTION: ConnectionParams)
 
 This section defines connection parameters. Each connection may have its own
-set of em(ConnectionParams) but having one is in no way mandatory. If no 
-separate parameters have been assigned, the defaults and the ones  from 
+set of em(ConnectionParams) but having one is in no way mandatory. If no
+separate parameters have been assigned, the defaults and the ones  from
 em(General) section will be used. A silcd configuration may have any number of
 em(ConnectionParams) sections.
 
 bf(name)
-quote(This is a unique name that separates bf(this) particular 
-em(ConnectionParams) section from all the others. It is also the name with 
-which settings are referred to a given set of parameters. This field is 
+quote(This is a unique name that separates bf(this) particular
+em(ConnectionParams) section from all the others. It is also the name with
+which settings are referred to a given set of parameters. This field is
 mandatory.)
 
 bf(connections_max)
-quote(Limits how many concurrent connections are allowed. Any further 
+quote(Limits how many concurrent connections are allowed. Any further
 connections are simply refused. Note that this setting can not override the
 figure given in em(General) section.)
 
@@ -293,7 +298,7 @@ quote(Exactly the same as in em(General) section.)
 
 bf(anonymous)
 quote(This boolean setting has meaning only to client connections. If set to
-em(true), client connections using this em(ConnectionParams) block will have 
+em(true), client connections using this em(ConnectionParams) block will have
 their username and host scrambled. The client will also have an anonymous mode
 set to it.)
 
@@ -322,7 +327,7 @@ must supply a connection password.
 
 bf(Host)
 quote(An address or wildcarded set of addresses, either in numeric IP-address
-fashion or as hostnames. For example em("10.1.*") or 
+fashion or as hostnames. For example em("10.1.*") or
 em("*.mydomain.domain.org").)
 
 bf(Passphrase)
@@ -410,7 +415,7 @@ nsect(SECTION: Admin)
 This section defines configured administration connections.
 
 bf(Host)
-quote(Either FQDN or a strict IP-address to the origin of connection. 
+quote(Either FQDN or a strict IP-address to the origin of connection.
 This field is optional.)
 
 bf(User)
@@ -427,7 +432,7 @@ quote(Path to administrator's public key file. If both em(Passphrase) and
 em(PublicKey) are defined, either one can be used.)
 
 nsect(SECTION: Deny)
-This section defines denied incoming connections. They apply equally to both 
+This section defines denied incoming connections. They apply equally to both
 client and server connections, so make sure you know what you add here. Each
 em(Deny) section covers one instance of denied connection(s). There may be any
 number of em(Deny) sections.
