@@ -363,8 +363,10 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
 
   if (remote_ip_addr && remote_port) {
     if (sock->ipv6) {
+#ifdef HAVE_IPV6
       from = (struct sockaddr *)&s.sin6;
       flen = sizeof(s.sin6);
+#endif /* HAVE_IPV6 */
     } else {
       from = (struct sockaddr *)&s.sin;
       flen = sizeof(s.sin);
@@ -395,9 +397,13 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
   /* Return remote address */
   if (remote_ip_addr && remote_port) {
     if (sock->ipv6) {
+#ifdef HAVE_IPV6
       *remote_port = ntohs(s.sin6.sin6_port);
       inet_ntop(AF_INET6, &s.sin6.sin6_addr, remote_ip_addr,
 		remote_ip_addr_size);
+#else
+      *remote_port = 0;
+#endif /* HAVE_IPV6 */
     } else {
       *remote_port = ntohs(s.sin.sin_port);
       inet_ntop(AF_INET, &s.sin.sin_addr, remote_ip_addr,
