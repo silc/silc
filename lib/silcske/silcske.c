@@ -3391,7 +3391,7 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
 			   SilcHmac *ret_hmac_receive,
 			   SilcHash *ret_hash)
 {
-  unsigned char iv[32];
+  unsigned char iv[SILC_HASH_MAXLEN];
   SilcBool iv_included = (prop->flags & SILC_SKE_SP_FLAG_IV_INCLUDED);
 
   /* Allocate ciphers to be used in the communication */
@@ -3443,6 +3443,8 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
 	  silc_hash_make(prop->hash, keymat->receive_iv, 8, iv);
 	  if (!iv_included)
 	    memcpy(iv + 4, keymat->receive_iv, 8);
+	  else
+	    memset(iv + 4, 0, 12);
 	}
 
         silc_cipher_set_iv(*ret_send_key, iv);
@@ -3467,6 +3469,8 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
 	  silc_hash_make(prop->hash, keymat->send_iv, 8, iv);
 	  if (!iv_included)
 	    memcpy(iv + 4, keymat->send_iv, 8);
+	  else
+	    memset(iv + 4, 0, 12);
 	}
 
         silc_cipher_set_iv(*ret_receive_key, iv);
@@ -3498,6 +3502,8 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
 	  silc_hash_make(prop->hash, keymat->send_iv, 8, iv);
 	  if (!iv_included)
 	    memcpy(iv + 4, keymat->send_iv, 8);
+	  else
+	    memset(iv + 4, 0, 12);
 	}
 
 	silc_cipher_set_iv(*ret_send_key, iv);
@@ -3523,6 +3529,8 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
 	  silc_hash_make(prop->hash, keymat->receive_iv, 8, iv);
 	  if (!iv_included)
 	    memcpy(iv + 4, keymat->receive_iv, 8);
+	  else
+	    memset(iv + 4, 0, 12);
 	}
 
 	silc_cipher_set_iv(*ret_receive_key, iv);
