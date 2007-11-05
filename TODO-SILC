@@ -32,8 +32,7 @@ point.
     bytes from the HASH value that was computed in SKE.  In each rekey 
     the value MUST be recomputed as follows:
 
-      HASH = hash(old Truncated HASH from SKE |
-                  new Sending/Receiving IV from SKE)
+      HASH = hash(new Sending/Receiving IV from SKE)
 
     The hash function is the one used in SKE.  The 'new Sending/Receiving 
     IV from SKE' is the first 8 bytes of the new value computed during 
