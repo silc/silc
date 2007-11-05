@@ -19,6 +19,10 @@ point.
  o Group Diffie-Hellman protocol for establishig key with two or more
    users on a channel.
 
+ o Define that with CTR mode PFS MUST be enabled in SKE.  CTR rekey
+   cannot be done without PFS because the counter block requires fresh
+   HASH value which requires PFS in rekey.
+
  o Extend the Channel ID port to be actually a counter, allowing the
    2^32 channels per cell, instead of 2^16 like now.  The port with
    compliant implementation would always be 706, and it could be used
