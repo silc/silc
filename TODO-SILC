@@ -19,9 +19,25 @@ point.
  o Group Diffie-Hellman protocol for establishig key with two or more
    users on a channel.
 
- o Define that with CTR mode PFS MUST be enabled in SKE.  CTR rekey
-   cannot be done without PFS because the counter block requires fresh
-   HASH value which requires PFS in rekey.
+ o Change CTR mode description:
+
+    Truncated HASH from SKE (4 bytes) - This value is the first 4
+    bytes from the HASH value that was computed as a result of SKE
+    protocol.  This acts as session identifier and each rekey MUST
+    produce a new HASH value.
+
+   to
+
+    Truncated HASH from SKE (4 bytes) - This value is the first 4
+    bytes from the HASH value that was computed in SKE.  In each rekey 
+    the value MUST be recomputed as follows:
+
+      HASH = hash(old Truncated HASH from SKE |
+                  new Sending/Receiving IV from SKE)
+
+    The hash function is the one used in SKE.  The 'new Sending/Receiving 
+    IV from SKE' is the first 8 bytes of the new value computed during 
+    rekey.  The first 4 bytes are used from the recomputed HASH.
 
  o Extend the Channel ID port to be actually a counter, allowing the
    2^32 channels per cell, instead of 2^16 like now.  The port with
