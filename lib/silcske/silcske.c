@@ -1881,7 +1881,8 @@ SILC_FSM_STATE(silc_ske_st_initiator_failure)
   SilcSKE ske = fsm_context;
   SilcUInt32 error = SILC_SKE_STATUS_ERROR;
 
-  if (ske->packet && silc_buffer_len(&ske->packet->buffer) == 4) {
+  if (ske->packet && ske->packet->type == SILC_PACKET_FAILURE &&
+      silc_buffer_len(&ske->packet->buffer) == 4) {
     SILC_GET32_MSB(error, ske->packet->buffer.data);
     ske->status = error;
     silc_packet_free(ske->packet);
@@ -2470,7 +2471,8 @@ SILC_FSM_STATE(silc_ske_st_responder_failure)
 
   SILC_LOG_DEBUG(("Key exchange protocol failed"));
 
-  if (ske->packet && silc_buffer_len(&ske->packet->buffer) == 4) {
+  if (ske->packet && ske->packet->type == SILC_PACKET_FAILURE &&
+      silc_buffer_len(&ske->packet->buffer) == 4) {
     SILC_GET32_MSB(error, ske->packet->buffer.data);
     ske->status = error;
     silc_packet_free(ske->packet);
@@ -3416,6 +3418,12 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
       return FALSE;
   }
 
+  /* Allocate hash */
+  if (ret_hash) {
+    if (!silc_hash_alloc(silc_hash_get_name(prop->hash), ret_hash))
+      return FALSE;
+  }
+
   /* Set key material */
   memset(iv, 0, sizeof(iv));
   if (ske->responder) {
@@ -3424,10 +3432,22 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
 			  keymat->enc_key_len, TRUE);
 
       if (silc_cipher_get_mode(*ret_send_key) == SILC_CIPHER_MODE_CTR) {
-        memcpy(iv, ske->hash, 4);
-        memcpy(iv + 4, keymat->receive_iv, iv_included ? 4 : 8);
+	/* Counter mode */
+	if (!ske->rekeying) {
+	  /* Set IV. */
+	  memcpy(iv, ske->hash, 4);
+	  if (!iv_included)
+	    memcpy(iv + 4, keymat->receive_iv, 8);
+	} else {
+	  /* Rekey, recompute the truncated hash value. */
+	  silc_hash_make(prop->hash, keymat->receive_iv, 8, iv);
+	  if (!iv_included)
+	    memcpy(iv + 4, keymat->receive_iv, 8);
+	}
+
         silc_cipher_set_iv(*ret_send_key, iv);
       } else {
+	/* Other modes */
 	silc_cipher_set_iv(*ret_send_key, keymat->receive_iv);
       }
     }
@@ -3436,10 +3456,22 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
 			  keymat->enc_key_len, FALSE);
 
       if (silc_cipher_get_mode(*ret_receive_key) == SILC_CIPHER_MODE_CTR) {
-        memcpy(iv, ske->hash, 4);
-        memcpy(iv + 4, keymat->send_iv, iv_included ? 4 : 8);
+	/* Counter mode */
+	if (!ske->rekeying) {
+	  /* Set IV. */
+	  memcpy(iv, ske->hash, 4);
+	  if (!iv_included)
+	    memcpy(iv + 4, keymat->send_iv, 8);
+	} else {
+	  /* Rekey, recompute the truncated hash value. */
+	  silc_hash_make(prop->hash, keymat->send_iv, 8, iv);
+	  if (!iv_included)
+	    memcpy(iv + 4, keymat->send_iv, 8);
+	}
+
         silc_cipher_set_iv(*ret_receive_key, iv);
       } else {
+	/* Other modes */
 	silc_cipher_set_iv(*ret_receive_key, keymat->send_iv);
       }
     }
@@ -3455,10 +3487,22 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
 			  keymat->enc_key_len, TRUE);
 
       if (silc_cipher_get_mode(*ret_send_key) == SILC_CIPHER_MODE_CTR) {
-        memcpy(iv, ske->hash, 4);
-        memcpy(iv + 4, keymat->send_iv, iv_included ? 4 : 8);
+	/* Counter mode */
+	if (!ske->rekeying) {
+	  /* Set IV. */
+	  memcpy(iv, ske->hash, 4);
+	  if (!iv_included)
+	    memcpy(iv + 4, keymat->send_iv, 8);
+	} else {
+	  /* Rekey, recompute the truncated hash value. */
+	  silc_hash_make(prop->hash, keymat->send_iv, 8, iv);
+	  if (!iv_included)
+	    memcpy(iv + 4, keymat->send_iv, 8);
+	}
+
 	silc_cipher_set_iv(*ret_send_key, iv);
       } else {
+	/* Other modes */
 	silc_cipher_set_iv(*ret_send_key, keymat->send_iv);
       }
     }
@@ -3467,10 +3511,23 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
 			  keymat->enc_key_len, FALSE);
 
       if (silc_cipher_get_mode(*ret_receive_key) == SILC_CIPHER_MODE_CTR) {
-        memcpy(iv, ske->hash, 4);
-        memcpy(iv + 4, keymat->receive_iv, iv_included ? 4 : 8);
+	/* Counter mode */
+	if (!ske->rekeying) {
+	  /* Set IV.  If IV Included flag was negotiated we only set the
+	     truncated hash value. */
+	  memcpy(iv, ske->hash, 4);
+	  if (!iv_included)
+	    memcpy(iv + 4, keymat->receive_iv, 8);
+	} else {
+	  /* Rekey, recompute the truncated hash value. */
+	  silc_hash_make(prop->hash, keymat->receive_iv, 8, iv);
+	  if (!iv_included)
+	    memcpy(iv + 4, keymat->receive_iv, 8);
+	}
+
 	silc_cipher_set_iv(*ret_receive_key, iv);
       } else {
+	/* Other modes */
 	silc_cipher_set_iv(*ret_receive_key, keymat->receive_iv);
       }
     }
@@ -3480,12 +3537,6 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
     if (ret_hmac_receive)
       silc_hmac_set_key(*ret_hmac_receive, keymat->receive_hmac_key,
 			keymat->hmac_key_len);
-  }
-
-  /* Allocate hash */
-  if (ret_hash) {
-    if (!silc_hash_alloc(silc_hash_get_name(prop->hash), ret_hash))
-      return FALSE;
   }
 
   return TRUE;

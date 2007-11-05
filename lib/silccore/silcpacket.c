@@ -786,6 +786,8 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
     return NULL;
   }
 
+  SILC_LOG_DEBUG(("Created packet stream %p", ps));
+
   return ps;
 }
 
@@ -887,6 +889,8 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
 
   if (silc_atomic_sub_int8(&stream->refcnt, 1) > 0) {
     stream->destroyed = TRUE;
+
+    SILC_LOG_DEBUG(("Marking packet stream %p destroyed", stream));
 
     /* Close the underlaying stream */
     if (!stream->udp && stream->stream)
@@ -1468,14 +1472,6 @@ static inline void silc_packet_send_ctr_increment(SilcPacketStream stream,
   unsigned char *iv = silc_cipher_get_iv(cipher);
   SilcUInt32 pc1, pc2;
 
-  /* Increment 64-bit packet counter */
-  SILC_GET32_MSB(pc1, iv + 4);
-  SILC_GET32_MSB(pc2, iv + 8);
-  if (++pc2 == 0)
-    ++pc1;
-  SILC_PUT32_MSB(pc1, iv + 4);
-  SILC_PUT32_MSB(pc2, iv + 8);
-
   /* Reset block counter */
   memset(iv + 12, 0, 4);
 
@@ -1486,11 +1482,24 @@ static inline void silc_packet_send_ctr_increment(SilcPacketStream stream,
     ret_iv[1] = ret_iv[0] + iv[4];
     ret_iv[2] = ret_iv[0] ^ ret_iv[1];
     ret_iv[3] = ret_iv[0] + ret_iv[2];
-    SILC_PUT32_MSB(pc2, ret_iv + 4);
+
+    /* Increment 32-bit packet counter */
+    SILC_GET32_MSB(pc1, iv + 8);
+    pc1++;
+    SILC_PUT32_MSB(pc1, ret_iv + 4);
+
     SILC_LOG_HEXDUMP(("IV"), ret_iv, 8);
 
     /* Set new nonce to counter block */
-    memcpy(iv + 4, ret_iv, 4);
+    memcpy(iv + 4, ret_iv, 8);
+  } else {
+    /* Increment 64-bit packet counter */
+    SILC_GET32_MSB(pc1, iv + 4);
+    SILC_GET32_MSB(pc2, iv + 8);
+    if (++pc2 == 0)
+      ++pc1;
+    SILC_PUT32_MSB(pc1, iv + 4);
+    SILC_PUT32_MSB(pc2, iv + 8);
   }
 
   SILC_LOG_HEXDUMP(("Counter Block"), iv, 16);
@@ -1604,6 +1613,12 @@ static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
     silc_rng_get_byte_fast(stream->sc->engine->rng);
 
   silc_mutex_lock(stream->lock);
+
+  if (silc_unlikely(stream->destroyed)) {
+    SILC_LOG_DEBUG(("Stream %p is destroyed, cannot send packet", stream));
+    silc_mutex_unlock(stream->lock);
+    return FALSE;
+  }
 
   /* Get packet pointer from the outgoing buffer */
   if (silc_unlikely(!silc_packet_send_prepare(stream, truelen + padlen + ivlen
