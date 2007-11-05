@@ -16,7 +16,8 @@ inherit toolkit
 define SILC_DIST_INPLACE
 define SILC_DIST_SIM
 
-# SFTP is undefined in server, so force it here
+# SFTP and VCARD is undefined in server, so force it here
 define SILC_DIST_SFTP
+define SILC_DIST_VCARD
 
 pre-hook distdir/pre-run
