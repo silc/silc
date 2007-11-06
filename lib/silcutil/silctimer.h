@@ -185,7 +185,7 @@ SilcBool silc_timer_is_running(SilcTimer timer);
  *    silc_timer_synchronize(&timer);
  *    start = silc_timer_tick(&timer, FALSE);
  *    do_something();
- *    stop = silc_tiemr_tick(&timer, TRUE);
+ *    stop = silc_timer_tick(&timer, TRUE);
  *
  ***/
 
