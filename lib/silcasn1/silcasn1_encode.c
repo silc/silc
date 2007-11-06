@@ -352,7 +352,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	/* Get OID words from the string */
 	cp = strchr(oidstr, '.');
 	while (cp) {
-	  if (sscanf(oidstr, "%lu", (unsigned long *)&oid) != 1) {
+	  if (sscanf(oidstr, "%lu", &oid) != 1) {
 	    SILC_LOG_DEBUG(("Malformed OID string"));
 	    goto fail;
 	  }
@@ -363,7 +363,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
 	  cp = strchr(oidstr, '.');
 
 	  if (!cp) {
-	    if (sscanf(oidstr, "%lu", (unsigned long *)&oid) != 1) {
+	    if (sscanf(oidstr, "%lu", &oid) != 1) {
 	      SILC_LOG_DEBUG(("Malformed OID string"));
 	      goto fail;
 	    }
