@@ -87,6 +87,8 @@ lib/silcclient, The Client Library
    should provide events so that application developer has a choice of
    developing the SILC app with callbacks or with events.
 
+ o Ability to recover from rekey errors, at least try to.
+
 
 Runtime library, lib/silcutil/
 ==============================
@@ -166,7 +168,7 @@ Runtime library, lib/silcutil/
    This relationship would be associative only.  The schedulers are still
    independent and run independently from each other.   All schedulers
    would be linked and could be accessed from any of the schedulers.
-   It should be possible to retrieve the parent and enumate all children
+   It should be possible to retrieve the parent and enumerate all children
    from any of the schedulers.
 
    SilcSchedule silc_schedule_init(int max_tasks, void *app_context,
@@ -239,6 +241,7 @@ Runtime library, lib/silcutil/
    }
 
    silc_snprintf(buf, sizeof(buf), "Client ID %@", id_renderer, client_id);
+   (***DONE)
 
  o Change silc_gettimeofday on Unix to use clock_gettime with REALTIME
    clock if it is available, otherwise use gettimeofday(). (***DONE)
@@ -376,6 +379,27 @@ SILC Accelerator Library
  o Implement software accelerator.  It is a thread pool system where the
    public key and private key operations are executed in threads. 
    (***DONE)
+
+ o Add init options to SilcAcceleratorObject as a SilcAcceleratorOption
+   structure.  Each accelerator defines the options that they support and
+   can be retrieved from the SilcAccelerator with silc_acc_get_options.
+   The format must also be machine parseable.  The structure can be of the
+   following format:
+
+	typedef struct SilcAcceleratorOptionStruct {
+	  const char *option;			/* Option name */
+	  const char *display_name;		/* Option displayable name */
+	  SilcParamType type;			/* Option data format */
+	} *SilcAcceleratorOption;
+
+   For software accelerator it could be for example:
+
+   { "min_threads", "Minimum threads", SILC_PARAM_UINT32 },
+   { "max_threads", "Maximum threads", SILC_PARAM_UINT32 },
+
+   The accelerator itself doesn't have to use the option structure to
+   parse the options if not wanted.  It is defined for the caller so
+   they can learn the supported options in a well defined way.
 
  o Diffie-Hellman acceleration
 
@@ -539,6 +563,8 @@ lib/silcserver
    Connection option that attemps to connect to remot server with various 
    different mechanisms: UDP 706, TCP 706, TCP 80, TCP 443, UDP 7706 and
    TCP 7706.  This is the so called hole punching mechanism.
+
+ o Ability to recover from rekey errors, at least try to.
 
  o Reference count all Silc*Entry structures.
 

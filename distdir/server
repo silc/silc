@@ -6,7 +6,6 @@ inherit common
 define SILC_DIST_SERVER
 #define SILC_DIST_SERVERLIB
 define SILC_DIST_HTTP
-define SILC_DIST_SIM
 undef SILC_DIST_SFTP
 undef SILC_DIST_VCARD
 
