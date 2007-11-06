@@ -64,8 +64,11 @@ SilcBool silc_client_send_private_message(SilcClient client,
 
   if (silc_unlikely(!client || !conn || !client_entry))
     return FALSE;
-  if (silc_unlikely(flags & SILC_MESSAGE_FLAG_SIGNED && !hash))
+  if (silc_unlikely(flags & SILC_MESSAGE_FLAG_SIGNED && !hash)) {
+    SILC_LOG_ERROR(("Cannot send signed message without hash, missing "
+		    "arguments"));
     return FALSE;
+  }
   if (silc_unlikely(conn->internal->disconnected))
     return FALSE;
 

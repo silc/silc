@@ -60,6 +60,9 @@ SILC_TASK_CALLBACK(silc_client_keyagr_timeout)
   SilcClientEntry client_entry = context;
   SilcClientKeyAgreement ke = client_entry->internal.ke;
 
+  if (!ke)
+    return;
+
   SILC_LOG_DEBUG(("Key agreement %p timeout", ke));
 
   ke->completion(ke->client, ke->conn, client_entry,
