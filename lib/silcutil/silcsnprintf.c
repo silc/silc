@@ -128,6 +128,7 @@ static size_t dopr(char *buffer, size_t maxlen, const char *format,
   int cflags;
   size_t currlen;
   va_list args;
+  SilcSnprintfRender render;
 
   silc_va_copy(args, args_in);
 
@@ -353,6 +354,23 @@ static size_t dopr(char *buffer, size_t maxlen, const char *format,
       case 'w':
 	/* not supported yet, treat as next char */
 	ch = *format++;
+	break;
+      case '@':
+	/* Renderer function */
+	render = va_arg (args, SilcSnprintfRender);
+	if (render) {
+	  void *ptr = va_arg (args, void *);
+	  if (ptr) {
+	    strvalue = render (ptr);
+	    if (strvalue) {
+	      if (max == -1)
+		max = strlen(strvalue);
+	      if (min > 0 && max >= 0 && min > max) max = min;
+	      fmtstr (buffer, &currlen, maxlen, strvalue, flags, min, max);
+	      silc_free(strvalue);
+	    }
+	  }
+	}
 	break;
       default:
 	/* Unknown, skip */
