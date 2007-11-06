@@ -133,6 +133,45 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
 			     SilcSchedule schedule,
 			     SilcNetCallback callback, void *context);
 
+/****f* silcutil/SilcNetAPI/silc_net_tcp_create_listener2
+ *
+ * SYNOPSIS
+ *
+ *    SilcNetListener
+ *    silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
+ *                                  SilcUInt32 port_count,
+ *                                  SilcBool ignore_port_error,
+ *                                  SilcBool lookup, SilcBool require_fqdn,
+ *                                  SilcSchedule schedule,
+ *                                  SilcNetCallback callback, void *context);
+ *
+ * DESCRIPTION
+ *
+ *    This function creates TCP listener.  This is used to create network
+ *    listener for incoming connections, and `callback' will be called
+ *    everytime new connection is received.  If `local_ip_addr' is NULL 'any'
+ *    address is used.  If `ports' is NULL or it contains a zero (0) port,
+ *    operating system will define it automatically.  This function can be
+ *    used to bind to many ports at the same time.  If `ignore_port_error'
+ *    is TRUE this won't return NULL if at least one of the ports could
+ *    be bound.  Otherwise, NULL will be returned on error.
+ *
+ *    If `require_fqdn' is TRUE the listener will require that the incoming
+ *    connection has FQDN to be able to connect.  If the `lookup' is TRUE
+ *    then the incoming connection hostname will be resolved.
+ *
+ *    The `callback' always delivers valid new stream.  It is not called
+ *    with an error status.
+ *
+ ***/
+SilcNetListener
+silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
+			      SilcUInt32 port_count,
+			      SilcBool ignore_port_error,
+			      SilcBool lookup, SilcBool require_fqdn,
+			      SilcSchedule schedule,
+			      SilcNetCallback callback, void *context);
+
 /****f* silcutil/SilcNetAPI/silc_net_listener_get_port
  *
  * SYNOPSIS
@@ -145,7 +184,8 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
  *    to get the port if none was specified in silc_net_tcp_create_listener.
  *    Returns an array of ports of size of `port_count'.  The caller must
  *    free the array with silc_free.  There are as many ports in the array
- *    as there were IP addresses provided in silc_net_tcp_create_listener.
+ *    as there were IP addresses provided in silc_net_tcp_create_listener,
+ *    as there were ports provided in silc_net_tcp_create_listener2.
  *
  ***/
 SilcUInt16 *silc_net_listener_get_port(SilcNetListener listener,

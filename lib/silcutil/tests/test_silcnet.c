@@ -78,8 +78,39 @@ SILC_FSM_STATE(test_st_connected)
 SILC_FSM_STATE(test_st_start)
 {
   Foo f = fsm_context;
+  int ports[3];
+  SilcUInt16 *ret_ports;
+  SilcUInt32 port_count;
 
   SILC_LOG_DEBUG(("test_st_start"));
+
+  SILC_LOG_DEBUG(("Creating network listener to ports 2000, 3000 and 4000"));
+  ports[0] = 2000;
+  ports[1] = 3000;
+  ports[2] = 4000;
+  f->server = silc_net_tcp_create_listener2(NULL, ports, 3, FALSE, TRUE, TRUE,
+				     silc_fsm_get_schedule(fsm),
+				     test_accept_connection, f);
+  if (!f->server) {
+    /** Creating network listener failed */
+    SILC_LOG_DEBUG(("Listener creation failed"));
+    silc_fsm_next(fsm, test_st_finish);
+    return SILC_FSM_CONTINUE;
+  }
+
+  ret_ports = silc_net_listener_get_port(f->server, &port_count);
+  if (!ret_ports) {
+    SILC_LOG_DEBUG(("Listener does not work"));
+    silc_fsm_next(fsm, test_st_finish);
+    return SILC_FSM_CONTINUE;
+  }
+  SILC_LOG_DEBUG(("Bound to port %d", ret_ports[0]));
+  SILC_LOG_DEBUG(("Bound to port %d", ret_ports[1]));
+  SILC_LOG_DEBUG(("Bound to port %d", ret_ports[2]));
+  silc_free(ret_ports);
+
+  /* Close this listener and create new one */
+  silc_net_close_listener(f->server);
 
   SILC_LOG_DEBUG(("Creating network listener"));
   f->server = silc_net_tcp_create_listener(NULL, 0, 5000, TRUE, TRUE,

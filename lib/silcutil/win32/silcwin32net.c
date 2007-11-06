@@ -227,6 +227,123 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
   return NULL;
 }
 
+/* Create TCP network, multiple ports */
+
+SilcNetListener
+silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
+			      SilcUInt32 port_count,
+			      SilcBool ignore_port_error,
+			      SilcBool lookup, SilcBool require_fqdn,
+			      SilcSchedule schedule,
+			      SilcNetCallback callback, void *context)
+{
+  SilcNetListener listener = NULL;
+  SOCKET sock;
+  SilcSockaddr server;
+  int i, rval;
+  const char *ipany = "0.0.0.0";
+
+  SILC_LOG_DEBUG(("Creating TCP listener"));
+
+  if (!schedule || !callback)
+    goto err;
+
+  listener = silc_calloc(1, sizeof(*listener));
+  if (!listener)
+    return NULL;
+  listener->schedule = schedule;
+  listener->callback = callback;
+  listener->context = context;
+  listener->require_fqdn = require_fqdn;
+  listener->lookup = lookup;
+
+  if (port_count > 0) {
+    listener->socks = silc_calloc(port_count, sizeof(*listener->socks));
+    if (!listener->socks)
+      return NULL;
+  } else {
+    listener->socks = silc_calloc(1, sizeof(*listener->socks));
+    if (!listener->socks)
+      return NULL;
+
+    port_count = 1;
+  }
+
+  /* Bind to local addresses */
+  for (i = 0; i < local_ip_count; i++) {
+    SILC_LOG_DEBUG(("Binding to local address %s:%d",
+		    local_ip_addr ? local_ip_addr : ipany,
+		    ports ? ports[i] : 0));
+
+    /* Set sockaddr for server */
+    if (!silc_net_set_sockaddr(&server,
+			       local_ip_addr ? local_ip_addr : ipany,
+			       ports ? ports[i] : 0)) {
+      if (ignore_port_error)
+	continue;
+      goto err;
+    }
+
+    /* Create the socket */
+    sock = socket(server.sin.sin_family, SOCK_STREAM, 0);
+    if (sock == INVALID_SOCKET) {
+      if (ignore_port_error)
+	continue;
+      SILC_LOG_ERROR(("Cannot create socket, error %d", WSAGetLastError()));
+      goto err;
+    }
+
+    /* Set the socket options */
+    rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
+    if (rval == SOCKET_ERROR) {
+      closesocket(sock);
+      if (ignore_port_error)
+	continue;
+      SILC_LOG_ERROR(("Cannot set socket options, error %d",
+		     WSAGetLastError()));
+      goto err;
+    }
+
+    /* Bind the listener socket */
+    rval = bind(sock, &server.sa, SIZEOF_SOCKADDR(server));
+    if (rval == SOCKET_ERROR) {
+      closesocket(sock);
+      if (ignore_port_error)
+	continue;
+      SILC_LOG_ERROR(("Cannot bind socket, error %d", WSAGetLastError()));
+      goto err;
+    }
+
+    /* Specify that we are listenning */
+    rval = listen(sock, SOMAXCONN);
+    if (rval == SOCKET_ERROR) {
+      closesocket(sock);
+      if (ignore_port_error)
+	continue;
+      SILC_LOG_ERROR(("Cannot set socket listenning, error %d",
+		     WSAGetLastError()));
+      goto err;
+    }
+
+    /* Schedule for incoming connections */
+    silc_schedule_task_add_fd(schedule, sock, silc_net_accept, listener);
+
+    SILC_LOG_DEBUG(("TCP listener created, fd=%d", sock));
+    listener->socks[i] = sock;
+    listener->socks_count++;
+  }
+
+  if (ignore_port_error && !listener->socks_count)
+    goto err;
+
+  return listener;
+
+ err:
+  if (listener)
+    silc_net_close_listener(listener);
+  return NULL;
+}
+
 /* Close network listener */
 
 void silc_net_close_listener(SilcNetListener listener)

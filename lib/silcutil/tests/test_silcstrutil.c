@@ -49,12 +49,18 @@ utf8fail(28, "\xfc\x20\xfd\x20", 4);
 utf8fail(29, "\xf8\xf9\xfa\xfb", 4);
 utf8fail(30, "\xf0\x20\xf9\x20\xfa\x20\xfb\x20", 8);
 
+char *render(void *data)
+{
+  char *buf = data;
+  return strdup(buf);
+}
+
 int main(int argc, char **argv)
 {
   SilcBool success = FALSE;
   unsigned char *s1, *s2, *s3, *s4;
   unsigned char t[16];
-  char h[32 + 1];
+  char h[32 + 1], str[40];
   int l, opt, i;
   SilcUInt32 len;
 
@@ -173,6 +179,12 @@ int main(int argc, char **argv)
   silc_snprintf(h, sizeof(h), "010203ffabdef9ab");
   silc_hex2data(h, t, sizeof(t), &len);
   silc_data2hex(t, sizeof(t), h, sizeof(h));
+
+  /* snprintf test */
+  silc_snprintf(str, sizeof(str), "This is %@ rendered\n",
+		render, "automatically");
+  SILC_LOG_DEBUG((str));
+  SILC_LOG_DEBUG(("This too %@ rendered", render, "is automatically"));
 
   success = TRUE;
 

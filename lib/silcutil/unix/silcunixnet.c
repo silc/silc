@@ -223,6 +223,123 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
   return NULL;
 }
 
+/* Create TCP listener, multiple ports */
+
+SilcNetListener
+silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
+			      SilcUInt32 port_count,
+			      SilcBool ignore_port_error,
+			      SilcBool lookup, SilcBool require_fqdn,
+			      SilcSchedule schedule,
+			      SilcNetCallback callback, void *context)
+{
+  SilcNetListener listener = NULL;
+  SilcSockaddr server;
+  int i, sock, rval;
+  const char *ipany = "0.0.0.0";
+
+  SILC_LOG_DEBUG(("Creating TCP listener"));
+
+  if (!schedule || !callback)
+    goto err;
+
+  listener = silc_calloc(1, sizeof(*listener));
+  if (!listener)
+    return NULL;
+  listener->schedule = schedule;
+  listener->callback = callback;
+  listener->context = context;
+  listener->require_fqdn = require_fqdn;
+  listener->lookup = lookup;
+
+  if (port_count > 0) {
+    listener->socks = silc_calloc(port_count, sizeof(*listener->socks));
+    if (!listener->socks)
+      return NULL;
+  } else {
+    listener->socks = silc_calloc(1, sizeof(*listener->socks));
+    if (!listener->socks)
+      return NULL;
+
+    port_count = 1;
+  }
+
+  /* Bind to ports */
+  for (i = 0; i < port_count; i++) {
+    SILC_LOG_DEBUG(("Binding to local address %s:%d",
+		    local_ip_addr ? local_ip_addr : ipany,
+		    ports ? ports[i] : 0));
+
+    /* Set sockaddr for server */
+    if (!silc_net_set_sockaddr(&server,
+			       local_ip_addr ? local_ip_addr : ipany,
+			       ports ? ports[i] : 0)) {
+      if (ignore_port_error)
+	continue;
+      goto err;
+    }
+
+    /* Create the socket */
+    sock = socket(server.sin.sin_family, SOCK_STREAM, 0);
+    if (sock < 0) {
+      if (ignore_port_error)
+	continue;
+      SILC_LOG_ERROR(("Cannot create socket: %s", strerror(errno)));
+      goto err;
+    }
+
+    /* Set the socket options */
+    rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
+    if (rval < 0) {
+      close(sock);
+      if (ignore_port_error)
+	continue;
+      SILC_LOG_ERROR(("Cannot set socket options: %s", strerror(errno)));
+      goto err;
+    }
+
+    /* Bind the listener socket */
+    rval = bind(sock, &server.sa, SIZEOF_SOCKADDR(server));
+    if (rval < 0) {
+      close(sock);
+      if (ignore_port_error)
+	continue;
+      SILC_LOG_ERROR(("Cannot bind socket: %s", strerror(errno)));
+      goto err;
+    }
+
+    /* Specify that we are listenning */
+    rval = listen(sock, 64);
+    if (rval < 0) {
+      close(sock);
+      SILC_LOG_ERROR(("Cannot set socket listenning: %s", strerror(errno)));
+      if (ignore_port_error)
+	continue;
+      goto err;
+    }
+
+    /* Set the server socket to non-blocking mode */
+    silc_net_set_socket_nonblock(sock);
+
+    /* Schedule for incoming connections */
+    silc_schedule_task_add_fd(schedule, sock, silc_net_accept, listener);
+
+    SILC_LOG_DEBUG(("TCP listener created, fd=%d", sock));
+    listener->socks[i] = sock;
+    listener->socks_count++;
+  }
+
+  if (ignore_port_error && !listener->socks_count)
+    goto err;
+
+  return listener;
+
+ err:
+  if (listener)
+    silc_net_close_listener(listener);
+  return NULL;
+}
+
 /* Close network listener */
 
 void silc_net_close_listener(SilcNetListener listener)
@@ -363,8 +480,10 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
 
   if (remote_ip_addr && remote_port) {
     if (sock->ipv6) {
+#ifdef HAVE_IPV6
       from = (struct sockaddr *)&s.sin6;
       flen = sizeof(s.sin6);
+#endif /* HAVE_IPV6 */
     } else {
       from = (struct sockaddr *)&s.sin;
       flen = sizeof(s.sin);
@@ -395,9 +514,13 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
   /* Return remote address */
   if (remote_ip_addr && remote_port) {
     if (sock->ipv6) {
+#ifdef HAVE_IPV6
       *remote_port = ntohs(s.sin6.sin6_port);
       inet_ntop(AF_INET6, &s.sin6.sin6_addr, remote_ip_addr,
 		remote_ip_addr_size);
+#else
+      *remote_port = 0;
+#endif /* HAVE_IPV6 */
     } else {
       *remote_port = ntohs(s.sin.sin_port);
       inet_ntop(AF_INET, &s.sin.sin_addr, remote_ip_addr,

@@ -283,6 +283,153 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
   return NULL;
 }
 
+/* Create TCP listener, multiple ports */
+
+SilcNetListener
+silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
+			      SilcUInt32 port_count,
+			      SilcBool ignore_port_error,
+			      SilcBool lookup, SilcBool require_fqdn,
+			      SilcSchedule schedule,
+			      SilcNetCallback callback, void *context)
+{
+  SilcNetListener listener = NULL;
+  SilcSymbianTCPListener *l = NULL;
+  TInetAddr server;
+  TInt ret;
+  int i;
+
+  SILC_LOG_DEBUG(("Creating TCP listener"));
+
+  if (!schedule || !callback)
+    goto err;
+
+  listener = (SilcNetListener)silc_calloc(1, sizeof(*listener));
+  if (!listener) {
+    callback(SILC_NET_NO_MEMORY, NULL, context);
+    return NULL;
+  }
+  listener->schedule = schedule;
+  listener->callback = callback;
+  listener->context = context;
+  listener->require_fqdn = require_fqdn;
+  listener->lookup = lookup;
+
+  if (port_count > 0) {
+    listener->socks = (SilcSocket *)silc_calloc(port_count,
+					        sizeof(*listener->socks));
+    if (!listener->socks) {
+      callback(SILC_NET_NO_MEMORY, NULL, context);
+      return NULL;
+    }
+  } else {
+    listener->socks = (SilcSocket *)silc_calloc(1, sizeof(*listener->socks));
+    if (!listener->socks) {
+      callback(SILC_NET_NO_MEMORY, NULL, context);
+      return NULL;
+    }
+
+    port_count = 1;
+  }
+
+  /* Bind to ports */
+  for (i = 0; i < port_count; i++) {
+    SILC_LOG_DEBUG(("Binding to local address %s:%d",
+		    local_ip_addr ? local_ip_addr : "0.0.0.0",
+		    ports ? ports[i] : 0));
+
+    l = new SilcSymbianTCPListener;
+    if (!l)
+      goto err;
+
+    /* Connect to socket server */
+    ret = l->ss.Connect();
+    if (ret != KErrNone)
+      goto err;
+
+#ifdef SILC_THREADS
+    /* Make our socket shareable between threads */
+    l->ss.ShareAuto();
+#endif /* SILC_THREADS */
+
+    /* Set listener address */
+    if (!silc_net_set_sockaddr(&server, local_ip_addr, ports ? ports[i] : 0)) {
+      if (ignore_port_error) {
+	delete l;
+	continue;
+      }
+      goto err;
+    }
+
+    /* Create the socket */
+    ret = l->sock.Open(l->ss, KAfInet, KSockStream, KProtocolInetTcp);
+    if (ret != KErrNone) {
+      if (ignore_port_error) {
+	delete l;
+	continue;
+      }
+      SILC_LOG_ERROR(("Cannot create socket, error %d", ret));
+      goto err;
+    }
+
+    /* Set the socket options */
+    ret = l->sock.SetOpt(KSoReuseAddr, KSolInetIp, 1);
+    if (ret != KErrNone) {
+      if (ignore_port_error) {
+	delete l;
+	continue;
+      }
+      SILC_LOG_ERROR(("Cannot set socket options, error %d", ret));
+      goto err;
+    }
+
+    /* Bind the listener socket */
+    ret = l->sock.Bind(server);
+    if (ret != KErrNone) {
+      if (ignore_port_error) {
+	delete l;
+	continue;
+      }
+      SILC_LOG_DEBUG(("Cannot bind socket, error %d", ret));
+      goto err;
+    }
+
+    /* Specify that we are listenning */
+    ret = l->sock.Listen(5);
+    if (ret != KErrNone) {
+      if (ignore_port_error) {
+	delete l;
+	continue;
+      }
+      SILC_LOG_ERROR(("Cannot set socket listenning, error %d", ret));
+      goto err;
+    }
+    l->Listen();
+
+    l->listener = listener;
+    listener->socks[i] = (SilcSocket)l;
+    listener->socks_count++;
+  }
+
+  if (ignore_port_error && !listener->socks_count) {
+    l = NULL;
+    goto err;
+  }
+
+  SILC_LOG_DEBUG(("TCP listener created"));
+
+  return listener;
+
+ err:
+  if (l)
+    delete l;
+  if (callback)
+    callback(SILC_NET_ERROR, NULL, context);
+  if (listener)
+    silc_net_close_listener(listener);
+  return NULL;
+}
+
 /* Close network listener */
 
 void silc_net_close_listener(SilcNetListener listener)
