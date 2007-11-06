@@ -447,7 +447,7 @@ SILC_ATOMIC_SET_INT_F(bits)						\
 SILC_ATOMIC_SET_INT_F(bits)						\
 {									\
   /* Windows */								\
-  InterlockedExchange((LONG)&atomic->value, (LONG)value);		\
+  InterlockedExchange((LONG *)&atomic->value, (LONG)value);		\
 }
 
 #elif defined(__GNUC__) && (defined(SILC_I486) || defined(SILC_X86_64))
@@ -905,7 +905,7 @@ SILC_ATOMIC_INC_F(bits)				   			\
 SILC_ATOMIC_INC_F(bits)				   			\
 {									\
   /* Windows */								\
-  InterlockedIncrement((LONG)&atomic->value);				\
+  InterlockedIncrement((LONG *)&atomic->value);				\
 }
 
 #elif defined(__GNUC__) && (defined(SILC_I486) || defined(SILC_X86_64))
@@ -1011,7 +1011,7 @@ SILC_ATOMIC_DEC_F(bits)				   			\
 SILC_ATOMIC_DEC_F(bits)				   			\
 {									\
   /* Windows */								\
-  InterlockedDecrement((LONG)&atomic->value);				\
+  InterlockedDecrement((LONG *)&atomic->value);				\
 }
 
 #elif defined(__GNUC__) && (defined(SILC_I486) || defined(SILC_X86_64))
