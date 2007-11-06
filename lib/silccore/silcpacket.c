@@ -1490,7 +1490,7 @@ static inline void silc_packet_send_ctr_increment(SilcPacketStream stream,
 
     SILC_LOG_HEXDUMP(("IV"), ret_iv, 8);
 
-    /* Set new nonce to counter block */
+    /* Set new IV to counter block */
     memcpy(iv + 4, ret_iv, 8);
   } else {
     /* Increment 64-bit packet counter */
@@ -1505,7 +1505,7 @@ static inline void silc_packet_send_ctr_increment(SilcPacketStream stream,
   SILC_LOG_HEXDUMP(("Counter Block"), iv, 16);
 }
 
-/* Internal routine to assemble outgoing packet.  Assembles and encryptes
+/* Internal routine to assemble outgoing packet.  Assembles and encrypts
    the packet.  The silc_packet_stream_write needs to be called to send it
    after this returns TRUE. */
 

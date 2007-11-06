@@ -924,24 +924,24 @@ void silc_prefetch(void *addr, int rw, int locality)
  *    Enforced block prefetch.  This function loads the specified amount
  *    `prefetch_length' of memory from the specified address `addr' to CPU
  *    cache with each loaded cache line being the size of `cache_line_length'.
- *    If you don't know the cache line size use 32 bytes.  Note that, the
+ *    If you don't know the cache line size use 64 bytes.  Note that, the
  *    `cache_line_length' is a const int.  In this context this mean its
  *    value must not come from a variable but must be a constant (the code
  *    won't compile if it comes from a variable).
  *
  *    The `prefetch_length' must be multiple of twice of the
- *    `cache_line_length' or 64 if you don't know the cache line size, hence
- *    the minimum length for `prefetch_length' is 64 bytes when the
- *    `cache_line_length' is 32 bytes.
+ *    `cache_line_length' or 128 if you don't know the cache line size, hence
+ *    the minimum length for `prefetch_length' is 128 bytes when the
+ *    `cache_line_length' is 64 bytes.  Shorter cache line length (32 bytes)
+ *    can be used too.
  *
  *    You should use the correct `cache_line_length' value for your CPU or
  *    the value of the CPU for which you want to optimize your code.  Intel
- *    CPUs usually have cache size of 32 or 64 bytes, or both when there are
- *    multiple caches.  The most optimal prefetch is achieved if the
- *    `cache_line_length' is the actual CPU cache line size.  Always do
- *    performance testing with and without prefetching to make sure the
- *    prefetch actually helps.  If used improperly, it may slow down your
- *    program.
+ *    CPUs usually have cache size of 32 or 64 bytes.  The most optimal
+ *    prefetch is achieved if the `cache_line_length' is the actual CPU cache
+ *    line size.  Always do performance testing with and without prefetching
+ *    to make sure the prefetch actually helps.  If used improperly, it may
+ *    slow down your program.
  *
  *    The difference to silc_prefetch is that this function always performs
  *    the prefetch and has the ability to prefetch more than one cache line
