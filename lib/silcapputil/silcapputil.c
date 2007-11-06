@@ -31,13 +31,17 @@ static char *silc_create_pk_identifier(void)
 
   /* Get hostname */
   hostname = silc_net_localhost();
-  if (!hostname)
+  if (!hostname) {
+    fprintf(stderr, "Could not resolve local hostname/IP address");
     return NULL;
+  }
 
   /* Get username (mandatory) */
   username = silc_get_username();
-  if (!username)
+  if (!username) {
+    fprintf(stderr, "Could not determine username");
     return NULL;
+  }
 
   /* Create default email address, whether it is right or not */
   silc_snprintf(email, sizeof(email), "%s@%s", username, hostname);
@@ -136,8 +140,7 @@ New pair of keys will be created.  Please, answer to following questions.\n\
       }
     } else {
       if (!def) {
-	fprintf(stderr, "Could not create public key identifier: %s\n",
-		strerror(errno));
+	fprintf(stderr, "Could not create public key identifier\n");
 	return FALSE;
       }
       identifier = strdup(def);
