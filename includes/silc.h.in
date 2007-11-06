@@ -305,8 +305,11 @@ extern "C" {
 #include "silcfsm.h"
 #include "silcsocketstream.h"
 #include "silcfdstream.h"
-#include "silcvcard.h"
 #include "silcmime.h"
+
+#ifdef SILC_DIST_VCARD
+#include "silcvcard.h"
+#endif /* SILC_DIST_VCARD */
 
 #ifdef SILC_DIST_ASN1
 #include "silcasn1.h"
