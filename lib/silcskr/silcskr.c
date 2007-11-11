@@ -492,6 +492,9 @@ static SilcSKRStatus silc_skr_add_silc_simple(SilcSKR skr,
 {
   SilcSKRKeyInternal key;
   SilcSKRStatus status = SILC_SKR_ERROR;
+#if defined(SILC_DEBUG)
+  char tmp[256];
+#endif /* SILC_DEBUG */
 
   SILC_LOG_DEBUG(("Adding SILC public key"));
 
@@ -515,6 +518,12 @@ static SilcSKRStatus silc_skr_add_silc_simple(SilcSKR skr,
   key->key.usage = usage;
   key->key.key = public_key;
   key->key.key_context = key_context;
+
+#if defined(SILC_DEBUG)
+  silc_skr_type_string(SILC_SKR_FIND_USAGE, SILC_32_TO_PTR(usage),
+		       tmp, sizeof(tmp) - 1);
+  SILC_LOG_DEBUG(("Search cons %s", tmp));
+#endif /* SILC_DEBUG */
 
   /* Add key specifics */
 
