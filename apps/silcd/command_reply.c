@@ -515,7 +515,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     if (!nickname) {
       SILC_LOG_ERROR(("Malformed nickname '%s' received in WHOWAS reply "
 		      "from %s",
-		      hostname ? hostname : "", nick));
+		      nick, hostname ? hostname : ""));
       return FALSE;
     }
 
@@ -534,12 +534,10 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     client->data.status |= SILC_IDLIST_STATUS_RESOLVED;
     client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
 
-    /* Remove the old cache entry and create a new one */
-    silc_idcache_del_by_context(global ? server->global_list->clients :
-				server->local_list->clients, client, NULL);
-    silc_idcache_add(global ? server->global_list->clients :
-		     server->local_list->clients, nickname, client->id,
-		     client);
+    /* Update cache entry */
+    silc_idcache_update_by_context(global ? server->global_list->clients :
+				   server->local_list->clients, client, NULL,
+				   nickname, TRUE);
   }
 
   /* If client is global and is not on any channel then add that we'll
@@ -675,17 +673,13 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 	  return FALSE;
 	}
 
-	/* Remove the old cache entry */
-	silc_idcache_del_by_context(global ? server->global_list->clients :
-				    server->local_list->clients, client, NULL);
-
 	silc_free(client->nickname);
 	client->nickname = strdup(nick);
 
-	/* Add new cache entry */
-	silc_idcache_add(global ? server->global_list->clients :
-			 server->local_list->clients, name, client->id,
-			 client);
+	/* Update the context */
+	silc_idcache_update_by_context(global ? server->global_list->clients :
+				       server->local_list->clients, client,
+				       NULL, name, TRUE);
       }
 
       if (info) {
