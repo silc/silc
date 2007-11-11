@@ -108,11 +108,10 @@ static SilcBool silc_server_packet_receive(SilcPacketEngine engine,
       packet->type != SILC_PACKET_DISCONNECT)
     return FALSE;
 
-  /* NEW_CLIENT, NEW_SERVER and RESUME_CLIENT are accepted only without
-     source ID and for unregistered connection. */
+  /* NEW_CLIENT and NEW_SERVER are accepted only without source ID and
+     for unregistered connection. */
   if (packet->src_id && (packet->type == SILC_PACKET_NEW_CLIENT ||
-			 packet->type == SILC_PACKET_NEW_SERVER ||
-			 packet->type == SILC_PACKET_RESUME_CLIENT) &&
+			 packet->type == SILC_PACKET_NEW_SERVER) &&
       (idata->status & SILC_IDLIST_STATUS_REGISTERED))
     return FALSE;
 
