@@ -597,8 +597,9 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
       return SILC_FSM_CONTINUE;
     }
 
-    silc_skr_find_set_pkcs_type(find, connauth->ske->pk_type);
-    silc_skr_find_set_public_key(find, connauth->ske->public_key);
+    silc_skr_find_set_pkcs_type(
+		  find, silc_pkcs_get_type(connauth->ske->prop->public_key));
+    silc_skr_find_set_public_key(find, connauth->ske->prop->public_key);
     silc_skr_find_set_usage(find, (SILC_SKR_USAGE_AUTH |
 				   SILC_SKR_USAGE_KEY_AGREEMENT));
 
@@ -651,6 +652,8 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate_pk)
   }
 
   silc_free(connauth->auth_data);
+
+  SILC_LOG_DEBUG(("Signature is Ok"));
 
   /** Authentication successful */
   silc_fsm_next(fsm, silc_connauth_st_responder_success);
