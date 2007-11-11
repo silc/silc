@@ -591,7 +591,7 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
     /* Allocate search constraints for finding the key */
     find = silc_skr_find_alloc();
 
-    if (!find || !connauth->auth_data) {
+    if (!find || !connauth->auth_data || !connauth->ske->prop->public_key) {
       /** Out of memory */
       silc_fsm_next(fsm, silc_connauth_st_responder_failure);
       return SILC_FSM_CONTINUE;
