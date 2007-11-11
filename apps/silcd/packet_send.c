@@ -295,7 +295,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
   int k;
 
   /* This doesn't send channel message packets */
-  assert(type != SILC_PACKET_CHANNEL_MESSAGE);
+  SILC_ASSERT(type != SILC_PACKET_CHANNEL_MESSAGE);
 
   /* If there are global users in the channel we will send the message
      first to our router for further routing. */

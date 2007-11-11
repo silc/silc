@@ -202,6 +202,7 @@ static void silc_server_packet_eos(SilcPacketEngine engine,
   if (server->router_conn && server->router_conn->sock == stream &&
       !server->router && server->standalone) {
     silc_server_create_connections(server);
+    silc_server_free_sock_user_data(server, stream, NULL);
   } else {
     /* If backup disconnected then mark that resuming will not be allowed */
      if (server->server_type == SILC_ROUTER && !server->backup_router &&
@@ -1341,9 +1342,9 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
   SilcID remote_id;
   const char *ip;
 
-  SILC_LOG_DEBUG(("Connection authentication completed"));
+  SILC_LOG_DEBUG(("Connection %p authentication completed", sconn));
 
-  sconn->op = NULL;
+  entry->op = NULL;
 
   if (success == FALSE) {
     /* Authentication failed */
@@ -1583,7 +1584,9 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
   SilcHmac hmac_send, hmac_receive;
   SilcHash hash;
 
-  sconn->op = NULL;
+  SILC_LOG_DEBUG(("Connection %p, SKE completed", sconn));
+
+  entry->op = NULL;
 
   if (status != SILC_SKE_STATUS_OK) {
     /* SKE failed */
@@ -1657,7 +1660,7 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
   entry->data.rekey = rekey;
 
   /* Start connection authentication */
-  sconn->op =
+  entry->op =
     silc_connauth_initiator(connauth, server->server_type == SILC_SERVER ?
 			    SILC_CONN_SERVER : SILC_CONN_ROUTER, auth_meth,
 			    auth_data, auth_data_len,
@@ -1720,7 +1723,7 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
     params.flags |= SILC_SKE_SP_FLAG_PFS;
 
   /* Start SILC Key Exchange protocol */
-  SILC_LOG_DEBUG(("Starting key exchange protocol"));
+  SILC_LOG_DEBUG(("Starting key exchange protocol, connection %p", sconn));
   ske = silc_ske_alloc(server->rng, server->schedule, server->repository,
 		       server->public_key, server->private_key, sconn);
   if (!ske) {
@@ -1737,7 +1740,7 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
   /* Start key exchange protocol */
   params.version = silc_version_string;
   params.timeout_secs = server->config->key_exchange_timeout;
-  sconn->op = silc_ske_initiator(ske, sconn->sock, &params, NULL);
+  entry->op = silc_ske_initiator(ske, sconn->sock, &params, NULL);
 }
 
 /* Timeout callback that will be called to retry connecting to remote
@@ -1804,7 +1807,7 @@ static void silc_server_connection_established(SilcNetStatus status,
 
   switch (status) {
   case SILC_NET_OK:
-    SILC_LOG_DEBUG(("Connection to %s:%d established",
+    SILC_LOG_DEBUG(("Connection %p to %s:%d established", sconn,
 		    sconn->remote_host, sconn->remote_port));
 
     /* Continue with key exchange protocol */

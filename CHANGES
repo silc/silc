@@ -1,4 +1,10 @@
-Sun Nov 11 16:02:12 EET 2007  Pekka Riikonen <priikone@silcnet.org>
+Sun Nov 11 23:04:54 EET 2007 Pekka Riikonen <priikone@silcnet.org>
+
+	* Free stream data and abort ongoing protocols correctly
+	  for primary router connections receiving end of stream.
+	  Affected file is apps/silcd/server.c.
+
+Sun Nov 11 16:02:12 EET 2007 Pekka Riikonen <priikone@silcnet.org>
 
 	* SILC Server 1.1 Beta4.
 
