@@ -183,8 +183,8 @@ static SilcBool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
   return TRUE;
 }
 
-static SilcBool my_parse_publickeydir(const char *dirname, void **auth_data,
-				      SilcSKRKeyUsage usage)
+static int my_parse_publickeydir(const char *dirname, void **auth_data,
+				 SilcSKRKeyUsage usage)
 {
   int total = 0;
   struct dirent *get_file;
@@ -193,7 +193,7 @@ static SilcBool my_parse_publickeydir(const char *dirname, void **auth_data,
   if (!(dp = opendir(dirname))) {
     SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
 			   "Could not open directory \"%s\"", dirname));
-    return FALSE;
+    return -1;
   }
 
   /* errors are not considered fatal */
@@ -216,14 +216,14 @@ static SilcBool my_parse_publickeydir(const char *dirname, void **auth_data,
       SILC_SERVER_LOG_ERROR(("Error stating file %s: %s", buf,
 			     strerror(errno)));
     } else if (S_ISREG(check_file.st_mode)) {
-      my_parse_authdata(SILC_AUTH_PUBLIC_KEY, buf, auth_data, NULL,
-			usage, NULL);
-      total++;
+      if (my_parse_authdata(SILC_AUTH_PUBLIC_KEY, buf, auth_data, NULL,
+			    usage, NULL))
+	total++;
     }
   }
 
   SILC_LOG_DEBUG(("Tried to load %d public keys in \"%s\"", total, dirname));
-  return TRUE;
+  return total;
 }
 
 /* Callbacks */
@@ -867,18 +867,22 @@ SILC_CONFIG_CALLBACK(fetch_client)
   else if (!strcmp(name, "publickey")) {
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
 			   (void *)&config->server->repository, NULL,
+			   SILC_SKR_USAGE_AUTH |
 			   SILC_SKR_USAGE_KEY_AGREEMENT, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
+    tmp->publickeys = TRUE;
   }
   else if (!strcmp(name, "publickeydir")) {
-    if (!my_parse_publickeydir((char *) val,
-			       (void *)&config->server->repository,
-			       SILC_SKR_USAGE_KEY_AGREEMENT)) {
+    if (my_parse_publickeydir((char *) val,
+			      (void *)&config->server->repository,
+			      SILC_SKR_USAGE_AUTH |
+			      SILC_SKR_USAGE_KEY_AGREEMENT) < 0) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
+    tmp->publickeys = TRUE;
   }
   else if (!strcmp(name, "params")) {
     CONFIG_IS_DOUBLE(tmp->param);
@@ -946,6 +950,7 @@ SILC_CONFIG_CALLBACK(fetch_admin)
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
+    tmp->publickeys = TRUE;
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -1043,10 +1048,12 @@ SILC_CONFIG_CALLBACK(fetch_server)
     CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
 			   (void *)&config->server->repository, NULL,
+			   SILC_SKR_USAGE_AUTH |
 			   SILC_SKR_USAGE_KEY_AGREEMENT, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
+    tmp->publickeys = TRUE;
   }
   else if (!strcmp(name, "params")) {
     CONFIG_IS_DOUBLE(tmp->param);
@@ -1120,10 +1127,12 @@ SILC_CONFIG_CALLBACK(fetch_router)
     CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
 			   (void *)&config->server->repository, NULL,
+			   SILC_SKR_USAGE_AUTH |
 			   SILC_SKR_USAGE_KEY_AGREEMENT, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
+    tmp->publickeys = TRUE;
   }
   else if (!strcmp(name, "params")) {
     CONFIG_IS_DOUBLE(tmp->param);
