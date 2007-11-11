@@ -3433,6 +3433,8 @@ void silc_server_resume_client(SilcServer server,
   SilcPublicKey public_key;
   const char *cipher, *hostname, *ip;
 
+  SILC_LOG_DEBUG(("Resuming client"));
+
   silc_socket_stream_get_info(silc_packet_stream_get_stream(sock),
 			      NULL, &hostname, &ip, NULL);
 
@@ -3696,6 +3698,7 @@ void silc_server_resume_client(SilcServer server,
     /* Take new keys and stuff into use in the old entry */
     silc_idlist_del_data(detached_client);
     silc_idlist_add_data(detached_client, idata);
+    idata->public_key = NULL;
 
     if (detached_client->data.public_key) {
       /* Add the resumed client's public key back to repository. */
@@ -3807,14 +3810,17 @@ void silc_server_resume_client(SilcServer server,
       silc_buffer_free(nidp);
     }
 
-    /* Add the client again to the ID cache to get it to correct list */
-    if (!silc_idcache_del_by_context(server->local_list->clients, client,
-				     NULL))
-      silc_idcache_del_by_context(server->global_list->clients, client, NULL);
-    silc_free(client->id);
-    *client->id = client_id;
-    silc_idcache_add(server->local_list->clients, nicknamec,
-		     client->id, client);
+    /* Update entry */
+    if (!silc_idcache_update_by_context(server->local_list->clients, client,
+					&client_id, NULL, FALSE))
+      silc_idcache_update_by_context(server->global_list->clients, client,
+				     &client_id, NULL, FALSE);
+
+    /* Move entry to local list if it is in global list */
+    if (silc_idcache_find_by_context(server->global_list->clients, client,
+				     &id_cache))
+      silc_idcache_move(server->global_list->clients,
+			server->local_list->clients, id_cache);
 
     /* Send some nice info to the client */
     silc_server_send_connect_notifys(server, sock, client);
@@ -3975,15 +3981,18 @@ void silc_server_resume_client(SilcServer server,
 	server_entry->server_type == SILC_ROUTER)
       local = FALSE;
 
-    /* Change the client to correct list. */
-    if (!silc_idcache_del_by_context(server->local_list->clients,
-				     detached_client, NULL))
-      silc_idcache_del_by_context(server->global_list->clients,
-				  detached_client, NULL);
-    silc_idcache_add(local && server->server_type == SILC_ROUTER ?
-		     server->local_list->clients :
-		     server->global_list->clients, nicknamec,
-		     detached_client->id, detached_client);
+    /* Move entry to correct list */
+    if (local && server->server_type == SILC_ROUTER) {
+      if (silc_idcache_find_by_context(server->global_list->clients,
+				       detached_client, &id_cache))
+	silc_idcache_move(server->global_list->clients,
+			  server->local_list->clients, id_cache);
+    } else {
+      if (silc_idcache_find_by_context(server->local_list->clients,
+				       detached_client, &id_cache))
+	silc_idcache_move(server->local_list->clients,
+			  server->global_list->clients, id_cache);
+    }
 
     /* Change the owner of the client */
     detached_client->router = server_entry;

@@ -1112,6 +1112,13 @@ SilcPublicKey silc_server_get_public_key(SilcServer server,
   silc_skr_find(server->repository, server->schedule,
 		find, find_callback, &public_key);
 
+#ifdef SILC_DEBUG
+  if (public_key)
+    SILC_LOG_DEBUG(("Found public key"));
+  else
+    SILC_LOG_DEBUG(("Public key not found"));
+#endif /* SILC_DEBUG */
+
   return public_key;
 }
 

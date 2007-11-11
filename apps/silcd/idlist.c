@@ -55,8 +55,6 @@ void silc_idlist_del_data(void *entry)
 
   if (idata->hash)
     silc_hash_free(idata->hash);
-  if (idata->public_key)
-    silc_pkcs_public_key_free(idata->public_key);
 
   idata->hash = NULL;
   idata->public_key = NULL;
@@ -338,6 +336,8 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
   }
 
   client = silc_calloc(1, sizeof(*client));
+  if (!client)
+    return NULL;
   client->nickname = nickname;
   client->username = username ? strdup(username) : NULL;
   client->userinfo = userinfo;

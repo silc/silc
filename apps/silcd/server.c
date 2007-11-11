@@ -103,14 +103,16 @@ static SilcBool silc_server_packet_receive(SilcPacketEngine engine,
        !(idata->status & SILC_IDLIST_STATUS_REGISTERED)) &&
       packet->type != SILC_PACKET_NEW_CLIENT &&
       packet->type != SILC_PACKET_NEW_SERVER &&
+      packet->type != SILC_PACKET_RESUME_CLIENT &&
       packet->type != SILC_PACKET_CONNECTION_AUTH_REQUEST &&
       packet->type != SILC_PACKET_DISCONNECT)
     return FALSE;
 
-  /* NEW_CLIENT and NEW_SERVER are accepted only without source ID
-     and for unregistered connection. */
+  /* NEW_CLIENT, NEW_SERVER and RESUME_CLIENT are accepted only without
+     source ID and for unregistered connection. */
   if (packet->src_id && (packet->type == SILC_PACKET_NEW_CLIENT ||
-			 packet->type == SILC_PACKET_NEW_SERVER) &&
+			 packet->type == SILC_PACKET_NEW_SERVER ||
+			 packet->type == SILC_PACKET_RESUME_CLIENT) &&
       (idata->status & SILC_IDLIST_STATUS_REGISTERED))
     return FALSE;
 
@@ -2043,7 +2045,16 @@ silc_server_accept_get_auth(SilcConnAuth connauth,
     if (cconfig->publickeys)
       *repository = server->repository;
 
-    entry->data.conn_type = conn_type;
+    if (cconfig->publickeys) {
+      if (server->config->prefer_passphrase_auth) {
+	*repository = NULL;
+      } else {
+	*passphrase = NULL;
+	*passphrase_len = 0;
+      }
+    }
+
+    entry->conn_type = conn_type;
     return TRUE;
   }
 
@@ -2064,7 +2075,16 @@ silc_server_accept_get_auth(SilcConnAuth connauth,
     if (sconfig->publickeys)
       *repository = server->repository;
 
-    entry->data.conn_type = conn_type;
+    if (sconfig->publickeys) {
+      if (server->config->prefer_passphrase_auth) {
+	*repository = NULL;
+      } else {
+	*passphrase = NULL;
+	*passphrase_len = 0;
+      }
+    }
+
+    entry->conn_type = conn_type;
     return TRUE;
   }
 
@@ -2079,7 +2099,16 @@ silc_server_accept_get_auth(SilcConnAuth connauth,
     if (rconfig->publickeys)
       *repository = server->repository;
 
-    entry->data.conn_type = conn_type;
+    if (rconfig->publickeys) {
+      if (server->config->prefer_passphrase_auth) {
+	*repository = NULL;
+      } else {
+	*passphrase = NULL;
+	*passphrase_len = 0;
+      }
+    }
+
+    entry->conn_type = conn_type;
     return TRUE;
   }
 
@@ -2118,14 +2147,14 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 
   SILC_LOG_DEBUG(("Checking whether connection is allowed"));
 
-  switch (entry->data.conn_type) {
+  switch (entry->conn_type) {
   case SILC_CONN_CLIENT:
     {
       SilcClientEntry client;
       SilcServerConfigClient *conn = entry->cconfig.ref_ptr;
 
       /* Verify whether this connection is after all allowed to connect */
-      if (!silc_server_connection_allowed(server, sock, entry->data.conn_type,
+      if (!silc_server_connection_allowed(server, sock, entry->conn_type,
 					  &server->config->param,
 					  conn->param,
 					  silc_connauth_get_ske(connauth))) {
@@ -2178,6 +2207,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 	goto out;
       }
       entry->data.status |= SILC_IDLIST_STATUS_LOCAL;
+      entry->data.conn_type = SILC_CONN_CLIENT;
 
       /* Statistics */
       server->stat.my_clients++;
@@ -2205,6 +2235,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
       }
 
       /* Add public key to repository */
+      SILC_LOG_DEBUG(("Add client public key to repository"));
       if (!silc_server_get_public_key_by_client(server, client, NULL))
 	silc_skr_add_public_key_simple(server->repository,
 				       entry->data.public_key,
@@ -2231,7 +2262,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 	 and we do not have connection to primary router, do not allow
 	 the connection. */
       if (server->server_type == SILC_BACKUP_ROUTER &&
-	  entry->data.conn_type == SILC_CONN_SERVER &&
+	  entry->conn_type == SILC_CONN_SERVER &&
 	  !SILC_PRIMARY_ROUTE(server)) {
 	SILC_LOG_INFO(("Will not accept server connection because we do "
 		       "not have primary router connection established"));
@@ -2243,10 +2274,10 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 	goto out;
       }
 
-      if (entry->data.conn_type == SILC_CONN_ROUTER) {
+      if (entry->conn_type == SILC_CONN_ROUTER) {
 	/* Verify whether this connection is after all allowed to connect */
 	if (!silc_server_connection_allowed(server, sock,
-					    entry->data.conn_type,
+					    entry->conn_type,
 					    &server->config->param,
 					    rconn ? rconn->param : NULL,
 					    silc_connauth_get_ske(connauth))) {
@@ -2278,10 +2309,10 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 	}
       }
 
-      if (entry->data.conn_type == SILC_CONN_SERVER) {
+      if (entry->conn_type == SILC_CONN_SERVER) {
 	/* Verify whether this connection is after all allowed to connect */
 	if (!silc_server_connection_allowed(server, sock,
-					    entry->data.conn_type,
+					    entry->conn_type,
 					    &server->config->param,
 					    srvconn ? srvconn->param : NULL,
 					    silc_connauth_get_ske(connauth))) {
@@ -2337,11 +2368,11 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
       }
 
       SILC_LOG_DEBUG(("Remote host is %s",
-		      entry->data.conn_type == SILC_CONN_SERVER ?
+		      entry->conn_type == SILC_CONN_SERVER ?
 		      "server" : (backup_router ?
 				  "backup router" : "router")));
       SILC_LOG_INFO(("Connection %s (%s) is %s", entry->hostname,
-		     entry->ip, entry->data.conn_type == SILC_CONN_SERVER ?
+		     entry->ip, entry->conn_type == SILC_CONN_SERVER ?
 		     "server" : (backup_router ?
 				 "backup router" : "router")));
 
@@ -2350,15 +2381,15 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 	 server. We mark ourselves as router for this server if we really
 	 are router. */
       new_server =
-	silc_idlist_add_server((entry->data.conn_type == SILC_CONN_SERVER ?
+	silc_idlist_add_server((entry->conn_type == SILC_CONN_SERVER ?
 				server->local_list : (backup_router ?
 						      server->local_list :
 						      server->global_list)),
 			       NULL,
-			       (entry->data.conn_type == SILC_CONN_SERVER ?
+			       (entry->conn_type == SILC_CONN_SERVER ?
 				SILC_SERVER : SILC_ROUTER),
 			       NULL,
-			       (entry->data.conn_type == SILC_CONN_SERVER ?
+			       (entry->conn_type == SILC_CONN_SERVER ?
 				server->id_entry : (backup_router ?
 						    server->id_entry : NULL)),
 			       sock);
@@ -2370,6 +2401,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 	goto out;
       }
       entry->data.status |= SILC_IDLIST_STATUS_LOCAL;
+      entry->data.conn_type = entry->conn_type;
 
       id_entry = (void *)new_server;
 
@@ -2509,6 +2541,8 @@ silc_server_accept_completed(SilcSKE ske, SilcSKEStatus status,
   idata->public_key = silc_pkcs_public_key_copy(prop->public_key);
   pk = silc_pkcs_public_key_encode(idata->public_key, &pk_len);
   silc_hash_make(server->sha1hash, pk, pk_len, idata->fingerprint);
+
+  silc_hash_alloc(silc_hash_get_name(prop->hash), &idata->hash);
 
   SILC_LOG_DEBUG(("Starting connection authentication"));
   server->stat.auth_attempts++;
