@@ -1,3 +1,26 @@
+Sun Nov 11 11:22:35 EET 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed connection authentication with public keys to use
+	  correct public key as responder.  Affected file is
+	  lib/silcske/silcconnauth.c.
+
+	* Fixed public key authentication in server.  Affected file is
+	  apps/silcd/serverconfig.c.
+
+	* Fixed OPER and SILCOPER public key authentication.  Affected
+	  file is apps/silcd/server.c.
+
+	* Fixed prefer_passphrase_auth flag in server.  Fixed
+	  disconnection of unauthenticated connection.  Affected file is
+	  apps/silcd/server.c.
+
+	* Fixed client resuming in server.  Affected file is
+	  apps/silcd/packet_receive.c.
+
+	* Fixed IDENTIFY and WHOWAS command reply to correctly update
+	  client entries (fixes a crash).  Affected file is
+	  apps/silcd/command_reply.c.
+
 Tue Nov  6 16:39:20 EET 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* SILC Client 1.1.3.
@@ -159,7 +182,7 @@ Mon Jun 18 23:47:22 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 	* Use SILC_VERIFY to assert that silc_rwlock_wrlock can be
 	  called only once per thread on Unix.  Affected file is
 	  lib/silcutil/unix/silcunixthread.c.  Added same for mutex
-	  as well.   Documented same on the API in 
+	  as well.   Documented same on the API in
 	  lib/silcutil/silcmutex.h.
 
 	* Fixed USERS command reply write-lock unlocking.  Affected file
@@ -182,7 +205,7 @@ Thu Jun 14 21:15:31 CEST 2007  Jochen Eisinger <coffee@silcnet.org>
 	  apps/irssi/src/core/modules-load.c
 
 	* Don't delete hilight entry (because it's just a pointer, not a
-	  copy).  Affected file is 
+	  copy).  Affected file is
 	  apps/irssi/src/fe-common/silc/fe-silc-messages.c
 
 Mon Jun 11 22:10:17 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
@@ -233,7 +256,7 @@ Thu Jun  7 21:25:31 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
 Wed Jun  6 18:33:05 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
-	* Added notify callback to silc_schedule_init which can be used to 
+	* Added notify callback to silc_schedule_init which can be used to
 	  set a notify callback for scheduler which is called when task is
 	  added to scheduler or deleted from scheduler.  Affected file
 	  is lib/silcutil/silcschedule.[ch].
@@ -242,7 +265,7 @@ Wed Jun  6 18:33:05 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 	  was very short.  Affected file is lib/silcutil/silcschedule.c.
 
 	* Rewrote the SILC scheduler handling in SILC Client to not poll
-	  every few msecs but to use the new notify callback.  Affected 
+	  every few msecs but to use the new notify callback.  Affected
 	  file is apps/irssi/src/silc/core/silc-core.c.
 
 	* Fixed SFTP client library read buffer size which was too small.
@@ -418,7 +441,7 @@ Fri May 18 18:10:36 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 	  better.  Affected file is lib/silccilent/client_entry.c.
 
 	* Added "foo#2 appears as foo" support to SILC Client when user
-	  leaves or quits and one formatted nickname remain.  Affected file 
+	  leaves or quits and one formatted nickname remain.  Affected file
 	  is apps/irssi/src/silc/core/client_ops.c.
 
 	* Send SilcChannelEntry to application in SILC_NOTIFY_TYPE_SIGNOFF.
@@ -480,7 +503,7 @@ Wed May 16 09:34:10 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 Tue May 15 23:55:41 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SILC_VERIFY macro which is equivalent to SILC_ASSERT
-	  but is compiled always in.  Affected file is 
+	  but is compiled always in.  Affected file is
 	  lib/silcutil/silclog.h.
 
 	* Use SILC_VERIFY in FSM macros instead of SILC_ASSERT which is
@@ -559,7 +582,7 @@ Wed May  9 19:51:28 EEST 2007  Pekka Riikonen <priikone@silcnet.org>
 	  on WIN32.  Affected files are lib/silcutil/silclog_i.h and
 	  silclog.c.
 
-	* Rewrote WIN32 SILC Scheduler.  It now handles non-blocking file 
+	* Rewrote WIN32 SILC Scheduler.  It now handles non-blocking file
 	  descriptors and sockets better.  Though, room for optimization
 	  remains.  Affected file is lib/silcutil/win32/silcwin32schedule.c.
 
