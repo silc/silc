@@ -2293,24 +2293,35 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
     {
       SilcChannelEntry channel_entry;
       SilcDList chpks;
+      SilcPublicKey founder_key;
 
       channel_entry = va_arg(vp, SilcChannelEntry);
       (void)va_arg(vp, SilcUInt32);
-      (void)va_arg(vp, SilcPublicKey);
+      founder_key = va_arg(vp, SilcPublicKey);
       chpks = va_arg(vp, SilcDList);
 
-      if (SILC_STATUS_IS_ERROR(status) || !cmode_list_chpks ||
-	  !channel_entry || !channel_entry->channel_name)
+      if (SILC_STATUS_IS_ERROR(status) || !channel_entry ||
+	  !channel_entry->channel_name)
 	return;
 
-      /* Print the channel public key list */
-      if (chpks)
-        silc_parse_channel_public_keys(server, channel_entry, chpks);
-      else
+      /* If founder was changed successfully, tell it to user */
+      if (founder_key && channel_entry->founder_key &&
+	  !silc_pkcs_public_key_compare(founder_key,
+					channel_entry->founder_key)) {
         printformat_module("fe-common/silc", server, NULL,
-                         MSGLEVEL_CRAP, SILCTXT_CHANNEL_PK_NO_LIST,
-                         channel_entry->channel_name);
+			   MSGLEVEL_CRAP, SILCTXT_CHANNEL_FOUNDER_CHANGED,
+			   channel_entry->channel_name);
+      }
 
+      /* Print the channel public key list */
+      if (cmode_list_chpks) {
+	if (chpks)
+	  silc_parse_channel_public_keys(server, channel_entry, chpks);
+	else
+	  printformat_module("fe-common/silc", server, NULL,
+			     MSGLEVEL_CRAP, SILCTXT_CHANNEL_PK_NO_LIST,
+			     channel_entry->channel_name);
+      }
     }
     break;
 

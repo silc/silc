@@ -29,6 +29,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 
 	{ "channel_founder_you", "You are channel founder on {channel $0}", 1, { 0 } },
 	{ "channel_founder", "channel founder on {channel $0} is: {channick_hilight $1}", 2, { 0, 0 } },
+	{ "channel_founder_changed", "Channel founder public key changed on {channel $0}", 1, { 0 } },
 	{ "channel_topic", "Topic for {channel $0} is: $1", 2, { 0, 0 } },
 	{ "channel_topic_not_set", "Topic for {channel $0} not set", 1, { 0 } },
 	{ "cmode", "channel mode/{channel $0} {mode $1} by {nick $2}", 3, { 0, 0, 0 } },
