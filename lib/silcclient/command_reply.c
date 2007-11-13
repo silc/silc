@@ -822,7 +822,7 @@ SILC_FSM_STATE(silc_client_command_reply_topic)
   SilcClient client = conn->client;
   SilcCommandPayload payload = state_context;
   SilcArgumentPayload args = silc_command_get_args(payload);
-  SilcChannelEntry channel;
+  SilcChannelEntry channel = NULL;
   char *topic;
   SilcUInt32 len;
   SilcID id;
@@ -859,6 +859,7 @@ SILC_FSM_STATE(silc_client_command_reply_topic)
   silc_client_command_callback(cmd, channel, channel->topic);
 
  out:
+  silc_client_unref_channel(client, conn, channel);
   silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
@@ -874,7 +875,7 @@ SILC_FSM_STATE(silc_client_command_reply_invite)
   SilcClient client = conn->client;
   SilcCommandPayload payload = state_context;
   SilcArgumentPayload args = silc_command_get_args(payload);
-  SilcChannelEntry channel;
+  SilcChannelEntry channel = NULL;
   unsigned char *tmp;
   SilcUInt32 len;
   SilcArgumentPayload invite_args = NULL;
@@ -909,6 +910,7 @@ SILC_FSM_STATE(silc_client_command_reply_invite)
     silc_argument_payload_free(invite_args);
 
  out:
+  silc_client_unref_channel(client, conn, channel);
   silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
@@ -1420,7 +1422,7 @@ SILC_FSM_STATE(silc_client_command_reply_cmode)
   SilcArgumentPayload args = silc_command_get_args(payload);
   unsigned char *tmp;
   SilcUInt32 mode;
-  SilcChannelEntry channel;
+  SilcChannelEntry channel = NULL;
   SilcUInt32 len;
   SilcPublicKey public_key = NULL;
   SilcID id;
@@ -1481,6 +1483,7 @@ SILC_FSM_STATE(silc_client_command_reply_cmode)
 			       channel->channel_pubkeys, channel->user_limit);
 
  out:
+  silc_client_unref_channel(client, conn, channel);
   if (public_key)
     silc_pkcs_public_key_free(public_key);
   silc_fsm_next(fsm, silc_client_command_reply_processed);
@@ -1499,7 +1502,7 @@ SILC_FSM_STATE(silc_client_command_reply_cumode)
   SilcCommandPayload payload = state_context;
   SilcArgumentPayload args = silc_command_get_args(payload);
   SilcClientEntry client_entry;
-  SilcChannelEntry channel;
+  SilcChannelEntry channel = NULL;
   SilcChannelUser chu;
   unsigned char *modev;
   SilcUInt32 len, mode;
@@ -1556,6 +1559,7 @@ SILC_FSM_STATE(silc_client_command_reply_cumode)
   silc_client_unref_client(client, conn, client_entry);
 
  out:
+  silc_client_unref_channel(client, conn, channel);
   silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
@@ -1570,7 +1574,7 @@ SILC_FSM_STATE(silc_client_command_reply_kick)
   SilcCommandPayload payload = state_context;
   SilcArgumentPayload args = silc_command_get_args(payload);
   SilcClientEntry client_entry;
-  SilcChannelEntry channel;
+  SilcChannelEntry channel = NULL;
   SilcID id;
 
   /* Sanity checks */
@@ -1609,6 +1613,7 @@ SILC_FSM_STATE(silc_client_command_reply_kick)
   silc_client_unref_client(client, conn, client_entry);
 
  out:
+  silc_client_unref_channel(client, conn, channel);
   silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }
@@ -1716,7 +1721,7 @@ SILC_FSM_STATE(silc_client_command_reply_ban)
   SilcClient client = conn->client;
   SilcCommandPayload payload = state_context;
   SilcArgumentPayload args = silc_command_get_args(payload);
-  SilcChannelEntry channel;
+  SilcChannelEntry channel = NULL;
   unsigned char *tmp;
   SilcUInt32 len;
   SilcArgumentPayload invite_args = NULL;
@@ -1751,6 +1756,7 @@ SILC_FSM_STATE(silc_client_command_reply_ban)
     silc_argument_payload_free(invite_args);
 
  out:
+  silc_client_unref_channel(client, conn, channel);
   silc_fsm_next(fsm, silc_client_command_reply_processed);
   return SILC_FSM_CONTINUE;
 }

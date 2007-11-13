@@ -425,6 +425,8 @@ SILC_FSM_STATE(silc_client_st_resume_resolve_channels)
     channel = silc_client_get_channel_by_id(client, conn, &channel_id);
     if (!channel)
       silc_client_add_channel(client, conn, name, 0, &channel_id);
+    else
+      silc_client_unref_channel(client, conn, channel);
 
     res_argv = silc_realloc(res_argv, sizeof(*res_argv) * (res_argc + 1));
     res_argv_lens = silc_realloc(res_argv_lens, sizeof(*res_argv_lens) *
