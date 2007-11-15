@@ -172,6 +172,7 @@ static void silc_connauth_verify_signature_cb(SilcBool success,
     return;
   }
 
+  SILC_LOG_DEBUG(("Signature is Ok"));
   SILC_FSM_CALL_CONTINUE(connauth->fsm);
 }
 
@@ -646,14 +647,15 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate)
     /* Allocate search constraints for finding the key */
     find = silc_skr_find_alloc();
 
-    if (!find || !connauth->auth_data) {
+    if (!find || !connauth->auth_data || !connauth->ske->prop->public_key) {
       /** Out of memory */
       silc_fsm_next(fsm, silc_connauth_st_responder_failure);
       return SILC_FSM_CONTINUE;
     }
 
-    silc_skr_find_set_pkcs_type(find, connauth->ske->pk_type);
-    silc_skr_find_set_public_key(find, connauth->ske->public_key);
+    silc_skr_find_set_pkcs_type(
+		  find, silc_pkcs_get_type(connauth->ske->prop->public_key));
+    silc_skr_find_set_public_key(find, connauth->ske->prop->public_key);
     silc_skr_find_set_usage(find, (SILC_SKR_USAGE_AUTH |
 				   SILC_SKR_USAGE_KEY_AGREEMENT));
 
