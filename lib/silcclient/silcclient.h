@@ -1391,7 +1391,7 @@ SilcUInt16 silc_client_command_call(SilcClient client,
  *
  *    If FALSE is returned in this function this callback will not be called
  *    again for `command' even if there are more comand replies.  By returning
- *    FALSE the caller my stop the command reply handling when needed.
+ *    FALSE the caller may stop the command reply handling when needed.
  *
  ***/
 typedef SilcBool (*SilcClientCommandReply)(SilcClient client,

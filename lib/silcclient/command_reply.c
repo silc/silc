@@ -1111,6 +1111,29 @@ silc_client_command_reply_join_resolved(SilcClient client,
 {
   SilcClientCommandContext cmd = context;
   SilcChannelEntry channel = cmd->context;
+  SilcCommandPayload payload = silc_fsm_get_state_context(&cmd->thread);
+  SilcArgumentPayload args = silc_command_get_args(payload);
+  SilcUInt32 list_count;
+  unsigned char *tmp;
+  char msg[512];
+
+  if (!clients) {
+    silc_snprintf(msg, sizeof(msg), "Error resolving channel %s user list",
+		  channel->channel_name);
+    SAY(client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR, msg);
+  } else {
+    tmp = silc_argument_get_arg_type(args, 12, NULL);
+    if (tmp) {
+      SILC_GET32_MSB(list_count, tmp);
+      if (list_count - silc_dlist_count(clients) > 5) {
+	silc_snprintf(msg, sizeof(msg),
+		      "Channel %s user list was not fully resolved. "
+		      "The channel may not be fully synced.",
+		      channel->channel_name);
+	SAY(client, conn, SILC_CLIENT_MESSAGE_WARNING, msg);
+      }
+    }
+  }
 
   channel->internal.resolve_cmd_ident = 0;
   silc_client_unref_channel(client, conn, channel);
@@ -1172,7 +1195,7 @@ SILC_FSM_STATE(silc_client_command_reply_join)
 
   /* Get the list count */
   tmp = silc_argument_get_arg_type(args, 12, &len);
-  if (!tmp) {
+  if (!tmp || len != 4) {
     ERROR_CALLBACK(SILC_STATUS_ERR_NOT_ENOUGH_PARAMS);
     goto out;
   }
