@@ -1814,6 +1814,8 @@ SILC_FSM_STATE(silc_client_command_reply_leave)
   SilcCommandPayload payload = state_context;
   SilcArgumentPayload args = silc_command_get_args(payload);
   SilcChannelEntry channel;
+  SilcCipher key;
+  SilcHmac hmac;
   SilcID id;
 
   /* Sanity checks */
@@ -1838,6 +1840,32 @@ SILC_FSM_STATE(silc_client_command_reply_leave)
 
   /* Notify application */
   silc_client_command_callback(cmd, channel);
+
+  /* Remove old keys and stuff.  The channel may remain even after leaving
+     but we want to remove these always. */
+  if (channel->internal.send_key)
+    silc_cipher_free(channel->internal.send_key);
+  channel->internal.send_key = NULL;
+  if (channel->internal.receive_key)
+    silc_cipher_free(channel->internal.receive_key);
+  channel->internal.receive_key = NULL;
+  if (channel->internal.hmac)
+    silc_hmac_free(channel->internal.hmac);
+  channel->internal.hmac = NULL;
+  if (channel->internal.old_channel_keys) {
+    silc_dlist_start(channel->internal.old_channel_keys);
+    while ((key = silc_dlist_get(channel->internal.old_channel_keys)))
+      silc_cipher_free(key);
+    silc_dlist_uninit(channel->internal.old_channel_keys);
+  }
+  channel->internal.old_channel_keys = NULL;
+  if (channel->internal.old_hmacs) {
+    silc_dlist_start(channel->internal.old_hmacs);
+    while ((hmac = silc_dlist_get(channel->internal.old_hmacs)))
+      silc_hmac_free(hmac);
+    silc_dlist_uninit(channel->internal.old_hmacs);
+  }
+  channel->internal.old_hmacs = NULL;
 
   /* Now delete the channel. */
   silc_client_empty_channel(client, conn, channel);
