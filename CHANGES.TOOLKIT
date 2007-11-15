@@ -10,6 +10,14 @@ Thu Nov 15 16:45:48 EET 2007 Pekka Riikonen <priikone@silcnet.org>
 	  closely fully resolved, report it to application.  Affected
 	  file is lib/silcclient/command_reply.c.
 
+	* Reprocess JOIN command synchronously after resolving channel
+	  user list.  Affected file is lib/silcclient/command_reply.c.
+
+	* In JOIN command reply check if the channel key is already
+	  saved.  If it is we have received new key from server while
+	  resolving user and must not save the old key.  Affected file
+	  is lib/silcclient/command_reply.c.
+
 Tue Nov 13 18:24:56 EET 2007 Pekka Riikonen <priikone@silcnet.org>
 
 	* Added missing channel unreferencing in CMODE, CUMODE,

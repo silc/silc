@@ -1138,7 +1138,7 @@ silc_client_command_reply_join_resolved(SilcClient client,
   channel->internal.resolve_cmd_ident = 0;
   silc_client_unref_channel(client, conn, channel);
 
-  SILC_FSM_CALL_CONTINUE(&cmd->thread);
+  SILC_FSM_CALL_CONTINUE_SYNC(&cmd->thread);
 }
 
 
@@ -1287,8 +1287,13 @@ SILC_FSM_STATE(silc_client_command_reply_join)
   /* Get channel key and save it */
   tmp = silc_argument_get_arg_type(args, 7, &len);
   if (tmp) {
-    silc_buffer_set(&keyp, tmp, len);
-    silc_client_save_channel_key(client, conn, &keyp, channel);
+    /* If channel key already exists on the channel then while resolving
+       the user list we have already received new key from server.  Don't
+       replace it with this old key. */
+    if (!channel->internal.send_key) {
+      silc_buffer_set(&keyp, tmp, len);
+      silc_client_save_channel_key(client, conn, &keyp, channel);
+    }
   }
 
   /* Get topic */
