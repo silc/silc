@@ -149,7 +149,15 @@ static void silc_client_packet_error(SilcPacketEngine engine,
 				     void *callback_context,
 				     void *stream_context)
 {
-  /* Nothing */
+  SilcClient client = callback_context;
+  SilcClientConnection conn = stream_context;
+
+  /* Read and write errors are silent */
+  if (error == SILC_PACKET_ERR_READ || error == SILC_PACKET_ERR_WRITE)
+    return;
+
+  client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
+			     (char *)silc_packet_error_string(error));
 }
 
 /* Packet stream callbacks */
