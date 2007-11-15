@@ -293,7 +293,10 @@ founder's public key when it was set.  It may also return the channel
 public key list when the list was altered.  The 'founder_key' and
 'channel_pubkeys' arguments may be NULL.  The 'channel_pubkeys' is a list
 of SilcArgumentDecodedList contexts which each contain one channel public
-key.  The library will automatically free the list.
+key.  The library will automatically free the list.  If the `founder_key'
+was present it will be updated to `channel' entry by the library after
+calling the command_reply callback.  Application may check if the `founder_key'
+is different from the key in `channel' entry to detect if it was changed.
 </td>
 <td width="50%"><small>SilcChannelEntry channel, SilcUInt32 mode,
 SilcPublicKey founder_key, SilcDList channel_pubkeys, SilcUint32 user_limit
