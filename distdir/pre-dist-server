@@ -11,13 +11,9 @@ if test -z $release; then
 fi
 
 sed -e "s/SILC_VERSION/$dist_version/" -e "s/SILC_RELEASE/$release/" \
-  silc-toolkit.spec.in > silc-toolkit.spec
-
-./configure
+  apps/silcd/silc-server.spec.in > apps/silcd/silc-server.spec
 
 cd doc
 make dist-hook
-rm -rf toolkit
-make toolkit-ref-html
-cp ../lib/doc/*.gif toolkit
 cd ..
+

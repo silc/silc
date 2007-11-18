@@ -4,10 +4,10 @@ bug-report silc-devel@lists.silcnet.org
 
 inherit common
 define SILC_DIST_SERVER
-#define SILC_DIST_SERVERLIB
 define SILC_DIST_HTTP
 undef SILC_DIST_SFTP
 undef SILC_DIST_VCARD
 
+pre-dist-hook distdir/pre-dist-server
 post-process-dist-hook distdir/post-process-dist
 post-dist-hook distdir/post-dist
