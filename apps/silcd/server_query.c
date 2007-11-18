@@ -1516,6 +1516,7 @@ void silc_server_query_send_reply(SilcServer server,
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   SilcStatus status;
   unsigned char *tmp;
+  char *tmp2;
   SilcUInt32 len;
   SilcBuffer idp;
   int i, k, valid_count;
@@ -1642,8 +1643,8 @@ void silc_server_query_send_reply(SilcServer server,
 	    hsock = entry->connection;
 	    silc_strncat(uh, sizeof(uh), "@", 1);
 	    silc_socket_stream_get_info(silc_packet_stream_get_stream(hsock),
-					NULL, (const char **)&tmp, NULL, NULL);
-	    silc_strncat(uh, sizeof(uh), tmp, strlen(tmp));
+					NULL, (const char **)&tmp2, NULL, NULL);
+	    silc_strncat(uh, sizeof(uh), tmp2, strlen(tmp2));
 	  }
 
 	  if (idata->conn_type == SILC_CONN_CLIENT)
@@ -1733,9 +1734,9 @@ void silc_server_query_send_reply(SilcServer server,
 	    hsock = entry->connection;
 	    silc_strncat(uh, sizeof(uh), "@", 1);
 	    silc_socket_stream_get_info(silc_packet_stream_get_stream(hsock),
-					NULL, (const char **)&tmp,
+					NULL, (const char **)&tmp2,
 					NULL, NULL);
-	    silc_strncat(uh, sizeof(uh), tmp, strlen(tmp));
+	    silc_strncat(uh, sizeof(uh), tmp2, strlen(tmp2));
 	  }
 
 	  silc_server_send_command_reply(server, cmd->sock, query->querycmd,
