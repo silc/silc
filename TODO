@@ -546,7 +546,8 @@ lib/silcserver
    term UDP sessions.
 
  o The server must be able to run behind NAT device.  This means that
-   Server ID must be based on public IP instead of private IP.
+   Server ID must be based on public IP instead of private IP (See 
+   also NAT detection protocol in SILC protocol specification).
 
  o The following data must be in per-connection context: client id cache,
    server id cache, channel id cache, all statistics must be
@@ -559,7 +560,7 @@ lib/silcserver
    server-threads FSM.  Same as in client library.
 
  o Binding to other ports than 706 too.  To allow easier traversing
-   through NATs and firewalls server should bind to 80, 443 and 7706
+   through NATs and firewalls server should also bind to 80, 443 and 7706
    by default (at least try to bind).  Connections must work normally
    even if they were established to some other port other than 706.
 
