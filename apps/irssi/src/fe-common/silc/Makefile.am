@@ -49,7 +49,7 @@ noinst_LTLIBRARIES = $(NILB)
 module_LTLIBRARIES = $(LTLB)
 
 libfe_common_silc_la_LDFLAGS = \
-	$(LDFGS)
+	$(LDFLGS)
 
 libfe_common_silc_la_SOURCES = \
 	fe-silc-channels.c \
