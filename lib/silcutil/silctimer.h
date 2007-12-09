@@ -193,19 +193,19 @@ static inline
 SilcUInt64 silc_timer_tick(SilcTimer timer, SilcBool adjust)
 {
 #if defined(__GNUC__) || defined(__ICC)
-#ifdef SILC_I486
+#if defined(SILC_I486)
   SilcUInt64 x;
   asm volatile ("rdtsc" : "=A" (x));
   return adjust ? x - timer->sync_tdiff : x;
 
-#elif SILC_X86_64
+#elif defined(SILC_X86_64)
   SilcUInt64 x;
   SilcUInt32 hi, lo;
   asm volatile ("rdtsc" : "=a" (lo), "=d" (hi));
   x = ((SilcUInt64)lo | ((SilcUInt64)hi << 32));
   return adjust ? x - timer->sync_tdiff : x;
 
-#elif SILC_POWERPC
+#elif defined(SILC_POWERPC)
   SilcUInt32 hi, lo, tmp;
   asm volatile ("0:            \n\t"
                 "mftbu   %0    \n\t"
