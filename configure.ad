@@ -96,7 +96,7 @@ case "$host_cpu" in
     # Check for specific CPU features
     SILC_CPU_FLAG(mmx, AC_DEFINE([SILC_CPU_MMX], [], [SILC_CPU_MMX]), [])
     SILC_CPU_FLAG(sse2, AC_DEFINE([SILC_CPU_SSE2], [], [SILC_CPU_SSE2]), [])
-    SILC_CPU_FLAG(sse3, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
+    SILC_CPU_FLAG(pni, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
     SILC_CPU_FLAG(ssse3, AC_DEFINE([SILC_CPU_SSSE3], [], [SILC_CPU_SSSE3]), [])
     SILC_CPU_FLAG(sse4, AC_DEFINE([SILC_CPU_SSE4], [], [SILC_CPU_SSE4]), [])
     ;;
@@ -109,7 +109,7 @@ case "$host_cpu" in
     # Check for specific CPU features
     SILC_CPU_FLAG(mmx, AC_DEFINE([SILC_CPU_MMX], [], [SILC_CPU_MMX]), [])
     SILC_CPU_FLAG(sse2, AC_DEFINE([SILC_CPU_SSE2], [], [SILC_CPU_SSE2]), [])
-    SILC_CPU_FLAG(sse3, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
+    SILC_CPU_FLAG(pni, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
     SILC_CPU_FLAG(ssse3, AC_DEFINE([SILC_CPU_SSSE3], [], [SILC_CPU_SSSE3]), [])
     SILC_CPU_FLAG(sse4, AC_DEFINE([SILC_CPU_SSE4], [], [SILC_CPU_SSE4]), [])
     ;;
@@ -122,7 +122,7 @@ case "$host_cpu" in
     # Check for specific CPU features
     SILC_CPU_FLAG(mmx, AC_DEFINE([SILC_CPU_MMX], [], [SILC_CPU_MMX]), [])
     SILC_CPU_FLAG(sse2, AC_DEFINE([SILC_CPU_SSE2], [], [SILC_CPU_SSE2]), [])
-    SILC_CPU_FLAG(sse3, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
+    SILC_CPU_FLAG(pni, AC_DEFINE([SILC_CPU_SSE3], [], [SILC_CPU_SSE3]), [])
     SILC_CPU_FLAG(ssse3, AC_DEFINE([SILC_CPU_SSSE3], [], [SILC_CPU_SSSE3]), [])
     SILC_CPU_FLAG(sse4, AC_DEFINE([SILC_CPU_SSE4], [], [SILC_CPU_SSE4]), [])
     ;;
@@ -169,7 +169,7 @@ else
   if test x$x_have_cpu_sse2 = xtrue; then
     SILC_ADD_CFLAGS(-msse2)
   fi
-  if test x$x_have_cpu_sse3 = xtrue; then
+  if test x$x_have_cpu_pni = xtrue; then
     SILC_ADD_CFLAGS(-msse3)
   fi
   if test x$x_have_cpu_ssse3 = xtrue; then
