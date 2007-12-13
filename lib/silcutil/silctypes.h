@@ -861,10 +861,10 @@ static inline SilcUInt64 silc_ror64(SilcUInt64 val, int num)
  *
  * DESCRIPTION
  *
- *    Brach prediction macro.  It specifies that it is unlikely that the brach
- *    where silc_unlikely is applied is taken.  Compiler will optimize the
- *    code based on this prediction.  Never use this before you have profiled
- *    the code first.
+ *    Branch prediction macro.  It specifies that it is unlikely that the
+ *    branch where silc_unlikely is applied is taken.  Compiler will optimize
+ *    the code based on this prediction.  Never use this before you have
+ *    profiled the code first.
  *
  ***/
 #if __GNUC__ >= 3
