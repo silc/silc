@@ -120,38 +120,11 @@ static void *silc_thread_pool_run_thread(void *context)
     while (!t->run && !t->stop)
       silc_cond_wait(thread_signal, lock);
 
-    if (silc_unlikely(t->stop)) {
-      /* Stop the thread.  Remove from threads list. */
-      SILC_LOG_DEBUG(("Stop thread %p", t));
-      silc_mutex_lock(tp->lock);
-      silc_list_del(tp->threads, t);
-      silc_list_start(tp->threads);
-
-      /* Clear thread's call queue. */
-      silc_list_start(t->queue);
-      silc_list_start(t->free_queue);
-      while ((q = silc_list_get(t->queue)))
-	silc_sfree(tp->stack, q);
-      while ((q = silc_list_get(t->free_queue)))
-	silc_sfree(tp->stack, q);
-
-      /* Destroy the thread */
-      silc_mutex_unlock(lock);
-      silc_mutex_free(lock);
-      silc_cond_free(thread_signal);
-      silc_sfree(tp->stack, t);
-
-      /* If we are last thread, signal the waiting destructor. */
-      if (silc_list_count(tp->threads) == 0)
-        silc_cond_signal(tp->pool_signal);
-
-      /* Release pool reference.  Releases lock also. */
-      silc_thread_pool_unref(tp);
-      break;
-    }
-    silc_mutex_unlock(lock);
+    if (t->stop)
+      goto stop;
 
     /* Execute code */
+    silc_mutex_unlock(lock);
   execute:
     SILC_LOG_DEBUG(("Execute call %p, context %p, thread %p", t->run,
 		    t->run_context, t));
@@ -175,9 +148,12 @@ static void *silc_thread_pool_run_thread(void *context)
       }
     }
 
+    silc_mutex_lock(lock);
+    if (t->stop)
+      goto stop;
+
     /* Check if there are calls in queue.  Takes the most recently added
        call since new ones are added at the start of the list. */
-    silc_mutex_lock(lock);
     if (silc_list_count(t->queue) > 0) {
     execute_queue:
       silc_list_start(t->queue);
@@ -196,55 +172,97 @@ static void *silc_thread_pool_run_thread(void *context)
       silc_list_add(t->free_queue, q);
       silc_mutex_unlock(lock);
       goto execute;
-    } else {
-      silc_mutex_unlock(lock);
+    }
 
-      /* Nothing to do.  Attempt to steal call from some other thread. */
-      silc_mutex_lock(tp->lock);
+    silc_mutex_unlock(lock);
+    silc_mutex_lock(tp->lock);
+
+    /* Nothing to do.  Attempt to steal call from some other thread. */
+    o = silc_list_get(tp->threads);
+    if (!o) {
+      /* List wraps around */
+      silc_list_start(tp->threads);
       o = silc_list_get(tp->threads);
-      if (!o) {
-	/* List wraps around */
-	silc_list_start(tp->threads);
-	o = silc_list_get(tp->threads);
-      }
+    }
+
+    /* Check that the other thread is valid and has something to execute. */
+    silc_mutex_lock(o->lock);
+    if (o == t || o->stop || silc_list_count(o->queue) == 0) {
+      silc_mutex_unlock(o->lock);
+      o = NULL;
+    }
+
+    if (o) {
       silc_mutex_unlock(tp->lock);
+      silc_list_start(o->queue);
+      q = silc_list_get(o->queue);
 
-      if (o && o != t) {
-	silc_mutex_lock(o->lock);
-	if (silc_list_count(o->queue) > 0) {
-	  silc_list_start(o->queue);
-	  q = silc_list_get(o->queue);
+      SILC_LOG_DEBUG(("Execute call from queue from thread %p", o));
 
-	  SILC_LOG_DEBUG(("Execute call from queue from thread %p", o));
+      /* Execute this call now */
+      t->run = q->run;
+      t->run_context = q->run_context;
+      t->completion = q->completion;
+      t->completion_context = q->completion_context;
+      t->schedule = q->schedule;
 
-	  /* Execute this call now */
-	  t->run = q->run;
-	  t->run_context = q->run_context;
-	  t->completion = q->completion;
-	  t->completion_context = q->completion_context;
-	  t->schedule = q->schedule;
-
-	  silc_list_del(o->queue, q);
-	  silc_list_add(o->free_queue, q);
-	  silc_mutex_unlock(o->lock);
-	  goto execute;
-	}
-	silc_mutex_unlock(o->lock);
-      }
+      silc_list_del(o->queue, q);
+      silc_list_add(o->free_queue, q);
+      silc_mutex_unlock(o->lock);
+      goto execute;
     }
 
     silc_mutex_lock(lock);
+    if (t->stop) {
+      silc_mutex_unlock(tp->lock);
+      goto stop;
+    }
 
     /* Now that we have the lock back, check the queue again. */
-    if (silc_list_count(t->queue) > 0)
+    if (silc_list_count(t->queue) > 0) {
+      silc_mutex_unlock(tp->lock);
       goto execute_queue;
+    }
 
     /* The thread is now free for use again. */
     t->run = NULL;
     t->completion = NULL;
     t->schedule = NULL;
     silc_list_add(tp->free_threads, t);
+    silc_mutex_unlock(tp->lock);
   }
+
+ stop:
+  /* Stop the thread.  Remove from threads list. */
+  SILC_LOG_DEBUG(("Stop thread %p", t));
+
+  /* We can unlock the thread now.  After we get the thread pool lock
+     no one can retrieve the thread anymore. */
+  silc_mutex_unlock(lock);
+  silc_mutex_lock(tp->lock);
+
+  silc_list_del(tp->threads, t);
+  silc_list_start(tp->threads);
+
+  /* Clear thread's call queue. */
+  silc_list_start(t->queue);
+  silc_list_start(t->free_queue);
+  while ((q = silc_list_get(t->queue)))
+    silc_sfree(tp->stack, q);
+  while ((q = silc_list_get(t->free_queue)))
+    silc_sfree(tp->stack, q);
+
+  /* Destroy the thread */
+  silc_mutex_free(lock);
+  silc_cond_free(thread_signal);
+  silc_sfree(tp->stack, t);
+
+  /* If we are last thread, signal the waiting destructor. */
+  if (silc_list_count(tp->threads) == 0)
+    silc_cond_signal(tp->pool_signal);
+
+  /* Release pool reference.  Releases lock also. */
+  silc_thread_pool_unref(tp);
 
   return NULL;
 }
@@ -397,7 +415,7 @@ SilcBool silc_thread_pool_run(SilcThreadPool tp,
   /* Get free thread */
   silc_list_start(tp->free_threads);
   t = silc_list_get(tp->free_threads);
-  if (!t) {
+  if (!t || t->stop) {
     if (silc_list_count(tp->threads) + 1 > tp->max_threads) {
       /* Maximum threads reached */
       if (!queuable) {
