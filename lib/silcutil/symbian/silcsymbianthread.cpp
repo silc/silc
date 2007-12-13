@@ -228,8 +228,8 @@ void silc_mutex_unlock(SilcMutex mutex)
 {
 #ifdef SILC_THREADS
   if (mutex) {
-    mutex->mutex->Signal();
     mutex->locked = FALSE;
+    mutex->mutex->Signal();
   }
 #endif /* SILC_THREADS */
 }

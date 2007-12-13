@@ -154,8 +154,8 @@ void silc_mutex_unlock(SilcMutex mutex)
 {
 #ifdef SILC_THREADS
   if (mutex) {
-    SILC_VERIFY(pthread_mutex_unlock(&mutex->mutex) == 0);
     mutex->locked = FALSE;
+    SILC_VERIFY(pthread_mutex_unlock(&mutex->mutex) == 0);
   }
 #endif /* SILC_THREADS */
 }
