@@ -18,7 +18,7 @@ SilcUInt64 cpu_freq = 0;
 int max_locks, max_locks2;
 SilcTimerStruct timer;
 
-#define rdtsc() silc_timer_tick(&timer)
+#define rdtsc() silc_timer_tick(&timer, FALSE)
 
 void *mutex_thread(void *context)
 {
