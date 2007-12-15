@@ -22,10 +22,29 @@
 
 /**************************** SILC Thread API *******************************/
 
+typedef struct {
+  SilcThreadStart start_func;
+  void *context;
+} *SilcThreadStartContext;
+
+static void *silc_thread_start(void *context)
+{
+  SilcThreadStartContext c = context;
+  SilcThreadStart start_func = c->start_func;
+  void *start_context = c->context;
+
+  silc_free(c);
+
+  silc_thread_tls_init();
+
+  return start_func(start_context);
+}
+
 SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 			      SilcBool waitable)
 {
 #ifdef SILC_THREADS
+  SilcThreadStartContext c;
   pthread_attr_t attr;
   pthread_t thread;
   int ret;
@@ -35,8 +54,15 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
   if (!start_func)
     return NULL;
 
+  c = silc_calloc(1, sizeof(*c));
+  if (!c)
+    return NULL;
+  c->start_func = start_func;
+  c->context = context;
+
   if (pthread_attr_init(&attr)) {
     SILC_LOG_ERROR(("Thread error: %s", strerror(errno)));
+    silc_free(c);
     return NULL;
   }
 
@@ -45,14 +71,15 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 				  PTHREAD_CREATE_DETACHED)) {
     SILC_LOG_ERROR(("Thread error: %s", strerror(errno)));
     pthread_attr_destroy(&attr);
+    silc_free(c);
     return NULL;
   }
 
-  ret = pthread_create(&thread, &attr, (void * (*)(void *))start_func,
-		       context);
+  ret = pthread_create(&thread, &attr, silc_thread_start, c);
   if (ret) {
     SILC_LOG_ERROR(("Thread error: %s", strerror(errno)));
     pthread_attr_destroy(&attr);
+    silc_free(c);
     return NULL;
   }
 
@@ -295,3 +322,69 @@ SilcBool silc_cond_timedwait(SilcCond cond, SilcMutex mutex,
   return FALSE;
 #endif /* SILC_THREADS*/
 }
+
+/************************** Thread-local Storage ****************************/
+
+#if (defined(SILC_THREADS) && defined(HAVE_PTHREAD_KEY_CREATE) && \
+     defined(HAVE_PTHREAD_ONCE))
+
+static pthread_key_t key;
+static pthread_once_t key_once;
+
+static void silc_thread_tls_destructor(void *context)
+{
+  silc_free(context);
+}
+
+static void silc_thread_tls_alloc(void)
+{
+  if (pthread_key_create(&key, silc_thread_tls_destructor))
+    SILC_LOG_ERROR(("Error creating Thread-local storage"));
+}
+
+SilcTls silc_thread_tls_init(void)
+{
+  SilcTls tls;
+
+  pthread_once(&key_once, silc_thread_tls_alloc);
+
+  if (silc_thread_get_tls())
+    return silc_thread_get_tls();
+
+  /* Allocate Tls for the thread */
+  tls = silc_calloc(1, sizeof(*tls));
+  if (!tls) {
+    SILC_LOG_ERROR(("Error allocating Thread-local storage"));
+    return NULL;
+  }
+
+  pthread_setspecific(key, tls);
+  return tls;
+}
+
+SilcTls silc_thread_get_tls(void)
+{
+  return pthread_getspecific(key);
+}
+
+#else
+
+SilcTlsStruct tls;
+SilcTls tls_ptr = NULL;
+
+SilcTls silc_thread_tls_init(void)
+{
+  if (silc_thread_get_tls())
+    return silc_thread_get_tls();
+
+  tls_ptr = &tls;
+  memset(tls_ptr, 0, sizeof(*tls_ptr));
+  return tls_ptr;
+}
+
+SilcTls silc_thread_get_tls(void)
+{
+  return tls_ptr;
+}
+
+#endif

@@ -46,8 +46,11 @@ static TInt silc_thread_start(TAny *context)
   void *user_context = tc->context;
   SilcBool waitable = tc->waitable;
   void *ret = NULL;
+  SilcTls tls;
 
   silc_free(tc);
+
+  tls = silc_thread_tls_init();
 
   CTrapCleanup *cs = CTrapCleanup::New();
   if (cs) {
@@ -63,6 +66,7 @@ static TInt silc_thread_start(TAny *context)
     delete cs;
   }
 
+  silc_free(tls);
   silc_thread_exit(ret);
 
 #endif
@@ -407,6 +411,30 @@ SilcBool silc_cond_timedwait(SilcCond cond, SilcMutex mutex,
 #else
   return FALSE;
 #endif /* SILC_THREADS*/
+}
+
+/************************** Thread-local Storage ****************************/
+
+SilcTls silc_thread_tls_init(void)
+{
+  SilcTls tls;
+
+  if (silc_thread_get_tls())
+    return silc_thread_get_tls();
+
+  /* Allocate Tls for the thread */
+  tls = (SilcTls)silc_calloc(1, sizeof(*tls));
+  if (!tls)
+    return NULL;
+
+  Dll::SetTls(tls);
+
+  return tls;
+}
+
+SilcTls silc_thread_get_tls(void)
+{
+  return STATIC_CAST(SilcTls, Dll::Tls());
 }
 
 } /* extern "C" */

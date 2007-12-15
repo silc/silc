@@ -73,7 +73,7 @@ lib/silcclient, The Client Library
    access to them for programmers.  Currently these have to be digged up
    from the packet stream.
 
- o Connection option that attemps to connect to remot host with various 
+ o Connection option that attemps to connect to remot host with various
    different mechanisms: UDP 706, TCP 706, TCP 80, TCP 443, UDP 7706 and
    TCP 7706.  This is the so called hole punching mechanism.
 
@@ -105,7 +105,7 @@ Runtime library, lib/silcutil/
 
  o silc_getopt routines
 
- o Add silc_stream_get_root and add get_root stream operation.  It 
+ o Add silc_stream_get_root and add get_root stream operation.  It
    returns the root of the stream or NULL if stream doesn't have root.
 
  o Change some stream routines (like socket stream API) to accept ANY
@@ -217,7 +217,7 @@ Runtime library, lib/silcutil/
    _ua unaligned memory allocation routines.  Remove unaligned memory
    allocation possibility. (***DONE)
 
- o silc_stack_alloc shouldn't require multiple by 8 size argument, it 
+ o silc_stack_alloc shouldn't require multiple by 8 size argument, it
    should figure it out itself.
 
  o silc_malloc et. al. to respect --with-alignment.
@@ -243,10 +243,13 @@ Runtime library, lib/silcutil/
    silc_snprintf(buf, sizeof(buf), "Client ID %@", id_renderer, client_id);
    (***DONE)
 
+ o SILC Tls (Thread-local storage) API to lib/silcutil/silcthread.[ch].
+   (***DONE)
+
  o Change silc_gettimeofday on Unix to use clock_gettime with REALTIME
    clock if it is available, otherwise use gettimeofday(). (***DONE)
 
- (o SilcIpAddr abstraction.  Ipv4 and Ipv6 support to the abstaction.) 
+ (o SilcIpAddr abstraction.  Ipv4 and Ipv6 support to the abstaction.)
   maybe
 
  (o Generic SilcStatus or SilcResult that includes all possible status and
@@ -377,7 +380,7 @@ SILC Accelerator Library
    (***DONE)
 
  o Implement software accelerator.  It is a thread pool system where the
-   public key and private key operations are executed in threads. 
+   public key and private key operations are executed in threads.
    (***DONE)
 
  o Add init options to SilcAcceleratorObject as a SilcAcceleratorOption
@@ -412,7 +415,7 @@ lib/silcmath
 ============
 
  o Import TFM.  We want TFM's speed but its memory requirements are
-   just too much.  By default it uses large pre-allocated tables which 
+   just too much.  By default it uses large pre-allocated tables which
    will eat memory when there are thousands of public keys in system.
    We probably want to change TFM's fp_int dynamic so that a specific
    size can be allocated for the int.  We could have two new functions:
@@ -435,7 +438,7 @@ lib/silcmath
    any other MP function (including utility ones) that may allocate
    memory.
 
- o Prime generation progress using callback instead of printing to 
+ o Prime generation progress using callback instead of printing to
    stdout.
 
  o All utility functions should be made non-allocating ones.
@@ -546,7 +549,7 @@ lib/silcserver
    term UDP sessions.
 
  o The server must be able to run behind NAT device.  This means that
-   Server ID must be based on public IP instead of private IP (See 
+   Server ID must be based on public IP instead of private IP (See
    also NAT detection protocol in SILC protocol specification).
 
  o The following data must be in per-connection context: client id cache,
@@ -564,7 +567,7 @@ lib/silcserver
    by default (at least try to bind).  Connections must work normally
    even if they were established to some other port other than 706.
 
-   Connection option that attemps to connect to remot server with various 
+   Connection option that attemps to connect to remot server with various
    different mechanisms: UDP 706, TCP 706, TCP 80, TCP 443, UDP 7706 and
    TCP 7706.  This is the so called hole punching mechanism.
 
@@ -574,7 +577,7 @@ lib/silcserver
 
  Some issues that must be kept in mind from 1.0 and 1.1 silcd's:
 
- o The server and router software MUST work out of the box.  After 
+ o The server and router software MUST work out of the box.  After
    installation the server must not require any configuration to run the
    most basic working configuration.  No defining IP addresses, etc.
    The server must work just by running it.

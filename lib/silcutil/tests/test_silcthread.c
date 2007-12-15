@@ -6,7 +6,8 @@ SilcSchedule schedule;
 
 static void func(SilcSchedule schedule, void *context)
 {
-  SILC_LOG_DEBUG(("func: %d", (int)context));
+  silc_thread_tls_set(context);
+  SILC_LOG_DEBUG(("func: %d", (int)silc_thread_tls_get()));
   sleep(1);
 }
 

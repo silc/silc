@@ -32,8 +32,6 @@ typedef struct {
   SilcBool waitable;
 } *SilcWin32Thread;
 
-static DWORD silc_thread_tls;
-
 /* Actual routine that is called by WIN32 when the thread is created.
    We will call the start_func from here. When this returns the thread
    is destroyed. */
@@ -41,12 +39,15 @@ static DWORD silc_thread_tls;
 unsigned __stdcall silc_thread_win32_start(void *context)
 {
   SilcWin32Thread thread = (SilcWin32Thread)context;
+  SilcTls tls;
 
-  silc_thread_tls = TlsAlloc();
-  if (silc_thread_tls != TLS_OUT_OF_INDEXES)
-    TlsSetValue(silc_thread_tls, context);
+  tls = silc_thread_tls_init();
+  if (tls)
+    tls->platform_context = thread;
 
   silc_thread_exit(thread->start_func(thread->context));
+
+  silc_free(tls);
 
   return 0;
 }
@@ -62,6 +63,8 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
   SILC_LOG_DEBUG(("Creating new thread"));
 
   thread = silc_calloc(1, sizeof(*thread));
+  if (!thread)
+    return NULL;
   thread->start_func = start_func;
   thread->context = context;
   thread->waitable = waitable;
@@ -86,7 +89,8 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 void silc_thread_exit(void *exit_value)
 {
 #ifdef SILC_THREADS
-  SilcWin32Thread thread = TlsGetValue(silc_thread_tls);
+  SilcTls tls = silc_thread_get_tls();
+  SilcWin32Thread thread = tls->platform_context;
 
   if (thread) {
     /* If the thread is waitable the memory is freed only in silc_thread_wait
@@ -95,7 +99,6 @@ void silc_thread_exit(void *exit_value)
       silc_free(thread);
   }
 
-  TlsFree(silc_thread_tls);
   _endthreadex(0);
 #endif
 }
@@ -103,17 +106,20 @@ void silc_thread_exit(void *exit_value)
 SilcThread silc_thread_self(void)
 {
 #ifdef SILC_THREADS
-  SilcWin32Thread self = TlsGetValue(silc_thread_tls);
+  SilcTls tls = silc_thread_get_tls();
+  SilcWin32Thread self = tls->platform_context;
 
   if (!self) {
     /* This should only happen for the main thread. */
     HANDLE handle = GetCurrentThread ();
     HANDLE process = GetCurrentProcess ();
     self = silc_calloc(1, sizeof(*self));
-    DuplicateHandle(process, handle, process,
-		    &self->thread, 0, FALSE,
-		    DUPLICATE_SAME_ACCESS);
-    TlsSetValue(silc_thread_tls, self);
+    if (self) {
+      DuplicateHandle(process, handle, process,
+		      &self->thread, 0, FALSE,
+		      DUPLICATE_SAME_ACCESS);
+      tls->platform_context = self;
+    }
   }
 
   return (SilcThread)self;
@@ -391,3 +397,65 @@ SilcBool silc_cond_timedwait(SilcCond cond, SilcMutex mutex,
 #endif /* SILC_THREADS*/
   return TRUE;
 }
+
+/************************** Thread-local Storage ****************************/
+
+#ifdef SILC_THREADS
+
+static DWORD silc_tls;
+SilcBool silc_tls_set = FALSE;
+
+SilcTls silc_thread_tls_init(void)
+{
+  SilcTls tls;
+
+  if (!silc_tls_set) {
+    silc_tls = TlsAlloc();
+    if (silc_tls == TLS_OUT_OF_INDEXES) {
+      SILC_LOG_ERROR(("Error creating Thread-local storage"));
+      return NULL;
+    }
+
+    silc_tls_set = TRUE;
+  }
+
+  if (silc_thread_get_tls())
+    return silc_thread_get_tls();
+
+  /* Allocate Tls for the thread */
+  tls = silc_calloc(1, sizeof(*tls));
+  if (!tls) {
+    SILC_LOG_ERROR(("Error allocating Thread-local storage"));
+    return NULL;
+  }
+
+  TlsSetValue(silc_tls, tls);
+  return tls;
+}
+
+SilcTls silc_thread_get_tls(void)
+{
+  return (SilcTls)TlsGetValue(silc_tls);
+}
+
+#else
+
+SilcTlsStruct tls;
+SilcTls tls_ptr = NULL;
+
+SilcTls silc_thread_tls_init(void)
+{
+  if (silc_thread_get_tls())
+    return silc_thread_get_tls();
+
+  tls_ptr = &tls;
+  memset(tls_ptr, 0, sizeof(*tls_ptr));
+  return tls_ptr;
+}
+
+SilcTls silc_thread_get_tls(void)
+{
+  return tls_ptr;
+}
+
+#endif /* SILC_THREADS */

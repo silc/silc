@@ -19,6 +19,8 @@
 
 #include "silc.h"
 
+/***************************** Thread Pool API *****************************/
+
 /* Explanation of the thread pool execution.
 
    When new call is added to thread pool by calling silc_thread_pool_run
@@ -571,4 +573,28 @@ void silc_thread_pool_purge(SilcThreadPool tp)
 
   silc_list_start(tp->threads);
   silc_mutex_unlock(tp->lock);
+}
+
+/*************************** Thread-local Storage ***************************/
+
+void silc_thread_tls_set(void *context)
+{
+  SilcTls tls = silc_thread_get_tls();
+
+  if (!tls) {
+    /* Initialize Tls for this thread */
+    tls = silc_thread_tls_init();
+    if (!tls)
+      return;
+  }
+
+  tls->thread_context = context;
+}
+
+void *silc_thread_tls_get(void)
+{
+  SilcTls tls = silc_thread_get_tls();
+  if (!tls)
+    return NULL;
+  return tls->thread_context;
 }

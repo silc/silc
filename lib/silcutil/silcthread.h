@@ -30,6 +30,9 @@
  * in the threads.  The thread pool manages the threads creation and
  * destruction.
  *
+ * The interface also provides routines for accessing the Thread-local
+ * storage (Tls) on all supported platforms.
+ *
  ***/
 
 #ifndef SILCTHREAD_H
@@ -348,5 +351,39 @@ SilcUInt32 silc_thread_pool_num_free_threads(SilcThreadPool tp);
  *
  ***/
 void silc_thread_pool_purge(SilcThreadPool tp);
+
+/****f* silcutil/SilcThreadAPI/silc_thread_tls_set
+ *
+ * SYNOPSIS
+ *
+ *    void silc_thread_tls_set(void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Sets `context' into the Thread-local storage.  Any previously set
+ *    value will be replaced.  This function may be called for the main
+ *    thread also.  This function may be called also if the program does
+ *    not support threads.
+ *
+ *    To retrieve the context from the Tls, call silc_thread_tls_get.
+ *
+ ***/
+void silc_thread_tls_set(void *context);
+
+/****f* silcutil/SilcThreadAPI/silc_thread_tls_get
+ *
+ * SYNOPSIS
+ *
+ *    void *silc_thread_tls_get(void);
+ *
+ * DESCRIPTION
+ *
+ *    Returns context from the Thread-local storage.  If context has no been
+ *    set for the current thread NULL will be returned.
+ *
+ ***/
+void *silc_thread_tls_get(void);
+
+#include "silcthread_i.h"
 
 #endif

@@ -1246,7 +1246,7 @@ if test x$has_threads = xtrue; then
    esac
 
   # Check for threads
-  AC_CHECK_FUNC(pthread_create)
+  AC_CHECK_FUNCS(pthread_create pthread_key_create pthread_once)
 
   # Check for read/write locks
   AC_CHECK_FUNC(pthread_rwlock_init,
