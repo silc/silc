@@ -236,11 +236,11 @@ SilcUInt64 silc_timer_tick(SilcTimer timer, SilcBool adjust)
  *
  *    Synchronizes the `timer'.  This call will attempt to synchronize the
  *    timer for more accurate results with high resolution timing.  Call
- *    this before you start using time `timer'.
+ *    this before you start using the `timer'.
  *
  * EXAMPLE
  *
- *    // Synchronized timer
+ *    // Synchronize timer
  *    silc_timer_synchronize(&timer);
  *    silc_timer_start(&timer);
  *    ... time passes ...
