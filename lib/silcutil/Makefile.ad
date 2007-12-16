@@ -73,7 +73,8 @@ libsilcutil_la_SOURCES = \
 	silcthread.c	\
 	silcdll.c	\
 	silcenv.c	\
-	silcbase64.c
+	silcbase64.c	\
+	silcbitops.c
 
 #ifdef SILC_DIST_TOOLKIT
 include_HEADERS =	\
@@ -93,6 +94,7 @@ include_HEADERS =	\
 	silcschedule.h	\
 	silcschedule_i.h \
 	silcthread.h	\
+	silcthread_i.h	\
 	silclist.h	\
 	silcdlist.h	\
 	silcfileutil.h	\
@@ -119,7 +121,8 @@ include_HEADERS =	\
 	silcsnprintf.h	\
 	silcdll.h	\
 	silcenv.h	\
-	silcbase64.h
+	silcbase64.h	\
+	silcbitops.h
 
 SILC_EXTRA_DIST = tests
 #endif SILC_DIST_TOOLKIT
