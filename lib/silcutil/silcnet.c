@@ -94,6 +94,7 @@ int silc_net_accept_connection(int sock)
   int ret = accept(sock, 0, 0);
   if (ret < 0)
     silc_set_errno_posix(errno);
+  return ret;
 }
 
 /* Sets a option for a socket. */
@@ -103,6 +104,7 @@ int silc_net_set_socket_opt(int sock, int level, int option, int on)
   int ret = setsockopt(sock, level, option, (void *)&on, sizeof(on));
   if (ret < 0)
     silc_set_errno_posix(errno);
+  return ret;
 }
 
 /* Get socket options */
@@ -113,6 +115,7 @@ int silc_net_get_socket_opt(int sock, int level, int option,
   int ret = getsockopt(sock, level, option, optval, opt_len);
   if (ret < 0)
     silc_set_errno_posix(errno);
+  return ret;
 }
 
 /* Checks whether IP address sent as argument is valid IPv4 address. */
