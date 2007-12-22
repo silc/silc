@@ -62,6 +62,7 @@ extern const SilcStreamOps silc_socket_stream_ops;
 extern const SilcStreamOps silc_socket_udp_stream_ops;
 
 /* Backwards support */
+#define SilcSocketStreamStatus SilcResult
 #define silc_socket_stream_get_error(stream) silc_errno
 #define SILC_SOCKET_OK SILC_OK
 #define SILC_SOCKET_UNKNOWN_IP SILC_ERR_UNKNOWN_IP
