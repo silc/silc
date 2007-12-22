@@ -805,10 +805,8 @@ void silc_hash_table_foreach(SilcHashTable ht, SilcHashForeach foreach,
   int i;
   SilcBool auto_rehash;
 
-  if (!foreach) {
-    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
-    return FALSE;
-  }
+  if (!foreach)
+    return;
 
   auto_rehash = ht->auto_rehash;
   ht->auto_rehash = FALSE;
