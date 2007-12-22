@@ -12,7 +12,7 @@ int main(int argc, char **argv)
     silc_log_debug(TRUE);
     silc_log_quick(TRUE);
     silc_log_debug_hexdump(TRUE);
-    silc_log_set_debug_string("*dll*");
+    silc_log_set_debug_string("*dll*,*errno*");
   }
 
   SILC_LOG_DEBUG(("Load shared object /lib/libc.so.6"));

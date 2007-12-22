@@ -25,7 +25,7 @@
 
 /* Callback called after connected to remote host */
 
-static void silc_client_connect_callback(SilcNetStatus status,
+static void silc_client_connect_callback(SilcResult status,
 					 SilcStream stream, void *context)
 {
   SilcFSMThread fsm = context;
@@ -35,33 +35,33 @@ static void silc_client_connect_callback(SilcNetStatus status,
   conn->internal->op = NULL;
   if (conn->internal->verbose) {
     switch (status) {
-    case SILC_NET_OK:
+    case SILC_OK:
       break;
-    case SILC_NET_UNKNOWN_IP:
+    case SILC_ERR_UNKNOWN_IP:
       client->internal->ops->say(
 		   client, conn, SILC_CLIENT_MESSAGE_ERROR,
 		   "Could not connect to host %s: unknown IP address",
 		   conn->remote_host);
       break;
-    case SILC_NET_UNKNOWN_HOST:
+    case SILC_ERR_UNKNOWN_HOST:
       client->internal->ops->say(
 		   client, conn, SILC_CLIENT_MESSAGE_ERROR,
 		   "Could not connect to host %s: unknown host name",
 		   conn->remote_host);
       break;
-    case SILC_NET_HOST_UNREACHABLE:
+    case SILC_ERR_UNREACHABLE:
       client->internal->ops->say(
 		   client, conn, SILC_CLIENT_MESSAGE_ERROR,
 		   "Could not connect to host %s: network unreachable",
 		   conn->remote_host);
       break;
-    case SILC_NET_CONNECTION_REFUSED:
+    case SILC_ERR_REFUSED:
       client->internal->ops->say(
 		   client, conn, SILC_CLIENT_MESSAGE_ERROR,
 		   "Could not connect to host %s: connection refused",
 		   conn->remote_host);
       break;
-    case SILC_NET_CONNECTION_TIMEOUT:
+    case SILC_ERR_TIMEOUT:
       client->internal->ops->say(
 		   client, conn, SILC_CLIENT_MESSAGE_ERROR,
 		   "Could not connect to host %s: connection timeout",
@@ -76,7 +76,7 @@ static void silc_client_connect_callback(SilcNetStatus status,
     }
   }
 
-  if (status != SILC_NET_OK) {
+  if (status != SILC_OK) {
     /* Notify application of failure */
     SILC_LOG_DEBUG(("Connecting failed"));
     conn->internal->status = SILC_CLIENT_CONN_ERROR;
@@ -414,8 +414,8 @@ SILC_FSM_STATE(silc_client_st_connect)
 				  conn->remote_host, conn->remote_port,
 				  conn->internal->schedule);
 
-    SILC_FSM_CALL(silc_client_connect_callback(stream ? SILC_NET_OK :
-					       SILC_NET_HOST_UNREACHABLE,
+    SILC_FSM_CALL(silc_client_connect_callback(stream ? SILC_OK :
+					       SILC_ERR_UNREACHABLE,
 					       stream, fsm));
   } else {
     /* Connect (TCP) */

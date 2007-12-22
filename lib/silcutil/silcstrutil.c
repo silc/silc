@@ -124,10 +124,10 @@ char **silc_string_split(const char *string, char ch, int *ret_count)
   char **splitted = NULL, sep[1], *item, *cp;
   int i = 0, len;
 
-  if (!string)
+  if (!string || !ret_count) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return NULL;
-  if (!ret_count)
-    return NULL;
+  }
 
   splitted = silc_calloc(1, sizeof(*splitted));
   if (!splitted)
@@ -174,8 +174,10 @@ char *silc_string_regexify(const char *string)
   int i, len, count;
   char *regex;
 
-  if (!string)
+  if (!string) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return NULL;
+  }
 
   len = strlen(string);
   count = 4;
@@ -224,8 +226,10 @@ char *silc_string_regex_combine(const char *string1, const char *string2)
   char *tmp;
   int len1, len2;
 
-  if (!string1 || !string2)
+  if (!string1 || !string2) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return NULL;
+  }
 
   len1 = strlen(string1);
   len2 = strlen(string2);
@@ -245,8 +249,10 @@ int silc_string_regex_match(const char *regex, const char *string)
   regex_t preg;
   int ret = FALSE;
 
-  if (regcomp(&preg, regex, REG_NOSUB | REG_EXTENDED) != 0)
+  if (regcomp(&preg, regex, REG_NOSUB | REG_EXTENDED) != 0) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return FALSE;
+  }
 
   if (regexec(&preg, string, 0, NULL, 0) == 0)
     ret = TRUE;
@@ -264,8 +270,10 @@ int silc_string_match(const char *string1, const char *string2)
   char *s1;
   int ret = FALSE;
 
-  if (!string1 || !string2)
+  if (!string1 || !string2) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return ret;
+  }
 
   s1 = silc_string_regexify(string1);
   ret = silc_string_regex_match(s1, string2);

@@ -68,17 +68,17 @@ extern "C" {
 
 /* Deliver new stream to upper layer */
 
-static void silc_net_accept_stream(SilcSocketStreamStatus status,
+static void silc_net_accept_stream(SilcResult status,
 				   SilcStream stream, void *context)
 {
   SilcNetListener listener = (SilcNetListener)context;
 
   /* In case of error, the socket has been destroyed already via
      silc_stream_destroy. */
-  if (status != SILC_SOCKET_OK)
+  if (status != SILC_OK)
     return;
 
-  listener->callback(SILC_NET_OK, stream, listener->context);
+  listener->callback(SILC_OK, stream, listener->context);
 }
 
 } /* extern "C" */
@@ -186,7 +186,7 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
 
   listener = (SilcNetListener)silc_calloc(1, sizeof(*listener));
   if (!listener) {
-    callback(SILC_NET_NO_MEMORY, NULL, context);
+    callback(SILC_ERR_OUT_OF_MEMORY, NULL, context);
     return NULL;
   }
   listener->schedule = schedule;
@@ -199,13 +199,13 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     listener->socks = (SilcSocket *)silc_calloc(local_ip_count,
 					        sizeof(*listener->socks));
     if (!listener->socks) {
-      callback(SILC_NET_NO_MEMORY, NULL, context);
+      callback(SILC_ERR_OUT_OF_MEMORY, NULL, context);
       return NULL;
     }
   } else {
     listener->socks = (SilcSocket *)silc_calloc(1, sizeof(*listener->socks));
     if (!listener->socks) {
-      callback(SILC_NET_NO_MEMORY, NULL, context);
+      callback(SILC_ERR_OUT_OF_MEMORY, NULL, context);
       return NULL;
     }
 
@@ -277,7 +277,7 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
   if (l)
     delete l;
   if (callback)
-    callback(SILC_NET_ERROR, NULL, context);
+    callback(SILC_ERR, NULL, context);
   if (listener)
     silc_net_close_listener(listener);
   return NULL;
@@ -306,7 +306,7 @@ silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
 
   listener = (SilcNetListener)silc_calloc(1, sizeof(*listener));
   if (!listener) {
-    callback(SILC_NET_NO_MEMORY, NULL, context);
+    callback(SILC_ERR_OUT_OF_MEMORY, NULL, context);
     return NULL;
   }
   listener->schedule = schedule;
@@ -319,13 +319,13 @@ silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
     listener->socks = (SilcSocket *)silc_calloc(port_count,
 					        sizeof(*listener->socks));
     if (!listener->socks) {
-      callback(SILC_NET_NO_MEMORY, NULL, context);
+      callback(SILC_ERR_OUT_OF_MEMORY, NULL, context);
       return NULL;
     }
   } else {
     listener->socks = (SilcSocket *)silc_calloc(1, sizeof(*listener->socks));
     if (!listener->socks) {
-      callback(SILC_NET_NO_MEMORY, NULL, context);
+      callback(SILC_ERR_OUT_OF_MEMORY, NULL, context);
       return NULL;
     }
 
@@ -424,7 +424,7 @@ silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
   if (l)
     delete l;
   if (callback)
-    callback(SILC_NET_ERROR, NULL, context);
+    callback(SILC_ERR, NULL, context);
   if (listener)
     silc_net_close_listener(listener);
   return NULL;
@@ -458,8 +458,8 @@ void silc_net_close_listener(SilcNetListener listener)
 
 /**************************** TCP/IP connecting *****************************/
 
-static void silc_net_connect_stream(SilcSocketStreamStatus status,
-	    SilcStream stream, void *context);
+static void silc_net_connect_stream(SilcResult status,
+				    SilcStream stream, void *context);
 
 } /* extern "C" */
 
@@ -497,7 +497,7 @@ public:
 
     if (iStatus != KErrNone) {
       if (callback)
-	callback(SILC_NET_ERROR, NULL, context);
+	callback(SILC_ERR, NULL, context);
       sock->CancelConnect();
       delete sock;
       ss->Close();
@@ -557,28 +557,16 @@ extern "C" {
 
 /* TCP stream creation callback */
 
-static void silc_net_connect_stream(SilcSocketStreamStatus status,
+static void silc_net_connect_stream(SilcResult status,
 				    SilcStream stream, void *context)
 {
   SilcSymbianTCPConnect *conn = (SilcSymbianTCPConnect *)context;
-  SilcNetStatus net_status = SILC_NET_OK;
 
   SILC_LOG_DEBUG(("Socket stream creation status %d", status));
 
-  if (status != SILC_SOCKET_OK) {
-    /* In case of error, the socket has been destroyed already via
-       silc_stream_destroy. */
-    if (status == SILC_SOCKET_UNKNOWN_IP)
-      net_status = SILC_NET_UNKNOWN_IP;
-    else if (status == SILC_SOCKET_UNKNOWN_HOST)
-      net_status = SILC_NET_UNKNOWN_HOST;
-    else
-      net_status = SILC_NET_ERROR;
-  }
-
   /* Call connection callback */
   if (conn->callback)
-    conn->callback(net_status, stream, conn->context);
+    conn->callback(status, stream, conn->context);
   else if (stream)
     silc_stream_destroy(stream);
 
@@ -609,7 +597,7 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
 {
   SilcSymbianTCPConnect *conn;
   TInetAddr local, remote;
-  SilcNetStatus status;
+  SilcResult status;
   TInt ret;
 
   if (!remote_ip_addr || remote_port < 1 || !schedule || !callback)
@@ -620,7 +608,7 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
 
   conn = new SilcSymbianTCPConnect;
   if (!conn) {
-    callback(SILC_NET_NO_MEMORY, NULL, context);
+    callback(SILC_ERR_OUT_OF_MEMORY, NULL, context);
     return NULL;
   }
   conn->schedule = schedule;
@@ -629,21 +617,21 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
   conn->port = remote_port;
   conn->remote = strdup(remote_ip_addr);
   if (!conn->remote) {
-    status = SILC_NET_NO_MEMORY;
+    status = SILC_ERR_OUT_OF_MEMORY;
     goto err;
   }
 
   /* Allocate socket */
   conn->sock = new RSocket;
   if (!conn->sock) {
-    status = SILC_NET_NO_MEMORY;
+    status = SILC_ERR_OUT_OF_MEMORY;
     goto err;
   }
 
   /* Allocate socket server */
   conn->ss = new RSocketServ;
   if (!conn->ss) {
-    status = SILC_NET_NO_MEMORY;
+    status = SILC_ERR_OUT_OF_MEMORY;
     goto err;
   }
 
@@ -651,7 +639,7 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
   ret = conn->ss->Connect();
   if (ret != KErrNone) {
     SILC_LOG_ERROR(("Error connecting to socket server, error %d", ret));
-    status = SILC_NET_ERROR;
+    status = SILC_ERR;
     goto err;
   }
 
@@ -663,7 +651,7 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
   /* Start async operation */
   conn->op = silc_async_alloc(silc_net_connect_abort, NULL, (void *)conn);
   if (!conn->op) {
-    status = SILC_NET_NO_MEMORY;
+    status = SILC_ERR_OUT_OF_MEMORY;
     goto err;
   }
 
@@ -672,7 +660,7 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
 			      sizeof(conn->remote_ip))) {
     SILC_LOG_ERROR(("Network (%s) unreachable: could not resolve the "
 		    "host", conn->remote));
-    status = SILC_NET_HOST_UNREACHABLE;
+    status = SILC_ERR_UNREACHABLE;
     goto err;
   }
 
@@ -680,7 +668,7 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
   ret = conn->sock->Open(*conn->ss, KAfInet, KSockStream, KProtocolInetTcp);
   if (ret != KErrNone) {
     SILC_LOG_ERROR(("Cannot create socket, error %d", ret));
-    status = SILC_NET_ERROR;
+    status = SILC_ERR;
     goto err;
   }
 
@@ -696,7 +684,7 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
   /* Connect to the host */
   if (!silc_net_set_sockaddr(&remote, conn->remote_ip, remote_port)) {
     SILC_LOG_ERROR(("Cannot connect (cannot set address)"));
-    status = SILC_NET_ERROR;
+    status = SILC_ERR;
     goto err;
   }
   conn->Connect(remote);

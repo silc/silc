@@ -34,6 +34,8 @@ int silc_file_open(const char *filename, int flags)
 int silc_file_open_mode(const char *filename, int flags, int mode)
 {
   int fd = open(filename, flags, mode);
+  if (fd < 0)
+    silc_set_errno_posix(errno);
   return fd;
 }
 
@@ -41,21 +43,30 @@ int silc_file_open_mode(const char *filename, int flags, int mode)
 
 int silc_file_read(int fd, unsigned char *buf, SilcUInt32 buf_len)
 {
-  return read(fd, (void *)buf, buf_len);
+  int ret = read(fd, (void *)buf, buf_len);
+  if (ret < 0)
+    silc_set_errno_posix(errno);
+  return ret;
 }
 
 /* Writes `buffer' of length of `len' to file descriptor `fd'. */
 
 int silc_file_write(int fd, const char *buffer, SilcUInt32 len)
 {
-  return write(fd, (const void *)buffer, len);
+  int ret = write(fd, (const void *)buffer, len);
+  if (ret < 0)
+    silc_set_errno_posix(errno);
+  return ret;
 }
 
 /* Closes file descriptor */
 
 int silc_file_close(int fd)
 {
-  return close(fd);
+  int ret = close(fd);
+  if (ret < 0)
+    silc_set_errno_posix(errno);
+  return ret;
 }
 
 /* Writes a buffer to the file. */
@@ -72,12 +83,13 @@ int silc_file_writefile(const char *filename, const char *buffer,
 
   if ((fd = open(filename, flags, 0644)) == -1) {
     SILC_LOG_ERROR(("Cannot open file %s for writing: %s", filename,
-		    strerror(errno)));
+		    silc_errno_string(silc_errno)));
     return -1;
   }
 
   if (silc_file_write(fd, buffer, len) == -1) {
-    SILC_LOG_ERROR(("Cannot write to file %s: %s", filename, strerror(errno)));
+    SILC_LOG_ERROR(("Cannot write to file %s: %s", filename,
+		    silc_errno_string(silc_errno)));
     silc_file_close(fd);
     return -1;
   }
@@ -104,12 +116,13 @@ int silc_file_writefile_mode(const char *filename, const char *buffer,
 
   if ((fd = open(filename, flags, mode)) == -1) {
     SILC_LOG_ERROR(("Cannot open file %s for writing: %s", filename,
-		    strerror(errno)));
+		    silc_errno_string(silc_errno)));
     return -1;
   }
 
   if ((silc_file_write(fd, buffer, len)) == -1) {
-    SILC_LOG_ERROR(("Cannot write to file %s: %s", filename, strerror(errno)));
+    SILC_LOG_ERROR(("Cannot write to file %s: %s", filename,
+		    silc_errno_string(silc_errno)));
     silc_file_close(fd);
     return -1;
   }
@@ -133,24 +146,21 @@ char *silc_file_readfile(const char *filename, SilcUInt32 *return_len,
 
   fd = silc_file_open(filename, O_RDONLY);
   if (fd < 0) {
-    if (errno == ENOENT)
+    if (silc_errno == SILC_ERR_NO_SUCH_FILE)
       return NULL;
-    SILC_LOG_ERROR(("Cannot open file %s: %s", filename, strerror(errno)));
+    SILC_LOG_ERROR(("Cannot open file %s: %s", filename,
+		    silc_errno_string(silc_errno)));
     return NULL;
   }
 
   filelen = lseek(fd, (off_t)0L, SEEK_END);
   if (filelen < 0) {
+    silc_set_errno_posix(errno);
     silc_file_close(fd);
     return NULL;
   }
   if (lseek(fd, (off_t)0L, SEEK_SET) < 0) {
-    silc_file_close(fd);
-    return NULL;
-  }
-
-  if (filelen < 0) {
-    SILC_LOG_ERROR(("Cannot open file %s: %s", filename, strerror(errno)));
+    silc_set_errno_posix(errno);
     silc_file_close(fd);
     return NULL;
   }
@@ -161,7 +171,7 @@ char *silc_file_readfile(const char *filename, SilcUInt32 *return_len,
     memset(buffer, 0, sizeof(buffer));
     silc_file_close(fd);
     SILC_LOG_ERROR(("Cannot read from file %s: %s", filename,
-                    strerror(errno)));
+		    silc_errno_string(silc_errno)));
     return NULL;
   }
 
@@ -190,8 +200,10 @@ SilcUInt64 silc_file_size(const char *filename)
 #ifdef SILC_SYMBIAN
   ret = stat(filename, &stats);
 #endif /* SILC_SYMBIAN */
-  if (ret < 0)
+  if (ret < 0) {
+    silc_set_errno_posix(errno);
     return 0;
+  }
 
   return (SilcUInt64)stats.st_size;
 }

@@ -319,10 +319,16 @@ SilcThreadPool silc_thread_pool_alloc(SilcStack stack,
   SilcThreadPool tp;
   int i;
 
-  if (max_threads < min_threads)
+  if (max_threads < min_threads) {
+    silc_set_errno_reason(SILC_ERR_INVALID_ARGUMENT,
+			  "Max threads is smaller than min threads (%d < %d)",
+			  max_threads, min_threads);
     return NULL;
-  if (!max_threads)
+  }
+  if (!max_threads) {
+    silc_set_errno_reason(SILC_ERR_INVALID_ARGUMENT, "Max threads is 0");
     return NULL;
+  }
 
   if (stack)
     stack = silc_stack_alloc(0, stack);
@@ -411,6 +417,7 @@ SilcBool silc_thread_pool_run(SilcThreadPool tp,
 
   if (tp->destroy) {
     silc_mutex_unlock(tp->lock);
+    silc_set_errno(SILC_ERR_NOT_VALID);
     return FALSE;
   }
 
@@ -422,6 +429,7 @@ SilcBool silc_thread_pool_run(SilcThreadPool tp,
       /* Maximum threads reached */
       if (!queuable) {
 	silc_mutex_unlock(tp->lock);
+	silc_set_errno(SILC_ERR_LIMIT);
 	return FALSE;
       }
 

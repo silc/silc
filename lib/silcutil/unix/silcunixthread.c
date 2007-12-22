@@ -61,7 +61,8 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
   c->context = context;
 
   if (pthread_attr_init(&attr)) {
-    SILC_LOG_ERROR(("Thread error: %s", strerror(errno)));
+    silc_set_errno_posix(errno);
+    SILC_LOG_ERROR(("Thread error: %s", silc_errno_string(silc_errno)));
     silc_free(c);
     return NULL;
   }
@@ -69,7 +70,8 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
   if (pthread_attr_setdetachstate(&attr,
 				  waitable ? PTHREAD_CREATE_JOINABLE :
 				  PTHREAD_CREATE_DETACHED)) {
-    SILC_LOG_ERROR(("Thread error: %s", strerror(errno)));
+    silc_set_errno_posix(errno);
+    SILC_LOG_ERROR(("Thread error: %s", silc_errno_string(silc_errno)));
     pthread_attr_destroy(&attr);
     silc_free(c);
     return NULL;
@@ -77,7 +79,8 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 
   ret = pthread_create(&thread, &attr, silc_thread_start, c);
   if (ret) {
-    SILC_LOG_ERROR(("Thread error: %s", strerror(errno)));
+    silc_set_errno_posix(errno);
+    SILC_LOG_ERROR(("Thread error: %s", silc_errno_string(silc_errno)));
     pthread_attr_destroy(&attr);
     silc_free(c);
     return NULL;
@@ -149,7 +152,11 @@ SilcBool silc_mutex_alloc(SilcMutex *mutex)
   *mutex = silc_calloc(1, sizeof(**mutex));
   if (*mutex == NULL)
     return FALSE;
-  pthread_mutex_init(&(*mutex)->mutex, NULL);
+  if (pthread_mutex_init(&(*mutex)->mutex, NULL)) {
+    silc_set_errno_posix(errno);
+    silc_free(*mutex);
+    return FALSE;
+  }
   (*mutex)->locked = FALSE;
   return TRUE;
 #else
@@ -212,7 +219,11 @@ SilcBool silc_rwlock_alloc(SilcRwLock *rwlock)
   *rwlock = silc_calloc(1, sizeof(**rwlock));
   if (*rwlock == NULL)
     return FALSE;
-  pthread_rwlock_init(&(*rwlock)->rwlock, NULL);
+  if (pthread_rwlock_init(&(*rwlock)->rwlock, NULL)) {
+    silc_set_errno_posix(errno);
+    silc_free(*rwlock);
+    return FALSE;
+  }
   return TRUE;
 #else
   return FALSE;
@@ -270,7 +281,11 @@ SilcBool silc_cond_alloc(SilcCond *cond)
   *cond = silc_calloc(1, sizeof(**cond));
   if (*cond == NULL)
     return FALSE;
-  pthread_cond_init(&(*cond)->cond, NULL);
+  if (pthread_cond_init(&(*cond)->cond, NULL)) {
+    silc_set_errno_posix(errno);
+    silc_free(*cond);
+    return FALSE;
+  }
   return TRUE;
 #else
   return FALSE;
@@ -329,7 +344,7 @@ SilcBool silc_cond_timedwait(SilcCond cond, SilcMutex mutex,
      defined(HAVE_PTHREAD_ONCE))
 
 static pthread_key_t key;
-static pthread_once_t key_once;
+static pthread_once_t key_once = PTHREAD_ONCE_INIT;
 
 static void silc_thread_tls_destructor(void *context)
 {

@@ -44,21 +44,6 @@
  ***/
 int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin);
 
-/****f* silcutil/SilcUtilAPI/silc_check_line
- *
- * SYNOPSIS
- *
- *    int silc_check_line(char *buf);
- *
- * DESCRIPTION
- *
- *    Checks line for illegal characters. Return -1 when illegal character
- *    were found. This is used to check for bad lines when reading data from
- *    for example a configuration file.
- *
- ***/
-int silc_check_line(char *buf);
-
 /****f* silcutil/SilcUtilAPI/silc_to_upper
  *
  * SYNOPSIS

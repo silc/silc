@@ -155,9 +155,10 @@ unsigned char *silc_base64_decode(SilcStack stack,
     }
   }
 
-  switch(char_count) {
+  switch (char_count) {
   case 1:
     silc_sfree(stack, data);
+    silc_set_errno(SILC_ERR_BAD_ENCODING);
     return NULL;
     break;
   case 2:

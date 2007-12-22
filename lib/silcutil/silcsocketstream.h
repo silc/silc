@@ -35,34 +35,11 @@
 #ifndef SILCSOCKETSTREAM_H
 #define SILCSOCKETSTREAM_H
 
-/****d* silcutil/SilcSocketStreamAPI/SilcSocketStreamStatus
- *
- * NAME
- *
- *    typedef enum { ... } SilcStreamStatus;
- *
- * DESCRIPTION
- *
- *    Socket Stream status.  This status is returned into the
- *    SilcSocketStreamCallback function after the socket stream is
- *    created.
- *
- * SOURCE
- */
-typedef enum {
-  SILC_SOCKET_OK,		/* Normal status */
-  SILC_SOCKET_UNKNOWN_IP,	/* Remote does not have IP address */
-  SILC_SOCKET_UNKNOWN_HOST,	/* Remote does not have host name */
-  SILC_SOCKET_NO_MEMORY,	/* System out of memory */
-  SILC_SOCKET_ERROR,		/* Unknown error */
-} SilcSocketStreamStatus;
-/***/
-
 /****f* silcutil/SilcSocketStreamAPI/SilcSocketStreamCallback
  *
  * SYNOPSIS
  *
- *    typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
+ *    typedef void (*SilcSocketStreamCallback)(SilcResult status,
  *                                             SilcStream stream,
  *                                             void *context);
  *
@@ -82,7 +59,7 @@ typedef enum {
  *    non-blocking mode.
  *
  ***/
-typedef void (*SilcSocketStreamCallback)(SilcSocketStreamStatus status,
+typedef void (*SilcSocketStreamCallback)(SilcResult status,
 					 SilcStream stream, void *context);
 
 /****f* silcutil/SilcSocketStreamAPI/silc_socket_tcp_stream_create
@@ -230,20 +207,6 @@ SilcBool silc_socket_stream_get_info(SilcStream stream,
 SilcBool silc_socket_stream_set_info(SilcStream stream,
 				     const char *hostname,
 				     const char *ip, SilcUInt16 port);
-
-/****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_get_error
- *
- * SYNOPSIS
- *
- *    int silc_socket_stream_get_error(SilcStream stream);
- *
- * DESCRIPTION
- *
- *    If error occurred during socket stream operations, this function
- *    can be used to retrieve the error number that occurred.
- *
- ***/
-int silc_socket_stream_get_error(SilcStream stream);
 
 /****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_set_qos
  *

@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     silc_log_debug(TRUE);
     silc_log_debug_hexdump(TRUE);
     silc_log_quick(TRUE);
-    silc_log_set_debug_string("*stringprep*,*utf8*");
+    silc_log_set_debug_string("*stringprep*,*utf8*,*errno*");
   }
 
   SILC_LOG_DEBUG(("--- Identifier string tests"));

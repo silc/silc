@@ -10,7 +10,7 @@ int main(int argc, char **argv)
     silc_log_debug(TRUE);
     silc_log_quick(TRUE);
     silc_log_debug_hexdump(TRUE);
-    silc_log_set_debug_string("*env*");
+    silc_log_set_debug_string("*env*,*errno*");
   }
 
   silc_setenv("FOO", "BAR");

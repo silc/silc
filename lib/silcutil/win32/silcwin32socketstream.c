@@ -68,6 +68,7 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
 				silc_schedule_get_fd_events(sock->schedule,
 							    sock->sock) |
 				SILC_TASK_READ, FALSE);
+    silc_set_errno(SILC_ERR_WOULD_BLOCK);
     return -1;
   }
 
@@ -75,6 +76,7 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
   len = recv(fd, buf, buf_len, 0);
   if (len == SOCKET_ERROR) {
     len = WSAGetLastError();
+    silc_set_errno_posix(ret);
     if (len == WSAEWOULDBLOCK || len == WSAEINTR) {
       SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
       silc_schedule_set_listen_fd(sock->schedule, sock->sock,
@@ -85,7 +87,6 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
     }
     SILC_LOG_DEBUG(("Cannot read from socket: %d", sock->sock));
     silc_schedule_unset_listen_fd(sock->schedule, sock->sock);
-    sock->sock_error = len;
     return -2;
   }
 
@@ -111,6 +112,7 @@ int silc_socket_stream_write(SilcStream stream, const unsigned char *data,
   ret = send(fd, data, data_len,  0);
   if (ret == SOCKET_ERROR) {
     ret = WSAGetLastError();
+    silc_set_errno_posix(ret);
     if (ret == WSAEWOULDBLOCK) {
       SILC_LOG_DEBUG(("Could not write immediately, will do it later"));
       silc_schedule_set_listen_fd(sock->schedule, sock->sock,
@@ -119,7 +121,6 @@ int silc_socket_stream_write(SilcStream stream, const unsigned char *data,
     }
     SILC_LOG_DEBUG(("Cannot write to socket"));
     silc_schedule_unset_listen_fd(sock->schedule, sock->sock);
-    sock->sock_error = ret;
     return -2;
   }
 

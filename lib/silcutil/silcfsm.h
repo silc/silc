@@ -117,8 +117,8 @@ typedef struct SilcFSMObject SilcFSMThreadStruct;
  *
  * DESCRIPTION
  *
- *    Moves to next state synchronously.  This type is used is returned
- *    from state functions to immediately move to next state.
+ *    Moves to next state synchronously.  This type is returned from state
+ *    functions to immediately move to next state.
  *
  * EXAMPLE
  *

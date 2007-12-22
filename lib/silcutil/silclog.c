@@ -424,7 +424,7 @@ void silc_log_set_debug_string(const char *debug_string)
   int len;
   if ((strchr(debug_string, '(') && strchr(debug_string, ')')) ||
       strchr(debug_string, '$'))
-    string = strdup(debug_string);
+    string = silc_strdup(debug_string);
   else
     string = silc_string_regexify(debug_string);
   len = strlen(string);

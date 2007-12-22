@@ -43,7 +43,7 @@ SilcSchedule silc_socket_stream_get_schedule(SilcStream stream);
 /* Internal async host lookup context. */
 typedef struct {
   SilcSocketStream stream;
-  SilcSocketStreamStatus status;
+  SilcResult status;
   SilcSocketStreamCallback callback;
   SilcAsyncOperation op;
   void *context;
@@ -71,7 +71,7 @@ SILC_TASK_CALLBACK(silc_socket_host_lookup_finish)
     return;
   }
 
-  if (lookup->status != SILC_SOCKET_OK) {
+  if (lookup->status != SILC_OK) {
     SILC_LOG_DEBUG(("Socket stream lookup failed"));
     stream->schedule = NULL;
     silc_socket_stream_destroy(stream);
@@ -99,24 +99,24 @@ static void *silc_socket_host_lookup_start(void *context)
 
   silc_net_check_host_by_sock(stream->sock, &stream->hostname, &stream->ip);
   if (!stream->ip) {
-    lookup->status = SILC_SOCKET_UNKNOWN_IP;
+    lookup->status = SILC_ERR_UNKNOWN_IP;
     goto out;
   }
 
   if (!stream->hostname && lookup->require_fqdn) {
-    lookup->status = SILC_SOCKET_UNKNOWN_HOST;
+    lookup->status = SILC_ERR_UNKNOWN_HOST;
     goto out;
   }
 
   if (!stream->hostname) {
-    stream->hostname = strdup(stream->ip);
+    stream->hostname = silc_strdup(stream->ip);
     if (!stream->hostname) {
-      lookup->status = SILC_SOCKET_NO_MEMORY;
+      lookup->status = SILC_ERR_OUT_OF_MEMORY;
       goto out;
     }
   }
 
-  lookup->status = SILC_SOCKET_OK;
+  lookup->status = SILC_OK;
 
  out:
   silc_schedule_task_add_timeout(schedule, silc_socket_host_lookup_finish,
@@ -155,14 +155,14 @@ silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
   if (!sock || !schedule) {
     SILC_LOG_ERROR(("Missing arguments to silc_socket_tcp_stream_create"));
     if (callback)
-      callback(SILC_SOCKET_ERROR, NULL, context);
+      callback(SILC_ERR_INVALID_ARGUMENT, NULL, context);
     return NULL;
   }
 
   stream = silc_calloc(1, sizeof(*stream));
   if (!stream) {
     if (callback)
-      callback(SILC_SOCKET_NO_MEMORY, NULL, context);
+      callback(silc_errno, NULL, context);
     return NULL;
   }
 
@@ -177,7 +177,7 @@ silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
   if (!l) {
     silc_free(stream);
     if (callback)
-      callback(SILC_SOCKET_NO_MEMORY, NULL, context);
+      callback(silc_errno, NULL, context);
     return NULL;
   }
 
@@ -193,7 +193,7 @@ silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
       silc_free(stream);
       silc_free(l);
       if (callback)
-	callback(SILC_SOCKET_ERROR, NULL, context);
+	callback(silc_errno, NULL, context);
       return NULL;
     }
 
@@ -203,7 +203,7 @@ silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
     return l->op;
   } else {
     /* No lookup */
-    l->status = SILC_SOCKET_OK;
+    l->status = SILC_OK;
     silc_socket_host_lookup_finish(schedule,
 				   silc_schedule_get_context(schedule),
 				   0, 0, l);
@@ -296,17 +296,17 @@ SilcBool silc_socket_stream_set_info(SilcStream stream,
 
   if (hostname) {
     silc_free(socket_stream->hostname);
-    socket_stream->hostname = strdup(hostname);
+    socket_stream->hostname = silc_strdup(hostname);
     if (!socket_stream->hostname)
       return FALSE;
   }
   if (ip) {
     silc_free(socket_stream->ip);
-    socket_stream->ip = strdup(ip);
+    socket_stream->ip = silc_strdup(ip);
     if (!socket_stream->ip)
       return FALSE;
     if (!socket_stream->hostname) {
-      socket_stream->hostname = strdup(ip);
+      socket_stream->hostname = silc_strdup(ip);
       if (!socket_stream->hostname)
 	return FALSE;
     }
@@ -315,19 +315,6 @@ SilcBool silc_socket_stream_set_info(SilcStream stream,
     socket_stream->port = port;
 
   return TRUE;
-}
-
-/* Return socket errno */
-
-int silc_socket_stream_get_error(SilcStream stream)
-{
-  SilcSocketStream socket_stream = stream;
-
-  if (!SILC_IS_SOCKET_STREAM(socket_stream) &&
-      !SILC_IS_SOCKET_STREAM_UDP(socket_stream))
-    return 0;
-
-  return socket_stream->sock_error;
 }
 
 /* Set QoS for socket stream */

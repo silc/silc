@@ -317,7 +317,7 @@ typedef SilcBool (*SilcLogHexdumpCb)(char *file, char *function, int line,
  *
  * DESCRIPTION
  *
- *    Verification macro that prints error message to stderr and calls 
+ *    Verification macro that prints error message to stderr and calls
  *    abort() if the `expression' is false (ie. compares equal to zero)
  *    on debug builds (SILC_DEBUG defined), and prints error message to
  *    stderr on release builds (SILC_DEBUG undefined) but does not abort().
@@ -330,8 +330,12 @@ typedef SilcBool (*SilcLogHexdumpCb)(char *file, char *function, int line,
 #define SILC_VERIFY(expr) assert((expr));
 #else
 #define SILC_VERIFY(expr)						\
-  if (!(expr))								\
-    SILC_LOG_ERROR(("SILC_VERIFY %s:%d", __FUNCTION__, __LINE__));
+  if (silc_unlikely(!(expr))) {						\
+    SILC_LOG_ERROR(("SILC_VERIFY %s:%s:%d",				\
+		    __FILE__, __FUNCTION__, __LINE__));			\
+    silc_set_errno_reason_nofail(SILC_ERR_ASSERT, "SILC_VERIFY %s:%s:%d", \
+				 __FILE__, __FUNCTION__, __LINE__);	\
+  }
 #endif /* SILC_DEBUG */
 /***/
 

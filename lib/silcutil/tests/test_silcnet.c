@@ -10,9 +10,9 @@ typedef struct {
   SilcFSMThreadStruct thread;
   SilcNetListener server;
   SilcStream client_stream;
-  SilcNetStatus client_status;
+  SilcResult client_status;
   SilcStream server_stream;
-  SilcNetStatus server_status;
+  SilcResult server_status;
   SilcBool success;
 } *Foo;
 
@@ -23,7 +23,7 @@ SILC_FSM_STATE(test_st_finish);
 SILC_FSM_STATE(test_st_connect);
 SILC_FSM_STATE(test_st_connected);
 
-static void test_accept_connection(SilcNetStatus status, SilcStream stream,
+static void test_accept_connection(SilcResult status, SilcStream stream,
 				   void *context)
 {
   Foo f = context;
@@ -33,7 +33,7 @@ static void test_accept_connection(SilcNetStatus status, SilcStream stream,
   SILC_FSM_EVENT_SIGNAL(&f->sema);
 }
 
-static void test_connected(SilcNetStatus status, SilcStream stream,
+static void test_connected(SilcResult status, SilcStream stream,
 			   void *context)
 {
   Foo f = context;
@@ -64,7 +64,7 @@ SILC_FSM_STATE(test_st_connected)
 
   SILC_LOG_DEBUG(("test_st_connected"));
 
-  if (f->server_status != SILC_NET_OK) {
+  if (f->server_status != SILC_OK) {
     SILC_LOG_DEBUG(("Creating connection failed"));
     return SILC_FSM_FINISH;
   }
@@ -144,7 +144,7 @@ SILC_FSM_STATE(test_st_second)
 
   SILC_FSM_EVENT_WAIT(&f->sema);
 
-  if (f->client_status != SILC_NET_OK) {
+  if (f->client_status != SILC_OK) {
     /** Accepting new connection failed */
     SILC_LOG_DEBUG(("Accepting failed %d", f->client_status));
     silc_fsm_next(fsm, test_st_finish);
@@ -199,7 +199,7 @@ int main(int argc, char **argv)
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_log_debug(TRUE);
     silc_log_debug_hexdump(TRUE);
-    silc_log_set_debug_string("*net*,*stream*");
+    silc_log_set_debug_string("*net*,*stream*,*errno*");
   }
 
   SILC_LOG_DEBUG(("Allocating scheduler"));

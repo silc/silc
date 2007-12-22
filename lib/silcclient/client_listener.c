@@ -219,7 +219,7 @@ silc_client_listener_new_connection(SilcClientListener listener,
 /* TCP network listener callback.  Accepts new key agreement connection.
    Responder function. */
 
-static void silc_client_listener_tcp_accept(SilcNetStatus status,
+static void silc_client_listener_tcp_accept(SilcResult status,
 					    SilcStream stream,
 					    void *context)
 {

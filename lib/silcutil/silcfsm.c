@@ -58,8 +58,10 @@ SilcBool silc_fsm_init(SilcFSM fsm,
 		       void *destructor_context,
 		       SilcSchedule schedule)
 {
-  if (!schedule)
+  if (!schedule) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return FALSE;
+  }
 
   fsm->fsm_context = fsm_context;
   fsm->state_context = NULL;
@@ -481,7 +483,7 @@ SILC_TASK_CALLBACK(silc_fsm_finish_fsm)
 
   } else {
     /* Machine must not have active threads */
-    assert(silc_atomic_get_int32(&fsm->u.m.threads) == 0);
+    SILC_VERIFY(silc_atomic_get_int32(&fsm->u.m.threads) == 0);
 
     if (fsm->u.m.lock) {
       silc_mutex_free(fsm->u.m.lock);

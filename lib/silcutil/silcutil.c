@@ -40,13 +40,17 @@ int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin)
 
   i = 0;
   for ( ; start <= srclen; i++, start++) {
-    if (i > destlen)
+    if (i > destlen) {
+      silc_set_errno(SILC_ERR_OVERFLOW);
       return -1;
+    }
 
     dest[i] = src[start];
 
-    if (dest[i] == EOF)
+    if (dest[i] == EOF) {
+      silc_set_errno(SILC_ERR_EOF);
       return EOF;
+    }
 
     if (dest[i] == '\n')
       break;
@@ -56,36 +60,16 @@ int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin)
   return start;
 }
 
-/* Checks line for illegal characters. Return -1 when illegal character
-   were found. This is used to check for bad lines when reading data from
-   for example a configuration file. */
-
-int silc_check_line(char *buf)
-{
-  /* Illegal characters in line */
-  if (strchr(buf, '#')) return -1;
-  if (strchr(buf, '\'')) return -1;
-  if (strchr(buf, '\\')) return -1;
-  if (strchr(buf, '\r')) return -1;
-  if (strchr(buf, '\a')) return -1;
-  if (strchr(buf, '\b')) return -1;
-  if (strchr(buf, '\f')) return -1;
-
-  /* Empty line */
-  if (buf[0] == '\n')
-    return -1;
-
-  return 0;
-}
-
 /* Converts string to capital characters. */
 
 SilcBool silc_to_upper(const char *string, char *dest, SilcUInt32 dest_size)
 {
   int i;
 
-  if (strlen(string) > dest_size)
+  if (strlen(string) > dest_size) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
     return FALSE;
+  }
 
   for (i = 0; i < strlen(string); i++)
     dest[i] = (char)toupper((int)string[i]);
@@ -99,8 +83,10 @@ SilcBool silc_to_lower(const char *string, char *dest, SilcUInt32 dest_size)
 {
   int i;
 
-  if (strlen(string) > dest_size)
+  if (strlen(string) > dest_size) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
     return FALSE;
+  }
 
   for (i = 0; i < strlen(string); i++)
     dest[i] = (char)tolower((int)string[i]);
@@ -116,14 +102,18 @@ int silc_parse_userfqdn(const char *string,
 {
   SilcUInt32 tlen;
 
-  if (!user && !fqdn)
+  if (!user && !fqdn) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return 0;
+  }
 
   memset(user, 0, user_size);
   memset(fqdn, 0, fqdn_size);
 
-  if (!string)
+  if (!string) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return 0;
+  }
 
   if (string[0] == '@') {
     if (user)
@@ -239,7 +229,7 @@ char *silc_format(char *fmt, ...)
   silc_vsnprintf(buf, sizeof(buf) - 1, fmt, args);
   va_end(args);
 
-  return strdup(buf);
+  return silc_strdup(buf);
 }
 
 /* Basic has function to hash strings. May be used with the SilcHashTable.
@@ -460,7 +450,7 @@ char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len)
   if ((i + 1) % 10 == 0)
     cp[-1] = 0;
 
-  return strdup(fingerprint);
+  return silc_strdup(fingerprint);
 }
 
 /* Return TRUE if the `data' is ASCII string. */
@@ -493,7 +483,7 @@ char *silc_get_input(const char *prompt, SilcBool echo_off)
 
     fd = open("/dev/tty", O_RDONLY);
     if (fd < 0) {
-      fprintf(stderr, "silc: %s\n", strerror(errno));
+      silc_set_errno_posix(errno);
       return NULL;
     }
 
@@ -515,13 +505,14 @@ char *silc_get_input(const char *prompt, SilcBool echo_off)
     fflush(stdout);
 
     if ((read(fd, input, sizeof(input))) < 0) {
-      fprintf(stderr, "silc: %s\n", strerror(errno));
+      silc_set_errno_posix(errno);
       tcsetattr(fd, TCSANOW, &to_old);
       return NULL;
     }
 
     if (strlen(input) <= 1) {
       tcsetattr(fd, TCSANOW, &to_old);
+      silc_set_errno(SILC_ERR_EOF);
       return NULL;
     }
 
@@ -539,7 +530,7 @@ char *silc_get_input(const char *prompt, SilcBool echo_off)
   } else {
     fd = open("/dev/tty", O_RDONLY);
     if (fd < 0) {
-      fprintf(stderr, "silc: %s\n", strerror(errno));
+      silc_set_errno_posix(errno);
       return NULL;
     }
 
@@ -549,17 +540,19 @@ char *silc_get_input(const char *prompt, SilcBool echo_off)
     fflush(stdout);
 
     if ((read(fd, input, sizeof(input))) < 0) {
-      fprintf(stderr, "silc: %s\n", strerror(errno));
+      silc_set_errno_posix(errno);
       return NULL;
     }
 
-    if (strlen(input) <= 1)
+    if (strlen(input) <= 1) {
+      silc_set_errno(SILC_ERR_EOF);
       return NULL;
+    }
 
     if (strchr(input, '\n'))
       *strchr(input, '\n') = '\0';
 
-    return strdup(input);
+    return silc_strdup(input);
   }
 #else
   return NULL;
@@ -640,8 +633,10 @@ SilcBool silc_hex2data(const char *hex, unsigned char *data,
   unsigned char l, h;
   int i;
 
-  if (data_size < strlen(hex) / 2)
+  if (data_size < strlen(hex) / 2) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
     return FALSE;
+  }
 
   for (i = 0; i < strlen(hex) / 2; i++) {
     h = *cp++;
@@ -670,8 +665,10 @@ SilcBool silc_data2hex(const unsigned char *data, SilcUInt32 data_len,
   char *cp = hex;
   int i;
 
-  if (hex_size - 1 < data_len * 2)
+  if (hex_size - 1 < data_len * 2) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
     return FALSE;
+  }
 
   memset(hex, 0, hex_size);
 

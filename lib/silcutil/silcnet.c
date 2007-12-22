@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -87,38 +87,22 @@ char **silc_net_listener_get_hostname(SilcNetListener listener,
   return hs;
 }
 
-static const char *silc_net_error[] = {
-  "Ok",
-  "Unknown IP address",
-  "Unknown hostname",
-  "Destination unreachable",
-  "Connection refused",
-  "Connection timeout",
-  "System out of memory",
-  "Unexpected error",
-};
-
-/* Return error as string */
-
-const char *silc_net_get_error_string(SilcNetStatus error)
-{
-  if (error < SILC_NET_OK || error > SILC_NET_ERROR)
-    return "";
-  return silc_net_error[error];
-}
-
 /* Accepts a connection from a particular socket */
 
 int silc_net_accept_connection(int sock)
 {
-  return accept(sock, 0, 0);
+  int ret = accept(sock, 0, 0);
+  if (ret < 0)
+    silc_set_errno_posix(errno);
 }
 
 /* Sets a option for a socket. */
 
 int silc_net_set_socket_opt(int sock, int level, int option, int on)
 {
-  return setsockopt(sock, level, option, (void *)&on, sizeof(on));
+  int ret = setsockopt(sock, level, option, (void *)&on, sizeof(on));
+  if (ret < 0)
+    silc_set_errno_posix(errno);
 }
 
 /* Get socket options */
@@ -126,7 +110,9 @@ int silc_net_set_socket_opt(int sock, int level, int option, int on)
 int silc_net_get_socket_opt(int sock, int level, int option,
 			    void *optval, int *opt_len)
 {
-  return getsockopt(sock, level, option, optval, opt_len);
+  int ret = getsockopt(sock, level, option, optval, opt_len);
+  if (ret < 0)
+    silc_set_errno_posix(errno);
 }
 
 /* Checks whether IP address sent as argument is valid IPv4 address. */
@@ -204,7 +190,7 @@ static void *silc_net_gethostbyname_thread(void *context)
   char tmp[64];
 
   if (silc_net_gethostbyname(r->input, r->prefer_ipv6, tmp, sizeof(tmp)))
-    r->result = strdup(tmp);
+    r->result = silc_strdup(tmp);
 
   silc_schedule_task_add(schedule, 0, silc_net_resolve_completion, r, 0, 1,
 			 SILC_TASK_TIMEOUT);
@@ -221,7 +207,7 @@ static void *silc_net_gethostbyaddr_thread(void *context)
   char tmp[256];
 
   if (silc_net_gethostbyaddr(r->input, tmp, sizeof(tmp)))
-    r->result = strdup(tmp);
+    r->result = silc_strdup(tmp);
 
   silc_schedule_task_add(schedule, 0, silc_net_resolve_completion, r, 0, 1,
 			 SILC_TASK_TIMEOUT);
@@ -315,7 +301,7 @@ void silc_net_gethostbyname_async(const char *name,
   r->context = context;
   r->prefer_ipv6 = prefer_ipv6;
   r->schedule = schedule;
-  r->input = strdup(name);
+  r->input = silc_strdup(name);
 
   silc_thread_create(silc_net_gethostbyname_thread, r, FALSE);
 }
@@ -370,7 +356,7 @@ void silc_net_gethostbyaddr_async(const char *addr,
   r->completion = completion;
   r->context = context;
   r->schedule = schedule;
-  r->input = strdup(addr);
+  r->input = silc_strdup(addr);
 
   silc_thread_create(silc_net_gethostbyaddr_thread, r, FALSE);
 }
@@ -610,10 +596,10 @@ char *silc_net_localhost(void)
     return NULL;
 
   if (!silc_net_gethostbyname(hostname, TRUE, ip_addr, sizeof(ip_addr)))
-    return strdup(hostname);
+    return silc_strdup(hostname);
 
   silc_net_gethostbyaddr(ip_addr, hostname, sizeof(hostname));
-  return strdup(hostname);
+  return silc_strdup(hostname);
 }
 
 /* Returns local IP address */
@@ -628,5 +614,5 @@ char *silc_net_localip(void)
   if (!silc_net_gethostbyname(hostname, TRUE, ip_addr, sizeof(ip_addr)))
     return NULL;
 
-  return strdup(ip_addr);
+  return silc_strdup(ip_addr);
 }

@@ -48,36 +48,11 @@
  ***/
 typedef struct SilcNetListenerStruct *SilcNetListener;
 
-/****d* silcutil/SilcNetAPI/SilcNetStatus
- *
- * NAME
- *
- *    typedef enum { ... } SilcNetStatus;
- *
- * DESCRIPTION
- *
- *    Status to indicate the result of the network operation creation.  This
- *    type is returned in the SilcNetCallback callback function.
- *
- * SOURCE
- */
-typedef enum {
-  SILC_NET_OK,			       /* Everything Ok */
-  SILC_NET_UNKNOWN_IP,		       /* Unknown IP address */
-  SILC_NET_UNKNOWN_HOST,	       /* Unknown hostname */
-  SILC_NET_HOST_UNREACHABLE,	       /* Destination unreachable */
-  SILC_NET_CONNECTION_REFUSED,	       /* Connection refused */
-  SILC_NET_CONNECTION_TIMEOUT,	       /* Connection timedout */
-  SILC_NET_NO_MEMORY,		       /* System out of memory */
-  SILC_NET_ERROR,		       /* Unknown error */
-} SilcNetStatus;
-/***/
-
 /****f* silcutil/SilcNetAPI/SilcNetCallback
  *
  * SYNOPSIS
  *
- *    typedef void (*SilcNetCallback)(SilcNetStatus status,
+ *    typedef void (*SilcNetCallback)(SilcResult status,
  *                                    SilcStream stream, void *context);
  *
  * DESCRIPTION
@@ -95,7 +70,7 @@ typedef enum {
  *    the `stream'.
  *
  ***/
-typedef void (*SilcNetCallback)(SilcNetStatus status,
+typedef void (*SilcNetCallback)(SilcResult status,
 				SilcStream stream, void *context);
 
 /****f* silcutil/SilcNetAPI/silc_net_tcp_create_listener
@@ -373,19 +348,6 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
 int silc_net_udp_send(SilcStream stream,
 		      const char *remote_ip_addr, int remote_port,
 		      const unsigned char *data, SilcUInt32 data_len);
-
-/****f* silcutil/SilcNetAPI/silc_net_get_error_string
- *
- * SYNOPSIS
- *
- *    const char silc_net_get_error_string(SilcNetStatus error);
- *
- * DESCRIPTION
- *
- *    Return `error' as a string.
- *
- ***/
-const char *silc_net_get_error_string(SilcNetStatus error);
 
 /****f* silcutil/SilcNetAPI/silc_net_close_connection
  *

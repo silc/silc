@@ -533,8 +533,10 @@ unsigned char *silc_buffer_pull(SilcBuffer sb, SilcUInt32 len)
 #ifdef SILC_DIST_INPLACE
   SILC_ASSERT(len <= silc_buffer_len(sb));
 #endif /* SILC_DIST_INPLACE */
-  if (silc_unlikely(len > silc_buffer_len(sb)))
+  if (silc_unlikely(len > silc_buffer_len(sb))) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
     return NULL;
+  }
 
   sb->data += len;
   return old_data;
@@ -579,8 +581,10 @@ unsigned char *silc_buffer_push(SilcBuffer sb, SilcUInt32 len)
 #ifdef SILC_DIST_INPLACE
   SILC_ASSERT((sb->data - len) >= sb->head);
 #endif /* SILC_DIST_INPLACE */
-  if (silc_unlikely((sb->data - len) < sb->head))
+  if (silc_unlikely((sb->data - len) < sb->head)) {
+    silc_set_errno(SILC_ERR_UNDERFLOW);
     return NULL;
+  }
 
   sb->data -= len;
   return old_data;
@@ -624,8 +628,10 @@ unsigned char *silc_buffer_pull_tail(SilcBuffer sb, SilcUInt32 len)
 #ifdef SILC_DIST_INPLACE
   SILC_ASSERT(len <= silc_buffer_taillen(sb));
 #endif /* SILC_DIST_INPLACE */
-  if (silc_unlikely(len > silc_buffer_taillen(sb)))
+  if (silc_unlikely(len > silc_buffer_taillen(sb))) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
     return NULL;
+  }
 
   sb->tail += len;
   return old_tail;
@@ -670,8 +676,10 @@ unsigned char *silc_buffer_push_tail(SilcBuffer sb, SilcUInt32 len)
 #ifdef SILC_DIST_INPLACE
   SILC_ASSERT((sb->tail - len) >= sb->data);
 #endif /* SILC_DIST_INPLACE */
-  if (silc_unlikely((sb->tail - len) < sb->data))
+  if (silc_unlikely((sb->tail - len) < sb->data)) {
+    silc_set_errno(SILC_ERR_UNDERFLOW);
     return NULL;
+  }
 
   sb->tail -= len;
   return old_tail;
@@ -712,8 +720,10 @@ unsigned char *silc_buffer_put_head(SilcBuffer sb,
 #ifdef SILC_DIST_INPLACE
   SILC_ASSERT(len <= silc_buffer_headlen(sb));
 #endif /* SILC_DIST_INPLACE */
-  if (silc_unlikely(len > silc_buffer_headlen(sb)))
+  if (silc_unlikely(len > silc_buffer_headlen(sb))) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
     return NULL;
+  }
 
   return (unsigned char *)memcpy(sb->head, data, len);
 }
@@ -753,8 +763,10 @@ unsigned char *silc_buffer_put(SilcBuffer sb,
 #ifdef SILC_DIST_INPLACE
   SILC_ASSERT(len <= silc_buffer_len(sb));
 #endif /* SILC_DIST_INPLACE */
-  if (silc_unlikely(len > silc_buffer_len(sb)))
+  if (silc_unlikely(len > silc_buffer_len(sb))) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
     return NULL;
+  }
 
   return (unsigned char *)memcpy(sb->data, data, len);
 }
@@ -794,8 +806,10 @@ unsigned char *silc_buffer_put_tail(SilcBuffer sb,
 #ifdef SILC_DIST_INPLACE
   SILC_ASSERT(len <= silc_buffer_taillen(sb));
 #endif /* SILC_DIST_INPLACE */
-  if (silc_unlikely(len > silc_buffer_taillen(sb)))
+  if (silc_unlikely(len > silc_buffer_taillen(sb))) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
     return NULL;
+  }
 
   return (unsigned char *)memcpy(sb->tail, data, len);
 }

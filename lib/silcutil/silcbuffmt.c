@@ -32,12 +32,16 @@ do {							\
 } while(0)
 
 /* Check that there is data to be unformatted */
-#define UNFORMAT_HAS_SPACE(b, req)		\
-do {						\
-  if (silc_unlikely(req > silc_buffer_len(b)))	\
-    goto fail;					\
-  if (silc_unlikely((req + 1) <= 0))		\
-    goto fail;					\
+#define UNFORMAT_HAS_SPACE(b, req)		        \
+do {							\
+  if (silc_unlikely(req > silc_buffer_len(b))) {	\
+    silc_set_errno(SILC_ERR_OVERFLOW);			\
+    goto fail;						\
+  }							\
+  if (silc_unlikely((req + 1) <= 0)) {			\
+    silc_set_errno(SILC_ERR_UNDERFLOW);			\
+    goto fail;						\
+  }							\
 } while(0)
 
 
@@ -234,8 +238,10 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap)
 	if (!offst)
 	  break;
 	if (offst > 1) {
-	  if (offst > silc_buffer_len(dst))
+	  if (offst > silc_buffer_len(dst)) {
+	    silc_set_errno(SILC_ERR_OVERFLOW);
 	    goto fail;
+	  }
 	  silc_buffer_pull(dst, offst);
 	  flen += offst;
 	} else {
@@ -253,6 +259,8 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap)
     default:
       SILC_LOG_DEBUG(("Bad buffer formatting type `%d'. Could not "
 		      "format the data.", fmt));
+      silc_set_errno_reason(SILC_ERR_INVALID_ARGUMENT,
+			    "Bad buffer formatting type %d", fmt);
       goto fail;
       break;
     }
@@ -644,6 +652,8 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap)
     default:
       SILC_LOG_DEBUG(("Bad buffer formatting type `%d'. Could not "
 		      "format the data.", fmt));
+      silc_set_errno_reason(SILC_ERR_INVALID_ARGUMENT,
+			    "Bad buffer formatting type %d", fmt);
       goto fail;
       break;
     }

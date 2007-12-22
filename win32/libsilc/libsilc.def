@@ -340,7 +340,6 @@ EXPORTS
 	silc_file_write @ 341 ;
 	silc_file_writefile @ 342 ;
 	silc_file_writefile_mode @ 343 ;
-	silc_check_line @ 344 ;
 	silc_fingerprint @ 345 ;
 	silc_format @ 346 ;
 	silc_get_input @ 347 ;

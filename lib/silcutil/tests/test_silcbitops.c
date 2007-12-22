@@ -12,7 +12,7 @@ int main(int argc, char **argv)
     silc_log_debug(TRUE);
     silc_log_quick(TRUE);
     silc_log_debug_hexdump(TRUE);
-    silc_log_set_debug_string("*bit*");
+    silc_log_set_debug_string("*bit*,*err*");
   }
 
   silc_bit_clear_bitmap(bitmap, size);
@@ -82,7 +82,8 @@ int main(int argc, char **argv)
   SILC_LOG_DEBUG(("Test overflow"));
   if (silc_bit_set(bitmap, size, 1500))
     goto err;
-  SILC_LOG_DEBUG(("Overflow detected"));
+  if (silc_errno == SILC_ERR_OVERFLOW)
+    SILC_LOG_DEBUG(("Overflow detected"));
 
   SILC_LOG_DEBUG(("Find first set bit"));
   bit = silc_bit_ffs(bitmap, size);

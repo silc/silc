@@ -77,6 +77,7 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
   if (!sock->qos) {
     len = read(sock->sock, buf, buf_len);
     if (len < 0) {
+      silc_set_errno_posix(errno);
       if (errno == EAGAIN || errno == EINTR) {
 	SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
 	silc_schedule_set_listen_fd(sock->schedule, sock->sock,
@@ -88,7 +89,6 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
       SILC_LOG_DEBUG(("Cannot read from socket: %d:%s",
 		      sock->sock, strerror(errno)));
       silc_schedule_unset_listen_fd(sock->schedule, sock->sock);
-      sock->sock_error = errno;
       return -2;
     }
 
@@ -121,6 +121,7 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
 	 sock->qos->read_limit_bytes);
   len = read(sock->sock, qosbuf, len);
   if (len < 0) {
+    silc_set_errno_posix(errno);
     if (errno == EAGAIN || errno == EINTR) {
       SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
       silc_schedule_set_listen_fd(sock->schedule, sock->sock,
@@ -134,7 +135,6 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
     silc_schedule_unset_listen_fd(sock->schedule, sock->sock);
     silc_schedule_task_del_by_context(sock->schedule, sock->qos);
     sock->qos->data_len = 0;
-    sock->sock_error = errno;
     return -2;
   }
 
@@ -186,6 +186,7 @@ int silc_socket_stream_write(SilcStream stream, const unsigned char *data,
 
   ret = write(sock->sock, data, data_len);
   if (ret < 0) {
+    silc_set_errno_posix(errno);
     if (errno == EAGAIN || errno == EINTR) {
       SILC_LOG_DEBUG(("Could not write immediately, will do it later"));
       silc_schedule_set_listen_fd(sock->schedule, sock->sock,
@@ -194,7 +195,6 @@ int silc_socket_stream_write(SilcStream stream, const unsigned char *data,
     }
     SILC_LOG_DEBUG(("Cannot write to socket: %s", strerror(errno)));
     silc_schedule_unset_listen_fd(sock->schedule, sock->sock);
-    sock->sock_error = errno;
     return -2;
   }
 
@@ -229,27 +229,6 @@ int silc_socket_udp_stream_write(SilcStream stream, const unsigned char *data,
   /* In connected state use normal writing to socket. */
   return silc_socket_stream_write(stream, data, data_len);
 }
-
-#if 0
-/* Returns human readable socket error message */
-
-SilcBool silc_socket_get_error(SilcStream sock, char *error,
-			       SilcUInt32 error_len)
-{
-  char *err;
-
-  if (!sock->sock_error)
-    return FALSE;
-
-  err = strerror(sock->sock_error);
-  if (strlen(err) > error_len)
-    return FALSE;
-
-  memset(error, 0, error_len);
-  memcpy(error, err, strlen(err));
-  return TRUE;
-}
-#endif
 
 /* Closes socket */
 

@@ -68,11 +68,6 @@ typedef void *SilcStream;
 typedef enum {
   SILC_STREAM_CAN_READ,		/* Data available for reading */
   SILC_STREAM_CAN_WRITE,	/* Stream ready for writing */
-  SILC_STREAM_EOS,		/* End of stream */
-  SILC_STREAM_CLOSED,		/* Stream is closed */
-  SILC_STREAM_INVALID,		/* Stream is invalid */
-  SILC_STREAM_NO_MEMORY,	/* System out of memory */
-  SILC_STREAM_ERROR,		/* Unknown error */
 } SilcStreamStatus;
 /***/
 
@@ -174,6 +169,8 @@ typedef struct {
  *    the notifier callback will later be called with SILC_STREAM_CAN_READ
  *    status when stream is again ready for reading.
  *
+ *    If error occurred the error code can be retrieved with silc_errno.
+ *
  ***/
 int silc_stream_read(SilcStream stream, unsigned char *buf,
 		     SilcUInt32 buf_len);
@@ -193,6 +190,8 @@ int silc_stream_read(SilcStream stream, unsigned char *buf,
  *    at this moment, or -2 if error occurred.  If -1 is returned the
  *    notifier callback will later be called with SILC_STREAM_CAN_WRITE
  *    status when stream is again ready for writing.
+ *
+ *    If error occurred the error code can be retrieved with silc_errno.
  *
  ***/
 int silc_stream_write(SilcStream stream, const unsigned char *data,

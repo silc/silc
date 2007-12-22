@@ -249,13 +249,11 @@ Runtime library, lib/silcutil/
  o Change silc_gettimeofday on Unix to use clock_gettime with REALTIME
    clock if it is available, otherwise use gettimeofday(). (***DONE)
 
+ o Generic SilcResult that includes all possible status and
+   error conditions and generic errno API. (***DONE)
+
  (o SilcIpAddr abstraction.  Ipv4 and Ipv6 support to the abstaction.)
   maybe
-
- (o Generic SilcStatus or SilcResult that includes all possible status and
-    error conditions, including those of SILC protocol.  Though, the SILC
-    protocol related status (currently in silcstatus.h) cannot be in
-    runtime library) maybe
 
  (o SILC specific socket creation/closing routines to silcnet.h, wrappers
   to all send(), recv(), sendto() etc.  Bad thing is that we'd have to

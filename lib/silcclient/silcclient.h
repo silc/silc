@@ -1083,11 +1083,11 @@ silc_client_connect_to_client(SilcClient client,
  *                                  stream_create_cb, app);
  *
  *    // Stream callback delivers our new SilcStream context
- *    void stream_create_cb(SilcSocketStreamStatus status, SilcStream stream,
+ *    void stream_create_cb(SilcResult status, SilcStream stream,
  *                          void *context)
  *    {
  *      ...
- *      if (status != SILC_SOCKET_OK)
+ *      if (status != SILC_OK)
  *        error(status);
  *
  *      // Start key exchange

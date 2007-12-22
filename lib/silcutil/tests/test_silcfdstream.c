@@ -199,7 +199,7 @@ int main(int argc, char **argv)
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_log_debug(TRUE);
     silc_log_debug_hexdump(TRUE);
-    silc_log_set_debug_string("*fdstream*");
+    silc_log_set_debug_string("*fdstream*,*errno*");
   }
 
   SILC_LOG_DEBUG(("Allocating scheduler"));

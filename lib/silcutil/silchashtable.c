@@ -362,8 +362,10 @@ SilcHashTable silc_hash_table_alloc(SilcStack stack,
   SilcHashTable ht;
   SilcUInt32 size_index = SILC_HASH_TABLE_SIZE;
 
-  if (!hash)
+  if (!hash) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return NULL;
+  }
 
   if (stack)
     stack = silc_stack_alloc(0, stack);
@@ -491,8 +493,10 @@ SilcBool silc_hash_table_del(SilcHashTable ht, void *key)
   entry = silc_hash_table_find_internal(ht, key, &prev,
 					ht->hash, ht->hash_user_context,
 					ht->compare, ht->compare_user_context);
-  if (*entry == NULL)
+  if (*entry == NULL) {
+    silc_set_errno(SILC_ERR_NOT_FOUND);
     return FALSE;
+  }
 
   e = *entry;
 
@@ -537,8 +541,10 @@ SilcBool silc_hash_table_del_ext(SilcHashTable ht, void *key,
 					compare_user_context ?
 					compare_user_context :
 					ht->compare_user_context);
-  if (*entry == NULL)
+  if (*entry == NULL) {
+    silc_set_errno(SILC_ERR_NOT_FOUND);
     return FALSE;
+  }
 
   e = *entry;
 
@@ -582,8 +588,10 @@ SilcBool silc_hash_table_del_by_context(SilcHashTable ht, void *key,
 						ht->hash_user_context,
 						ht->compare,
 						ht->compare_user_context);
-  if (*entry == NULL)
+  if (*entry == NULL) {
+    silc_set_errno(SILC_ERR_NOT_FOUND);
     return FALSE;
+  }
 
   e = *entry;
 
@@ -631,8 +639,10 @@ SilcBool silc_hash_table_del_by_context_ext(SilcHashTable ht, void *key,
 						compare_user_context ?
 						compare_user_context :
 						ht->compare_user_context);
-  if (*entry == NULL)
+  if (*entry == NULL) {
+    silc_set_errno(SILC_ERR_NOT_FOUND);
     return FALSE;
+  }
 
   e = *entry;
 
@@ -695,8 +705,10 @@ SilcBool silc_hash_table_find_ext(SilcHashTable ht, void *key,
 					       compare_user_context ?
 					       compare_user_context :
 					       ht->compare_user_context);
-  if (*entry == NULL)
+  if (*entry == NULL) {
+    silc_set_errno(SILC_ERR_NOT_FOUND);
     return FALSE;
+  }
 
   if (ret_key)
     *ret_key = (*entry)->key;
@@ -736,8 +748,10 @@ SilcBool silc_hash_table_find_by_context_ext(SilcHashTable ht, void *key,
 						compare_user_context ?
 						compare_user_context :
 						ht->compare_user_context);
-  if (!entry || !(*entry))
+  if (!entry || !(*entry)) {
+    silc_set_errno(SILC_ERR_NOT_FOUND);
     return FALSE;
+  }
 
   if (ret_key)
     *ret_key = (*entry)->key;
@@ -791,8 +805,10 @@ void silc_hash_table_foreach(SilcHashTable ht, SilcHashForeach foreach,
   int i;
   SilcBool auto_rehash;
 
-  if (!foreach)
-    return;
+  if (!foreach) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return FALSE;
+  }
 
   auto_rehash = ht->auto_rehash;
   ht->auto_rehash = FALSE;

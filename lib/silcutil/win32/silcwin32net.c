@@ -51,6 +51,8 @@ static SilcBool silc_net_set_sockaddr(SilcSockaddr *addr, const char *ip_addr,
   if (ip_addr) {
     if (!silc_net_is_ip(ip_addr)) {
       SILC_LOG_ERROR(("%s is not IP address", ip_addr));
+      silc_set_errno_reason(SILC_ERR_BAD_IP, "%s is not an IP address",
+			    ip_addr);
       return FALSE;
     }
 
@@ -93,15 +95,15 @@ static SilcBool silc_net_set_sockaddr(SilcSockaddr *addr, const char *ip_addr,
 
 /* Deliver new stream to upper layer */
 
-static void silc_net_accept_stream(SilcSocketStreamStatus status,
+static void silc_net_accept_stream(SilcResult status,
 				   SilcStream stream, void *context)
 {
   SilcNetListener listener = context;
 
-  if (status != SILC_SOCKET_OK)
+  if (status != SILC_OK)
     return;
 
-  listener->callback(SILC_NET_OK, stream, listener->context);
+  listener->callback(SILC_OK, stream, listener->context);
 }
 
 /* Accept incoming connection and notify upper layer */
@@ -143,8 +145,10 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
 
   SILC_LOG_DEBUG(("Creating TCP listener"));
 
-  if (port < 0 || !schedule || !callback)
+  if (port < 0 || !schedule || !callback) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     goto err;
+  }
 
   listener = silc_calloc(1, sizeof(*listener));
   if (!listener)
@@ -181,15 +185,17 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     /* Create the socket */
     sock = socket(server.sin.sin_family, SOCK_STREAM, 0);
     if (sock == INVALID_SOCKET) {
-      SILC_LOG_ERROR(("Cannot create socket, error %d", WSAGetLastError()));
+      silc_set_errno_posix(WSAGetLastError());
+      SILC_LOG_ERROR(("Cannot create socket, error %s",
+		      silc_errno_string(silc_errno)));
       goto err;
     }
 
     /* Set the socket options */
     rval = silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
     if (rval == SOCKET_ERROR) {
-      SILC_LOG_ERROR(("Cannot set socket options, error %d",
-		     WSAGetLastError()));
+      SILC_LOG_ERROR(("Cannot set socket options, error %s",
+		      silc_errno_string(silc_errno)));
       closesocket(sock);
       goto err;
     }
@@ -197,7 +203,9 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     /* Bind the listener socket */
     rval = bind(sock, &server.sa, SIZEOF_SOCKADDR(server));
     if (rval == SOCKET_ERROR) {
-      SILC_LOG_ERROR(("Cannot bind socket, error %d", WSAGetLastError()));
+      silc_set_errno_posix(WSAGetLastError());
+      SILC_LOG_ERROR(("Cannot bind socket, error %s",
+		      silc_errno_string(silc_errno)));
       closesocket(sock);
       goto err;
     }
@@ -205,8 +213,9 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
     /* Specify that we are listenning */
     rval = listen(sock, SOMAXCONN);
     if (rval == SOCKET_ERROR) {
-      SILC_LOG_ERROR(("Cannot set socket listenning, error %d",
-		     WSAGetLastError()));
+      silc_set_errno_posix(WSAGetLastError());
+      SILC_LOG_ERROR(("Cannot set socket listenning, error %s",
+		      silc_errno_string(silc_errno)));
       closesocket(sock);
       goto err;
     }
@@ -245,8 +254,10 @@ silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
 
   SILC_LOG_DEBUG(("Creating TCP listener"));
 
-  if (!schedule || !callback)
+  if (!schedule || !callback) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     goto err;
+  }
 
   listener = silc_calloc(1, sizeof(*listener));
   if (!listener)
@@ -289,7 +300,9 @@ silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
     if (sock == INVALID_SOCKET) {
       if (ignore_port_error)
 	continue;
-      SILC_LOG_ERROR(("Cannot create socket, error %d", WSAGetLastError()));
+      silc_set_errno_posix(WSAGetLastError());
+      SILC_LOG_ERROR(("Cannot create socket, error %s",
+		      silc_errno_string(silc_errno)));
       goto err;
     }
 
@@ -299,8 +312,8 @@ silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
       closesocket(sock);
       if (ignore_port_error)
 	continue;
-      SILC_LOG_ERROR(("Cannot set socket options, error %d",
-		     WSAGetLastError()));
+      SILC_LOG_ERROR(("Cannot set socket options, error %s",
+		      silc_errno_string(silc_errno)));
       goto err;
     }
 
@@ -310,7 +323,9 @@ silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
       closesocket(sock);
       if (ignore_port_error)
 	continue;
-      SILC_LOG_ERROR(("Cannot bind socket, error %d", WSAGetLastError()));
+      silc_set_errno_posix(WSAGetLastError());
+      SILC_LOG_ERROR(("Cannot bind socket, error %s",
+		      silc_errno_string(silc_errno)));
       goto err;
     }
 
@@ -320,8 +335,9 @@ silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
       closesocket(sock);
       if (ignore_port_error)
 	continue;
-      SILC_LOG_ERROR(("Cannot set socket listenning, error %d",
-		     WSAGetLastError()));
+      silc_set_errno_posix(WSAGetLastError());
+      SILC_LOG_ERROR(("Cannot set socket listenning, error %s",
+		      silc_errno_string(silc_errno)));
       goto err;
     }
 
@@ -398,6 +414,7 @@ silc_net_udp_connect(const char *local_ip_addr, int local_port,
   sock = socket(server.sin.sin_family, SOCK_DGRAM, 0);
   if (sock == INVALID_SOCKET) {
     SILC_LOG_ERROR(("Cannot create socket"));
+    silc_set_errno_posix(WSAGetLastError());
     goto err;
   }
 
@@ -419,6 +436,7 @@ silc_net_udp_connect(const char *local_ip_addr, int local_port,
   rval = bind(sock, &server.sa, SIZEOF_SOCKADDR(server));
   if (rval == SOCKET_ERROR) {
     SILC_LOG_DEBUG(("Cannot bind socket"));
+    silc_set_errno_posix(WSAGetLastError());
     goto err;
   }
 
@@ -430,6 +448,7 @@ silc_net_udp_connect(const char *local_ip_addr, int local_port,
     rval = connect(sock, &server.sa, SIZEOF_SOCKADDR(server));
     if (rval == SOCKET_ERROR) {
       SILC_LOG_DEBUG(("Cannot connect UDP stream"));
+      silc_set_errno_posix(WSAGetLastError());
       goto err;
     }
   }
@@ -480,15 +499,16 @@ int silc_net_udp_receive(SilcStream stream, char *remote_ip_addr,
 
   if (len == SOCKET_ERROR) {
     err = WSAGetLastError();
+    silc_set_errno_posix(err);
     if (err == WSAEWOULDBLOCK) {
       SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
       silc_schedule_set_listen_fd(sock->schedule, sock->sock,
 				  SILC_TASK_READ, FALSE);
       return -1;
     }
-    SILC_LOG_DEBUG(("Cannot read from UDP socket: %d", sock->sock));
+    SILC_LOG_DEBUG(("Cannot read from UDP socket: %d: %s", sock->sock,
+		    silc_errno_string(silc_errno)));
     silc_schedule_unset_listen_fd(sock->schedule, sock->sock);
-    sock->sock_error = err;
     return -2;
   }
 
@@ -539,15 +559,16 @@ int silc_net_udp_send(SilcStream stream,
 	       SIZEOF_SOCKADDR(remote));
   if (ret == SOCKET_ERROR) {
     err = WSAGetLastError();
+    silc_set_errno_posix(err);
     if (err == WSAEWOULDBLOCK) {
       SILC_LOG_DEBUG(("Could not send immediately, will do it later"));
       silc_schedule_set_listen_fd(sock->schedule, sock->sock,
 				  SILC_TASK_READ | SILC_TASK_WRITE, FALSE);
       return -1;
     }
-    SILC_LOG_DEBUG(("Cannot send to UDP socket: %s", strerror(errno)));
+    SILC_LOG_DEBUG(("Cannot send to UDP socket: %s",
+		    silc_errno_string(silc_errno)));
     silc_schedule_unset_listen_fd(sock->schedule, sock->sock);
-    sock->sock_error = err;
     return -2;
   }
 
@@ -564,8 +585,7 @@ int silc_net_udp_send(SilcStream stream,
 /******************************* TCP Stream *********************************/
 
 typedef struct {
-  SilcNetStatus status;
-  SilcSocketStreamStatus stream_status;
+  SilcResult status;
   SilcStream stream;
   SilcFSMStruct fsm;
   SilcFSMThreadStruct thread;
@@ -586,12 +606,12 @@ SILC_FSM_STATE(silc_net_connect_st_start);
 SILC_FSM_STATE(silc_net_connect_st_stream);
 SILC_FSM_STATE(silc_net_connect_st_finish);
 
-static void silc_net_connect_wait_stream(SilcSocketStreamStatus status,
+static void silc_net_connect_wait_stream(SilcResult status,
 					 SilcStream stream, void *context)
 {
   SilcNetConnect conn = context;
   conn->sop = NULL;
-  conn->stream_status = status;
+  conn->status = status;
   conn->stream = stream;
   SILC_FSM_CALL_CONTINUE(&conn->thread);
 }
@@ -632,7 +652,7 @@ SILC_FSM_STATE(silc_net_connect_st_start)
 		    "host, error %d", conn->remote, WSAGetLastError()));
 
     /** Network unreachable */
-    conn->status = SILC_NET_HOST_UNREACHABLE;
+    conn->status = SILC_ERR_UNREACHABLE;
     return SILC_FSM_FINISH;
   }
 
@@ -651,7 +671,9 @@ SILC_FSM_STATE(silc_net_connect_st_start)
     }
 
     /** Cannot create socket */
-    SILC_LOG_ERROR(("Cannot create socket, error %d", WSAGetLastError()));
+    silc_set_errno_posix(err);
+    SILC_LOG_ERROR(("Cannot create socket, error %d",
+		    silc_errno_string(silc_errno)));
     return SILC_FSM_FINISH;
   }
 
@@ -678,22 +700,12 @@ SILC_FSM_STATE(silc_net_connect_st_start)
 	goto retry;
       }
 
-      switch (err) {
-      case WSAETIMEDOUT:
-	conn->status = SILC_NET_CONNECTION_TIMEOUT;
-	break;
-      case WSAECONNREFUSED:
-	conn->status = SILC_NET_CONNECTION_REFUSED;
-	break;
-      case WSAEHOSTUNREACH:
-	conn->status = SILC_NET_HOST_UNREACHABLE;
-	break;
-      default:
-	break;
-      }
+      /* Set error */
+      silc_set_errno_posix(err);
+      conn->status = silc_errno;
 
-      SILC_LOG_ERROR(("Cannot connect to remote host, error %d",
-		      WSAGetLastError()));
+      SILC_LOG_ERROR(("Cannot connect to remote host: %s",
+		      silc_errno_string(silc_errno)));
       return SILC_FSM_FINISH;
     }
   }
@@ -728,21 +740,14 @@ SILC_FSM_STATE(silc_net_connect_st_stream)
   if (conn->aborted)
     return SILC_FSM_FINISH;
 
-  if (conn->stream_status != SILC_SOCKET_OK) {
+  if (conn->status != SILC_OK) {
     /** Stream creation failed */
-    if (conn->stream_status == SILC_SOCKET_UNKNOWN_IP)
-      conn->status = SILC_NET_UNKNOWN_IP;
-    else if (conn->stream_status == SILC_SOCKET_UNKNOWN_HOST)
-      conn->status = SILC_NET_UNKNOWN_HOST;
-    else
-      conn->status = SILC_NET_ERROR;
-
     return SILC_FSM_FINISH;
   }
 
   /** Stream created successfully */
   SILC_LOG_DEBUG(("Connected successfully, sock %d", conn->sock));
-  conn->status = SILC_NET_OK;
+  conn->status = SILC_OK;
   return SILC_FSM_FINISH;
 }
 
@@ -792,15 +797,17 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
 {
   SilcNetConnect conn;
 
-  if (!remote_ip_addr || remote_port < 1 || !schedule || !callback)
+  if (!remote_ip_addr || remote_port < 1 || !schedule || !callback) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return NULL;
+  }
 
   SILC_LOG_DEBUG(("Creating connection to host %s port %d",
 		  remote_ip_addr, remote_port));
 
   conn = silc_calloc(1, sizeof(*conn));
   if (!conn) {
-    callback(SILC_NET_NO_MEMORY, NULL, context);
+    callback(SILC_ERR_OUT_OF_MEMORY, NULL, context);
     return NULL;
   }
 
@@ -808,25 +815,25 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
   conn->op = silc_async_alloc(silc_net_connect_abort, NULL, conn);
   if (!conn->op) {
     silc_free(conn);
-    callback(SILC_NET_NO_MEMORY, NULL, context);
+    callback(SILC_ERR_OUT_OF_MEMORY, NULL, context);
     return NULL;
   }
 
   if (local_ip_addr)
-    conn->local_ip = strdup(local_ip_addr);
-  conn->remote = strdup(remote_ip_addr);
+    conn->local_ip = silc_strdup(local_ip_addr);
+  conn->remote = silc_strdup(remote_ip_addr);
   if (!conn->remote) {
     silc_async_free(conn->op);
     silc_free(conn->local_ip);
     silc_free(conn);
-    callback(SILC_NET_NO_MEMORY, NULL, context);
+    callback(SILC_ERR_OUT_OF_MEMORY, NULL, context);
     return NULL;
   }
   conn->port = remote_port;
   conn->callback = callback;
   conn->context = context;
   conn->retry = 1;
-  conn->status = SILC_NET_ERROR;
+  conn->status = SILC_ERR;
 
   silc_fsm_init(&conn->fsm, conn, silc_net_connect_destructor, NULL, schedule);
   silc_fsm_start(&conn->fsm, silc_net_connect_st_thread);
@@ -858,34 +865,41 @@ SilcBool silc_net_addr2bin(const char *addr, void *bin, SilcUInt32 bin_len)
 	ret[c++] = d;
 	d = 0;
 	if (c > 3)
-	  return FALSE;
+	  goto err;
 	continue;
       }
 
       if (!isdigit((int)addr[i - 1]))
-	return FALSE;
+	goto err;
 
       d = 10 * d + addr[i - 1] - '0';
       if (d > 255)
-	return FALSE;
+	goto err;
     }
     if (c != 3)
-      return FALSE;
+      goto err;
     ret[c] = d;
 
-    if (bin_len < sizeof(ret))
+    if (bin_len < sizeof(ret)) {
+      silc_set_errno(SILC_ERR_OVERFLOW);
       return FALSE;
+    }
 
     memcpy(bin, ret, sizeof(ret));
     return TRUE;
+
+    err:
+    return FALSE;
   } else {
 #ifdef HAVE_IPV6
     struct addrinfo hints, *ai;
     SilcSockaddr *s;
 
     /* IPv6 address */
-    if (bin_len < 16)
+    if (bin_len < 16) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
       return FALSE;
+    }
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET6;

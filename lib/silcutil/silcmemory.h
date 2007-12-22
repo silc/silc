@@ -118,6 +118,20 @@ void silc_free(void *ptr);
  ***/
 void *silc_memdup(const void *ptr, size_t size);
 
+/****f* silcutil/SilcMemoryAPI/silc_strdup
+ *
+ * SYNOPSIS
+ *
+ *    char *silc_strdup(const char *str);
+ *
+ * DESCRIPTION
+ *
+ *    Duplicates the string indicated by `str' and returns the duplicated
+ *    string.  Returns NULL on error.
+ *
+ ***/
+char *silc_strdup(const char *str);
+
 #else
 #ifndef SILC_DIST_TOOLKIT
 #error "The stack trace is not supported in this distribution"

@@ -81,7 +81,7 @@ int main(int argc, char **argv)
           if (optarg)
             silc_log_set_debug_string(optarg);
 	  else
-	    silc_log_set_debug_string("*strutil*");
+	    silc_log_set_debug_string("*strutil*,*errno*");
           break;
 	default:
 	  exit(1);

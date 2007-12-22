@@ -38,7 +38,8 @@ SilcDll silc_dll_load(const char *object_path)
 #else
   /* XXX Symbian */
 #endif /* SILC_UNIX */
-  SILC_LOG_ERROR(("Shared objects are not supported on this platform"));
+  silc_set_errno_reason(SILC_ERR_NOT_SUPPORTED,
+			"Shared objects are not supported on this platform");
   return NULL;
 }
 
@@ -66,7 +67,8 @@ void *silc_dll_getsym(SilcDll dll, const char *symbol)
 #else
   /* XXX Symbian */
 #endif /* SILC_UNIX */
-  SILC_LOG_ERROR(("Shared objects are not supported on this platform"));
+  silc_set_errno_reason(SILC_ERR_NOT_SUPPORTED,
+			"Shared objects are not supported on this platform");
   return NULL;
 }
 

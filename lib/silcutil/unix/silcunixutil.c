@@ -71,7 +71,8 @@ int silc_gettimeofday(struct timeval *p)
 {
 #if defined(HAVE_CLOCK_GETTIME)
   struct timespec tp;
-  clock_gettime(CLOCK_REALTIME, &tp);
+  if (clock_gettime(CLOCK_REALTIME, &tp))
+    return -1;
   p->tv_sec = tp.tv_sec;
   p->tv_usec = tp.tv_nsec / 1000;
   return 0;

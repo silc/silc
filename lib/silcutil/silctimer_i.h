@@ -24,6 +24,7 @@
 #error "Do not include this header directly"
 #endif
 
+/* Timer context */
 struct SilcTimerObject {
   SilcUInt64 start_sec;		/* Start seconds */
   SilcUInt64 timer_sec;		/* Timer seconds */

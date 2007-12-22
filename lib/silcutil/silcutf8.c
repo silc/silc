@@ -32,8 +32,10 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
 {
   SilcUInt32 enclen = 0, i, charval = 0;
 
-  if (!bin || !bin_len)
+  if (!bin || !bin_len) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return 0;
+  }
 
   if (bin_encoding == SILC_STRING_UTF8) {
     if (!silc_utf8_valid(bin, bin_len))
@@ -41,7 +43,7 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
     if (!utf8)
       return bin_len;
     if (bin_len > utf8_size)
-      return 0;
+      goto overflow;
     memcpy(utf8, bin, bin_len);
     return bin_len;
   }
@@ -55,7 +57,7 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
     for (i = 0; i < bin_len; i++) {
       if (bin[i] == '\\') {
 	if (i + 1 >= bin_len)
-	  return 0;
+	  goto overflow;
 
 	/* If escaped character is any of the following no processing is
 	   needed, otherwise it is a hex value and we need to read it. */
@@ -64,12 +66,14 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
 	    cv != '>' && cv != ';' && cv != ' ' && cv != '#') {
 	  unsigned int hexval;
 	  if (i + 2 >= bin_len)
+	    goto overflow;
+	  if (sscanf(&bin[i + 1], "%02X", &hexval) != 1) {
+	    silc_set_errno_posix(errno);
 	    return 0;
-	  if (sscanf(&bin[i + 1], "%02X", &hexval) != 1)
-	    return 0;
+	  }
 	  if (utf8) {
 	    if (enclen + 1 > utf8_size)
-	      return 0;
+	      goto overflow;
 	    utf8[enclen] = (unsigned char)hexval;
 	  }
 
@@ -82,7 +86,7 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
 
       if (utf8) {
 	if (enclen + 1 > utf8_size)
-	  return 0;
+	  goto overflow;
 	utf8[enclen] = bin[i];
       }
       enclen++;
@@ -129,44 +133,50 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
       break;
     case SILC_STRING_ASCII_ESC:
       SILC_NOT_IMPLEMENTED("SILC_STRING_ASCII_ESC");
+      silc_set_errno(SILC_ERR_NOT_SUPPORTED);
       return 0;
       break;
     case SILC_STRING_BMP:
       if (i + 1 >= bin_len)
-	return 0;
+	goto overflow;
       SILC_GET16_MSB(charval, bin + i);
       i += 1;
       break;
     case SILC_STRING_BMP_LSB:
       if (i + 1 >= bin_len)
-	return 0;
+	goto overflow;
       SILC_GET16_LSB(charval, bin + i);
       i += 1;
       break;
     case SILC_STRING_UNIVERSAL:
       if (i + 3 >= bin_len)
-	return 0;
+	goto overflow;
       SILC_GET32_MSB(charval, bin + i);
       i += 3;
       break;
     case SILC_STRING_UNIVERSAL_LSB:
       if (i + 3 >= bin_len)
-	return 0;
+	goto overflow;
       SILC_GET32_LSB(charval, bin + i);
       i += 3;
       break;
     case SILC_STRING_PRINTABLE:
     case SILC_STRING_VISIBLE:
-      if (!isprint(bin[i]))
+      if (!isprint(bin[i])) {
+        silc_set_errno(SILC_ERR_PROHIBITED_CHAR);
 	return 0;
+      }
       charval = bin[i];
       break;
     case SILC_STRING_NUMERICAL:
-      if (bin[i] != 0x20 && !isdigit(bin[i]))
+      if (bin[i] != 0x20 && !isdigit(bin[i])) {
+        silc_set_errno(SILC_ERR_PROHIBITED_CHAR);
 	return 0;
+      }
       charval = bin[i];
       break;
     default:
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
       return 0;
       break;
     }
@@ -174,7 +184,7 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
     if (charval < 0x80) {
       if (utf8) {
 	if (enclen > utf8_size)
-	  return 0;
+	  goto overflow;
 
 	utf8[enclen] = (unsigned char)charval;
       }
@@ -182,7 +192,7 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
     } else if (charval < 0x800) {
       if (utf8) {
 	if (enclen + 2 > utf8_size)
-	  return 0;
+	  goto overflow;
 
 	utf8[enclen    ] = (unsigned char )(((charval >> 6)  & 0x1f) | 0xc0);
 	utf8[enclen + 1] = (unsigned char )((charval & 0x3f) | 0x80);
@@ -191,7 +201,7 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
     } else if (charval < 0x10000) {
       if (utf8) {
 	if (enclen + 3 > utf8_size)
-	  return 0;
+	  goto overflow;
 
 	utf8[enclen    ] = (unsigned char )(((charval >> 12) & 0xf)  | 0xe0);
 	utf8[enclen + 1] = (unsigned char )(((charval >> 6)  & 0x3f) | 0x80);
@@ -201,7 +211,7 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
     } else if (charval < 0x200000) {
       if (utf8) {
 	if (enclen + 4 > utf8_size)
-	  return 0;
+	  goto overflow;
 
 	utf8[enclen    ] = (unsigned char )(((charval >> 18) & 0x7)  | 0xf0);
 	utf8[enclen + 1] = (unsigned char )(((charval >> 12) & 0x3f) | 0x80);
@@ -212,7 +222,7 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
     } else if (charval < 0x4000000) {
       if (utf8) {
 	if (enclen + 5 > utf8_size)
-	  return 0;
+	  goto overflow;
 
 	utf8[enclen    ] = (unsigned char )(((charval >> 24) & 0x3)  | 0xf8);
 	utf8[enclen + 1] = (unsigned char )(((charval >> 18) & 0x3f) | 0x80);
@@ -224,7 +234,7 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
     } else {
       if (utf8) {
 	if (enclen + 6 > utf8_size)
-	  return 0;
+	  goto overflow;
 
 	utf8[enclen    ] = (unsigned char )(((charval >> 30) & 0x1)  | 0xfc);
 	utf8[enclen + 1] = (unsigned char )(((charval >> 24) & 0x3f) | 0x80);
@@ -238,6 +248,10 @@ SilcUInt32 silc_utf8_encode(const unsigned char *bin, SilcUInt32 bin_len,
   }
 
   return enclen;
+
+ overflow:
+  silc_set_errno(SILC_ERR_OVERFLOW);
+  return 0;
 }
 
 /* Decodes UTF-8 encoded string `utf8' to string of which encoding is
@@ -253,13 +267,16 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
 {
   SilcUInt32 enclen = 0, i, charval, bytes;
 
-  if (!utf8 || !utf8_len)
+  if (!utf8 || !utf8_len) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return 0;
+  }
 
   if (bin_encoding == SILC_STRING_UTF8) {
-    if (!silc_utf8_valid(utf8, utf8_len) ||
-	utf8_len > bin_size)
+    if (!silc_utf8_valid(utf8, utf8_len))
       return 0;
+    if (utf8_len > bin_size)
+      goto overflow;
     memcpy(bin, utf8, utf8_len);
     return utf8_len;
   }
@@ -300,10 +317,10 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       bytes = 1;
     } else if ((utf8[i] & 0xe0) == 0xc0) {
       if (i + 1 >= utf8_len)
-	return 0;
+	goto overflow;
 
       if ((utf8[i + 1] & 0xc0) != 0x80)
-        return 0;
+	goto bad_char;
 
       charval = (utf8[i++] & 0x1f) << 6;
       charval |= utf8[i] & 0x3f;
@@ -312,49 +329,49 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       bytes = 2;
     } else if ((utf8[i] & 0xf0) == 0xe0) {
       if (i + 2 >= utf8_len)
-	return 0;
+	goto overflow;
 
       if (((utf8[i + 1] & 0xc0) != 0x80) ||
 	  ((utf8[i + 2] & 0xc0) != 0x80))
-        return 0;
+	goto bad_char;
 
       /* Surrogates not allowed (D800-DFFF) */
       if (utf8[i] == 0xed &&
 	  utf8[i + 1] >= 0xa0 && utf8[i + 1] <= 0xbf &&
 	  utf8[i + 2] >= 0x80 && utf8[i + 2] <= 0xbf)
-	return 0;
+	goto bad_char;
 
       charval = (utf8[i++]  & 0xf)  << 12;
       charval |= (utf8[i++] & 0x3f) << 6;
       charval |= utf8[i] & 0x3f;
       if (charval < 0x800)
-        return 0;
+	goto bad_char;
       bytes = 3;
     } else if ((utf8[i] & 0xf8) == 0xf0) {
       if (i + 3 >= utf8_len)
-	return 0;
+	goto overflow;
 
       if (((utf8[i + 1] & 0xc0) != 0x80) ||
 	  ((utf8[i + 2] & 0xc0) != 0x80) ||
 	  ((utf8[i + 3] & 0xc0) != 0x80))
-        return 0;
+	goto bad_char;
 
       charval = ((SilcUInt32)(utf8[i++] & 0x7)) << 18;
       charval |= (utf8[i++] & 0x3f) << 12;
       charval |= (utf8[i++] & 0x3f) << 6;
       charval |= utf8[i] & 0x3f;
       if (charval < 0x10000)
-        return 0;
+	goto bad_char;
       bytes = 4;
     } else if ((utf8[i] & 0xfc) == 0xf8) {
       if (i + 4 >= utf8_len)
-	return 0;
+	goto overflow;
 
       if (((utf8[i + 1] & 0xc0) != 0x80) ||
 	  ((utf8[i + 2] & 0xc0) != 0x80) ||
 	  ((utf8[i + 3] & 0xc0) != 0x80) ||
 	  ((utf8[i + 4] & 0xc0) != 0x80))
-        return 0;
+	goto bad_char;
 
       charval = ((SilcUInt32)(utf8[i++]  & 0x3))  << 24;
       charval |= ((SilcUInt32)(utf8[i++] & 0x3f)) << 18;
@@ -362,18 +379,18 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       charval |= (utf8[i++] & 0x3f) << 6;
       charval |= utf8[i] & 0x3f;
       if (charval < 0x200000)
-        return 0;
+	goto bad_char;
       bytes = 5;
     } else if ((utf8[i] & 0xfe) == 0xfc) {
       if (i + 5 >= utf8_len)
-	return 0;
+	goto overflow;
 
       if (((utf8[i + 1] & 0xc0) != 0x80) ||
 	  ((utf8[i + 2] & 0xc0) != 0x80) ||
 	  ((utf8[i + 3] & 0xc0) != 0x80) ||
 	  ((utf8[i + 4] & 0xc0) != 0x80) ||
 	  ((utf8[i + 5] & 0xc0) != 0x80))
-        return 0;
+	goto bad_char;
 
       charval = ((SilcUInt32)(utf8[i++]  & 0x1))  << 30;
       charval |= ((SilcUInt32)(utf8[i++] & 0x3f)) << 24;
@@ -382,10 +399,10 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       charval |= (utf8[i++] & 0x3f) << 6;
       charval |= utf8[i] & 0x3f;
       if (charval < 0x4000000)
-        return 0;
+	goto bad_char;
       bytes = 6;
     } else {
-      return 0;
+      goto bad_char;
     }
 
     switch (bin_encoding) {
@@ -396,7 +413,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
     case SILC_STRING_NUMERICAL:
       if (bin) {
         if (enclen + 1 > bin_size)
-          return 0;
+	  goto overflow;
 
         bin[enclen] = (unsigned char)charval;
       }
@@ -409,7 +426,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
     case SILC_STRING_BMP:
       if (bin) {
         if (enclen + 2 > bin_size)
-          return 0;
+	  goto overflow;
 	SILC_PUT16_MSB(charval, bin + enclen);
       }
       enclen += 2;
@@ -417,7 +434,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
     case SILC_STRING_BMP_LSB:
       if (bin) {
         if (enclen + 2 > bin_size)
-          return 0;
+	  goto overflow;
 	SILC_PUT16_LSB(charval, bin + enclen);
       }
       enclen += 2;
@@ -425,7 +442,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
     case SILC_STRING_UNIVERSAL:
       if (bin) {
         if (enclen + 4 > bin_size)
-          return 0;
+	  goto overflow;
 	SILC_PUT32_MSB(charval, bin + enclen);
       }
       enclen += 4;
@@ -433,7 +450,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
     case SILC_STRING_UNIVERSAL_LSB:
       if (bin) {
         if (enclen + 4 > bin_size)
-          return 0;
+	  goto overflow;
 	SILC_PUT32_LSB(charval, bin + enclen);
       }
       enclen += 4;
@@ -452,7 +469,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
 	  if (!enclen && (cv == '#' || cv == ' ')) {
 	    if (bin) {
 	      if (enclen + 2 > bin_size)
-		return 0;
+		goto overflow;
 	      bin[enclen] = '\\';
 	      bin[enclen + 1] = cv;
 	    }
@@ -464,7 +481,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
 	  if (i == utf8_len - 1 && cv == ' ') {
 	    if (bin) {
 	      if (enclen + 2 > bin_size)
-		return 0;
+		goto overflow;
 	      bin[enclen] = '\\';
 	      bin[enclen + 1] = cv;
 	    }
@@ -477,7 +494,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
 	      cv == '>' || cv == ';') {
 	    if (bin) {
 	      if (enclen + 2 > bin_size)
-		return 0;
+		goto overflow;
 	      bin[enclen] = '\\';
 	      bin[enclen + 1] = cv;
 	    }
@@ -489,7 +506,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
 	  if (!isprint((int)cv)) {
 	    if (bin) {
 	      if (enclen + 3 > bin_size)
-		return 0;
+		goto overflow;
 	      bin[enclen] = '\\';
 	      silc_snprintf(bin + enclen + 1, 3, "%02X", cv);
 	    }
@@ -499,7 +516,7 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
 
 	  if (bin) {
 	    if (enclen + 1 > bin_size)
-	      return 0;
+	      goto overflow;
 	    bin[enclen] = cv;
 	  }
 	  enclen++;
@@ -507,12 +524,21 @@ SilcUInt32 silc_utf8_decode(const unsigned char *utf8, SilcUInt32 utf8_len,
       }
       break;
     default:
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
       return 0;
       break;
     }
   }
 
   return enclen;
+
+ overflow:
+  silc_set_errno(SILC_ERR_OVERFLOW);
+  return 0;
+
+ bad_char:
+  silc_set_errno(SILC_ERR_BAD_CHAR_ENCODING);
+  return 0;
 }
 
 /* UTF-8 to wide characters */
@@ -528,8 +554,10 @@ SilcUInt32 silc_utf8_c2w(const unsigned char *utf8, SilcUInt32 utf8_len,
   if (!tmp_len)
     return 0;
 
-  if (utf8_wide_size < tmp_len / 2)
+  if (utf8_wide_size < tmp_len / 2) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
     return 0;
+  }
 
   memset(utf8_wide, 0, utf8_wide_size * 2);
 
@@ -557,8 +585,10 @@ SilcUInt32 silc_utf8_w2c(const SilcUInt16 *wide_str,
   SilcUInt32 tmp_len;
   int i, k;
 
-  if (utf8_size < wide_str_len * 2)
+  if (utf8_size < wide_str_len * 2) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
     return 0;
+  }
 
   memset(utf8, 0, utf8_size);
 

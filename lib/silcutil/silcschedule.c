@@ -317,6 +317,9 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context,
 {
   SilcSchedule schedule;
 
+  /* Initialize Tls, in case it hasn't been done yet */
+  silc_thread_tls_init();
+
   stack = silc_stack_alloc(0, stack);
   if (!stack)
     return NULL;
@@ -581,8 +584,10 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 {
   SilcTask task = NULL;
 
-  if (silc_unlikely(!schedule->valid))
+  if (silc_unlikely(!schedule->valid)) {
+    silc_set_errno(SILC_ERR_NOT_VALID);
     return NULL;
+  }
 
   SILC_SCHEDULE_LOCK(schedule);
 
@@ -661,6 +666,7 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 		      schedule->max_tasks)) {
       SILC_LOG_WARNING(("Scheduler task limit reached: cannot add new task"));
       task = NULL;
+      silc_set_errno(SILC_ERR_LIMIT);
       goto out;
     }
 
@@ -805,6 +811,9 @@ SilcBool silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd)
     ret = TRUE;
   }
 
+  if (ret == FALSE)
+    silc_set_errno(SILC_ERR_NOT_FOUND);
+
   return ret;
 }
 
@@ -854,6 +863,9 @@ SilcBool silc_schedule_task_del_by_callback(SilcSchedule schedule,
   }
 
   SILC_SCHEDULE_UNLOCK(schedule);
+
+  if (ret == FALSE)
+    silc_set_errno(SILC_ERR_NOT_FOUND);
 
   return ret;
 }
@@ -905,6 +917,9 @@ SilcBool silc_schedule_task_del_by_context(SilcSchedule schedule,
 
   SILC_SCHEDULE_UNLOCK(schedule);
 
+  if (ret == FALSE)
+    silc_set_errno(SILC_ERR_NOT_FOUND);
+
   return ret;
 }
 
@@ -943,6 +958,9 @@ SilcBool silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
 
   SILC_SCHEDULE_UNLOCK(schedule);
 
+  if (ret == FALSE)
+    silc_set_errno(SILC_ERR_NOT_FOUND);
+
   return TRUE;
 }
 
@@ -955,8 +973,10 @@ SilcBool silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
 {
   SilcTaskFd task;
 
-  if (silc_unlikely(!schedule->valid))
+  if (silc_unlikely(!schedule->valid)) {
+    silc_set_errno(SILC_ERR_NOT_VALID);
     return FALSE;
+  }
 
   SILC_SCHEDULE_LOCK(schedule);
 
@@ -992,8 +1012,10 @@ SilcTaskEvent silc_schedule_get_fd_events(SilcSchedule schedule,
   SilcTaskFd task;
   SilcTaskEvent event = 0;
 
-  if (silc_unlikely(!schedule->valid))
+  if (silc_unlikely(!schedule->valid)) {
+    silc_set_errno(SILC_ERR_NOT_VALID);
     return 0;
+  }
 
   SILC_SCHEDULE_LOCK(schedule);
   if (silc_hash_table_find(schedule->fd_queue, SILC_32_TO_PTR(fd),

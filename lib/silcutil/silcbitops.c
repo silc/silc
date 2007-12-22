@@ -30,8 +30,14 @@ SilcBool silc_bit_set(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
   SilcUInt32 pos = SILC_BIT_POS(bit);
   unsigned long mask = SILC_BIT_MASK(bit);
 
-  if (!bitmap || pos >= bitmap_size)
+  if (!bitmap) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return FALSE;
+  }
+  if (pos >= bitmap_size) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
+    return FALSE;
+  }
 
   bitmap[pos] |= mask;
   return TRUE;
@@ -45,8 +51,14 @@ SilcBool silc_bit_clear(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
   SilcUInt32 pos = SILC_BIT_POS(bit);
   unsigned long mask = SILC_BIT_MASK(bit);
 
-  if (!bitmap || pos >= bitmap_size)
+  if (!bitmap) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return FALSE;
+  }
+  if (pos >= bitmap_size) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
+    return FALSE;
+  }
 
   bitmap[pos] &= ~mask;
   return TRUE;
@@ -60,8 +72,14 @@ SilcBool silc_bit_toggle(volatile unsigned long *bitmap,
   SilcUInt32 pos = SILC_BIT_POS(bit);
   unsigned long mask = SILC_BIT_MASK(bit);
 
-  if (!bitmap || pos >= bitmap_size)
+  if (!bitmap) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return FALSE;
+  }
+  if (pos >= bitmap_size) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
+    return FALSE;
+  }
 
   bitmap[pos] ^= mask;
   return TRUE;
@@ -75,8 +93,14 @@ int silc_bit_test_and_set(volatile unsigned long *bitmap,
   SilcUInt32 pos = SILC_BIT_POS(bit);
   unsigned long mask = SILC_BIT_MASK(bit), ret;
 
-  if (!bitmap || pos >= bitmap_size)
+  if (!bitmap) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return -1;
+  }
+  if (pos >= bitmap_size) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
+    return -1;
+  }
 
   ret = bitmap[pos];
   bitmap[pos] ^= mask;
@@ -92,8 +116,14 @@ int silc_bit_test_and_clear(volatile unsigned long *bitmap,
   SilcUInt32 pos = SILC_BIT_POS(bit);
   unsigned long mask = SILC_BIT_MASK(bit), ret;
 
-  if (!bitmap || pos >= bitmap_size)
+  if (!bitmap) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return -1;
+  }
+  if (pos >= bitmap_size) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
+    return -1;
+  }
 
   ret = bitmap[pos];
   bitmap[pos] &= ~mask;
@@ -109,8 +139,14 @@ int silc_bit_test_and_toggle(volatile unsigned long *bitmap,
   SilcUInt32 pos = SILC_BIT_POS(bit);
   unsigned long mask = SILC_BIT_MASK(bit), ret;
 
-  if (!bitmap || pos >= bitmap_size)
+  if (!bitmap) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return -1;
+  }
+  if (pos >= bitmap_size) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
+    return -1;
+  }
 
   ret = bitmap[pos];
   bitmap[pos] ^= mask;
@@ -126,8 +162,14 @@ int silc_bit_get(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
   SilcUInt32 pos = SILC_BIT_POS(bit);
   unsigned long mask = SILC_BIT_MASK(bit);
 
-  if (!bitmap || pos >= bitmap_size)
+  if (!bitmap) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return -1;
+  }
+  if (pos >= bitmap_size) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
+    return -1;
+  }
 
   return (bitmap[pos] & mask) != 0;
 }
@@ -153,13 +195,20 @@ int silc_bit_fns(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
 {
   register SilcUInt32 i;
 
-  if (!bitmap || offset >= bitmap_size * SILC_BIT_SIZE)
+  if (!bitmap) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return -1;
+  }
+  if (offset >= bitmap_size * SILC_BIT_SIZE) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
+    return -1;
+  }
 
   for (i = offset; i < bitmap_size * SILC_BIT_SIZE; i++)
     if (bitmap[SILC_BIT_POS(i)] & SILC_BIT_MASK(i))
       return i;
 
+  silc_set_errno(SILC_ERR_NOT_FOUND);
   return -1;
 }
 
@@ -170,13 +219,20 @@ int silc_bit_fnz(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
 {
   register SilcUInt32 i;
 
-  if (!bitmap || offset >= bitmap_size * SILC_BIT_SIZE)
+  if (!bitmap) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return -1;
+  }
+  if (offset >= bitmap_size * SILC_BIT_SIZE) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
+    return -1;
+  }
 
   for (i = offset; i < bitmap_size * SILC_BIT_SIZE; i++)
     if ((bitmap[SILC_BIT_POS(i)] & SILC_BIT_MASK(i)) == 0)
       return i;
 
+  silc_set_errno(SILC_ERR_NOT_FOUND);
   return -1;
 }
 

@@ -74,6 +74,7 @@ SilcThread silc_thread_create(SilcThreadStart start_func, void *context,
 
   if (!thread->thread) {
     SILC_LOG_ERROR(("Could not create new thread"));
+    silc_set_errno_reason(SILC_ERR, "Could not create new thread");
     silc_free(thread);
     return NULL;
   }

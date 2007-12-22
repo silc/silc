@@ -144,18 +144,7 @@ SilcStream silc_fd_stream_file2(const char *read_file, const char *write_file,
 SilcBool silc_fd_stream_get_info(SilcStream stream,
 				 int *read_fd, int *write_fd);
 
-/****f* silcutil/SilcFDStreamAPI/silc_fd_stream_get_error
- *
- * SYNOPSIS
- *
- *    int silc_fd_stream_get_error(SilcStream stream);
- *
- * DESCRIPTION
- *
- *    If error occurred during file descriptor stream operations, this
- *    function can be used to retrieve the error number that occurred.
- *
- ***/
-int silc_fd_stream_get_error(SilcStream stream);
+/* Backwards support */
+#define silc_fd_stream_get_error(stream) silc_errno
 
 #endif /* SILCFDSTREAM_H */

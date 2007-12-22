@@ -25,7 +25,7 @@
  * find bits in an arbitrarily large bitmap.  The interface does not support
  * setting the bits atomically.
  *
- * Example with a pre-allocate bitmap:
+ * Example with a pre-allocated bitmap:
  *
  * // Declare bitmap of size of 500 bits
  * SILC_BITMAP_DECLARE(bitmap, 500);
@@ -41,7 +41,7 @@
  * bit = silc_bit_ffs(bitmap, bitmap_size);
  *
  * // Find next set bit from the bitmap
- * bit = silc_bit_fns(bitmap, bitmap_size, bit);
+ * bit = silc_bit_fns(bitmap, bitmap_size, bit + 1);
  *
  * // Clear bit number 100
  * silc_bit_set(bitmap, bitmap_size, 100);
@@ -184,7 +184,7 @@ int silc_bit_test_and_toggle(volatile unsigned long *bitmap,
  * SYNOPSIS
  *
  *    int silc_bit_get(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
- *                     ,SilcUInt32 bit);
+ *                     SilcUInt32 bit);
  *
  * DESCRIPTION
  *
@@ -203,7 +203,7 @@ int silc_bit_get(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
  * DESCRIPTION
  *
  *    Returns the bit number of the first set bit in the `bitmap' of size
- *    of `bitmap_size'.  Returns -1 on error or there were no set bits.
+ *    of `bitmap_size'.  Returns -1 on error or when there were no set bits.
  *
  ***/
 int silc_bit_ffs(volatile unsigned long *bitmap, SilcUInt32 bitmap_size);
@@ -217,7 +217,7 @@ int silc_bit_ffs(volatile unsigned long *bitmap, SilcUInt32 bitmap_size);
  * DESCRIPTION
  *
  *    Returns the bit number of the first zero bit in the `bitmap' of size
- *    of `bitmap_size'.  Returns -1 on error or there were no zero bits.
+ *    of `bitmap_size'.  Returns -1 on error or when there were no zero bits.
  *
  ***/
 int silc_bit_ffz(volatile unsigned long *bitmap, SilcUInt32 bitmap_size);
@@ -233,7 +233,7 @@ int silc_bit_ffz(volatile unsigned long *bitmap, SilcUInt32 bitmap_size);
  *
  *    Returns the bit number of the next set bit in the `bitmap' of size
  *    of `bitmap_size' starting at bit `offset'.  Returns -1 on error or
- *    there were no more set bits.
+ *    when there were no more set bits.
  *
  ***/
 int silc_bit_fns(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
@@ -250,7 +250,7 @@ int silc_bit_fns(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
  *
  *    Returns the bit number of the next zero bit in the `bitmap' of size
  *    of `bitmap_size' starting at bit `offset'.  Returns -1 on error or
- *    there were no more zero bits.
+ *    when there were no more zero bits.
  *
  ***/
 int silc_bit_fnz(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,

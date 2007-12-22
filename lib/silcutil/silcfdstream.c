@@ -34,7 +34,6 @@ typedef struct {
   void *notifier_context;
   int fd1;
   int fd2;
-  int error;
 } *SilcFDStream;
 
 
@@ -70,8 +69,10 @@ SILC_TASK_CALLBACK(silc_fd_stream_io)
 
 SilcStream silc_fd_stream_create(int fd, SilcStack stack)
 {
-  if (fd < 1)
+  if (fd < 1) {
+    silc_set_errno_reason(SILC_ERR_BAD_FD, "Bad file descriptor %d", fd);
     return NULL;
+  }
   return silc_fd_stream_create2(fd, 0, stack);
 }
 
@@ -107,8 +108,10 @@ SilcStream silc_fd_stream_file(const char *filename, SilcBool reading,
 {
   const char *read_file = NULL, *write_file = NULL;
 
-  if (!filename)
+  if (!filename) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return NULL;
+  }
 
   if (writing)
     write_file = filename;
@@ -171,18 +174,6 @@ SilcBool silc_fd_stream_get_info(SilcStream stream, int *read_fd,
   return TRUE;
 }
 
-/* Return errno */
-
-int silc_fd_stream_get_error(SilcStream stream)
-{
-  SilcFDStream fd_stream = stream;
-
-  if (!SILC_IS_FD_STREAM(fd_stream))
-    return 0;
-
-  return fd_stream->error;
-}
-
 /* Read */
 
 int silc_fd_stream_read(SilcStream stream, unsigned char *buf,
@@ -202,12 +193,13 @@ int silc_fd_stream_read(SilcStream stream, unsigned char *buf,
       SILC_LOG_DEBUG(("Could not read immediately, will do it later"));
       silc_schedule_set_listen_fd(fd_stream->schedule, fd_stream->fd1,
 				  SILC_TASK_READ, FALSE);
+      silc_set_errno_posix(errno);
       return -1;
     }
     SILC_LOG_DEBUG(("Cannot read from fd: %d:%s",
 		    fd_stream->fd1, strerror(errno)));
     silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd1);
-    fd_stream->error = errno;
+    silc_set_errno_posix(errno);
     return -2;
   }
 
@@ -238,11 +230,12 @@ int silc_fd_stream_write(SilcStream stream, const unsigned char *data,
       SILC_LOG_DEBUG(("Could not write immediately, will do it later"));
       silc_schedule_set_listen_fd(fd_stream->schedule, fd_stream->fd2,
 				  SILC_TASK_READ | SILC_TASK_WRITE, FALSE);
+      silc_set_errno_posix(errno);
       return -1;
     }
     SILC_LOG_DEBUG(("Cannot write to fd: %s", strerror(errno)));
     silc_schedule_unset_listen_fd(fd_stream->schedule, fd_stream->fd2);
-    fd_stream->error = errno;
+    silc_set_errno_posix(errno);
     return -2;
   }
 

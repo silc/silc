@@ -187,8 +187,10 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
 
   SILC_LOG_DEBUG(("Parsing MIME message"));
 
-  if (!data)
+  if (!data) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return NULL;
+  }
 
   if (!mime) {
     mime = silc_mime_alloc();
@@ -204,26 +206,34 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
     if (data_len - i >= 2 && tmp[i] == '\r' && tmp[i + 1] == '\n') {
       /* Get field */
       field = strchr(line, ':');
-      if (!field)
+      if (!field) {
+	silc_set_errno(SILC_ERR_BAD_ENCODING);
 	goto err;
+      }
       field = silc_memdup(line, field - line);
       if (!field)
 	goto err;
 
       /* Get value. Remove whitespaces too. */
       value = strchr(line, ':');
-      if ((tmp + i) - value < 2)
+      if ((tmp + i) - value < 2) {
+	silc_set_errno(SILC_ERR_OVERFLOW);
 	goto err;
+      }
       value++;
       for (k = 0; k < (tmp + i) - value; k++) {
-	if (value[k] == '\r')
+	if (value[k] == '\r') {
+	  silc_set_errno(SILC_ERR_BAD_ENCODING);
 	  goto err;
+        }
 	if (value[k] != ' ' && value[k] != '\t')
 	  break;
       }
       value += k;
-      if ((tmp + i) - value < 1)
+      if ((tmp + i) - value < 1) {
+	silc_set_errno(SILC_ERR_OVERFLOW);
 	goto err;
+      }
       value = silc_memdup(value, (tmp + i) - value);
       if (!value)
 	goto err;
@@ -261,17 +271,23 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
 
     /* Get multipart type */
     value = strchr(field, '/');
-    if (!value)
+    if (!value) {
+      silc_set_errno(SILC_ERR_BAD_ENCODING);
       goto err;
+    }
     value++;
     if (strchr(field, '"'))
       value++;
-    if (!strchr(field, ';'))
+    if (!strchr(field, ';')) {
+      silc_set_errno(SILC_ERR_BAD_ENCODING);
       goto err;
+    }
     memset(b, 0, sizeof(b));
     len = (unsigned int)(strchr(field, ';') - value);
-    if (len > sizeof(b) - 1)
+    if (len > sizeof(b) - 1) {
+      silc_set_errno(SILC_ERR_OVERFLOW);
       goto err;
+    }
     strncpy(b, value, len);
     if (strchr(b, '"'))
       *strchr(b, '"') = '\0';
@@ -285,14 +301,14 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
       SILC_LOG_DEBUG(("Boundary '%s'", value));
 
       memset(b, 0, sizeof(b));
-      line = strdup(value);
+      line = silc_strdup(value);
       if (strrchr(line, '"')) {
 	*strrchr(line, '"') = '\0';
 	silc_snprintf(b, sizeof(b) - 1, "--%s", line + 1);
-	mime->boundary = strdup(line + 1);
+	mime->boundary = silc_strdup(line + 1);
       } else {
 	silc_snprintf(b, sizeof(b) - 1, "--%s", line);
-	mime->boundary = strdup(line);
+	mime->boundary = silc_strdup(line);
       }
       silc_free(line);
 
@@ -324,8 +340,10 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
 		tmp[k] == '-' && tmp[k + 1] == '-')
 	      if (!memcmp(tmp + k, b, strlen(b)))
 		break;
-	  if (k >= data_len)
+	  if (k >= data_len) {
+	    silc_set_errno(SILC_ERR_OVERFLOW);
 	    goto err;
+	  }
 
 	  /* Remove preceding CRLF */
 	  k -= 2;
@@ -477,23 +495,31 @@ SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
 
   SILC_LOG_DEBUG(("Assembling MIME fragments"));
 
-  if (!assembler || !partial)
+  if (!assembler || !partial) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     goto err;
+  }
 
   type = (char *)silc_mime_get_field(partial, "Content-Type");
-  if (!type)
+  if (!type) {
+    silc_set_errno(SILC_ERR_BAD_ENCODING);
     goto err;
+  }
 
   /* Get ID */
   tmp = strstr(type, "id=");
-  if (!tmp)
+  if (!tmp) {
+    silc_set_errno(SILC_ERR_BAD_ENCODING);
     goto err;
-  if (strlen(tmp) <= 4)
+  }
+  if (strlen(tmp) <= 4) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
     goto err;
+  }
   tmp += 3;
   if (*tmp == '"')
     tmp++;
-  id = strdup(tmp);
+  id = silc_strdup(tmp);
   if (strchr(id, ';'))
     *strchr(id, ';') = '\0';
   if (strrchr(id, '"'))
@@ -503,14 +529,18 @@ SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
 
   /* Get fragment number */
   tmp = strstr(type, "number=");
-  if (!tmp)
+  if (!tmp) {
+    silc_set_errno(SILC_ERR_BAD_ENCODING);
     goto err;
+  }
   tmp = strchr(tmp, '=');
-  if (strlen(tmp) < 2)
+  if (strlen(tmp) < 2) {
+    silc_set_errno(SILC_ERR_OVERFLOW);
     goto err;
+  }
   tmp++;
   if (strchr(tmp, ';')) {
-    tmp = strdup(tmp);
+    tmp = silc_strdup(tmp);
     *strchr(tmp, ';') = '\0';
     number = atoi(tmp);
     silc_free(tmp);
@@ -545,11 +575,13 @@ SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
   tmp = strstr(type, "total=");
   if (tmp) {
     tmp = strchr(tmp, '=');
-    if (strlen(tmp) < 2)
+    if (strlen(tmp) < 2) {
+      silc_set_errno(SILC_ERR_OVERFLOW);
       goto err;
+    }
     tmp++;
     if (strchr(tmp, ';')) {
-      tmp = strdup(tmp);
+      tmp = silc_strdup(tmp);
       *strchr(tmp, ';') = '\0';
       total = atoi(tmp);
       silc_free(tmp);
@@ -583,8 +615,10 @@ SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
 
     /* The fragment is in the data portion of the partial message */
     data = silc_mime_get_data(p, &data_len);
-    if (!data)
+    if (!data) {
+      silc_set_errno(SILC_ERR_BAD_ENCODING);
       goto err;
+    }
 
     /* Assemble */
     if (!compbuf) {
@@ -757,7 +791,7 @@ void silc_mime_add_field(SilcMime mime, const char *field, const char *value)
   if (!mime || !field || !value)
     return;
 
-  silc_hash_table_add(mime->fields, strdup(field), strdup(value));
+  silc_hash_table_add(mime->fields, silc_strdup(field), silc_strdup(value));
 }
 
 /* Get field */
@@ -852,7 +886,7 @@ void silc_mime_set_multipart(SilcMime mime, const char *type,
   silc_snprintf(tmp, sizeof(tmp) - 1, "multipart/%s; boundary=%s", type, boundary);
   silc_mime_add_field(mime, "Content-Type", tmp);
   silc_free(mime->boundary);
-  mime->boundary = strdup(boundary);
+  mime->boundary = silc_strdup(boundary);
 
   if (mime->multiparts)
     return;
@@ -863,8 +897,10 @@ void silc_mime_set_multipart(SilcMime mime, const char *type,
 
 SilcBool silc_mime_add_multipart(SilcMime mime, SilcMime part)
 {
-  if (!mime || !mime->multiparts || !part)
+  if (!mime || !mime->multiparts || !part) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return FALSE;
+  }
 
   silc_dlist_add(mime->multiparts, part);
   return TRUE;
@@ -874,8 +910,10 @@ SilcBool silc_mime_add_multipart(SilcMime mime, SilcMime part)
 
 SilcBool silc_mime_is_multipart(SilcMime mime)
 {
-  if (!mime)
+  if (!mime) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return FALSE;
+  }
 
   return mime->multiparts != NULL;
 }
@@ -884,8 +922,10 @@ SilcBool silc_mime_is_multipart(SilcMime mime)
 
 SilcDList silc_mime_get_multiparts(SilcMime mime, const char **type)
 {
-  if (!mime)
+  if (!mime) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return NULL;
+  }
 
   if (type)
     *type = (const char *)mime->multitype;

@@ -403,7 +403,7 @@ static void silc_http_server_io(SilcStream stream, SilcStreamStatus status,
 
 /* Accepts new connection */
 
-static void silc_http_server_new_connection(SilcNetStatus status,
+static void silc_http_server_new_connection(SilcResult status,
 					    SilcStream stream,
 					    void *context)
 {

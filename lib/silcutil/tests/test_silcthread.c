@@ -28,7 +28,7 @@ int main(int argc, char **argv)
     silc_log_debug(TRUE);
     silc_log_quick(TRUE);
     silc_log_debug_hexdump(TRUE);
-    silc_log_set_debug_string("*thread*");
+    silc_log_set_debug_string("*thread*,*errno*");
   }
 
   schedule = silc_schedule_init(0, NULL, NULL);

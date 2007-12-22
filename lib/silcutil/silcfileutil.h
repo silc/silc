@@ -41,7 +41,8 @@
  *
  *    Opens a file indicated by the filename `filename' with flags indicated
  *    by `flags'.  The opening permission defaults to 0600.  The `flags'
- *    are defined in open(2).
+ *    are defined in open(2).  Returns the opened file descriptor or -1 on
+ *    error.
  *
  ***/
 int silc_file_open(const char *filename, int flags);
@@ -57,6 +58,7 @@ int silc_file_open(const char *filename, int flags);
  *    Opens a file indicated by the filename `filename' with flags indicated
  *    by `flags'.  The argument `mode' specifies the permissions to use in
  *    case a new file is created.  The `flags' are defined in open(2).
+ *    Returns the opened file descriptor or -1 on error.
  *
  ***/
 int silc_file_open_mode(const char *filename, int flags, int mode);
@@ -69,7 +71,8 @@ int silc_file_open_mode(const char *filename, int flags, int mode);
  *
  * DESCRIPTION
  *
- *    Reads data from file descriptor `fd' to `buf'.
+ *    Reads data from file descriptor `fd' to `buf'.  Returns the amount of
+ *    bytes read, 0 on EOF or -1 on error.
  *
  ***/
 int silc_file_read(int fd, unsigned char *buf, SilcUInt32 buf_len);
@@ -82,7 +85,8 @@ int silc_file_read(int fd, unsigned char *buf, SilcUInt32 buf_len);
  *
  * DESCRIPTION
  *
- *    Writes `buffer' of length of `len' to file descriptor `fd'.
+ *    Writes `buffer' of length of `len' to file descriptor `fd'.  Returns
+ *    the amount of bytes written, 0 on EOF or -1 on error.
  *
  ***/
 int silc_file_write(int fd, const char *buffer, SilcUInt32 len);
@@ -96,6 +100,7 @@ int silc_file_write(int fd, const char *buffer, SilcUInt32 len);
  * DESCRIPTION
  *
  *    Closes file descriptor previously opened with silc_file_open().
+ *    Returns 0 on success or -1 on error.
  *
  ***/
 int silc_file_close(int fd);

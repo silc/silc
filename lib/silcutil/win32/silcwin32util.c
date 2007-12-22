@@ -45,7 +45,7 @@ char *silc_get_username(void)
   DWORD maxlen = 128;
   char username[128];
   GetUserName(username, &maxlen);
-  return strdup(username);
+  return silc_strdup(username);
 }
 
 char *silc_get_real_name(void)

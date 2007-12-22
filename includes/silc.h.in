@@ -246,7 +246,9 @@ extern "C" {
 #endif				/* !SILC_WIN32 */
 
 /* Include generic SILC type definitions */
+#include "silcerrno.h"
 #include "silctypes.h"
+#include "silcbitops.h"
 #include "silcmutex.h"
 #include "silcatomic.h"
 #include "silcversion.h"

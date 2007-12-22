@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 - 2006 Pekka Riikonen
+  Copyright (C) 2005 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -47,11 +47,10 @@ struct SilcSocketStreamStruct {
   SilcSocket sock;
   char *hostname;
   char *ip;
-  SilcUInt16 port;
-  SilcUInt16 sock_error;
   SilcSocketQos qos;
   SilcStreamNotifier notifier;
   void *notifier_context;
+  SilcUInt16 port;
   unsigned int ipv6      : 1;       /* UDP IPv6 */
   unsigned int connected : 1;	    /* UDP connected state */
 };
@@ -61,5 +60,13 @@ struct SilcSocketStreamStruct {
 
 extern const SilcStreamOps silc_socket_stream_ops;
 extern const SilcStreamOps silc_socket_udp_stream_ops;
+
+/* Backwards support */
+#define silc_socket_stream_get_error(stream) silc_errno
+#define SILC_SOCKET_OK SILC_OK
+#define SILC_SOCKET_UNKNOWN_IP SILC_ERR_UNKNOWN_IP
+#define SILC_SOCKET_UNKNOWN_HOST SILC_ERR_UNKNOWN_HOST
+#define SILC_SOCKET_NO_MEMORY SILC_ERR_OUT_OF_MEMORY
+#define SILC_SOCKET_ERROR SILC_ERR
 
 #endif /* SILCSOCKETSTREAM_I_H */

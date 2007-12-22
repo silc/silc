@@ -214,13 +214,13 @@ int main(int argc, char **argv)
     silc_log_debug(TRUE);
     silc_log_debug_hexdump(TRUE);
     silc_log_quick(TRUE);
-    silc_log_set_debug_string("*table*");
+    silc_log_set_debug_string("*table*,*errno*");
   }
 
   if (argc > 1 && !strcmp(argv[1], "-D")) {
     silc_log_debug(TRUE);
     dump = TRUE;
-    silc_log_set_debug_string("*table*");
+    silc_log_set_debug_string("*table*,*errno*");
   }
 
   if (!alloc_table())

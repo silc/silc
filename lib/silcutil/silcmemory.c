@@ -27,26 +27,40 @@
 void *silc_malloc(size_t size)
 {
   void *addr;
+
   if (silc_unlikely(size <= 0 || size >= SILC_MAX_ALLOC)) {
-    SILC_LOG_ERROR(("Invalid memory allocation, allocation by %x", size));
+    if (size == 0)
+      silc_set_errno_nofail(SILC_ERR_ZERO_ALLOCATION);
+    else
+      silc_set_errno_reason_nofail(SILC_ERR_TOO_LARGE_ALLOCATION,
+				   "Allocation by %d", size);
     return NULL;
   }
+
   addr = malloc(size);
   if (silc_unlikely(!addr))
-    SILC_LOG_ERROR(("System out of memory"));
+    silc_set_errno_nofail(SILC_ERR_OUT_OF_MEMORY);
+
   return addr;
 }
 
 void *silc_calloc(size_t items, size_t size)
 {
   void *addr;
+
   if (silc_unlikely(size * items <= 0 || size * items >= SILC_MAX_ALLOC)) {
-    SILC_LOG_ERROR(("Invalid memory allocation, allocation by %x", size));
+    if (size == 0)
+      silc_set_errno_nofail(SILC_ERR_ZERO_ALLOCATION);
+    else
+      silc_set_errno_reason_nofail(SILC_ERR_TOO_LARGE_ALLOCATION,
+				   "Allocation by %d", size);
     return NULL;
   }
+
   addr = calloc(items, size);
   if (silc_unlikely(!addr))
-    SILC_LOG_ERROR(("System out of memory"));
+    silc_set_errno_nofail(SILC_ERR_OUT_OF_MEMORY);
+
   return addr;
 }
 
@@ -54,12 +68,18 @@ void *silc_realloc(void *ptr, size_t size)
 {
   void *addr;
   if (silc_unlikely(size <= 0 || size >= SILC_MAX_ALLOC)) {
-    SILC_LOG_ERROR(("Invalid memory allocation, allocation by %x", size));
+    if (size == 0)
+      silc_set_errno_nofail(SILC_ERR_ZERO_ALLOCATION);
+    else
+      silc_set_errno_reason_nofail(SILC_ERR_TOO_LARGE_ALLOCATION,
+				   "Allocation by %d", size);
     return NULL;
   }
+
   addr = realloc(ptr, size);
   if (silc_unlikely(!addr))
-    SILC_LOG_ERROR(("System out of memory"));
+    silc_set_errno_nofail(SILC_ERR_OUT_OF_MEMORY);
+
   return addr;
 }
 
@@ -71,14 +91,20 @@ void silc_free(void *ptr)
 void *silc_memdup(const void *ptr, size_t size)
 {
   unsigned char *addr;
+
   addr = silc_malloc(size + 1);
   if (silc_unlikely(!addr)) {
-    SILC_LOG_ERROR(("System out of memory"));
+    silc_set_errno_nofail(SILC_ERR_OUT_OF_MEMORY);
     return NULL;
   }
   memcpy((void *)addr, ptr, size);
   addr[size] = '\0';
   return (void *)addr;
+}
+
+char *silc_strdup(const char *str)
+{
+  return silc_memdup(str, strlen(str));
 }
 
 #endif /* !SILC_STACKTRACE */
