@@ -71,4 +71,9 @@
 #undef sleep
 #define sleep(x) Sleep((x) * 1000)
 
+#if _MSC_VER < 1300
+#define SetWindowLongPtr SetWindowLong
+#define GetWindowLongPtr GetWindowLong
+#endif /* _MSC_VER < 1300 */
+
 #endif
