@@ -41,8 +41,7 @@
  * to encode and decode with various options (such as implicit and explicit
  * tagging and defining specific class option).
  *
- * The implementation supports all the common ASN.1 types.  This
- * implementation does not support advanced ASN.1 features like macros.
+ * The implementation supports all the common ASN.1 types.
  *
  * References: ITU-T X.680 - X.693
  * http://www.itu.int/ITU-T/studygroups/com17/languages/
@@ -111,7 +110,6 @@ typedef struct SilcAsn1Object SilcAsn1Struct;
  *                     SILC_ASN1_BOOLEAN_T(SILC_ASN1_PRIVATE |
  *                                         SILC_ASN1_EXPLICIT, 100, boolval),
  *                     SILC_ASN1_END);
- *
  *
  *    // Decode optional value, with SILC_ASN1_OPTIONAL the type must be
  *    // a pointer so that NULL can be returned if the type is not present.
