@@ -281,16 +281,17 @@ void *silc_stack_malloc(SilcStack stack, SilcUInt32 size);
  * SYNOPSIS
  *
  *    void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
- *                             *void *ptr, SilcUInt32 size);
+ *                             void *ptr, SilcUInt32 size);
  *
  * DESCRIPTION
  *
  *    Attempts to reallocate memory by changing the size of the `ptr' into
  *    `size'.  This routine works only if the previous allocation to `stack'
  *    was `ptr'.  If there is another memory allocation between allocating
- *    `ptr' and this call this routine will return NULL.  NULL is also
- *    returned if the `size' does not fit into the current stack block.
- *    If NULL is returned the old memory remains intact.
+ *    `ptr' and this call this routine will return NULL (and silc_errno is
+ *    set to SILC_ERR_INVALID_ARGUMENT).  NULL is also returned if the `size'
+ *    does not fit into the current stack block.  If NULL is returned the old
+ *    memory remains intact.
  *
  * NOTES
  *

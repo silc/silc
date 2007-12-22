@@ -497,7 +497,7 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
   if (stack->stack->data[si]->bytes_left + old_size +
       ((unsigned char *)ptr - (unsigned char *)sptr) != bsize) {
     SILC_LOG_DEBUG(("Cannot reallocate"));
-    silc_set_errno_nofail(SILC_ERR_BAD_ADDRESS);
+    silc_set_errno_nofail(SILC_ERR_INVALID_ARGUMENT);
     SILC_STACK_STAT(stack, num_errors, 1);
     return NULL;
   }
@@ -512,7 +512,8 @@ void *silc_stack_realloc(SilcStack stack, SilcUInt32 old_size,
   }
 
   SILC_LOG_DEBUG(("Cannot reallocate in this block"));
-  silc_set_errno_nofail(SILC_ERR_OUT_OF_MEMORY);
+  silc_set_errno_reason_nofail(SILC_ERR_TOO_LARGE_ALLOCATION,
+			       "Cannot reallocate in this memory block");
   SILC_STACK_STAT(stack, num_errors, 1);
   return NULL;
 }
