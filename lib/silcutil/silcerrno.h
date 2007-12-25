@@ -80,20 +80,20 @@ typedef enum {
   SILC_ERR_TRY_AGAIN                   = 9,   /* Try again */
   SILC_ERR_PERMISSION_DENIED           = 10,  /* Permission denied */
   SILC_ERR_INVALID_ARGUMENT            = 11,  /* Invalid argument */
-  SILC_ERR_BAD_TIME                    = 13,  /* Bad time value */
-  SILC_ERR_TIMEOUT                     = 14,  /* Timeout occurred */
-  SILC_ERR_ASSERT                      = 15,  /* Assertion failed */
-  SILC_ERR_NOT_FOUND                   = 16,  /* Item/entry not found */
-  SILC_ERR_UNKNOWN_CHAR                = 17,  /* Unknown character */
-  SILC_ERR_PROHIBITED_CHAR             = 18,  /* Prohibited character */
-  SILC_ERR_BAD_CHAR_ENCODING           = 19,  /* Bad character encoding */
-  SILC_ERR_UNSUPPORTED_CHAR_ENCODING   = 20,  /* Unsupported char encoding */
-  SILC_ERR_BAD_VERSION                 = 21,  /* Bad/unsupported version */
-  SILC_ERR_BAD_ADDRESS                 = 22,  /* Bad memory address */
-  SILC_ERR_BAD_ENCODING                = 23,  /* Bad data encoding */
-  SILC_ERR_INTERRUPTED                 = 24,  /* Interrupted */
-  SILC_ERR_NOT_VALID                   = 25,  /* Not valid */
-  SILC_ERR_LIMIT                       = 26,  /* Limit reached */
+  SILC_ERR_BAD_TIME                    = 12,  /* Bad time value */
+  SILC_ERR_TIMEOUT                     = 13,  /* Timeout occurred */
+  SILC_ERR_ASSERT                      = 14,  /* Assertion failed */
+  SILC_ERR_NOT_FOUND                   = 15,  /* Item/entry not found */
+  SILC_ERR_UNKNOWN_CHAR                = 16,  /* Unknown character */
+  SILC_ERR_PROHIBITED_CHAR             = 17,  /* Prohibited character */
+  SILC_ERR_BAD_CHAR_ENCODING           = 18,  /* Bad character encoding */
+  SILC_ERR_UNSUPPORTED_CHAR_ENCODING   = 19,  /* Unsupported char encoding */
+  SILC_ERR_BAD_VERSION                 = 20,  /* Bad/unsupported version */
+  SILC_ERR_BAD_ADDRESS                 = 21,  /* Bad memory address */
+  SILC_ERR_BAD_ENCODING                = 22,  /* Bad data encoding */
+  SILC_ERR_INTERRUPTED                 = 23,  /* Interrupted */
+  SILC_ERR_NOT_VALID                   = 24,  /* Not valid */
+  SILC_ERR_LIMIT                       = 25,  /* Limit reached */
 
   /* File, directory and device errors */
   SILC_ERR_NO_SUCH_FILE                = 40,  /* No such file */
