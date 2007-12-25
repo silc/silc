@@ -224,7 +224,7 @@ AC_HEADER_STAT
 
 # More header checking
 #
-AC_CHECK_HEADERS(unistd.h string.h getopt.h errno.h fcntl.h assert.h)
+AC_CHECK_HEADERS(unistd.h string.h errno.h fcntl.h assert.h)
 AC_CHECK_HEADERS(sys/types.h sys/stat.h sys/time.h stddef.h)
 AC_CHECK_HEADERS(netinet/in.h netinet/tcp.h xti.h netdb.h sys/resource.h)
 AC_CHECK_HEADERS(pwd.h grp.h termcap.h paths.h)
@@ -296,13 +296,6 @@ AC_CHECK_FUNC(getopt_long,
     AC_DEFINE([HAVE_GETOPT_LONG], [], [HAVE_GETOPT_LONG])
     have_getopt_long=1
   ], have_getopt_long=0
-)
-
-AC_CHECK_FUNC(getopt,
-  [
-    AC_DEFINE([HAVE_GETOPT], [], [HAVE_GETOPT])
-    have_getopt=1
-  ], have_getopt=0
 )
 
 ##

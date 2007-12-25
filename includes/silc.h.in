@@ -158,14 +158,6 @@ extern "C" {
 #include <grp.h>
 #endif
 
-#if defined(HAVE_GETOPT_H) && defined(HAVE_GETOPT)
-#include <getopt.h>
-#else
-#if defined(HAVE_SILCDEFS_H)
-#include "getopti.h"
-#endif /* HAVE_SILCDEFS_H */
-#endif
-
 #ifdef SOCKS5
 #include "socks.h"
 #endif
