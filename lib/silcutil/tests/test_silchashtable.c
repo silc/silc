@@ -208,19 +208,38 @@ SilcBool dump_table()
 int main(int argc, char **argv)
 {
   SilcBool success = FALSE;
+  SilcGetOptStruct op = SILC_GETOPT_INIT;
+  int opt;
   int i;
 
-  if (argc > 1 && !strcmp(argv[1], "-d")) {
-    silc_log_debug(TRUE);
-    silc_log_debug_hexdump(TRUE);
-    silc_log_quick(TRUE);
-    silc_log_set_debug_string("*table*,*errno*");
-  }
+  while ((opt = silc_getopt(argc, argv, "de::D", &op)) != -1) {
+    switch (opt) {
+      case 'd':
+	silc_log_debug(TRUE);
+	silc_log_debug_hexdump(TRUE);
+	silc_log_quick(TRUE);
+	silc_log_set_debug_string("*table*,*errno*");
+	break;
 
-  if (argc > 1 && !strcmp(argv[1], "-D")) {
-    silc_log_debug(TRUE);
-    dump = TRUE;
-    silc_log_set_debug_string("*table*,*errno*");
+      case 'D':
+	silc_log_debug(TRUE);
+	dump = TRUE;
+ 	silc_log_set_debug_string("*table*,*errno*");
+	break;
+
+      case 'e':
+	silc_log_debug(TRUE);
+	fprintf(stderr, "%s\n", op.opt_arg);
+	if (op.opt_arg) {
+	  dump = TRUE;
+ 	  silc_log_set_debug_string(op.opt_arg);
+	}
+	break;
+
+      default:
+	exit(1);
+	break;
+    }
   }
 
   if (!alloc_table())

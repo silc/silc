@@ -254,6 +254,7 @@ extern "C" {
 #include "silcversion.h"
 
 /* SILC util library includes */
+#include "silcgetopt.h"
 #include "silclist.h"
 #include "silcstack.h"
 #include "silcmemory.h"

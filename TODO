@@ -103,15 +103,7 @@ Runtime library, lib/silcutil/
 
  o Add directory opening/traversing functions
 
- o silc_getopt routines
-
- o Add silc_stream_get_root and add get_root stream operation.  It
-   returns the root of the stream or NULL if stream doesn't have root.
-
- o Change some stream routines (like socket stream API) to accept ANY
-   stream and use silc_stream_get_root to get the socket stream from the
-   given stream.  This will make various stream APIs more easier to use
-   when user doesn't have to dig up the correct stream.
+ o silc_getopt routines (***DONE)
 
  o The SILC Event signals.  Asynchronous events that can be created,
    connected to and signalled.  Either own event routines or glued into
@@ -201,13 +193,6 @@ Runtime library, lib/silcutil/
 
  o Thread pool API.  Add this to lib/silcutil/silcthread.[ch]. 	(***DONE)
 
- o Fast mutex implementation.  Fast rwlock implementation.  Mutex and
-   rwlock implementation using atomic operations.
-
- o Compression routines are missing.  The protocol supports packet
-   compression thus it must be implemented.  SILC Zip API must be
-   defined.
-
  o Add new functions to SilcStack API in lib/silcutil/silcstack.[ch].  Add
    silc_stack_[set|get]_alignment.  It defines the default alignment used
    when allocating memory from stack.  It can be used to specify special
@@ -252,12 +237,27 @@ Runtime library, lib/silcutil/
  o Generic SilcResult that includes all possible status and
    error conditions and generic errno API. (***DONE)
 
+ (o Change some stream routines (like socket stream API) to accept ANY
+   stream and use silc_stream_get_root to get the socket stream from the
+   given stream.  This will make various stream APIs more easier to use
+   when user doesn't have to dig up the correct stream.
+
+   Add silc_stream_get_root and add get_root stream operation.  It
+   returns the root of the stream or NULL if stream doesn't have root.) maybe
+
+ (o Compression routines are missing.  The protocol supports packet
+   compression thus it must be implemented.  SILC Zip API must be
+   defined.) maybe
+
  (o SilcIpAddr abstraction.  Ipv4 and Ipv6 support to the abstaction.)
   maybe
 
  (o SILC specific socket creation/closing routines to silcnet.h, wrappers
   to all send(), recv(), sendto() etc.  Bad thing is that we'd have to
   define all socket options, sockaddrs, etc.) maybe
+
+ (o Fast mutex implementation.  Fast rwlock implementation.  Mutex and
+   rwlock implementation using atomic operations.) not for now.
 
  (o mmap) maybe
 
