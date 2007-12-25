@@ -177,6 +177,9 @@ SilcStack silc_stack_alloc(SilcUInt32 stack_size, SilcStack parent)
   if (stack_size < SILC_STACK_DEFAULT_SIZE)
     stack_size = SILC_STACK_DEFAULT_SIZE;
 
+  /* Align by 8 */
+  stack_size += ((-stack_size) % 8);
+
   if (parent) {
     /* Get stack from parent.  The stack itself is allocated from the
        parent (but does not consume parent's own stack). */

@@ -108,7 +108,7 @@ void silc_fsm_thread_init(SilcFSMThread thread,
   SILC_LOG_DEBUG(("Initializing new thread %p (%s)",
 		  thread, real_thread ? "real" : "FSM"));
 
-  SILC_ASSERT(!fsm->thread);
+  SILC_VERIFY(!fsm->thread);
 
   thread->fsm_context = thread_context;
   thread->state_context = NULL;
@@ -317,7 +317,7 @@ void silc_fsm_finish(void *fsm)
 {
   SilcFSM f = fsm;
 
-  SILC_ASSERT(!f->finished);
+  SILC_VERIFY(!f->finished);
 
   f->started = FALSE;
   f->finished = TRUE;
@@ -356,7 +356,7 @@ SilcSchedule silc_fsm_get_schedule(void *fsm)
 
 SilcFSM silc_fsm_get_machine(SilcFSMThread thread)
 {
-  SILC_ASSERT(thread->thread);
+  SILC_VERIFY(thread->thread);
   return (SilcFSM)thread->u.t.fsm;
 }
 
@@ -406,7 +406,7 @@ SilcBool silc_fsm_thread_wait(void *fsm, void *thread)
 {
   SilcFSM t = thread;
 
-  SILC_ASSERT(t->thread);
+  SILC_VERIFY(t->thread);
 
   t->u.t.event = silc_fsm_event_alloc(t->u.t.fsm);
   if (!t->u.t.event)
@@ -517,7 +517,7 @@ SilcFSMEvent silc_fsm_event_alloc(SilcFSM fsm)
 void silc_fsm_event_init(SilcFSMEvent event, SilcFSM fsm)
 {
   SILC_LOG_DEBUG(("Initializing event %p", event));
-  SILC_ASSERT(!fsm->thread);
+  SILC_VERIFY(!fsm->thread);
   memset(event, 0, sizeof(*event));
   event->fsm = fsm;
   event->refcnt = 0;

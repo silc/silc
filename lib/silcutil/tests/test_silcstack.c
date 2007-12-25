@@ -94,7 +94,7 @@ int main(int argc, char **argv)
   silc_stack_stats(stack);
 
   SILC_LOG_DEBUG(("Creating child stack"));
-  child = silc_stack_alloc(8192, stack);
+  child = silc_stack_alloc(8190, stack);
   if (!child)
     goto err;
   SILC_LOG_DEBUG(("Pushing %d times", NUM_ALLS / 2));

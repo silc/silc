@@ -125,8 +125,7 @@ typedef void (*SilcStackOomHandler)(SilcStack stack, void *context);
  *    allocation by various routines.  Returns the pointer to the stack
  *    that must be freed with silc_stack_free function when it is not
  *    needed anymore.  If the `stack_size' is zero (0) by default a
- *    1 kilobyte (1024 bytes) stack is allocated.  If the `stack_size'
- *    is non-zero the byte value must be multiple by 8.
+ *    1 kilobyte (1024 bytes) stack is allocated.
  *
  *    If `parent' is non-NULL the created stack is a child of the `parent'
  *    stack.  All of childs the memory is allocated from the `parent' and

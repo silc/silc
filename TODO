@@ -203,7 +203,7 @@ Runtime library, lib/silcutil/
    allocation possibility. (***DONE)
 
  o silc_stack_alloc shouldn't require multiple by 8 size argument, it
-   should figure it out itself.
+   should figure it out itself. (***DONE)
 
  o silc_malloc et. al. to respect --with-alignment.
 
