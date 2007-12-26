@@ -93,7 +93,8 @@ typedef void (*SilcSocketStreamCallback)(SilcResult status,
  *    also return NULL as the `callback' is called immediately.
  *
  *    If the silc_stream_set_notifier is called the stream is set to
- *    non-blocking mode.
+ *    non-blocking mode.  If `schedule' is NULL this will call
+ *    silc_schedule_get_global to try to get global scheduler.
  *
  ***/
 SilcAsyncOperation
@@ -136,7 +137,8 @@ silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
  *    This function returns the created SilcStream or NULL on error.
  *
  *    If the silc_stream_set_notifier is called the stream is set to
- *    non-blocking mode.
+ *    non-blocking mode.  If `schedule' is NULL this will call
+ *    silc_schedule_get_global to try to get global scheduler.
  *
  ***/
 SilcStream silc_socket_udp_stream_create(SilcSocket sock,

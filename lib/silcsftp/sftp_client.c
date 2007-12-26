@@ -403,6 +403,9 @@ SilcSFTP silc_sftp_client_start(SilcStream stream,
 
   SILC_LOG_DEBUG(("Starting SFTP client"));
 
+  if (!schedule)
+    schedule = silc_schedule_get_global();
+
   if (!stream)
     return NULL;
 

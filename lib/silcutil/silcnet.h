@@ -98,7 +98,8 @@ typedef void (*SilcNetCallback)(SilcResult status,
  *    is zero (0), operating system will define it automatically.
  *
  *    The `callback' always delivers valid new stream.  It is not called
- *    with an error status.
+ *    with an error status.  If `schedule' is NULL this will call
+ *    silc_schedule_get_global to try to get global scheduler.
  *
  ***/
 SilcNetListener
@@ -136,7 +137,8 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
  *    then the incoming connection hostname will be resolved.
  *
  *    The `callback' always delivers valid new stream.  It is not called
- *    with an error status.
+ *    with an error status.  If `schedule' is NULL this will call
+ *    silc_schedule_get_global to try to get global scheduler.
  *
  ***/
 SilcNetListener
@@ -238,7 +240,8 @@ void silc_net_close_listener(SilcNetListener listener);
  *    The returned SilcAsyncOperation context can be used to control the
  *    asynchronous connecting, such as to abort it.  If it is aborted
  *    using silc_async_abort the `callback' will not be called.  If NULL
- *    is returned the operation cannot be aborted.
+ *    is returned the operation cannot be aborted.  If `schedule' is NULL
+ *    this will call silc_schedule_get_global to try to get global scheduler.
  *
  ***/
 SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
@@ -277,7 +280,8 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
  *    To read the packet use silc_stream_read if the remote address was
  *    provided, and silc_net_udp_receive if it was not.
  *
- *    Supports IPv6 if the platform supports it.
+ *    Supports IPv6 if the platform supports it.  If `schedule' is NULL this
+ *    will call silc_schedule_get_global to try to get global scheduler.
  *
  * EXAMPLE
  *
@@ -532,7 +536,8 @@ SilcBool silc_net_gethostbyname(const char *name, SilcBool prefer_ipv6,
  *    Asynchronously resolves the IP address of the hostname indicated
  *    by the `name'.  This function returns immediately, and the
  *    `completion' callback will be called after the resolving is
- *    completed.
+ *    completed.  If `schedule' is NULL this will call silc_schedule_get_global
+ *    to try to get global scheduler.
  *
  *    If the `prefer_ipv6' is TRUE then this will return IPv6 address if it
  *    finds.  If FALSE if returns IPv4 address even if it found IPv6
@@ -577,7 +582,8 @@ SilcBool silc_net_gethostbyaddr(const char *addr, char *name,
  *    Asynchronously resolves the hostname for the IP address indicated
  *    by the `addr'.  This function returns immediately, and the
  *    `completion' callback will be called after the resolving is
- *    completed.
+ *    completed.  If `schedule' is NULL this will call silc_schedule_get_global
+ *    to try to get global scheduler.
  *
  ***/
 void silc_net_gethostbyaddr_async(const char *addr,

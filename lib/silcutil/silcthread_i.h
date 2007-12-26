@@ -29,6 +29,7 @@
    with silc_calloc and freeable with silc_free, and must also be able to
    pre-allocate from stack. */
 typedef struct SilcTlsObject {
+  SilcSchedule schedule;		    /* Global scheduler */
   void *thread_context;		            /* Context set with SILC Tls API */
   void *platform_context;	            /* Platform specific context */
   char error_reason[256];		    /* Reason for the error */

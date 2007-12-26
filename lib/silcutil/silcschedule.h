@@ -424,6 +424,47 @@ SilcStack silc_schedule_get_stack(SilcSchedule schedule);
 void silc_schedule_set_notify(SilcSchedule schedule,
 			      SilcTaskNotifyCb notify, void *context);
 
+/****f* silcutil/SilcScheduleAPI/silc_schedule_set_global
+ *
+ * SYNOPSIS
+ *
+ *    void silc_schedule_set_global(SilcSchedule schedule);
+ *
+ * DESCRIPTION
+ *
+ *    Sets global SilcSchedule `schedule' that can be retrieved at any time
+ *    by using silc_schedule_get_global.  The global scheduler is global only
+ *    to the current thread.  Each thread can have their own global scheduler.
+ *    If each thread must have global scheduler this must be called in each
+ *    thread.  If the global scheduler has been set already, new call will
+ *    replace the old one.
+ *
+ *    This routine is provided only as a convenience function to store
+ *    program's or thread's scheduler in one global place.  It is not mandatory
+ *    to call this function in order to use SilcSchedule.
+ *
+ *    Many routines that require SilcSchedule as an argument will call
+ *    silc_schedule_get_global if the scheduler is not provided to try to
+ *    get global scheduler.  Almost all routines in SilcSchedule API will call
+ *    silc_schedule_get_global if the SilcSchedule is not provided as argument.
+ *
+ ***/
+void silc_schedule_set_global(SilcSchedule schedule);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_get_global
+ *
+ * SYNOPSIS
+ *
+ *    SilcSchedule silc_schedule_get_global(void);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the thread's global scheduler that was set by calling
+ *    silc_schedule_set_global or NULL if global scheduler has not been set.
+ *
+ ***/
+SilcSchedule silc_schedule_get_global(void);
+
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_add_fd
  *
  * SYNOPSIS
@@ -444,6 +485,9 @@ void silc_schedule_set_notify(SilcSchedule schedule,
  *
  *    This returns the new task or NULL on error.  If a task with `fd' has
  *    already been added this will return the existing task pointer.
+ *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
  *
  ***/
 #define silc_schedule_task_add_fd(schedule, fd, callback, context)	\
@@ -466,6 +510,9 @@ void silc_schedule_set_notify(SilcSchedule schedule,
  *    to the `callback' is SILC_TASK_EXPIRE.  A task added with zero (0)
  *    timeout will be executed immediately next time tasks are scheduled.
  *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
+ *
  ***/
 #define silc_schedule_task_add_timeout(schedule, callback, context, s, u) \
   silc_schedule_task_add(schedule, 0, callback, context, s, u,		\
@@ -486,6 +533,9 @@ void silc_schedule_set_notify(SilcSchedule schedule,
  *    other platforms this function may not be available at all, and has no
  *    effect when called.  The event delivered to the `callback' is
  *    SILC_TASK_INTERRUPT.
+ *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
  *
  * NOTES
  *
@@ -517,6 +567,9 @@ void silc_schedule_set_notify(SilcSchedule schedule,
  *    in task callbacks (including in the task's own task callback) and
  *    in multi-threaded environment in other threads as well.
  *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
+ *
  ***/
 SilcBool silc_schedule_task_del(SilcSchedule schedule, SilcTask task);
 
@@ -535,6 +588,9 @@ SilcBool silc_schedule_task_del(SilcSchedule schedule, SilcTask task);
  *    It is safe to call this function in any place. Tasks may be removed
  *    in task callbacks (including in the task's own task callback) and
  *    in multi-threaded environment in other threads as well.
+ *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
  *
  ***/
 SilcBool silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd);
@@ -556,6 +612,9 @@ SilcBool silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd);
  *    in task callbacks (including in the task's own task callback) and
  *    in multi-threaded environment in other threads as well.
  *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
+ *
  ***/
 SilcBool silc_schedule_task_del_by_callback(SilcSchedule schedule,
 					    SilcTaskCallback callback);
@@ -575,6 +634,9 @@ SilcBool silc_schedule_task_del_by_callback(SilcSchedule schedule,
  *    It is safe to call this function in any place. Tasks may be removed
  *    in task callbacks (including in the task's own task callback) and
  *    in multi-threaded environment in other threads as well.
+ *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
  *
  ***/
 SilcBool silc_schedule_task_del_by_context(SilcSchedule schedule,
@@ -596,6 +658,9 @@ SilcBool silc_schedule_task_del_by_context(SilcSchedule schedule,
  *    It is safe to call this function in any place. Tasks may be removed
  *    in task callbacks (including in the task's own task callback) and
  *    in multi-threaded environment in other threads as well.
+ *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
  *
  ***/
 SilcBool silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
@@ -627,6 +692,9 @@ SilcBool silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
  *    after the event occurs in reality.  In normal cases the `send_events'
  *    is set to FALSE.
  *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
+ *
  *    Returns FALSE if the operation could not performed and TRUE if it
  *    was a success.
  *
@@ -646,6 +714,9 @@ SilcBool silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
  *    Returns the file descriptor `fd' current requested events mask,
  *    or 0 on error.
  *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
+ *
  ***/
 SilcTaskEvent silc_schedule_get_fd_events(SilcSchedule schedule,
 					  SilcUInt32 fd);
@@ -661,6 +732,9 @@ SilcTaskEvent silc_schedule_get_fd_events(SilcSchedule schedule,
  *    Tells the scheduler not to listen anymore for the specified
  *    file descriptor `fd'. No events will be detected for the `fd'
  *    after calling this function.
+ *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
  *
  ***/
 void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd);

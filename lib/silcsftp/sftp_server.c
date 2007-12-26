@@ -361,6 +361,9 @@ SilcSFTP silc_sftp_server_start(SilcStream stream,
 {
   SilcSFTPServer server;
 
+  if (!schedule)
+    schedule = silc_schedule_get_global();
+
   server = silc_calloc(1, sizeof(*server));
   if (!server)
     return NULL;

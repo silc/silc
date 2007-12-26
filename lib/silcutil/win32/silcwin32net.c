@@ -145,7 +145,15 @@ silc_net_tcp_create_listener(const char **local_ip_addr,
 
   SILC_LOG_DEBUG(("Creating TCP listener"));
 
-  if (port < 0 || !schedule || !callback) {
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      goto err;
+    }
+  }
+
+  if (port < 0 || !callback) {
     silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     goto err;
   }
@@ -254,7 +262,15 @@ silc_net_tcp_create_listener2(const char *local_ip_addr, int *ports,
 
   SILC_LOG_DEBUG(("Creating TCP listener"));
 
-  if (!schedule || !callback) {
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      goto err;
+    }
+  }
+
+  if (!callback) {
     silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     goto err;
   }
@@ -398,8 +414,13 @@ silc_net_udp_connect(const char *local_ip_addr, int local_port,
 
   SILC_LOG_DEBUG(("Creating UDP stream"));
 
-  if (!schedule)
-    goto err;
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      goto err;
+    }
+  }
 
   /* Bind to local addresses */
   SILC_LOG_DEBUG(("Binding to local address %s",
@@ -797,7 +818,15 @@ SilcAsyncOperation silc_net_tcp_connect(const char *local_ip_addr,
 {
   SilcNetConnect conn;
 
-  if (!remote_ip_addr || remote_port < 1 || !schedule || !callback) {
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return NULL;
+    }
+  }
+
+  if (!remote_ip_addr || remote_port < 1 || !callback) {
     silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     return NULL;
   }

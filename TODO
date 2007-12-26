@@ -105,6 +105,8 @@ Runtime library, lib/silcutil/
 
  o silc_getopt routines (***DONE)
 
+ o regex from /lib/contrib to lib/silcutil.
+
  o The SILC Event signals.  Asynchronous events that can be created,
    connected to and signalled.  Either own event routines or glued into
    SilcSchedule:
@@ -391,16 +393,14 @@ SILC Accelerator Library
 	  const char *option;			/* Option name */
 	  const char *display_name;		/* Option displayable name */
 	  SilcParamType type;			/* Option data format */
+	  void *default_value;			/* Option's default value */
+	  SilcUInt32 default_value_len;		/* Default value length */
 	} *SilcAcceleratorOption;
 
    For software accelerator it could be for example:
 
-   { "min_threads", "Minimum threads", SILC_PARAM_UINT32 },
-   { "max_threads", "Maximum threads", SILC_PARAM_UINT32 },
-
-   The accelerator itself doesn't have to use the option structure to
-   parse the options if not wanted.  It is defined for the caller so
-   they can learn the supported options in a well defined way.
+   { "min_threads", "Minimum threads", SILC_PARAM_UINT32, (void *)2, 4 },
+   { "max_threads", "Maximum threads", SILC_PARAM_UINT32, (void *)4, 4 },
 
  o Diffie-Hellman acceleration
 

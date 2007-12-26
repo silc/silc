@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 Pekka Riikonen
+  Copyright (C) 2006 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -112,6 +112,8 @@ typedef void (*SilcHttpServerCallback)(SilcHttpServer httpd,
  *    `port'.  The `callback' with `context' will be called everytime a new
  *    HTTP request comes to the server from a HTTP client.  In that callback
  *    the caller must then reply with the requested Web page or with error.
+ *    If the `schedule' is NULL this will call silc_schedule_get_global to
+ *    try to get global scheduler.
  *
  ***/
 SilcHttpServer silc_http_server_alloc(const char *ip, SilcUInt16 port,

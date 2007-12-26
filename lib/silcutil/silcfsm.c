@@ -59,8 +59,11 @@ SilcBool silc_fsm_init(SilcFSM fsm,
 		       SilcSchedule schedule)
 {
   if (!schedule) {
-    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
-    return FALSE;
+    schedule = silc_schedule_get_global();
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return FALSE;
+    }
   }
 
   fsm->fsm_context = fsm_context;

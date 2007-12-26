@@ -152,10 +152,20 @@ silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
   SilcSocketStream stream;
   SilcSocketHostLookup l;
 
-  if (!sock || !schedule) {
-    SILC_LOG_ERROR(("Missing arguments to silc_socket_tcp_stream_create"));
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      if (callback)
+	callback(silc_errno, NULL, context);
+      return NULL;
+    }
+  }
+
+  if (!sock) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
     if (callback)
-      callback(SILC_ERR_INVALID_ARGUMENT, NULL, context);
+      callback(silc_errno, NULL, context);
     return NULL;
   }
 
@@ -218,6 +228,14 @@ SilcStream silc_socket_udp_stream_create(SilcSocket sock, SilcBool ipv6,
 					 SilcSchedule schedule)
 {
   SilcSocketStream stream;
+
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return NULL;
+    }
+  }
 
   stream = silc_calloc(1, sizeof(*stream));
   if (!stream)

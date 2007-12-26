@@ -300,6 +300,11 @@ void silc_net_gethostbyname_async(const char *name,
 {
   SilcNetResolveContext r = silc_calloc(1, sizeof(*r));
 
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+  }
+
   r->completion = completion;
   r->context = context;
   r->prefer_ipv6 = prefer_ipv6;
@@ -355,6 +360,11 @@ void silc_net_gethostbyaddr_async(const char *addr,
 				  void *context)
 {
   SilcNetResolveContext r = silc_calloc(1, sizeof(*r));
+
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+  }
 
   r->completion = completion;
   r->context = context;

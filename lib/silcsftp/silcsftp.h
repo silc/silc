@@ -410,6 +410,9 @@ typedef void (*SilcSFTPExtendedCallback)(SilcSFTP sftp,
  *    used to read and write the SFTP packets.  The `error_cb' will be called
  *    in case a stream error occurs, such as end of stream.
  *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
+ *
  ***/
 SilcSFTP silc_sftp_client_start(SilcStream stream,
 				SilcSchedule schedule,
@@ -873,6 +876,9 @@ void silc_sftp_extended(SilcSFTP sftp,
  *    when the `stream' is ended (SILC_SFTP_STATUS_EOF).  The caller is
  *    responsible of closing and destroying the `stream'.  The `fs' is the
  *    filesystem context allocated by the application.
+ *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
  *
  ***/
 SilcSFTP silc_sftp_server_start(SilcStream stream,

@@ -1,3 +1,11 @@
+Wed Dec 26 13:10:30 EET 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_schedule_[set|get]_global to
+	  lib/silcutil/silcschedule.[ch].
+
+	* Changed many APIs to call silc_schedule_get_global if provided
+	  scheduler argument is NULL.
+
 Tue Dec 25 18:44:27 EET 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* silc_stack_alloc now automatically aligns the requested

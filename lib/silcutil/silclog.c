@@ -243,6 +243,9 @@ SilcBool silc_log_set_file(SilcLogType type, char *filename,
   FILE *fp = NULL;
   SilcLog log;
 
+  if (!scheduler)
+    scheduler = silc_schedule_get_global();
+
   log = silc_log_get_context(type);
   if (!log)
     return FALSE;

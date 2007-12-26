@@ -251,9 +251,8 @@ void silc_stream_destroy(SilcStream stream);
  *    If `notifier' is set to NULL no callback will be called for the stream,
  *    and the stream is not scheduled anymore.
  *
- *    This function returns FALSE if the `schedule' was provided and the
- *    stream could not be scheduled.  The actual API for `stream' may provide
- *    access to the actual error information.  Returns TRUE on success.
+ *    This function returns FALSE if the stream could not be scheduled.
+ *    Returns TRUE on success.  The `schedule' must always be non-NULL.
  *
  ***/
 SilcBool silc_stream_set_notifier(SilcStream stream, SilcSchedule schedule,

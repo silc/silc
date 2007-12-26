@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2007 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -346,8 +346,8 @@ typedef SilcBool (*SilcLogHexdumpCb)(char *file, char *function, int line,
  * SYNOPSIS
  *
  *    SilcBool silc_log_set_file(SilcLogType type, char *filename,
- *                           SilcUInt32 maxsize,
- *                           SilcSchedule scheduler);
+ *                               SilcUInt32 maxsize,
+ *                               SilcSchedule scheduler);
  *
  * DESCRIPTION
  *
@@ -359,7 +359,8 @@ typedef SilcBool (*SilcLogHexdumpCb)(char *file, char *function, int line,
  *    You can disable logging for a channel by specifying NULL filename, the
  *    maxsize in this case is not important.  The `scheduler' parameter is
  *    needed by the internal logging to allow buffered output and thus to
- *    save HD activity.
+ *    save HD activity.  If `scheduler' is NULL this will call
+ *    silc_schedule_get_global to try to get global scheduler.
  *
  ***/
 SilcBool silc_log_set_file(SilcLogType type, char *filename,

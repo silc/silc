@@ -457,6 +457,9 @@ SilcHttpServer silc_http_server_alloc(const char *ip, SilcUInt16 port,
 
   SILC_LOG_DEBUG(("Start HTTP server at %s:%d", ip, port));
 
+  if (!schedule)
+    schedule = silc_schedule_get_global();
+
   if (!ip || !schedule || !callback)
     return FALSE;
 

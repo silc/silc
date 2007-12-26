@@ -290,14 +290,14 @@ void silc_schedule_stats(SilcSchedule schedule)
 {
   SilcTaskFd ftask;
   fprintf(stdout, "Schedule %p statistics:\n\n", schedule);
-  fprintf(stdout, "Num FD tasks         : %lu (%lu bytes allocated)\n",
+  fprintf(stdout, "Num FD tasks         : %d (%lu bytes allocated)\n",
 	  silc_hash_table_count(schedule->fd_queue),
 	  sizeof(*ftask) * silc_hash_table_count(schedule->fd_queue));
-  fprintf(stdout, "Num Timeout tasks    : %d (%d bytes allocated)\n",
+  fprintf(stdout, "Num Timeout tasks    : %d (%lu bytes allocated)\n",
 	  silc_list_count(schedule->timeout_queue),
 	  sizeof(struct SilcTaskTimeoutStruct) *
 	  silc_list_count(schedule->timeout_queue));
-  fprintf(stdout, "Num Timeout freelist : %d (%d bytes allocated)\n",
+  fprintf(stdout, "Num Timeout freelist : %d (%lu bytes allocated)\n",
 	  silc_list_count(schedule->free_tasks),
 	  sizeof(struct SilcTaskTimeoutStruct) *
 	  silc_list_count(schedule->free_tasks));
@@ -376,6 +376,8 @@ SilcBool silc_schedule_uninit(SilcSchedule schedule)
 {
   SilcTask task;
 
+  SILC_VERIFY(schedule);
+
   SILC_LOG_DEBUG(("Uninitializing scheduler %p", schedule));
 
   if (schedule->valid == TRUE)
@@ -420,6 +422,7 @@ SilcBool silc_schedule_uninit(SilcSchedule schedule)
 void silc_schedule_stop(SilcSchedule schedule)
 {
   SILC_LOG_DEBUG(("Stopping scheduler"));
+  SILC_VERIFY(schedule);
   SILC_SCHEDULE_LOCK(schedule);
   schedule->valid = FALSE;
   SILC_SCHEDULE_UNLOCK(schedule);
@@ -575,6 +578,39 @@ void silc_schedule_set_notify(SilcSchedule schedule,
   schedule->notify_context = context;
 }
 
+/* Set global scheduler */
+
+void silc_schedule_set_global(SilcSchedule schedule)
+{
+  SilcTls tls = silc_thread_get_tls();
+
+  if (!tls) {
+    /* Try to initialize Tls */
+    tls = silc_thread_tls_init();
+    SILC_VERIFY(tls);
+    if (!tls)
+      return;
+  }
+
+  SILC_LOG_DEBUG(("Setting global scheduler %p", schedule));
+
+  tls->schedule = schedule;
+}
+
+/* Return global scheduler */
+
+SilcSchedule silc_schedule_get_global(void)
+{
+  SilcTls tls = silc_thread_get_tls();
+
+  if (!tls)
+    return NULL;
+
+  SILC_LOG_DEBUG(("Return global scheduler %p", tls->schedule));
+
+  return tls->schedule;
+}
+
 /* Add new task to the scheduler */
 
 SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
@@ -583,6 +619,15 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 				SilcTaskType type)
 {
   SilcTask task = NULL;
+
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return NULL;
+    }
+  }
 
   if (silc_unlikely(!schedule->valid)) {
     silc_set_errno(SILC_ERR_NOT_VALID);
@@ -730,6 +775,15 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 
 SilcBool silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
 {
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return FALSE;
+    }
+  }
+
   if (silc_unlikely(task == SILC_ALL_TASKS)) {
     SilcHashTableList htl;
 
@@ -787,6 +841,15 @@ SilcBool silc_schedule_task_del_by_fd(SilcSchedule schedule, SilcUInt32 fd)
 
   SILC_LOG_DEBUG(("Unregister task by fd %d", fd));
 
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return FALSE;
+    }
+  }
+
   SILC_SCHEDULE_LOCK(schedule);
 
   /* fd is unique, so there is only one task with this fd in the table */
@@ -828,6 +891,15 @@ SilcBool silc_schedule_task_del_by_callback(SilcSchedule schedule,
   SilcBool ret = FALSE;
 
   SILC_LOG_DEBUG(("Unregister task by callback"));
+
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return FALSE;
+    }
+  }
 
   SILC_SCHEDULE_LOCK(schedule);
 
@@ -881,6 +953,15 @@ SilcBool silc_schedule_task_del_by_context(SilcSchedule schedule,
   SilcBool ret = FALSE;
 
   SILC_LOG_DEBUG(("Unregister task by context"));
+
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return FALSE;
+    }
+  }
 
   SILC_SCHEDULE_LOCK(schedule);
 
@@ -939,6 +1020,15 @@ SilcBool silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
   if (fd)
     return silc_schedule_task_del_by_fd(schedule, fd);
 
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return FALSE;
+    }
+  }
+
   SILC_SCHEDULE_LOCK(schedule);
 
   /* Delete from timeout queue */
@@ -972,6 +1062,15 @@ SilcBool silc_schedule_set_listen_fd(SilcSchedule schedule, SilcUInt32 fd,
 				     SilcTaskEvent mask, SilcBool send_events)
 {
   SilcTaskFd task;
+
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return FALSE;
+    }
+  }
 
   if (silc_unlikely(!schedule->valid)) {
     silc_set_errno(SILC_ERR_NOT_VALID);
@@ -1011,6 +1110,15 @@ SilcTaskEvent silc_schedule_get_fd_events(SilcSchedule schedule,
 {
   SilcTaskFd task;
   SilcTaskEvent event = 0;
+
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return 0;
+    }
+  }
 
   if (silc_unlikely(!schedule->valid)) {
     silc_set_errno(SILC_ERR_NOT_VALID);
