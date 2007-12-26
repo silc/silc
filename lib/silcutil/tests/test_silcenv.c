@@ -5,6 +5,7 @@
 int main(int argc, char **argv)
 {
   SilcBool success = FALSE;
+  int i;
 
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_log_debug(TRUE);
@@ -19,6 +20,11 @@ int main(int argc, char **argv)
   if (silc_getenv("FOO") != NULL)
     goto err;
   success = TRUE;
+
+  for (i = 0; i < SILC_ERR_MAX + 10; i++) {
+    fprintf(stderr, "%d: ", i);
+    silc_set_errno(i);
+  }
 
  err:
   SILC_LOG_DEBUG(("Testing was %s", success ? "SUCCESS" : "FAILURE"));

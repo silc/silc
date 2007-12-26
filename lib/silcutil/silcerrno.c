@@ -350,6 +350,20 @@ const char *silc_errno_strings[] =
   "Interrupted",
   "Not valid",
   "Limit reached",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
 
   "No such file or directory",
   "Already exists",
@@ -364,6 +378,23 @@ const char *silc_errno_strings[] =
   "I/O error",
   "Bad file descriptor",
   "End of file",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
 
   "Bad IP address",
   "Unknown IP address",
@@ -380,7 +411,7 @@ const char *silc_errno_strings[] =
   "Network is down",
   "End of stream",
 
-  NULL
+  "",
 };
 
 /* Map error to string */
