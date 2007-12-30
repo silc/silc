@@ -405,7 +405,7 @@ do {						\
  *    is the caller's scheduler and the FSM will be run in the scheduler.
  *    If `schedule' is NULL this will call silc_schedule_get_global to try
  *    get global scheduler.  Returns NULL on error or if system is out of
- *    memory.
+ *    memory and sets silc_errno.
  *
  * EXAMPLE
  *
@@ -487,7 +487,7 @@ SilcBool silc_fsm_init(SilcFSM fsm,
  *    then the thread will actually be executed in real thread, if platform
  *    supports them.  The `thread_context' is delivered to every state
  *    function in the thread.  Returns NULL on error or if the system is out
- *    of memory.
+ *    of memory and sets silc_errno.
  *
  * NOTES
  *

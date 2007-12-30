@@ -93,7 +93,7 @@
  * DESCRIPTION
  *
  *    Set bit number `bit' in the `bitmap' of size of `bitmap_size'.  Returns
- *    FALSE on error.
+ *    FALSE on error and sets silc_errno.
  *
  ***/
 SilcBool silc_bit_set(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
@@ -109,7 +109,7 @@ SilcBool silc_bit_set(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
  * DESCRIPTION
  *
  *    Clear bit number `bit' in the `bitmap' of size of `bitmap_size'.
- *    Returns FALSE on error.
+ *    Returns FALSE on error and sets silc_errno.
  *
  ***/
 SilcBool silc_bit_clear(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
@@ -125,7 +125,7 @@ SilcBool silc_bit_clear(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
  * DESCRIPTION
  *
  *    Toggle bit number `bit' in the `bitmap' of size of `bitmap_size'.
- *    Returns FALSE on error.
+ *    Returns FALSE on error and sets silc_errno.
  *
  ***/
 SilcBool silc_bit_toggle(volatile unsigned long *bitmap,
@@ -141,7 +141,8 @@ SilcBool silc_bit_toggle(volatile unsigned long *bitmap,
  * DESCRIPTION
  *
  *    Set bit number `bit' in the `bitmap' of size of `bitmap_size' and
- *    return the value before setting.  Returns -1 on error.
+ *    return the value before setting.  Returns -1 on error and sets
+ *    silc_errno.
  *
  ***/
 int silc_bit_test_and_set(volatile unsigned long *bitmap,
@@ -157,7 +158,8 @@ int silc_bit_test_and_set(volatile unsigned long *bitmap,
  * DESCRIPTION
  *
  *    Clear bit number `bit' in the `bitmap' of size of `bitmap_size' and
- *    return the value before setting.  Returns -1 on error.
+ *    return the value before setting.  Returns -1 on error and sets
+ *    silc_errno.
  *
  ***/
 int silc_bit_test_and_clear(volatile unsigned long *bitmap,
@@ -173,7 +175,8 @@ int silc_bit_test_and_clear(volatile unsigned long *bitmap,
  * DESCRIPTION
  *
  *    Toggle bit number `bit' in the `bitmap' of size of `bitmap_size' and
- *    return the value before setting.  Returns -1 on error.
+ *    return the value before setting.  Returns -1 on error and sets
+ *    silc_errno.
  *
  ***/
 int silc_bit_test_and_toggle(volatile unsigned long *bitmap,
@@ -188,7 +191,8 @@ int silc_bit_test_and_toggle(volatile unsigned long *bitmap,
  *
  * DESCRIPTION
  *
- *    Returns the value of the bit number `bit' or -1 on error.
+ *    Returns the value of the bit number `bit' or -1 on error and sets
+ *    silc_errno.
  *
  ***/
 int silc_bit_get(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
@@ -203,7 +207,8 @@ int silc_bit_get(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
  * DESCRIPTION
  *
  *    Returns the bit number of the first set bit in the `bitmap' of size
- *    of `bitmap_size'.  Returns -1 on error or when there were no set bits.
+ *    of `bitmap_size'.  Returns -1 on error or when there were no set bits
+ *    and sets silc_errno.
  *
  ***/
 int silc_bit_ffs(volatile unsigned long *bitmap, SilcUInt32 bitmap_size);
@@ -217,7 +222,8 @@ int silc_bit_ffs(volatile unsigned long *bitmap, SilcUInt32 bitmap_size);
  * DESCRIPTION
  *
  *    Returns the bit number of the first zero bit in the `bitmap' of size
- *    of `bitmap_size'.  Returns -1 on error or when there were no zero bits.
+ *    of `bitmap_size'.  Returns -1 on error or when there were no zero bits
+ *    and sets silc_errno.
  *
  ***/
 int silc_bit_ffz(volatile unsigned long *bitmap, SilcUInt32 bitmap_size);
@@ -233,7 +239,7 @@ int silc_bit_ffz(volatile unsigned long *bitmap, SilcUInt32 bitmap_size);
  *
  *    Returns the bit number of the next set bit in the `bitmap' of size
  *    of `bitmap_size' starting at bit `offset'.  Returns -1 on error or
- *    when there were no more set bits.
+ *    when there were no more set bits and sets silc_errno.
  *
  ***/
 int silc_bit_fns(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
@@ -250,7 +256,7 @@ int silc_bit_fns(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,
  *
  *    Returns the bit number of the next zero bit in the `bitmap' of size
  *    of `bitmap_size' starting at bit `offset'.  Returns -1 on error or
- *    when there were no more zero bits.
+ *    when there were no more zero bits and sets silc_errno.
  *
  ***/
 int silc_bit_fnz(volatile unsigned long *bitmap, SilcUInt32 bitmap_size,

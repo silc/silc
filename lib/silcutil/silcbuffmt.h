@@ -123,7 +123,7 @@ typedef int (*SilcBufferUnformatFunc)(SilcStack stack, SilcBuffer buffer,
  *    Formats a buffer from a variable argument list.  Returns -1 if the
  *    system is out of memory and the length of the formatted buffer otherwise.
  *    The buffer is enlarged automatically during formatting, if it doesn't
- *    already have enough space.
+ *    already have enough space.  Sets silc_errno in case of error.
  *
  * EXAMPLE
  *
@@ -182,7 +182,7 @@ int silc_buffer_format(SilcBuffer dst, ...);
  *
  *    Same as silc_buffer_format but uses `stack' to allocate the memory.
  *    if `stack' is NULL reverts back to silc_buffer_format call.  Returns
- *    -1 if system is out of memory.
+ *    -1 if system is out of memory.  Sets silc_errno in case of error.
  *
  *    Note that this call consumes the `stack'.  The caller should push the
  *    stack before calling the function and pop it later.
@@ -215,7 +215,7 @@ int silc_buffer_format_vp(SilcBuffer dst, va_list ap);
  *
  *    Same as silc_buffer_format_vp but uses `stack' to allocate the memory.
  *    if `stack' is NULL reverts back to silc_buffer_format_vp call.  Returns
- *    -1 if system is out of memory.
+ *    -1 if system is out of memory.  Sets silc_errno in case of error.
  *
  *    Note that this call consumes the `stack'.  The caller should push the
  *    stack before calling the function and pop it later.
@@ -232,7 +232,8 @@ int silc_buffer_sformat_vp(SilcStack stack, SilcBuffer dst, va_list ap);
  * DESCRIPTION
  *
  *    Unformats a buffer from a variable argument list.  Returns -1 on error
- *    and the length of the unformatted buffer otherwise.
+ *    and the length of the unformatted buffer otherwise.  Sets silc_errno
+ *    in case of error.
  *
  * EXAMPLE
  *
@@ -309,7 +310,8 @@ int silc_buffer_sunformat_vp(SilcStack stack, SilcBuffer src, va_list ap);
  *    be end with SILC_STRFMT_END argument.  This allows that a string in
  *    the list can be NULL, in which case it is skipped.  This automatically
  *    allocates the space for the buffer data but `dst' must be already
- *    allocated by the caller.  Returns -1 if system is out of memory.
+ *    allocated by the caller.  Returns -1 if system is out of memory and
+ *    sets silc_errno.
  *
  * EXAMPLE
  *
@@ -335,7 +337,7 @@ int silc_buffer_strformat(SilcBuffer dst, ...);
  *    allocates the space for the buffer data but `dst' must be already
  *    allocated by the caller.  This function is equivalent to
  *    silc_buffer_strformat but allocates memory from `stack'.  Returns -1
- *    if system is out of memory.
+ *    if system is out of memory and sets silc_errno.
  *
  *    Note that this call consumes the `stack'.  The caller should push the
  *    stack before calling the function and pop it later.

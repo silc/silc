@@ -44,7 +44,7 @@
  *
  *    Allocates memory of `size' bytes and returns pointer to the allocated
  *    memory area.  Free the memory by calling silc_free.  Returns NULL on
- *    error.
+ *    error and sets silc_errno.
  *
  ***/
 void *silc_malloc(size_t size);
@@ -60,7 +60,7 @@ void *silc_malloc(size_t size);
  *    Allocates memory of for an array of `items' elements of `size' bytes
  *    and returns pointer to the allocated memory area.  The memory area is
  *    also zeroed.  Free the memory by calling silc_free.  Returns NULL on
- *    error.
+ *    error and sets silc_errno.
  *
  ***/
 void *silc_calloc(size_t items, size_t size);
@@ -127,7 +127,7 @@ void *silc_memdup(const void *ptr, size_t size);
  * DESCRIPTION
  *
  *    Duplicates the string indicated by `str' and returns the duplicated
- *    string.  Returns NULL on error.
+ *    string.  Returns NULL on error and sets silc_errno.
  *
  ***/
 char *silc_strdup(const char *str);
