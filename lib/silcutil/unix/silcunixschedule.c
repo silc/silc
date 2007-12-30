@@ -498,6 +498,7 @@ void silc_schedule_internal_signal_register(SilcSchedule schedule,
       signal_call[i].sig = sig;
       signal_call[i].callback = callback;
       signal_call[i].context = callback_context;
+      signal_call[i].schedule = schedule;
       signal_call[i].call = FALSE;
       signal(sig, silc_schedule_internal_sighandler);
       break;
@@ -527,6 +528,7 @@ void silc_schedule_internal_signal_unregister(SilcSchedule schedule,
       signal_call[i].sig = 0;
       signal_call[i].callback = NULL;
       signal_call[i].context = NULL;
+      signal_call[i].schedule = NULL;
       signal_call[i].call = FALSE;
       signal(sig, SIG_DFL);
     }
