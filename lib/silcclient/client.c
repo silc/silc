@@ -1040,7 +1040,7 @@ SilcBool silc_client_init(SilcClient client, const char *username,
   silc_rng_global_init(client->rng);
 
   /* Initialize the scheduler */
-  client->schedule = silc_schedule_init(0, client, NULL);
+  client->schedule = silc_schedule_init(0, client, NULL, NULL);
   if (!client->schedule)
     return FALSE;
 

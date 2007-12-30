@@ -22,6 +22,14 @@
 
 /************************** Types and definitions ***************************/
 
+/* Connected event context */
+typedef struct SilcScheduleEventConnectionStruct {
+  SilcSchedule schedule;
+  SilcTaskEventCallback callback;
+  void *context;
+  struct SilcScheduleEventConnectionStruct *next;
+} *SilcScheduleEventConnection;
+
 /* Platform specific implementation */
 extern const SilcScheduleOps schedule_ops;
 
@@ -29,7 +37,7 @@ static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task);
 static void silc_schedule_dispatch_fd(SilcSchedule schedule);
 static void silc_schedule_dispatch_timeout(SilcSchedule schedule,
 					   SilcBool dispatch_all);
-
+SILC_TASK_CALLBACK(silc_schedule_event_del_timeout);
 
 /************************ Static utility functions **************************/
 
@@ -196,10 +204,11 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
 
 static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
 {
-  SilcTaskFd ftask;
+  SilcSchedule parent;
 
   if (silc_unlikely(task == SILC_ALL_TASKS)) {
     SilcTask task;
+    SilcEventTask etask;
     SilcHashTableList htl;
     void *fd;
 
@@ -216,19 +225,59 @@ static void silc_schedule_task_remove(SilcSchedule schedule, SilcTask task)
       silc_free(task);
     }
 
+    /* Delete even tasks */
+    parent = silc_schedule_get_parent(schedule);
+    silc_hash_table_list(parent->events, &htl);
+    while (silc_hash_table_get(&htl, NULL, (void *)&etask)) {
+      silc_hash_table_del_by_context(parent->events, etask->event, etask);
+      silc_free(etask->event);
+      silc_free(etask);
+    }
+    silc_hash_table_list_reset(&htl);
     return;
   }
 
-  if (silc_likely(task->type == 1)) {
-    /* Delete from timeout queue */
-    silc_list_del(schedule->timeout_queue, task);
+  switch (task->type) {
+  case SILC_TASK_FD:
+    {
+      /* Delete from fd queue */
+      SilcTaskFd ftask = (SilcTaskFd)task;
+      silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(ftask->fd));
+    }
+    break;
 
-    /* Put to free list */
-    silc_list_add(schedule->free_tasks, task);
-  } else {
-    /* Delete from fd queue */
-    ftask = (SilcTaskFd)task;
-    silc_hash_table_del(schedule->fd_queue, SILC_32_TO_PTR(ftask->fd));
+  case SILC_TASK_TIMEOUT:
+    {
+      /* Delete from timeout queue */
+      silc_list_del(schedule->timeout_queue, task);
+
+      /* Put to free list */
+      silc_list_add(schedule->free_tasks, task);
+    }
+    break;
+
+  case SILC_TASK_EVENT:
+    {
+      SilcEventTask etask = (SilcEventTask)task;
+      SilcScheduleEventConnection conn;
+
+      parent = silc_schedule_get_parent(schedule);
+
+      /* Delete event */
+      silc_hash_table_del_by_context(parent->events, etask->event, etask);
+
+      /* Remove all connections */
+      silc_list_start(etask->connections);
+      while ((conn = silc_list_get(etask->connections)))
+	silc_free(conn);
+
+      silc_free(etask->event);
+      silc_free(etask);
+    }
+    break;
+
+  default:
+    break;
   }
 }
 
@@ -313,7 +362,7 @@ void silc_schedule_stats(SilcSchedule schedule)
    context that is delivered to task callbacks. */
 
 SilcSchedule silc_schedule_init(int max_tasks, void *app_context,
-				SilcStack stack)
+				SilcStack stack, SilcSchedule parent)
 {
   SilcSchedule schedule;
 
@@ -343,10 +392,15 @@ SilcSchedule silc_schedule_init(int max_tasks, void *app_context,
   silc_list_init(schedule->timeout_queue, struct SilcTaskStruct, next);
   silc_list_init(schedule->free_tasks, struct SilcTaskStruct, next);
 
+  /* Get the parent */
+  if (parent && parent->parent)
+    parent = parent->parent;
+
   schedule->stack = stack;
   schedule->app_context = app_context;
   schedule->valid = TRUE;
   schedule->max_tasks = max_tasks;
+  schedule->parent = parent;
 
   /* Allocate scheduler lock */
   silc_mutex_alloc(&schedule->lock);
@@ -550,6 +604,13 @@ void silc_schedule_wakeup(SilcSchedule schedule)
   schedule_ops.wakeup(schedule, schedule->internal);
   SILC_SCHEDULE_UNLOCK(schedule);
 #endif
+}
+
+/* Returns parent scheduler */
+
+SilcSchedule silc_schedule_get_parent(SilcSchedule schedule)
+{
+  return schedule->parent ? schedule->parent : schedule;
 }
 
 /* Returns the application specific context that was saved into the
@@ -775,6 +836,8 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
 
 SilcBool silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
 {
+  SilcSchedule parent;
+
   if (!schedule) {
     schedule = silc_schedule_get_global();
     SILC_VERIFY(schedule);
@@ -815,19 +878,33 @@ SilcBool silc_schedule_task_del(SilcSchedule schedule, SilcTask task)
 			 schedule->notify_context);
     }
 
+    /* Delete even tasks */
+    parent = silc_schedule_get_parent(schedule);
+    silc_hash_table_list(parent->events, &htl);
+    while (silc_hash_table_get(&htl, NULL, (void *)&task))
+      task->valid = FALSE;
+    silc_hash_table_list_reset(&htl);
+
     SILC_SCHEDULE_UNLOCK(schedule);
     return TRUE;
   }
 
-  SILC_LOG_DEBUG(("Unregistering task %p", task));
+  SILC_LOG_DEBUG(("Unregistering task %p, type %d", task, task->type));
   SILC_SCHEDULE_LOCK(schedule);
   task->valid = FALSE;
 
   /* Call notify callback */
-  if (schedule->notify)
-    schedule->notify(schedule, FALSE, task, !task->type, 0, 0, 0, 0,
-		     schedule->notify_context);
+  if (schedule->notify && task->type != SILC_TASK_EVENT)
+    schedule->notify(schedule, FALSE, task, task->type == SILC_TASK_FD,
+		     0, 0, 0, 0, schedule->notify_context);
   SILC_SCHEDULE_UNLOCK(schedule);
+
+  if (task->type == SILC_TASK_EVENT) {
+    /* Schedule removal of deleted event task */
+    parent = silc_schedule_get_parent(schedule);
+    silc_schedule_task_add_timeout(parent, silc_schedule_event_del_timeout,
+				   task, 0, 1);
+  }
 
   return TRUE;
 }
@@ -1139,4 +1216,366 @@ SilcTaskEvent silc_schedule_get_fd_events(SilcSchedule schedule,
 void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd)
 {
   silc_schedule_set_listen_fd(schedule, fd, 0, FALSE);
+}
+
+/*************************** Asynchronous Events ****************************/
+
+/* Add event */
+
+SilcTask silc_schedule_task_add_event(SilcSchedule schedule,
+				      const char *event, ...)
+{
+  SilcEventTask task;
+  SilcSchedule parent;
+
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return NULL;
+    }
+  }
+
+  /* Get parent scheduler */
+  parent = silc_schedule_get_parent(schedule);
+
+  SILC_LOG_DEBUG(("Adding event '%s' to scheduler %p", event, parent));
+
+  SILC_SCHEDULE_LOCK(parent);
+
+  /* Create events hash table if not already done */
+  if (!parent->events) {
+    parent->events = silc_hash_table_alloc(NULL, 3,
+					   silc_hash_string, NULL,
+					   silc_hash_string_compare, NULL,
+					   NULL, NULL, FALSE);
+    if (!parent->events) {
+      SILC_SCHEDULE_UNLOCK(parent);
+      return NULL;
+    }
+  }
+
+  /* Check if this event is added already */
+  if (silc_hash_table_find(parent->events, (void *)event, NULL, NULL)) {
+    SILC_SCHEDULE_UNLOCK(parent);
+    return NULL;
+  }
+
+  /* Add new event */
+  task = silc_calloc(1, sizeof(*task));
+  if (!task) {
+    SILC_SCHEDULE_UNLOCK(parent);
+    return NULL;
+  }
+
+  task->header.type = SILC_TASK_EVENT;
+  task->header.valid = TRUE;
+  task->event = silc_strdup(event);
+  if (!task->event) {
+    SILC_SCHEDULE_UNLOCK(parent);
+    silc_free(task);
+    return NULL;
+  }
+  silc_list_init(task->connections, struct SilcScheduleEventConnectionStruct,
+		 next);
+
+  if (!silc_hash_table_add(parent->events, task->event, task)) {
+    SILC_SCHEDULE_UNLOCK(parent);
+    silc_free(task->event);
+    silc_free(task);
+    return NULL;
+  }
+
+  SILC_SCHEDULE_UNLOCK(parent);
+
+  return (SilcTask)task;
+}
+
+/* Connect to event task */
+
+SilcBool silc_schedule_event_connect(SilcSchedule schedule,
+				     const char *event, SilcTask task,
+				     SilcTaskEventCallback callback,
+				     void *context)
+{
+  SilcSchedule parent;
+  SilcScheduleEventConnection conn;
+  SilcEventTask etask;
+
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return FALSE;
+    }
+  }
+
+  if (!event && !task) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return FALSE;
+  }
+
+  if (task && task->type != SILC_TASK_EVENT) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return FALSE;
+  }
+
+  /* Get parent scheduler */
+  parent = silc_schedule_get_parent(schedule);
+
+  SILC_SCHEDULE_LOCK(parent);
+
+  if (!task) {
+    /* Get the event task */
+    if (!silc_hash_table_find(parent->events, (void *)event, NULL,
+			      (void *)&task)) {
+      SILC_SCHEDULE_UNLOCK(parent);
+      return FALSE;
+    }
+  }
+  etask = (SilcEventTask)task;
+
+  /* See if task is deleted */
+  if (task->valid == FALSE) {
+    SILC_SCHEDULE_UNLOCK(parent);
+    silc_set_errno(SILC_ERR_NOT_VALID);
+    return FALSE;
+  }
+
+  SILC_LOG_DEBUG(("Connect callback %p with context %p to event '%s'",
+		  callback, context, etask->event));
+
+  /* See if already connected */
+  silc_list_start(etask->connections);
+  while ((conn = silc_list_get(etask->connections))) {
+    if (conn->callback == callback && conn->context == context) {
+      SILC_SCHEDULE_UNLOCK(parent);
+      silc_set_errno(SILC_ERR_ALREADY_EXISTS);
+      return FALSE;
+    }
+  }
+
+  conn = silc_calloc(1, sizeof(*conn));
+  if (!conn) {
+    SILC_SCHEDULE_UNLOCK(parent);
+    return FALSE;
+  }
+
+  /* Connect to the event */
+  conn->schedule = schedule;
+  conn->callback = callback;
+  conn->context = context;
+  silc_list_add(etask->connections, conn);
+
+  SILC_SCHEDULE_UNLOCK(parent);
+
+  return TRUE;
+}
+
+/* Disconnect from event */
+
+SilcBool silc_schedule_event_disconnect(SilcSchedule schedule,
+					const char *event, SilcTask task,
+					SilcTaskEventCallback callback,
+					void *context)
+{
+  SilcSchedule parent;
+  SilcScheduleEventConnection conn;
+  SilcEventTask etask;
+
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return FALSE;
+    }
+  }
+
+  if (!event && !task) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return FALSE;
+  }
+
+  if (task && task->type != SILC_TASK_EVENT) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return FALSE;
+  }
+
+  /* Get parent scheduler */
+  parent = silc_schedule_get_parent(schedule);
+
+  SILC_SCHEDULE_LOCK(parent);
+
+  if (!task) {
+    /* Get the event task */
+    if (!silc_hash_table_find(parent->events, (void *)event, NULL,
+			      (void *)&task)) {
+      SILC_SCHEDULE_UNLOCK(parent);
+      return FALSE;
+    }
+  }
+  etask = (SilcEventTask)task;
+
+  /* See if task is deleted */
+  if (task->valid == FALSE) {
+    SILC_SCHEDULE_UNLOCK(parent);
+    silc_set_errno(SILC_ERR_NOT_VALID);
+    return FALSE;
+  }
+
+  SILC_LOG_DEBUG(("Disconnect callback %p with context %p from event '%s'",
+		  callback, context, etask->event));
+
+  /* Disconnect */
+  silc_list_start(etask->connections);
+  while ((conn = silc_list_get(etask->connections))) {
+    if (conn->callback == callback && conn->context == context) {
+      silc_list_del(etask->connections, conn);
+      silc_free(conn);
+      SILC_SCHEDULE_UNLOCK(parent);
+      return TRUE;
+    }
+  }
+
+  SILC_SCHEDULE_UNLOCK(parent);
+  silc_set_errno(SILC_ERR_NOT_FOUND);
+  return FALSE;
+}
+
+/* Signal event */
+
+SilcBool silc_schedule_event_signal(SilcSchedule schedule, const char *event,
+				    SilcTask task, ...)
+{
+  SilcSchedule parent;
+  SilcScheduleEventConnection conn;
+  SilcEventTask etask;
+  SilcBool stop;
+  va_list ap, cp;
+
+  if (silc_unlikely(!schedule)) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return FALSE;
+    }
+  }
+
+  if (silc_unlikely(!event && !task)) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return FALSE;
+  }
+
+  if (silc_unlikely(task && task->type != SILC_TASK_EVENT)) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return FALSE;
+  }
+
+  /* Get parent scheduler */
+  parent = silc_schedule_get_parent(schedule);
+
+  SILC_SCHEDULE_LOCK(parent);
+
+  if (!task) {
+    /* Get the event task */
+    if (!silc_hash_table_find(parent->events, (void *)event, NULL,
+			      (void *)&task)) {
+      SILC_SCHEDULE_UNLOCK(parent);
+      return FALSE;
+    }
+  }
+  etask = (SilcEventTask)task;
+
+  /* See if task is deleted */
+  if (task->valid == FALSE) {
+    SILC_SCHEDULE_UNLOCK(parent);
+    silc_set_errno(SILC_ERR_NOT_VALID);
+    return FALSE;
+  }
+
+  SILC_LOG_DEBUG(("Signal event '%s'", etask->event));
+
+  va_start(ap, task);
+
+  /* Deliver the signal */
+  silc_list_start(etask->connections);
+  while ((conn = silc_list_get(etask->connections))) {
+    SILC_SCHEDULE_UNLOCK(parent);
+
+    silc_va_copy(cp, ap);
+    stop = conn->callback(conn->schedule, conn->schedule->app_context,
+			  task, conn->context, cp);
+    va_end(cp);
+
+    SILC_SCHEDULE_LOCK(parent);
+
+    /* Stop signal if wanted or if the task was deleted */
+    if (!stop || !task->valid)
+      break;
+  }
+
+  va_end(ap);
+
+  SILC_SCHEDULE_UNLOCK(parent);
+
+  return TRUE;
+}
+
+/* Delete event */
+
+SilcBool silc_schedule_task_del_event(SilcSchedule schedule, const char *event)
+{
+  SilcSchedule parent;
+  SilcTask task;
+
+  if (!schedule) {
+    schedule = silc_schedule_get_global();
+    SILC_VERIFY(schedule);
+    if (!schedule) {
+      silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+      return FALSE;
+    }
+  }
+
+  if (!event) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return FALSE;
+  }
+
+  /* Get parent scheduler */
+  parent = silc_schedule_get_parent(schedule);
+
+  SILC_SCHEDULE_LOCK(parent);
+
+  /* Get the event task */
+  if (!silc_hash_table_find(parent->events, (void *)event, NULL,
+			    (void *)&task)) {
+    SILC_SCHEDULE_UNLOCK(parent);
+    return FALSE;
+  }
+
+  /* See if already deleted */
+  if (task->valid == FALSE)
+    return TRUE;
+
+  SILC_LOG_DEBUG(("Delete event '%s'", ((SilcEventTask)task)->event));
+
+  SILC_SCHEDULE_UNLOCK(parent);
+
+  silc_schedule_task_del(parent, task);
+
+  return TRUE;
+}
+
+/* Timeout to remove deleted event task */
+
+SILC_TASK_CALLBACK(silc_schedule_event_del_timeout)
+{
+  SILC_SCHEDULE_LOCK(schedule);
+  silc_schedule_task_remove(schedule, context);
+  SILC_SCHEDULE_UNLOCK(schedule);
 }

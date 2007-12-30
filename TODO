@@ -109,49 +109,10 @@ Runtime library, lib/silcutil/
 
  o The SILC Event signals.  Asynchronous events that can be created,
    connected to and signalled.  Either own event routines or glued into
-   SilcSchedule:
-
-   SilcTask silc_schedule_task_add_event(SilcSchedule schedule,
-					 const char *event, ...);
-   SilcBool silc_schedule_event_connect(SilcSchedule schedule,
-					const char *event,
-					SilcTaskCallback event_callback,
-					void *context);
-   SilcBool silc_schedule_event_signal(SilcSchedule schedule,
-				       const char *event, ...);
-
-   Example:
-     silc_schedule_task_add_event(schedule, "connected",
-                                  SILC_PARAM_UI32_INT,
-                                  SILC_PARAM_BUFFER,
-                                  SILC_PARAM_END);
-     silc_schedule_event_connect(schedule, "connected", connected_cb, ctx);
-     silc_schedule_event_signal(schedule, "connected", integer, buf,
-                                 SILC_PARAM_END);
-     SILC_TASK_CALLBACK(connected_cb)
-     {
-       FooCtx ctx = context;
-       va_list args;
-       SilcUInt32 integer;
-       SilcBuffer buf;
-
-       va_start(args, context);
-       integer = va_arg(args, SilcUInt32);
-       buf = va_arg(args, SilcBuffer);
-       va_end(args);
-       ...
-     }
-
-   Problems: Events would be SilcSchedule specific, and would not work on
-   multi-thread/multi-scheduler system.  The events should be copyable
-   between schedulers.  Another problem is the signal delivery.  Do we
-   deliver them synchronously possibly from any thread to any other thread
-   or do we deliver them through the target schedulers.  If we use the
-   schedulers then signalling would be asynchronous (data must be
-   duplicated and later freed) which is not very nice.
+   SilcSchedule. (***DONE)
 
  o If the event signals are added, the SILC_PARAM_* stuff needs to be
-   moved from silcbuffmt.h to silctypes.h or something similar.
+   moved from silcbuffmt.h to silctypes.h or something similar. (***DONE)
 
  o In case the SILC Events are done we shall create a new concept of
    parent and child SilcSchedule's.  When new SilcSchedule is created a
@@ -164,10 +125,7 @@ Runtime library, lib/silcutil/
    would be linked and could be accessed from any of the schedulers.
    It should be possible to retrieve the parent and enumerate all children
    from any of the schedulers.
-
-   SilcSchedule silc_schedule_init(int max_tasks, void *app_context,
-				   SilcSchedule parent);
-   SilcSchedule silc_schedule_get_parent(SilcSchedule schedule);
+   (***DONE)
 
  o Additional scheduler changes: optimize silc_schedule_wakeup.  Wakeup
    only if the scheduler is actually waiting something.  If it is
@@ -209,25 +167,7 @@ Runtime library, lib/silcutil/
 
  o silc_malloc et. al. to respect --with-alignment.
 
- o Add '%@' format to silc_snprintf functions.  It marks for external
-   rendering function of following type:
-
-     /* Snprintf rendering function.  The `data' is rendered into a string
-        and allocated string is returned.  If NULL is returned the
-        rendering is skipped and ignored.  If the returned string does
-	not fit to the destination buffer it may be truncated. */
-     typedef char *(*SilcSnprintfRender)(void *data);
-
-   It can work like following:
-
-   char *id_renderer(void *data)
-   {
-     char tmp[32];
-     id_to_str(tmp, sizeof(tmp), (SilcID *)data);
-     return strdup(tmp);
-   }
-
-   silc_snprintf(buf, sizeof(buf), "Client ID %@", id_renderer, client_id);
+ o Add '%@' format to silc_snprintf functions.
    (***DONE)
 
  o SILC Tls (Thread-local storage) API to lib/silcutil/silcthread.[ch].
@@ -346,6 +286,10 @@ Crypto Library, lib/silccrypt/
  o Change SILC PKCS API to asynchronous, so that accelerators can be used.
    All PKCS routines should now take callbacks as argument and they should
    be delivered to SilcPKCSObject and SilcPKCSAlgorithm too. (***DONE)
+
+ o The asynchronous functions to perhaps to _async to preserve backwards
+   compatibility with synchronous versions, and make easier to migrate
+   from 1.1 to 1.2.
 
  o Change PKCS Algorithm API to take SilcPKCSAlgorithm as argument to
    encrypt, decrypt, sign and verify functions.  We may need to for exmaple

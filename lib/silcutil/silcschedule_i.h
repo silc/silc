@@ -38,12 +38,15 @@ typedef enum {
      automatically from the scheduler. It is safe to re-register the
      task in task callback. It is also safe to unregister a task in
      the task callback. */
-  SILC_TASK_TIMEOUT,
+  SILC_TASK_TIMEOUT      = 1,
 
   /* Platform specific process signal task.  On Unix systems this is one of
      the signals described in signal(7).  On other platforms this may not
      be available at all.  Only one callback per signal may be added. */
-  SILC_TASK_SIGNAL
+  SILC_TASK_SIGNAL       = 2,
+
+  /* Asynchronous event task. */
+  SILC_TASK_EVENT        = 3,
 } SilcTaskType;
 
 /* Task header */
@@ -51,7 +54,7 @@ struct SilcTaskStruct {
   struct SilcTaskStruct *next;
   SilcTaskCallback callback;
   void *context;
-  unsigned int type    : 1;	/* 0 = fd, 1 = timeout */
+  unsigned int type    : 2;	/* SilcTaskType */
   unsigned int valid   : 1;	/* Set if task is valid */
 };
 
@@ -66,17 +69,26 @@ typedef struct SilcTaskFdStruct {
   struct SilcTaskStruct header;
   unsigned int scheduled  : 1;
   unsigned int events     : 14;
-  unsigned int revents    : 15;
+  unsigned int revents    : 14;
   SilcUInt32 fd;
 } *SilcTaskFd;
 
+/* Event task */
+typedef struct SilcEventTaskStruct {
+  struct SilcTaskStruct header;
+  char *event;
+  SilcList connections;
+} *SilcEventTask;
+
 /* Scheduler context */
 struct SilcScheduleStruct {
+  SilcSchedule parent;		   /* Parent scheduler */
   void *internal;
   void *app_context;		   /* Application specific context */
   SilcTaskNotifyCb notify;	   /* Notify callback */
   void *notify_context;		   /* Notify context */
   SilcStack stack;		   /* Stack */
+  SilcHashTable events;		   /* Event tasks */
   SilcHashTable fd_queue;	   /* FD task queue */
   SilcList fd_dispatch;		   /* Dispatched FDs */
   SilcList timeout_queue;	   /* Timeout queue */

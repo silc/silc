@@ -158,6 +158,39 @@ typedef void (*SilcTaskCallback)(SilcSchedule schedule, void *app_context,
 				 SilcTaskEvent type, SilcUInt32 fd,
 				 void *context);
 
+/****f* silcutil/SilcScheduleAPI/SilcTaskEventCallback
+ *
+ * SYNOPSIS
+ *
+ *    typedef void (*SilcTaskEventCallback)(SilcSchedule schedule,
+ *                                          void *app_context,
+ *                                          SilcTask task, void *context,
+ *                                          va_list va);
+ *
+ * DESCRIPTION
+ *
+ *    Task callback for event tasks added with silc_schedule_task_add_event.
+ *    The callback of this type is called when an event task is signalled.
+ *    The signal is delivered to all that have connected to the event.
+ *
+ *    The `task' is the event task.  The `context' is the context given as
+ *    argument to silc_schedule_event_connect.  The `schedule' is the
+ *    scheduler given as argument to silc_schedule_event_connect.
+ *
+ *    If FALSE is returned in this callback function the signal delivery to
+ *    other connected entities is stopped.  Normally, TRUE is returned.
+ *    If the `task' is deleted in this callback, the signal delivery is also
+ *    stopped.
+ *
+ *    To specify task event callback function in the application using the
+ *    SILC_TASK_EVENT_CALLBACK macro is recommended.
+ *
+ ***/
+typedef SilcBool (*SilcTaskEventCallback)(SilcSchedule schedule,
+					  void *app_context,
+					  SilcTask task, void *context,
+					  va_list va);
+
 /****f* silcutil/SilcScheduleAPI/SilcTaskNotifyCb
  *
  * SYNOPSIS
@@ -237,6 +270,25 @@ void func(SilcSchedule schedule, void *app_context, SilcTaskEvent type,	\
 	  SilcUInt32 fd, void *context)
 /***/
 
+/****d* silcutil/SilcScheduleAPI/SILC_TASK_EVENT_CALLBACK
+ *
+ * NAME
+ *
+ *    #define SILC_TASK_EVENT_CALLBACK ...
+ *
+ * DESCRIPTION
+ *
+ *    Generic macro to declare event task callback functions. This defines a
+ *    function with name `func' as a event task callback function.
+ *
+ * SOURCE
+ */
+#define SILC_TASK_EVENT_CALLBACK(func)					\
+SilcBool func(SilcSchedule schedule, void *app_context,			\
+	      SilcTask task, void *context, va_list va)
+
+/***/
+
 /* Prototypes */
 
 #include "silcschedule_i.h"
@@ -246,21 +298,27 @@ void func(SilcSchedule schedule, void *app_context, SilcTaskEvent type,	\
  * SYNOPSIS
  *
  *    SilcSchedule silc_schedule_init(int max_tasks, void *app_context,
- *                                    SilcStack stack);
+ *                                    SilcStack stack, SilcSchedule parent);
  *
  * DESCRIPTION
  *
- *    Initializes the scheduler. This returns the scheduler context that
- *    is given as argument usually to all silc_schedule_* functions.
- *    The `app_context' is application specific context that is delivered
- *    to all task callbacks. The caller must free that context.  The
- *    'app_context' can be for example the application itself.
+ *    Initializes the scheduler. This returns the scheduler context or NULL
+ *    on error.  The `app_context' is application specific context that is
+ *    delivered to all task callbacks. The caller must free that context.
  *
  *    The `max_tasks' is the maximum number of file descriptor and socket
  *    tasks in the scheduler.  Set value to 0 to use default.  Operating
  *    system will enforce the final limit.  On some operating systems the
  *    limit can be significantly increased when this function is called in
  *    priviliged mode (as super user).
+ *
+ *    If `parent' is non-NULL it will be the parent of the new scheduler.
+ *    If it is NULL this will create a new parent scheduler.  If `parent'
+ *    is already a child scheduler, this will create a new child to the
+ *    child's parent.  Even if `parent' is non-NULL the new child scheduler
+ *    is still independent scheduler and will run independently of its
+ *    parent.  However, each child and parent will share event tasks
+ *    added with silc_schedule_task_add_event.
  *
  *    If `stack' is non-NULL all memory allocation for the scheduler is done
  *    from the `stack'.  Scheduler's stack may be retrieved by calling
@@ -272,7 +330,7 @@ void func(SilcSchedule schedule, void *app_context, SilcTaskEvent type,	\
  *
  ***/
 SilcSchedule silc_schedule_init(int max_tasks, void *app_context,
-				SilcStack stack);
+				SilcStack stack, SilcSchedule parent);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_uninit
  *
@@ -375,6 +433,19 @@ SilcBool silc_schedule_one(SilcSchedule schedule, int timeout_usecs);
  *
  ***/
 void silc_schedule_wakeup(SilcSchedule schedule);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_get_parent
+ *
+ * SYNOPSIS
+ *
+ *    SilcSchedule silc_schedule_get_parent(SilcSchedule schedule);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the parent scheduler of the `schedule'.  Never returns NULL.
+ *
+ ***/
+SilcSchedule silc_schedule_get_parent(SilcSchedule schedule);
 
 /****f* silcutil/SilcScheduleAPI/silc_schedule_get_context
  *
@@ -550,6 +621,69 @@ SilcSchedule silc_schedule_get_global(void);
   silc_schedule_task_add(schedule, sig, callback, context, 0, 0,	\
 			 SILC_TASK_SIGNAL)
 
+/****f* silcutil/SilcScheduleAPI/silc_schedule_task_add_event
+ *
+ * SYNOPSIS
+ *
+ *    SilcTask
+ *    silc_schedule_task_add_event(SilcSchedule schedule,
+ *                                 const char *event, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Adds an event task to scheduler.  These tasks are asynchronous events
+ *    that one or more receivers may connect to and receive information or
+ *    data when the event is signalled.  Event tasks are fast and may be
+ *    used to efficiently deliver events and data to multiple receivers.  The
+ *    `event' is the name of the event, and can be used to connect to the
+ *    event and to signal it.
+ *
+ *    The events are global among the `scheduler', its parent scheduler and
+ *    any of its child schedulers.  It does not matter to which scheduler
+ *    event is added to, connected to or signalled.  Signal will reach any
+ *    connected entity, as long as it is the parent or one of the fellow
+ *    children of `schedule'.
+ *
+ *    To connect to an event call silc_schedule_event_connect.
+ *    To disconnect from event call silc_schedule_event_disconnect.
+ *    To signal event call silc_schedule_event_signal.
+ *    To delete event task call silc_schedule_task_del or
+ *    silc_schedule_task_del_event.
+ *
+ *    The variable argument list is used to describe the arguments of the
+ *    event.  The variable arguments are a list of zero or more SilcParam
+ *    values.  This function returns the event task context or NULL on error.
+ *
+ * EXAMPLE
+ *
+ *    // Register 'connected' event
+ *    silc_schedule_task_add_event(schedule, "connected",
+ *                                 SILC_PARAM_UINT32,
+ *                                 SILC_PARAM_BUFFER);
+ *
+ *    // Connect to 'connected' event
+ *    silc_schedule_event_connect(schedule, "connected", NULL,
+ *                                connected_cb, ctx);
+ *
+ *    // Signal 'connected' event
+ *    silc_schedule_event_signal(schedule, "connected", NULL, integer, buf);
+ *
+ *    // 'connected' event handler
+ *    SILC_TASK_CALLBACK(connected_cb)
+ *    {
+ *      FooCtx ctx = context;
+ *      SilcUInt32 integer;
+ *      SilcBuffer buf;
+ *
+ *      integer = va_arg(va, SilcUInt32);
+ *      buf = va_arg(va, SilcBuffer);
+ *      ...
+ *    }
+ *
+ ***/
+SilcTask silc_schedule_task_add_event(SilcSchedule schedule,
+				      const char *event, ...);
+
 /****f* silcutil/SilcScheduleAPI/silc_schedule_task_del
  *
  * SYNOPSIS
@@ -667,6 +801,26 @@ SilcBool silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
 				       SilcTaskCallback callback,
 				       void *context);
 
+/****f* silcutil/SilcScheduleAPI/silc_schedule_task_del_event
+ *
+ * SYNOPSIS
+ *
+ *    void silc_schedule_task_del_event(SilcSchedule schedule,
+ *                                      const char *event);
+ *
+ * DESCRIPTION
+ *
+ *    Deletes event task by the event name `event'.  Returns FALSE if the
+ *    event does not exist.  Events can be deleted by calling the
+ *    silc_schedule_task_del also.
+ *
+ *    If `schedule' is NULL this will call silc_schedule_get_global to try to
+ *    get global scheduler.
+ *
+ ***/
+SilcBool silc_schedule_task_del_event(SilcSchedule schedule,
+				      const char *event);
+
 /****f* silcutil/SilcScheduleAPI/silc_schedule_set_listen_fd
  *
  * SYNOPSIS
@@ -738,5 +892,101 @@ SilcTaskEvent silc_schedule_get_fd_events(SilcSchedule schedule,
  *
  ***/
 void silc_schedule_unset_listen_fd(SilcSchedule schedule, SilcUInt32 fd);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_event_connect
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_schedule_event_connect(SilcSchedule schedule,
+ *                                         const char *event, SilcTask task,
+ *                                         SilcTaskEventCallback callback,
+ *                                         void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Connects to an event task.  The `event' or `task' must be non-NULL.
+ *    If `event' is non-NULL it is the name of the event to connect to.  If
+ *    the `task' is non-NULL it is the event task to connect to.  The event
+ *    SilcTask pointer is returned by silc_schedule_task_add_event when the
+ *    even is added to scheduler.
+ *
+ *    The `callback' with `context' and with `schedule' are called when the
+ *    even task is signalled with silc_schedule_event_signal.
+ *
+ *    Returns FALSE on error or if the `callback' with `context' has already
+ *    been connected.  Otherwise, returns TRUE.
+ *
+ * EXAMPLE
+ *
+ *    silc_schedule_event_connect(schedule, "foo event", NULL,
+ *                                foo_signal_callback, foo_context);
+ *
+ ***/
+SilcBool silc_schedule_event_connect(SilcSchedule schedule,
+				     const char *event, SilcTask task,
+				     SilcTaskEventCallback callback,
+				     void *context);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_event_disconnect
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_schedule_event_disconnect(SilcSchedule schedule,
+ *                                            const char *event, SilcTask task,
+ *                                            SilcTaskEventCallback callback,
+ *                                            void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Disconnects the `callback' and `context' from an event task.  The `event'
+ *    or `task' must be non-NULL.  If `event' is non-NULL it is the name of
+ *    the event.  If `task' is non-NULL it is the event task.
+ *
+ *    Returns FALSE on error or if the `callback' with `context' has not been
+ *    connected.  Otherwise, returns TRUE.
+ *
+ * EXAMPLE
+ *
+ *    silc_schedule_event_connect(schedule, "foo event", NULL,
+ *                                foo_signal_callback, foo_context);
+ *
+ ***/
+SilcBool silc_schedule_event_disconnect(SilcSchedule schedule,
+					const char *event, SilcTask task,
+					SilcTaskEventCallback callback,
+					void *context);
+
+/****f* silcutil/SilcScheduleAPI/silc_schedule_event_signal
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_schedule_event_signal(SilcSchedule schedule,
+ *                                        const char *event,
+ *                                        SilcTask task, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Signals an event task.  The `event' or `task' must be non-NULL.  If
+ *    `event' is non-NULL it is the name of the event to signal.  If the `task'
+ *    is non-NULL it is the task to be signalled.  It is marginally faster
+ *    to use the `task' pointer directly instead of `event' to send the signal.
+ *
+ *    The variable arguments are the arguments to be sent in the signal to
+ *    the connected entities.  The silc_schedule_task_add_event defines what
+ *    arguments must be sent to each signal.
+ *
+ *    Signal delivery is synchronous; the signal is delivered inside this
+ *    function.  If a receiver was originally in another thread, the signal
+ *    is delivered in the thread where this function is called.  This means
+ *    that concurrency control (locking) is required if the application uses
+ *    events in multiple threads.
+ *
+ * EXAMPLE
+ *
+ *    silc_schedule_event_signal(schedule, "foo event", NULL, intarg, buffer);
+ *
+ ***/
+SilcBool silc_schedule_event_signal(SilcSchedule schedule, const char *event,
+				    SilcTask task, ...);
 
 #endif

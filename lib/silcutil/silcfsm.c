@@ -770,11 +770,14 @@ void *silc_fsm_thread(void *context)
   /* We allocate new SilcSchedule for the FSM, as the old SilcSchedule
      cannot be used in this thread.  Application may still use it if it
      wants but we use our own. */
-  fsm->schedule = silc_schedule_init(0, old, silc_schedule_get_stack(old));
+  fsm->schedule = silc_schedule_init(0, old, silc_schedule_get_stack(old), old);
   if (silc_unlikely(!fsm->schedule)) {
     fsm->schedule = old;
     return NULL;
   }
+
+  /* The new scheduler is a global scheduler in this thread */
+  silc_schedule_set_global(fsm->schedule);
 
   /* Start the FSM thread */
   if (silc_unlikely(!silc_schedule_task_add_timeout(fsm->schedule,
@@ -786,6 +789,9 @@ void *silc_fsm_thread(void *context)
 
   /* Run the scheduler */
   silc_schedule(fsm->schedule);
+
+  /* Reset global scheduler */
+  silc_schedule_set_global(NULL);
 
   /* Free resources */
   silc_schedule_uninit(fsm->schedule);

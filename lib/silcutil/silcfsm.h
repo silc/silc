@@ -498,8 +498,11 @@ SilcBool silc_fsm_init(SilcFSM fsm,
  *    for the FSM thread. If you need scheduler in the real thread it is
  *    strongly recommended that you use the SilcSchedule that is allocated
  *    for the thread.  You can retrieve the SilcSchedule from the thread
- *    using silc_fsm_get_schedule function.  Note that, the allocated
- *    SilcSchedule will become invalid after the thread finishes.
+ *    using silc_fsm_get_schedule function.  The new scheduler is a child
+ *    scheduler of the original scheduler used with `fsm'.  Note that, the
+ *    allocated SilcSchedule will become invalid after the thread finishes.
+ *    Note also that the scheduler is automatically set as global scheduler
+ *    in that thread by calling silc_schedule_set_global.
  *
  *    If `real_thread' is FALSE the silc_fsm_get_schedule will return
  *    the SilcSchedule that was originally given to silc_fsm_alloc or
