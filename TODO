@@ -93,7 +93,23 @@ lib/silcclient, The Client Library
 Runtime library, lib/silcutil/
 ==============================
 
+ o silc_malloc et. al. to respect --with-alignment.
+
  o Fix universal time decoding (doesn't accept all formats) in silctime.c.
+
+ o Add directory opening/traversing functions
+
+ o regex from /lib/contrib to lib/silcutil, define SILC Regex API. (***DONE)
+
+ o Additional scheduler changes: optimize silc_schedule_wakeup.  Wakeup
+   only if the scheduler is actually waiting something.  If it is
+   delivering tasks wakeup is not needed.
+
+ o silc_stringprep to non-allocating version.
+
+ o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
+   SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
+   in separately.
 
  o Add functions to manipulate environment variables. (***DONE)
 
@@ -101,11 +117,7 @@ Runtime library, lib/silcutil/
    SIM library (lib/silcsim) and introduces generic library).  Add this
    to lib/silcutil/silcdll.[ch].  (***TESTING NEEDED WIN32, TODO Symbian)
 
- o Add directory opening/traversing functions
-
  o silc_getopt routines (***DONE)
-
- o regex from /lib/contrib to lib/silcutil.
 
  o The SILC Event signals.  Asynchronous events that can be created,
    connected to and signalled.  Either own event routines or glued into
@@ -127,22 +139,9 @@ Runtime library, lib/silcutil/
    from any of the schedulers.
    (***DONE)
 
- o Additional scheduler changes: optimize silc_schedule_wakeup.  Wakeup
-   only if the scheduler is actually waiting something.  If it is
-   delivering tasks wakeup is not needed.
-
- o Structured log messages to Log API.  Allows machine readable log
-   messages.  Would allow sending of any kind of data in a log message.
-
  o Base64 to an own API (***DONE)
 
  o Timer API (***DONE)
-
- o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
-   SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
-   in separately.
-
- o silc_stringprep to non-allocating version.
 
  o silc_hash_table_replace -> silc_hash_table_set.  Retain support for
    silc_hash_table_replace as macro. (***DONE)
@@ -165,8 +164,6 @@ Runtime library, lib/silcutil/
  o silc_stack_alloc shouldn't require multiple by 8 size argument, it
    should figure it out itself. (***DONE)
 
- o silc_malloc et. al. to respect --with-alignment.
-
  o Add '%@' format to silc_snprintf functions.
    (***DONE)
 
@@ -178,6 +175,9 @@ Runtime library, lib/silcutil/
 
  o Generic SilcResult that includes all possible status and
    error conditions and generic errno API. (***DONE)
+
+ (o Structured log messages to Log API.  Allows machine readable log
+   messages.  Would allow sending of any kind of data in a log message.) maybe
 
  (o Change some stream routines (like socket stream API) to accept ANY
    stream and use silc_stream_get_root to get the socket stream from the

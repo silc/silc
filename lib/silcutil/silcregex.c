@@ -1,47 +1,112 @@
 /*
 
-regexpr.c
+  regexpr.c
 
-Author: Tatu Ylonen <ylo@ngs.fi>
+  Author: Tatu Ylonen <ylo@ngs.fi>
 
-Copyright (c) 1991 Tatu Ylonen, Espoo, Finland
+  Copyright (c) 1991 Tatu Ylonen, Espoo, Finland
 
-Permission to use, copy, modify, distribute, and sell this software
-and its documentation is hereby granted without fee, provided that the
-above copyright notice appears in all source code copies, the name of
-Tatu Ylonen is not used to advertise products containing this software
-or a derivation thereof, and all modified versions are clearly marked
-as such.
+  Permission to use, copy, modify, distribute, and sell this software
+  and its documentation is hereby granted without fee, provided that the
+  above copyright notice appears in all source code copies, the name of
+  Tatu Ylonen is not used to advertise products containing this software
+  or a derivation thereof, and all modified versions are clearly marked
+  as such.
 
-This software is provided "as is" without express or implied warranty.
+  This software is provided "as is" without express or implied warranty.
 
-Created: Thu Sep 26 17:14:05 1991 ylo
-Last modified: Sun Mar 29 16:47:31 1992 ylo
+  Created: Thu Sep 26 17:14:05 1991 ylo
+  Last modified: Sun Mar 29 16:47:31 1992 ylo
 
-This code draws many ideas from the regular expression packages by
-Henry Spencer of the University of Toronto and Richard Stallman of the
-Free Software Foundation.
+  This code draws many ideas from the regular expression packages by
+  Henry Spencer of the University of Toronto and Richard Stallman of the
+  Free Software Foundation.
 
-Emacs-specific code and syntax table code is almost directly borrowed
-from GNU regexp.
+  Emacs-specific code and syntax table code is almost directly borrowed
+  from GNU regexp.
 
-$Id$
+  The SILC Regex API by Pekka Riikonen, under the same license as the original
+  code.
 
 */
 
 #include "silc.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <ctype.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <time.h>
 
-#include <stdio.h>
-#include <assert.h>
-#include "regexpr.h"
+/* Modified for use in SILC Runtime Toolkit.  I think we have disabled many
+   features we could use, for the sake of simple API, which we may want to
+   extend later. */
+
+#define RE_NREGS	128	/* number of registers available */
+
+/* bit definitions for syntax */
+#define RE_NO_BK_PARENS		1    /* no quoting for parentheses */
+#define RE_NO_BK_VBAR		2    /* no quoting for vertical bar */
+#define RE_BK_PLUS_QM		4    /* quoting needed for + and ? */
+#define RE_TIGHT_VBAR		8    /* | binds tighter than ^ and $ */
+#define RE_NEWLINE_OR		16   /* treat newline as or */
+#define RE_CONTEXT_INDEP_OPS	32   /* ^$?*+ are special in all contexts */
+#define RE_ANSI_HEX		64   /* ansi sequences (\n etc) and \xhh */
+#define RE_NO_GNU_EXTENSIONS   128   /* no gnu extensions */
+
+/* definitions for some common regexp styles */
+#define RE_SYNTAX_AWK	(RE_NO_BK_PARENS|RE_NO_BK_VBAR|RE_CONTEXT_INDEP_OPS)
+#define RE_SYNTAX_EGREP	(RE_SYNTAX_AWK|RE_NEWLINE_OR)
+#define RE_SYNTAX_GREP	(RE_BK_PLUS_QM|RE_NEWLINE_OR)
+#define RE_SYNTAX_EMACS	0
+
+/* Registers */
+typedef struct re_registers {
+  int start[RE_NREGS];		/* start offset of region */
+  int end[RE_NREGS];		/* end offset of region */
+} *regexp_registers_t;
+
+int re_set_syntax(int syntax);
+/* This sets the syntax to use and returns the previous syntax.  The
+   syntax is specified by a bit mask of the above defined bits. */
+
+SilcResult re_compile_pattern(char *regex, int regex_size, SilcRegex compiled);
+/* This compiles the regexp (given in regex and length in regex_size).
+   This returns NULL if the regexp compiled successfully, and an error
+   message if an error was encountered.  The buffer field must be
+   initialized to a memory area allocated by malloc (or to NULL) before
+   use, and the allocated field must be set to its length (or 0 if buffer is
+   NULL).  Also, the translate field must be set to point to a valid
+   translation table, or NULL if it is not used. */
+
+int re_match(SilcRegex compiled, char *string, int size, int pos,
+	     regexp_registers_t regs);
+/* This tries to match the regexp against the string.  This returns the
+   length of the matched portion, or -1 if the pattern could not be
+   matched and -2 if an error (such as failure stack overflow) is
+   encountered. */
+
+int re_match_2(SilcRegex compiled, char *string1, int size1,
+	      char *string2, int size2, int pos, regexp_registers_t regs,
+	       int mstop);
+/* This tries to match the regexp to the concatenation of string1 and
+   string2.  This returns the length of the matched portion, or -1 if the
+   pattern could not be matched and -2 if an error (such as failure stack
+   overflow) is encountered. */
+
+int re_search(SilcRegex compiled, char *string, int size, int startpos,
+	      int range, regexp_registers_t regs);
+/* This rearches for a substring matching the regexp.  This returns the first
+   index at which a match is found.  range specifies at how many positions to
+   try matching; positive values indicate searching forwards, and negative
+   values indicate searching backwards.  mstop specifies the offset beyond
+   which a match must not go.  This returns -1 if no match is found, and
+   -2 if an error (such as failure stack overflow) is encountered. */
+
+int re_search_2(SilcRegex compiled, char *string1, int size1,
+		char *string2, int size2, int startpos, int range,
+		regexp_registers_t regs, int mstop);
+/* This is like re_search, but search from the concatenation of string1 and
+   string2.  */
+
+void re_compile_fastmap(SilcRegex compiled);
+/* This computes the fastmap for the regexp.  For this to have any effect,
+   the calling program must have initialized the fastmap field to point
+   to an array of 256 characters. */
 
 #define MACRO_BEGIN do {
 #define MACRO_END } while (0)
@@ -149,10 +214,10 @@ static char re_syntax_table[256];
 static void re_compile_initialize()
 {
   int a;
-  
+
 #if !defined(emacs) && !defined(SYNTAX_TABLE)
   static int syntax_table_inited = 0;
-  
+
   if (!syntax_table_inited)
     {
       syntax_table_inited = 1;
@@ -266,10 +331,10 @@ int ch;
   return 16;
 }
 
-char *re_compile_pattern(regex, size, bufp)
+SilcResult re_compile_pattern(regex, size, bufp)
 char *regex;
 int size;
-regexp_t bufp;
+SilcRegex bufp;
 {
   int a, pos, op, current_level, level, opcode;
   int pattern_offset = 0, alloc;
@@ -293,7 +358,7 @@ regexp_t bufp;
     if (pattern_offset+(amount) > alloc)	\
       {						\
 	alloc += 256 + (amount);		\
-	pattern = realloc(pattern, alloc);	\
+	pattern = silc_realloc(pattern, alloc);	\
 	if (!pattern)				\
 	  goto out_of_memory;			\
       }						\
@@ -337,7 +402,7 @@ regexp_t bufp;
     bufp->buffer = pattern;			\
     bufp->used = pattern_offset;		\
   MACRO_END
-    
+
 #define GETHEX(var)						\
   MACRO_BEGIN							\
     char gethex_ch, gethex_value;				\
@@ -407,7 +472,7 @@ regexp_t bufp;
   if (alloc == 0 || pattern == NULL)
     {
       alloc = 256;
-      pattern = malloc(alloc);
+      pattern = silc_malloc(alloc);
       if (!pattern)
 	goto out_of_memory;
     }
@@ -608,7 +673,7 @@ regexp_t bufp;
 	case Ropenset:
 	  {
 	    int complement,prev,offset,range,firstchar;
-	    
+
 	    SET_LEVEL_START;
 	    ALLOC(1+256/8);
 	    STORE(Cset);
@@ -722,35 +787,35 @@ regexp_t bufp;
   ALLOC(1);
   STORE(Cend);
   SET_FIELDS;
-  return NULL;
+  return SILC_OK;
 
  op_error:
   SET_FIELDS;
-  return "Badly placed special character";
+  return SILC_ERR_REGEX_SPECIAL;
 
  bad_match_register:
   SET_FIELDS;
-  return "Bad match register number";
+  return SILC_ERR_REGEX_REG;
 
  hex_error:
   SET_FIELDS;
-  return "Bad hexadecimal number";
+  return SILC_ERR_REGEX_HEX;
 
  parenthesis_error:
   SET_FIELDS;
-  return "Badly placed parenthesis";
+  return SILC_ERR_REGEX_PAREN;
 
  out_of_memory:
   SET_FIELDS;
-  return "Out of memory";
+  return SILC_ERR_OUT_OF_MEMORY;
 
  ends_prematurely:
   SET_FIELDS;
-  return "Regular expression ends prematurely";
+  return SILC_ERR_OVERFLOW;
 
  too_complex:
   SET_FIELDS;
-  return "Regular expression too complex";
+  return SILC_ERR_REGEX_TOO_COMPLEX;
 }
 #undef CHARAT
 #undef NEXTCHAR
@@ -873,7 +938,7 @@ int used, pos;
     visited = small_visited;
   else
     {
-      visited = malloc(used);
+      visited = silc_malloc(used);
       if (!visited)
 	return 0;
     }
@@ -882,12 +947,12 @@ int used, pos;
   memset(visited, 0, used);
   re_compile_fastmap_aux(buffer, pos, visited, can_be_null, fastmap);
   if (visited != small_visited)
-    free(visited);
+    silc_free(visited);
   return 1;
 }
 
 void re_compile_fastmap(bufp)
-regexp_t bufp;
+SilcRegex bufp;
 {
   if (!bufp->fastmap || bufp->fastmap_accurate)
     return;
@@ -909,7 +974,7 @@ regexp_t bufp;
 #define MAX_FAILURES     4100  /* max # of failure points before failing */
 
 int re_match_2(bufp, string1, size1, string2, size2, pos, regs, mstop)
-regexp_t bufp;
+SilcRegex bufp;
 char *string1, *string2;
 int size1, size2, pos, mstop;
 regexp_registers_t regs;
@@ -1033,7 +1098,7 @@ regexp_registers_t regs;
 		}
 	    }
 	  if (failure_stack_start != initial_failure_stack)
-	    free((char *)failure_stack_start);
+	    silc_free((char *)failure_stack_start);
 	  return match_end - pos;
 	case Cbol:
 	  if (text == string1 || text[-1] == '\n') /* text[-1] always valid */
@@ -1084,7 +1149,7 @@ regexp_registers_t regs;
 	    regpartend = regtextend;
 	  else
 	    regpartend = string1 + size1;
-	  
+
 	  for (;regtext != regtextend;)
 	    {
 	      NEXTCHAR(ch);
@@ -1244,7 +1309,7 @@ regexp_registers_t regs;
 	      if (failure_stack_start != initial_failure_stack)
 		goto error;
 	      failure_stack_start = (struct failure_point *)
-		malloc(MAX_FAILURES * sizeof(*failure_stack_start));
+		silc_malloc(MAX_FAILURES * sizeof(*failure_stack_start));
 	      failure_stack_end = failure_stack_start + MAX_FAILURES;
 	      memcpy((char *)failure_stack_start, (char *)initial_failure_stack,
 		     INITIAL_FAILURES * sizeof(*failure_stack_start));
@@ -1358,12 +1423,12 @@ regexp_registers_t regs;
       goto continue_matching;
     }
   if (failure_stack_start != initial_failure_stack)
-    free((char *)failure_stack_start);
+    silc_free((char *)failure_stack_start);
   return -1;
 
  error:
   if (failure_stack_start != initial_failure_stack)
-    free((char *)failure_stack_start);
+    silc_free((char *)failure_stack_start);
   return -2;
 }
 
@@ -1372,7 +1437,7 @@ regexp_registers_t regs;
 #undef PUSH_FAILURE
 
 int re_match(bufp, string, size, pos, regs)
-regexp_t bufp;
+SilcRegex bufp;
 char *string;
 int size, pos;
 regexp_registers_t regs;
@@ -1382,7 +1447,7 @@ regexp_registers_t regs;
 
 int re_search_2(bufp, string1, size1, string2, size2, pos, range, regs,
 		mstop)
-regexp_t bufp;
+SilcRegex bufp;
 char *string1, *string2;
 int size1, size2, pos, range, mstop;
 regexp_registers_t regs;
@@ -1390,11 +1455,11 @@ regexp_registers_t regs;
   char *fastmap, *translate, *text, *partstart, *partend;
   int dir, ret;
   char anchor;
-  
+
   assert(size1 >= 0 && size2 >= 0 && pos >= 0 && mstop >= 0);
   assert(pos + range >= 0 && pos + range <= size1 + size2);
   assert(pos <= mstop);
-  
+
   fastmap = bufp->fastmap;
   translate = bufp->translate;
   if (fastmap && !bufp->fastmap_accurate)
@@ -1495,7 +1560,7 @@ regexp_registers_t regs;
 }
 
 int re_search(bufp, string, size, startpos, range, regs)
-regexp_t bufp;
+SilcRegex bufp;
 char *string;
 int size, startpos, range;
 regexp_registers_t regs;
@@ -1504,219 +1569,82 @@ regexp_registers_t regs;
 		     startpos, range, regs, size);
 }
 
-static struct re_pattern_buffer re_comp_buf;
+/****************************** SILC Regex API ******************************/
 
-char *re_comp(s)
-char *s;
+/* Compile regular expression */
+
+SilcBool silc_regex_compile(SilcRegex regexp, const char *regex,
+			    SilcRegexFlags flags)
 {
-  if (s == NULL)
-    {
-      if (!re_comp_buf.buffer)
-	return "Out of memory";
-      return NULL;
-    }
-  if (!re_comp_buf.buffer)
-    {
-      /* the buffer will be allocated automatically */
-      re_comp_buf.fastmap = malloc(256);
-      re_comp_buf.translate = NULL;
-    }
-  return re_compile_pattern(s, strlen(s), &re_comp_buf);
-}
-
-int re_exec(s)
-char *s;
-{
-  int len = strlen(s);
-  
-  return re_search(&re_comp_buf, s, len, 0, len, (regexp_registers_t)NULL) >= 0;
-}
-
-/* POSIX Compatibility */
-
-int regcomp(regex_t *preg, const char *regex, int cflags)
-{
+  SilcResult ret;
   int syntax = 0;
-  memset(preg, 0, sizeof(*preg));
-  if (cflags & REG_EXTENDED)
-    syntax |= (RE_CONTEXT_INDEP_OPS | RE_NO_BK_PARENS | RE_NO_BK_VBAR);
+
+  if (!regexp || !regex) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return FALSE;
+  }
+
+  memset(regexp, 0, sizeof(*regexp));
+
+  /* Set syntax */
+  syntax |= (RE_CONTEXT_INDEP_OPS | RE_NO_BK_PARENS | RE_NO_BK_VBAR);
   re_set_syntax(syntax);
-  if (re_compile_pattern((char *)regex, strlen(regex), preg) == NULL)
-    return 0;
-  return -1;
+
+  /* Compile */
+  ret = re_compile_pattern((char *)regex, strlen(regex), regexp);
+  if (ret != SILC_OK)
+    silc_set_errno(ret);
+
+  return ret == SILC_OK;
 }
 
-int regexec(const regex_t *preg, const char *string, size_t nmatch,
-            regmatch_t pmatch[], int eflags)
+/* Match compiled regular expression */
+
+SilcBool silc_regex_match(SilcRegex regexp, const char *string,
+			  SilcUInt32 num_match, SilcRegexMatch match,
+			  SilcRegexFlags flags)
 {
-  int len = strlen(string);
-  int ret;
-  
-  ret = re_search((regex_t *)preg, (char *)string, len, 0, len, (regexp_registers_t)NULL);
-  if (ret >= 0)
-    return 0;
-
-  return ret;
-}
-
-size_t regerror(int errcode, const regex_t *preg, char *errbuf,
-                size_t errbuf_size)
-{
-  return -1;
-}
-
-void regfree(regex_t *preg)
-{
-  free(preg->buffer);
-}
-
-#ifdef TEST_REGEXP
-
-int main()
-{
-  char buf[500];
-  char *cp;
-  struct re_pattern_buffer exp;
   struct re_registers regs;
-  int a,pos;
-  char fastmap[256];
+  int ret, i, len = strlen(string);
 
-  exp.allocated = 0;
-  exp.buffer = 0;
-  exp.translate = NULL;
-  exp.fastmap = fastmap;
+  if (!regexp || !string) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return FALSE;
+  }
 
-  /* re_set_syntax(RE_NO_BK_PARENS|RE_NO_BK_VBAR|RE_ANSI_HEX); */
+  if (num_match && !match) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return FALSE;
+  }
 
-  while (1)
-    {
-      printf("Enter regexp:\n");
-      gets(buf);
-      cp=re_compile_pattern(buf, strlen(buf), &exp);
-      if (cp)
-	{
-	  printf("Error: %s\n", cp);
-	  continue;
-	}
-      re_compile_fastmap(&exp);
-      printf("dump:\n");
-      for (pos = 0; pos < exp.used;)
-	{
-	  printf("%d: ", pos);
-	  switch (exp.buffer[pos++])
-	    {
-	    case Cend:
-	      strcpy(buf, "end");
-	      break;
-	    case Cbol:
-	      strcpy(buf, "bol");
-	      break;
-	    case Ceol:
-	      strcpy(buf, "eol");
-	      break;
-	    case Cset:
-	      strcpy(buf, "set ");
-	      for (a = 0; a < 256/8; a++)
-		sprintf(buf+strlen(buf)," %02x",
-			(unsigned char)exp.buffer[pos++]);
-	      break;
-	    case Cexact:
-	      sprintf(buf, "exact '%c' 0x%x", exp.buffer[pos],
-		      (unsigned char)exp.buffer[pos]);
-	      pos++;
-	      break;
-	    case Canychar:
-	      strcpy(buf, "anychar");
-	      break;
-	    case Cstart_memory:
-	      sprintf(buf, "start_memory %d", exp.buffer[pos++]);
-	      break;
-	    case Cend_memory:
-	      sprintf(buf, "end_memory %d", exp.buffer[pos++]);
-	      break;
-	    case Cmatch_memory:
-	      sprintf(buf, "match_memory %d", exp.buffer[pos++]);
-	      break;
-	    case Cjump:
-	    case Cdummy_failure_jump:
-	    case Cstar_jump:
-	    case Cfailure_jump:
-	    case Cupdate_failure_jump:
-	      a = (unsigned char)exp.buffer[pos++];
-	      a += (unsigned char)exp.buffer[pos++] << 8;
-	      a = (int)(short)a;
-	      switch (exp.buffer[pos-3])
-		{
-		case Cjump:
-		  cp = "jump";
-		  break;
-		case Cstar_jump:
-		  cp = "star_jump";
-		  break;
-		case Cfailure_jump:
-		  cp = "failure_jump";
-		  break;
-		case Cupdate_failure_jump:
-		  cp = "update_failure_jump";
-		  break;
-		case Cdummy_failure_jump:
-		  cp = "dummy_failure_jump";
-		  break;
-		default:
-		  cp = "unknown jump";
-		  break;
-		}
-	      sprintf(buf, "%s %d", cp, a + pos);
-	      break;
-	    case Cbegbuf:
-	      strcpy(buf,"begbuf");
-	      break;
-	    case Cendbuf:
-	      strcpy(buf,"endbuf");
-	      break;
-	    case Cwordbeg:
-	      strcpy(buf,"wordbeg");
-	      break;
-	    case Cwordend:
-	      strcpy(buf,"wordend");
-	      break;
-	    case Cwordbound:
-	      strcpy(buf,"wordbound");
-	      break;
-	    case Cnotwordbound:
-	      strcpy(buf,"notwordbound");
-	      break;
-	    default:
-	      sprintf(buf, "unknown code %d",
-		      (unsigned char)exp.buffer[pos - 1]);
-	      break;
-	    }
-	  printf("%s\n", buf);
-	}
-      printf("can_be_null = %d uses_registers = %d anchor = %d\n",
-	     exp.can_be_null, exp.uses_registers, exp.anchor);
-      
-      printf("fastmap:");
-      for (a = 0; a < 256; a++)
-	if (exp.fastmap[a])
-	  printf(" %d", a);
-      printf("\n");
-      printf("Enter strings.  An empty line terminates.\n");
-      while (fgets(buf, sizeof(buf), stdin))
-	{
-	  if (buf[0] == '\n')
-	    break;
-	  a = re_search(&exp, buf, strlen(buf), 0, strlen(buf), &regs);
-	  printf("search returns %d\n", a);
-	  if (a != -1)
-	    {
-	      for (a = 0; a < RE_NREGS; a++)
-		{
-		  printf("buf %d: %d to %d\n", a, regs.start[a], regs.end[a]);
-		}
-	    }
-	}
+  /* Internal limit for maximum number of registers */
+  if (num_match > RE_NREGS)
+    num_match = RE_NREGS;
+
+  /* Search */
+  ret = re_search(regexp, (char *)string, len, 0, len,
+		  num_match ? &regs : NULL);
+  if (ret < 0) {
+    if (ret == -2)
+      silc_set_errno(SILC_ERR);
+    else
+      silc_set_errno(SILC_ERR_NOT_FOUND);
+  }
+
+  if (ret >= 0) {
+    /* Return matches */
+    for (i = 0; i < num_match; i++) {
+      match[i].start = regs.start[i];
+      match[i].end = regs.end[i];
     }
+  }
+
+  return ret >= 0;
 }
 
-#endif /* TEST_REGEXP */
+/* Free regex */
+
+void silc_regex_free(SilcRegex regexp)
+{
+  silc_free(regexp->buffer);
+}

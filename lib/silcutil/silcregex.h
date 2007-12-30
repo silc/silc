@@ -1,3 +1,4 @@
+
 /*
 
   regexpr.h
@@ -58,9 +59,7 @@
  *
  * DESCRIPTION
  *
- *    The regular expression context.  This context is given as argument
- *    to all silc_regex_* functions.  It is usually statically allocated
- *    but can be dynamically allocated by silc_malloc.
+ *    The regular expression context.
  *
  ***/
 typedef struct SilcRegexObject {
@@ -83,9 +82,6 @@ typedef struct SilcRegexObject {
  *
  * DESCRIPTION
  *
- *    The regular expression match context that provides information on the
- *    found match.  It provides the start offset and end offset of the
- *    found match.
  *
  * SOURCE
  */

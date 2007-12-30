@@ -126,6 +126,13 @@ typedef enum {
   SILC_ERR_NET_DOWN                    = 82,  /* Network is down */
   SILC_ERR_EOS                         = 83,  /* End of stream */
 
+  /* Regular expression errors */
+  SILC_ERR_REGEX_PAREN                 = 100, /* Unmatched parenthesis */
+  SILC_ERR_REGEX_HEX                   = 101, /* Bad hex number */
+  SILC_ERR_REGEX_REG                   = 102, /* Bad register number */
+  SILC_ERR_REGEX_SPECIAL               = 103, /* Unmatched special character */
+  SILC_ERR_REGEX_TOO_COMPLEX           = 104, /* Too complex expression */
+
   SILC_ERR_MAX,
 } SilcResult;
 /***/

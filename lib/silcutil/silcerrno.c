@@ -410,8 +410,28 @@ const char *silc_errno_strings[] =
   "Address already in use",
   "Network is down",
   "End of stream",
-
   "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+
+  "Badly placed parenthesis",
+  "Bad hexadecimal number",
+  "Bad match register number",
+  "Badly placed special character",
+  "Regular expression too complex",
 };
 
 /* Map error to string */

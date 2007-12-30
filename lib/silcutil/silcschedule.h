@@ -945,11 +945,6 @@ SilcBool silc_schedule_event_connect(SilcSchedule schedule,
  *    Returns FALSE on error or if the `callback' with `context' has not been
  *    connected.  Otherwise, returns TRUE.
  *
- * EXAMPLE
- *
- *    silc_schedule_event_connect(schedule, "foo event", NULL,
- *                                foo_signal_callback, foo_context);
- *
  ***/
 SilcBool silc_schedule_event_disconnect(SilcSchedule schedule,
 					const char *event, SilcTask task,

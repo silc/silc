@@ -121,7 +121,7 @@ int silc_string_compare(char *string1, char *string2)
 
 char **silc_string_split(const char *string, char ch, int *ret_count)
 {
-  char **splitted = NULL, sep[1], *item, *cp;
+  char **splitted = NULL, sep[2], *item, *cp;
   int i = 0, len;
 
   if (!string || !ret_count) {
@@ -140,9 +140,13 @@ char **silc_string_split(const char *string, char ch, int *ret_count)
   }
 
   sep[0] = ch;
+  sep[1] = '\0';
   cp = (char *)string;
-  while(cp) {
+  while (cp) {
     len = strcspn(cp, sep);
+    if (!len)
+      break;
+
     item = silc_memdup(cp, len);
     if (!item) {
       silc_free(splitted);
@@ -155,10 +159,13 @@ char **silc_string_split(const char *string, char ch, int *ret_count)
     else
       cp++;
 
-    splitted = silc_realloc(splitted, (i + 1) * sizeof(*splitted));
-    if (!splitted)
-      return NULL;
     splitted[i++] = item;
+
+    if (cp) {
+      splitted = silc_realloc(splitted, (i + 1) * sizeof(*splitted));
+      if (!splitted)
+	return NULL;
+    }
   }
   *ret_count = i;
 
@@ -246,18 +253,15 @@ char *silc_string_regex_combine(const char *string1, const char *string2)
 
 int silc_string_regex_match(const char *regex, const char *string)
 {
-  regex_t preg;
-  int ret = FALSE;
+  SilcRegexStruct preg;
+  SilcBool ret;
 
-  if (regcomp(&preg, regex, REG_NOSUB | REG_EXTENDED) != 0) {
-    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+  if (!silc_regex_compile(&preg, regex, 0))
     return FALSE;
-  }
 
-  if (regexec(&preg, string, 0, NULL, 0) == 0)
-    ret = TRUE;
+  ret = silc_regex_match(&preg, string, 0, NULL, 0);
 
-  regfree(&preg);
+  silc_regex_free(&preg);
 
   return ret;
 }

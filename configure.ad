@@ -283,14 +283,6 @@ AC_CHECK_FUNCS(setenv getenv putenv unsetenv clearenv)
 
 # lib/contrib conditionals
 #
-AC_CHECK_HEADER(regex.h,
-  [
-    AC_DEFINE([HAVE_REGEX_H], [], [HAVE_REGEX_H])
-    have_regex=1
-  ], have_regex=0
-)
-AM_CONDITIONAL(HAVE_REGEX, test x$have_regex = x1)
-
 AC_CHECK_FUNC(getopt_long,
   [
     AC_DEFINE([HAVE_GETOPT_LONG], [], [HAVE_GETOPT_LONG])

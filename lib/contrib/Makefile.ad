@@ -19,15 +19,9 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 noinst_LTLIBRARIES = libcontrib.la
 
-if HAVE_REGEX
-REGEX =
-else
-REGEX = regexpr.c
-endif
-
 STRINGPREP = nfkc.c rfc3454.c stringprep.c
 
-libcontrib_la_SOURCES = $(STRINGPREP) $(REGEX)
+libcontrib_la_SOURCES = $(STRINGPREP)
 
 EXTRA_DIST = *.c *.h
 

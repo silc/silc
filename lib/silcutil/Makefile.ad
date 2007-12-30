@@ -76,7 +76,8 @@ libsilcutil_la_SOURCES = \
 	silcbase64.c	\
 	silcbitops.c	\
 	silcerrno.c	\
-	silcgetopt.c
+	silcgetopt.c	\
+	silcregex.c
 
 #ifdef SILC_DIST_TOOLKIT
 include_HEADERS =	\
@@ -126,7 +127,8 @@ include_HEADERS =	\
 	silcbase64.h	\
 	silcbitops.h	\
 	silcerrno.h	\
-	silcgetopt.h
+	silcgetopt.h	\
+	silcregex.h
 
 SILC_EXTRA_DIST = tests
 #endif SILC_DIST_TOOLKIT
