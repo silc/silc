@@ -268,6 +268,50 @@ typedef void * SilcSocket;
 #endif
 /***/
 
+
+/****d* silcutil/SILCTypes/SilcParam
+ *
+ * NAME
+ *
+ *    typedef SilcUInt32 SilcParam;
+ *
+ * DESCRIPTION
+ *
+ *    A generic parameters that describe the type of an parameter or argument.
+ *    They can be used to describe function arguments, buffer encoding format,
+ *    etc.
+ *
+ * SOURCE
+ */
+typedef SilcUInt32 SilcParam;
+
+#define SILC_PARAM_SINT8         1		/* SilcInt8 */
+#define SILC_PARAM_UINT8         2		/* SilcUInt8 */
+#define SILC_PARAM_SINT16        3		/* SilcInt16 */
+#define SILC_PARAM_UINT16        4		/* SilcUInt16 */
+#define SILC_PARAM_SINT32        5		/* SilcInt32 */
+#define SILC_PARAM_UINT32        6		/* SilcUInt32 */
+#define SILC_PARAM_SINT64        7		/* SilcInt64 */
+#define SILC_PARAM_UINT64        8		/* SilcUInt64 */
+#define SILC_PARAM_SICHAR        9		/* signed char * */
+#define SILC_PARAM_UICHAR        10		/* unsigned char * */
+#define SILC_PARAM_BUFFER        11		/* SilcBuffer */
+#define SILC_PARAM_PTR           12		/* void * */
+#define SILC_PARAM_END           0xfeeefff1     /* End of parameters */
+/***/
+
+/* Internal parameter types, not publicly documented */
+#define SILC_PARAM_UI8_STRING    100	        /* String (max len 8-bits) */
+#define SILC_PARAM_UI16_STRING   101	        /* String (max len 16-bits) */
+#define SILC_PARAM_UI32_STRING   102	        /* String (max len 32-bits) */
+#define SILC_PARAM_UI8_NSTRING   103	        /* String (max len 8-bits) */
+#define SILC_PARAM_UI16_NSTRING  104	        /* String (max len 16-bits) */
+#define SILC_PARAM_UI32_NSTRING  105	        /* String (max len 32-bits) */
+#define SILC_PARAM_OFFSET        106
+#define SILC_PARAM_ADVANCE       107
+#define SILC_PARAM_FUNC          108
+#define SILC_PARAM_ALLOC         0x00010000     /* Allocate, bitmask */
+
 /* Macros */
 
 #if (defined(SILC_I486) || defined(SILC_X86_64)) && defined(__GNUC__)
@@ -846,7 +890,7 @@ static inline SilcUInt64 silc_ror64(SilcUInt64 val, int num)
  *
  * DESCRIPTION
  *
- *    Brach prediction macro.  It specifies that it is likely that the brach
+ *    Branch prediction macro.  It specifies that it is likely that the branch
  *    where silc_likely is applied is taken.  Compiler will optimize the
  *    code based on this prediction.  Never use this before you have profiled
  *    the code first.
