@@ -71,8 +71,8 @@ SilcBool silc_ssh_parse_line(SilcBuffer key, SilcBuffer line,
 
 SilcHashTable silc_ssh_allocate_fields(void)
 {
-  return silc_hash_table_alloc(NULL, 0, silc_hash_string, NULL,
-			       silc_hash_string_compare, NULL,
+  return silc_hash_table_alloc(NULL, 0, silc_hash_string_case, NULL,
+			       silc_hash_string_case_compare, NULL,
 			       silc_ssh_field_dest, NULL, TRUE);
 }
 
@@ -416,8 +416,8 @@ SilcBool silc_ssh_public_key_add_field(SilcSshPublicKey public_key,
 
   if (!public_key->fields) {
     public_key->fields =
-      silc_hash_table_alloc(NULL, 0, silc_hash_string, NULL,
-			    silc_hash_string_compare, NULL,
+      silc_hash_table_alloc(NULL, 0, silc_hash_string_case, NULL,
+			    silc_hash_string_case_compare, NULL,
 			    silc_ssh_field_dest, NULL, TRUE);
     if (!public_key->fields)
       return FALSE;

@@ -131,62 +131,6 @@ void silc_parse_command_line(unsigned char *buffer,
  ***/
 char *silc_format(char *fmt, ...);
 
-/****f* silcutil/SilcUtilAPI/silc_hash_string
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_hash_string(void *key, void *user_context);
- *
- * DESCRIPTION
- *
- *    Basic has function to hash strings. May be used with the SilcHashTable.
- *    Note that this lowers the characters of the string (with tolower()) so
- *    this can be used to provide case-insensitive hashing.
- *
- ***/
-SilcUInt32 silc_hash_string(void *key, void *user_context);
-
-/****f* silcutil/SilcUtilAPI/silc_hash_utf8_string
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_hash_utf8_string(void *key, void *user_context);
- *
- * DESCRIPTION
- *
- *    Basic has function to hash UTF-8 strings. May be used with the
- *    SilcHashTable.  Used with identifier strings.  The key is
- *    expected to be casefolded.
- *
- ***/
-SilcUInt32 silc_hash_utf8_string(void *key, void *user_context);
-
-/****f* silcutil/SilcUtilAPI/silc_hash_uint
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_hash_uint(void *key, void *user_context);
- *
- * DESCRIPTION
- *
- *    Basic hash function to hash integers. May be used with the SilcHashTable.
- *
- ***/
-SilcUInt32 silc_hash_uint(void *key, void *user_context);
-
-/****f* silcutil/SilcUtilAPI/silc_hash_ptr
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_hash_ptr(void *key, void *user_context);
- *
- * DESCRIPTION
- *
- *    Basic hash funtion to hash pointers. May be used with the SilcHashTable.
- *
- ***/
-SilcUInt32 silc_hash_ptr(void *key, void *user_context);
-
 /****f* silcutil/SilcUtilAPI/silc_hash_id
  *
  * SYNOPSIS
@@ -212,34 +156,6 @@ SilcUInt32 silc_hash_id(void *key, void *user_context);
  *
  ***/
 SilcUInt32 silc_hash_client_id_hash(void *key, void *user_context);
-
-/****f* silcutil/SilcUtilAPI/silc_hash_data
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_hash_data(void *key, void *user_context);
- *
- * DESCRIPTION
- *
- *    Hash binary data. The `user_context' is the data length.
- *
- ***/
-SilcUInt32 silc_hash_data(void *key, void *user_context);
-
-/****f* silcutil/SilcUtilAPI/silc_hash_string_compare
- *
- * SYNOPSIS
- *
- *    SilcBool silc_hash_string_compare(void *key1, void *key2,
- *                                  void *user_context);
- *
- * DESCRIPTION
- *
- *    Compares two strings. This ignores the case while comparing.  It may
- *    be used as SilcHashTable comparison function.
- *
- ***/
-SilcBool silc_hash_string_compare(void *key1, void *key2, void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_hash_id_compare
  *
@@ -287,35 +203,6 @@ SilcBool silc_hash_id_compare_full(void *key1, void *key2, void *user_context);
  ***/
 SilcBool silc_hash_client_id_compare(void *key1, void *key2,
 				     void *user_context);
-
-/****f* silcutil/SilcUtilAPI/silc_hash_data_compare
- *
- * SYNOPSIS
- *
- *    SilcBool silc_hash_data_compare(void *key1, void *key2,
- *                                    void *user_context);
- *
- * DESCRIPTION
- *
- *    Compares binary data. May be used as SilcHashTable comparison function.
- *
- ***/
-SilcBool silc_hash_data_compare(void *key1, void *key2, void *user_context);
-
-/****f* silcutil/SilcUtilAPI/silc_hash_utf8_compare
- *
- * SYNOPSIS
- *
- *    SilcBool silc_hash_utf8_compare(void *key1, void *key2,
- *                                    void *user_context);
- *
- * DESCRIPTION
- *
- *    Compares UTF-8 strings.  Casefolded and NULL terminated strings are
- *    expected.  May be used as SilcHashTable comparison function.
- *
- ***/
-SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_fingerprint
  *

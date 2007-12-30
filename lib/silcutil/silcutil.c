@@ -232,61 +232,6 @@ char *silc_format(char *fmt, ...)
   return silc_strdup(buf);
 }
 
-/* Basic has function to hash strings. May be used with the SilcHashTable.
-   Note that this lowers the characters of the string (with tolower()) so
-   this is used usually with nicknames, channel and server names to provide
-   case insensitive keys. */
-
-SilcUInt32 silc_hash_string(void *key, void *user_context)
-{
-  char *s = (char *)key;
-  SilcUInt32 h = 0, g;
-
-  while (*s != '\0') {
-    h = (h << 4) + tolower((int)*s);
-    if ((g = h & 0xf0000000)) {
-      h = h ^ (g >> 24);
-      h = h ^ g;
-    }
-    s++;
-  }
-
-  return h;
-}
-
-/* Hash UTF-8 string */
-
-SilcUInt32 silc_hash_utf8_string(void *key, void *user_context)
-{
-  unsigned char *s = (unsigned char *)key;
-  SilcUInt32 h = 0, g;
-
-  while (*s != '\0') {
-    h = (h << 4) + *s;
-    if ((g = h & 0xf0000000)) {
-      h = h ^ (g >> 24);
-      h = h ^ g;
-    }
-    s++;
-  }
-
-  return h;
-}
-
-/* Basic hash function to hash integers. May be used with the SilcHashTable. */
-
-SilcUInt32 silc_hash_uint(void *key, void *user_context)
-{
-  return SILC_PTR_TO_32(key);
-}
-
-/* Basic hash funtion to hash pointers. May be used with the SilcHashTable. */
-
-SilcUInt32 silc_hash_ptr(void *key, void *user_context)
-{
-  return SILC_PTR_TO_32(key);
-}
-
 /* Hash a ID. The `user_context' is the ID type. */
 
 SilcUInt32 silc_hash_id(void *key, void *user_context)
@@ -355,29 +300,6 @@ SilcUInt32 silc_hash_client_id_hash(void *key, void *user_context)
   return h;
 }
 
-/* Hash binary data. The `user_context' is the data length. */
-
-SilcUInt32 silc_hash_data(void *key, void *user_context)
-{
-  SilcUInt32 len = SILC_PTR_TO_32(user_context), h = 0;
-  unsigned char *data = (unsigned char *)key;
-  int i;
-
-  h = (data[0] * data[len - 1] + 1) * len;
-  for (i = 0; i < len; i++)
-    h ^= data[i];
-
-  return h;
-}
-
-/* Compares two strings. It may be used as SilcHashTable comparison
-   function. */
-
-SilcBool silc_hash_string_compare(void *key1, void *key2, void *user_context)
-{
-  return !strcasecmp((char *)key1, (char *)key2);
-}
-
 /* Compares two ID's. May be used as SilcHashTable comparison function.
    The Client ID's compares only the hash of the Client ID not any other
    part of the Client ID. Other ID's are fully compared. */
@@ -404,25 +326,6 @@ SilcBool silc_hash_client_id_compare(void *key1, void *key2,
 				     void *user_context)
 {
   return SILC_ID_COMPARE_TYPE(key1, key2, SILC_ID_CLIENT);
-}
-
-/* Compares binary data. May be used as SilcHashTable comparison function. */
-
-SilcBool silc_hash_data_compare(void *key1, void *key2, void *user_context)
-{
-  SilcUInt32 len = SILC_PTR_TO_32(user_context);
-  return !memcmp(key1, key2, len);
-}
-
-/* Compares UTF-8 string. */
-
-SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context)
-{
-  int l1 = strlen((char *)key1);
-  int l2 = strlen((char *)key2);
-  if (l1 != l2)
-    return FALSE;
-  return !memcmp(key1, key2, l2);
 }
 
 /* Creates fingerprint from data, usually used with SHA1 digests */

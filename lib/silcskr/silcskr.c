@@ -168,7 +168,7 @@ static SilcUInt32 silc_skr_hash(void *key, void *user_context)
     break;
   }
 
-  return type->type + silc_hash_string(type->data, user_context);
+  return type->type + silc_hash_string_case(type->data, user_context);
 }
 
 /* Hash table comparison function for key entries */

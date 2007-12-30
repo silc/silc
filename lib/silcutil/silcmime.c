@@ -64,7 +64,7 @@ static void silc_mime_assemble_dest(void *key, void *context,
 static SilcUInt32 silc_mime_hash_id(void *key, void *user_context)
 {
   SilcMimeFragmentId id = key;
-  return silc_hash_string(id->id, user_context);
+  return silc_hash_string_case(id->id, user_context);
 }
 
 /* MIME fragment ID comparing */
@@ -73,7 +73,7 @@ static SilcBool silc_mime_id_compare(void *key1, void *key2,
 				     void *user_context)
 {
   SilcMimeFragmentId id1 = key1, id2 = key2;
-  return silc_hash_string_compare(id1->id, id2->id, user_context);
+  return silc_hash_string_case_compare(id1->id, id2->id, user_context);
 }
 
 
@@ -89,8 +89,8 @@ SilcMime silc_mime_alloc(void)
   if (!mime)
     return NULL;
 
-  mime->fields = silc_hash_table_alloc(NULL, 0, silc_hash_string, mime,
-				       silc_hash_string_compare, mime,
+  mime->fields = silc_hash_table_alloc(NULL, 0, silc_hash_string_case, mime,
+				       silc_hash_string_case_compare, mime,
 				       silc_mime_field_dest, mime, TRUE);
   if (!mime->fields) {
     silc_mime_free(mime);

@@ -988,3 +988,136 @@ SilcBool silc_hash_table_get(SilcHashTableList *htl, void **key,
 
   return TRUE;
 }
+
+/**************************** Utility functions *****************************/
+
+/* Case sensitive hashing */
+
+SilcUInt32 silc_hash_string(void *key, void *user_context)
+{
+  char *s = (char *)key;
+  SilcUInt32 h = 0;
+
+  while (*s != '\0') {
+    h += *s++;
+    h += (h << 10);
+    h ^= (h >> 6);
+  }
+
+  h += (h << 3);
+  h ^= (h >> 11);
+  h += (h << 15);
+
+  return h;
+}
+
+/* Case-insensitive hashing */
+
+SilcUInt32 silc_hash_string_case(void *key, void *user_context)
+{
+  char *s = (char *)key;
+  SilcUInt32 h = 0;
+
+  while (*s != '\0') {
+    h += tolower((int)*s);
+    h += (h << 10);
+    h ^= (h >> 6);
+    s++;
+  }
+
+  h += (h << 3);
+  h ^= (h >> 11);
+  h += (h << 15);
+
+  return h;
+}
+
+/* Hash UTF-8 string */
+
+SilcUInt32 silc_hash_utf8_string(void *key, void *user_context)
+{
+  char *s = (char *)key;
+  SilcUInt32 h = 0;
+
+  while (*s != '\0') {
+    h += *s++;
+    h += (h << 10);
+    h ^= (h >> 6);
+  }
+
+  h += (h << 3);
+  h ^= (h >> 11);
+  h += (h << 15);
+
+  return h;
+}
+
+/* Basic hash function to hash integers. */
+
+SilcUInt32 silc_hash_uint(void *key, void *user_context)
+{
+  return SILC_PTR_TO_32(key);
+}
+
+/* Basic hash funtion to hash pointers. */
+
+SilcUInt32 silc_hash_ptr(void *key, void *user_context)
+{
+  return SILC_PTR_TO_32(key);
+}
+
+/* Hash binary data. The `user_context' is the data length. */
+
+SilcUInt32 silc_hash_data(void *key, void *user_context)
+{
+  SilcUInt32 len = SILC_PTR_TO_32(user_context), h, i;
+  unsigned char *data = (char *)key;
+
+  h = (data[0] * data[len - 1] + 1) * len;
+
+  for (i = 0; i < len; i++) {
+    h += data[i];
+    h += (h << 10);
+    h ^= (h >> 6);
+  }
+
+  h += (h << 3);
+  h ^= (h >> 11);
+  h += (h << 15);
+
+  return h;
+}
+
+/* Compares two strings. */
+
+SilcBool silc_hash_string_compare(void *key1, void *key2, void *user_context)
+{
+  return !strcmp((char *)key1, (char *)key2);
+}
+
+/* Compares two strings, ignores case. */
+
+SilcBool silc_hash_string_case_compare(void *key1, void *key2,
+				       void *user_context)
+{
+  return !strcasecmp((char *)key1, (char *)key2);
+}
+
+/* Compares binary data. */
+
+SilcBool silc_hash_data_compare(void *key1, void *key2, void *user_context)
+{
+  SilcUInt32 len = SILC_PTR_TO_32(user_context);
+  return !memcmp(key1, key2, len);
+}
+
+/* Compares UTF-8 string. */
+
+SilcBool silc_hash_utf8_compare(void *key1, void *key2, void *user_context)
+{
+  int l1 = strlen((char *)key1);
+  int l2 = strlen((char *)key2);
+  if (l1 != l2)
+    return FALSE;
+  return !memcmp(key1, key2, l2);
+}

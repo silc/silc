@@ -771,10 +771,10 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
 
   /* If this is UDP stream, allocate UDP remote stream hash table */
   if (!engine->udp_remote && silc_socket_stream_is_udp(stream, NULL))
-    engine->udp_remote = silc_hash_table_alloc(NULL, 0, silc_hash_string, NULL,
-					       silc_hash_string_compare, NULL,
-					       silc_packet_engine_hash_destr,
-					       NULL, TRUE);
+    engine->udp_remote =
+      silc_hash_table_alloc(NULL, 0, silc_hash_string_case, NULL,
+			    silc_hash_string_case_compare, NULL,
+			    silc_packet_engine_hash_destr, NULL, TRUE);
 
   silc_mutex_unlock(engine->lock);
 
