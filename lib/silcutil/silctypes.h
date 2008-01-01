@@ -268,7 +268,6 @@ typedef void * SilcSocket;
 #endif
 /***/
 
-
 /****d* silcutil/SILCTypes/SilcParam
  *
  * NAME
@@ -310,6 +309,9 @@ typedef SilcUInt32 SilcParam;
 #define SILC_PARAM_OFFSET        106
 #define SILC_PARAM_ADVANCE       107
 #define SILC_PARAM_FUNC          108
+#define SILC_PARAM_REGEX         109
+#define SILC_PARAM_OFFSET_START  110
+#define SILC_PARAM_OFFSET_END    111
 #define SILC_PARAM_ALLOC         0x00010000     /* Allocate, bitmask */
 
 /* Macros */

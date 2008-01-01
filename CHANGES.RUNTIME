@@ -1,3 +1,25 @@
+Tue Jan  1 18:00:47 EET 2008  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_regex and silc_regex_buffer, routines that provide
+	  convenient use of regular expressions.  Affected files
+	  are lib/silcutil/silcregex.[ch].  Deprecated the
+	  silc_string_regex_match.  Affected files are
+	  lib/silcutil/silcstrutil.[ch].
+
+	* Added SILC_STR_REGEX macro to SILC Buffer Format API.  It
+	  provides powerful regular expression matching within the
+	  SilcBuffer.  Combined with SILC Buffer Format API it can turn
+	  the API into a Stream Editor (sed) and Awk like, providing
+	  powerful ways to match and edit the buffer in myriad of ways.  
+	  The SILC_STR_REGEX can also mimic the behavior of sed (match
+	  and edit line by line).  Affected files are
+	  lib/silcutil/silcbuffmt.[ch], silctypes.h.
+
+Mon Dec 31 15:50:31 EET 2007  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC_STR_OFFSET_START and SILC_STR_OFFSET_END to
+	  lib/silcutil/silcbuffmt.[ch].
+
 Mon Dec 31 01:30:17 EET 2007  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SILC regular expression API to lib/silcutil/silcregex.[ch].

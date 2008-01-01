@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,6 +26,16 @@
  * into specified data types.  It is especially useful to encode packets,
  * protocol payloads and such.
  *
+ * It also provides many advanced features like calling user specified
+ * encoder and decoder functions that are free to do anything to the buffer.
+ * The API also provides powerful regular expression matching capabilities
+ * within the buffer, enabling caller to not only match regular expressions
+ * but to make the API behave like Stream Editor (Sed) and Awk.  The buffer
+ * can be matched against regular expression and then edited.  Caller can
+ * do anything they want to the buffer after a match.  The SILC_STR_REGEX
+ * macro provides many different flags that can change the behavior of the
+ * matching, with capabilities to also mimic Sed behavior.
+ *
  * As the SilcBuffer API is not thread-safe these routines may not be used
  * in multithreaded environment with a same SilcBuffer context without
  * concurrency control.
@@ -44,6 +54,12 @@
  *                          SILC_STR_END);
  * if (ret < 0)
  *   error;
+ *
+ * // sed 's/foo/bar/', replace first foo with bar
+ * silc_buffer_format(buffer,
+ *                    SILC_STR_REGEX("foo", 0),
+ *                      SILC_STR_STRING("bar"),
+ *                    SILC_STR_END, SILC_STR_END);
  *
  ***/
 
@@ -489,6 +505,32 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
 #define SILC_STR_SI_INT64(x) SILC_PARAM_SINT64, (x)
 #define SILC_STR_UI_INT64(x) SILC_PARAM_UINT64, (x)
 
+/****d* silcutil/SilcBufferFormatAPI/SILC_STR_STRING
+ *
+ * NAME
+ *
+ *    #define SILC_STR_STRING() ...
+ *
+ * DESCRIPTION
+ *
+ *    Encode NULL terminated string.  Use this only for formatting.
+ *
+ *    Formatting:  SILC_STR_STRING(char *)
+ *
+ *    For unformatting use one of the SILC_STR_*_STRING macros, which
+ *    automatically gets the length of the string from the buffer.  Note
+ *    SILC_STR_STRING does not save the length of the string into the buffer.
+ *    The caller must do that in order for the unformatting macros to work.
+ *
+ *    Example:
+ *
+ *    Formatting:    ..., SILC_STR_UINT32(strlen(string)),
+ *                        SILC_STR_STRING(string), ...
+ *    Unformatting:  ..., SILC_STR_UI32_STRING(&string), ...
+ *
+ ***/
+#define SILC_STR_STRING(x) SILC_PARAM_UI8_STRING, (x)
+
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_*_STRING
  *
  * NAME
@@ -511,22 +553,21 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
  *
  *    Unformatting procedure will check for length of the string from the
  *    buffer before trying to get the string out. Thus, one *must* format the
- *    length as UI_INT or UI_SHORT into the buffer *before* formatting the
- *    actual string to the buffer, and, in unformatting one must ignore the
+ *    length as UINT32 or UINT16 or UINT8 into the buffer *before* formatting
+ *    the actual string to the buffer, and, in unformatting one ignores the
  *    length of the string because unformatting procedure will take it
  *    automatically.
  *
  *    Example:
  *
- *    Formatting:    ..., SILC_STR_UI_INT(strlen(string)),
+ *    Formatting:    ..., SILC_STR_UINT32(strlen(string)),
  *                        SILC_STR_UI32_STRING(string), ...
  *    Unformatting:  ..., SILC_STR_UI32_STRING(&string), ...
  *
  *    I.e., you can ignore the formatted length field in unformatting.
  *
  *    UI8, UI16 and UI32 means that the length is considered to be
- *    either char (8 bits), short (16 bits) or int (32 bits) in
- *    unformatting.
+ *    either UINT8, UINT16 or UINT32 in unformatting.
  *
  *    _ALLOC routines automatically allocates memory for the variable sent
  *    as argument in unformatting.
@@ -559,14 +600,14 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
  *
  *    Unformatting procedure will check for length of the string from the
  *    buffer before trying to get the string out. Thus, one *must* format the
- *    length as UI_INT or UI_SHORT into the buffer *before* formatting the
- *    actual string to the buffer, and, in unformatting one must ignore the
+ *    length as UINT32 or UINT16 or UINT8 into the buffer *before* formatting
+ *    the actual string to the buffer, and, in unformatting one ignores the
  *    length of the string because unformatting procedure will take it
  *    automatically.
  *
  *     Example:
  *
- *     Formatting:    ..., SILC_STR_UI_INT(strlen(string)),
+ *     Formatting:    ..., SILC_STR_UINT32(strlen(string)),
  *                         SILC_STR_UI32_NSTRING(string, strlen(string)), ...
  *     Unformatting:  ..., SILC_STR_UI32_NSTRING(&string, &len), ...
  *
@@ -575,8 +616,7 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
  *    argument (&len in above example).
  *
  *    UI8, UI16 and UI32 means that the length is considered to be
- *    either char (8 bits), short (16 bits) or int (32 bits) in
- *    unformatting.
+ *    either UINT8, UINT16 or UINT32 in unformatting.
  *
  *    _ALLOC routines automatically allocates memory for the variable sent
  *    as argument in unformatting.
@@ -654,7 +694,7 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
  *
  * DESCRIPTION
  *
- *    SilcBuffer formatting.
+ *    Formatting and unformatting of arbitrary data.
  *
  *    Formatting:    SILC_STR_FUNC(function, void *value, void *context)
  *    Unformatting:  SILC_STR_FUNC(function, void **value, void *context)
@@ -699,6 +739,134 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
 #define SILC_STR_FUNC(func, val, context) SILC_PARAM_FUNC, \
     func, (val), (context)
 
+/****d* silcutil/SilcBufferFormatAPI/SilcBufferRegexFlags
+ *
+ * NAME
+ *
+ *    typedef enum { ... } SilcBufferRegexFlags;
+ *
+ * DESCRIPTION
+ *
+ *    Regular expression flags for SILC_STR_REGEX macro.  The flags can be
+ *    used to manipulate the behavior of the SILC_STR_REGEX.  All flags
+ *    may be combined unless otherwise stated.
+ *
+ * SOURCE
+ */
+typedef enum {
+  SILC_STR_REGEX_NONE                 = 0x00000000,
+
+  /* By default mismatch will be skipped.  Set this flag if mismatch should
+     cause error and stopping of the formatting/unformatting. */
+  SILC_STR_REGEX_MISMATCH             = 0x00000001,
+
+  /* By default only the first match is found.  Set this flag to find
+     all matches. */
+  SILC_STR_REGEX_ALL                  = 0x00000002,
+
+  /* By default the buffer position is advanced to the position of the
+     first match.  Set this flag if the buffer should not be advanced to
+     the match. */
+  SILC_STR_REGEX_NO_ADVANCE           = 0x00000004,
+
+  /* By default SILC_STR_REGEX performs the match on the whole buffer.  Set
+     this flag to make it behave like sed and match line by line.  Each line
+     must end with '\n'.  If buffer doesn't have '\n' it is considered to be
+     one line.  Note that, any formatting done immediately after SILC_STR_REGEX
+     block with this flag will be formatted to the end of the buffer (after
+     last line).  Use SILC_STR_OFFSET* macros to change the position if
+     needed.  Also note that, any encoding macro inside the SILC_STR_REGEX
+     block will see only the matched line (including '\n'), instead of whole
+     buffer after the match. */
+  SILC_STR_REGEX_NL                   = 0x00000008,
+
+  /* Set this flag to not match the regular expression, but to match everything
+     else.  When combined with SILC_STR_REGEX_NL this flag matches all other
+     lines except the ones with matching regular expression. */
+  SILC_STR_REGEX_NOT                  = 0x00000010,
+
+  /* By default the buffer is advanced to the first match and the rest of the
+     buffer remains as is.  Set this flag to pass the exact match to the
+     SILC_STR_* macros in the SILC_STR_REGEX block; macros see the start of
+     the match and the end of the match, but not rest of the buffer (ie. with
+     match 'foo' the size of the buffer is 3 bytes). */
+  SILC_STR_REGEX_INCLUSIVE            = 0x00000020,
+} SilcBufferRegexFlags;
+/***/
+
+/****d* silcutil/SilcBufferFormatAPI/SILC_STR_REGEX
+ *
+ * NAME
+ *
+ *    #define SILC_STR_REGEX() ...
+ *
+ * DESCRIPTION
+ *
+ *    Regular expression matching within the buffer.
+ *
+ *    Formatting:    SILC_STR_REGEX(char *regex, SilcBufferRegexFlags flags)
+ *    Unformatting:  SILC_STR_REGEX(char *regex, SilcBufferRegexFlags flags)
+ *
+ *    SILC_STR_REGEX can be used to do regular expression matching within
+ *    the SilcBuffer.  When the string in the buffer matches the regular
+ *    expression the position of the buffer is advanced to the position of
+ *    the first match (rest of the buffer remains intact).  If the regular
+ *    expression does not match it is skipped, unless the flags specify
+ *    otherwise.  If flags are not needed they can be set to 0.
+ *
+ *    In addition of matching regular expressions it can be used in a
+ *    Stream Editor (sed) and Awk like fashion.  The regular expression can be
+ *    matched and then edited by any of the SILC_STR_* macros.  The flags
+ *    can be used to perform complex operations on the data.  Some sed
+ *    features that cannot be directly done with the flags can be done with
+ *    SILC_STR_FUNC and other macros (the SILC_STR_FUNC could do anything
+ *    after the match).
+ *
+ *    The SILC_STR_REGEX itself is used as an opening of a block of encoding
+ *    macros and must be closed with SILC_STR_END.  This means that for
+ *    each SILC_STR_REGEX there must be one SILC_STR_END.  See examples for
+ *    more information.
+ *
+ *    The SILC_STR_REGEX can be used in buffer unformatting also to do
+ *    string matching and parsing, but not editing, except with SILC_STR_FUNC
+ *    macro, which can do anything caller wants.
+ *
+ * EXAMPLE
+ *
+ *    // sed 's/foo/bar/', replace first foo with bar
+ *    silc_buffer_format(buffer,
+ *                       SILC_STR_REGEX("foo", 0),
+ *                         SILC_STR_STRING("bar"),
+ *                       SILC_STR_END, SILC_STR_END);
+ *
+ *    // sed 's/foo/bar/g', replace all foo's with bar
+ *    silc_buffer_format(buffer,
+ *                       SILC_STR_REGEX("foo", SILC_STR_REGEX_ALL),
+ *                         SILC_STR_STRING("bar"),
+ *                       SILC_STR_END, SILC_STR_END);
+ *
+ *    // sed '/baz/s/foo/bar/g, replace all foo's with bar on lines with baz
+ *    silc_buffer_format(buffer,
+ *                       SILC_STR_REGEX("baz", SILC_STR_REGEX_NL),
+ *                         SILC_STR_REGEX("foo", SILC_STR_REGEX_ALL),
+ *                           SILC_STR_STRING("bar"),
+ *                         SILC_STR_END,
+ *                       SILC_STR_END, SILC_STR_END);
+ *
+ *    // Print all lines that start with 'R'
+ *    int print(SilcStack stack, SilcBuffer buf, void *value, void *context)
+ *    {
+ *      return fwrite(silc_buffer_data(buf), 1, silc_buffer_len(buf), stdout);
+ *    }
+ *
+ *    silc_buffer_unformat(buffer,
+ *                         SILC_STR_REGEX("^R", SILC_STR_REGEX_NL),
+ *                           SILC_STR_FUNC(print, NULL, NULL),
+ *                         SILC_STR_END, SILC_STR_END);
+ *
+ ***/
+#define SILC_STR_REGEX(regex, flags) SILC_PARAM_REGEX, (regex), (flags)
+
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_OFFSET
  *
  * NAME
@@ -723,6 +891,40 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
  *
  ***/
 #define SILC_STR_OFFSET(x) SILC_PARAM_OFFSET, (x)
+
+/****d* silcutil/SilcBufferFormatAPI/SILC_STR_OFFSET_START
+ *
+ * NAME
+ *
+ *    #define SILC_STR_OFFSET_START ...
+ *
+ * DESCRIPTION
+ *
+ *    Moves the buffer position to the start of the data area.
+ *
+ *    Example:
+ *
+ *    ..., SILC_STR_OFFSET_START, ...
+ *
+ ***/
+#define SILC_STR_OFFSET_START SILC_PARAM_OFFSET_START
+
+/****d* silcutil/SilcBufferFormatAPI/SILC_STR_OFFSET_END
+ *
+ * NAME
+ *
+ *    #define SILC_STR_OFFSET_END ...
+ *
+ * DESCRIPTION
+ *
+ *    Moves the buffer position to the end of the data area.
+ *
+ *    Example:
+ *
+ *    ..., SILC_STR_OFFSET_END, ...
+ *
+ ***/
+#define SILC_STR_OFFSET_END SILC_PARAM_OFFSET_END
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_ADVANCE
  *

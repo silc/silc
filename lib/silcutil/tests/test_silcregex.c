@@ -17,6 +17,28 @@ int main(int argc, char **argv)
     silc_log_set_debug_string("*regex*,*errno*");
   }
 
+  regex = "(H..).(o..)";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  if (!silc_regex_compile(&reg, regex, 0))
+    goto err;
+
+  string = "Hello World";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex_match(&reg, string, num_match, match, 0))
+    goto err;
+  for (i = 0; i < num_match; i++) {
+    if (match[i].start != -1) {
+      SILC_LOG_DEBUG(("Match start %d, end %d", match[i].start,
+		      match[i].end));
+      sub = silc_memdup(string + match[i].start, match[i].end - 
+			match[i].start);
+      SILC_LOG_DEBUG(("Match substring '%s'", sub));
+      silc_free(sub);
+    }
+  }
+
+  silc_regex_free(&reg);
+
   regex = "foo[0-9]*";
   SILC_LOG_DEBUG(("Regex %s", regex));
   if (!silc_regex_compile(&reg, regex, 0))
