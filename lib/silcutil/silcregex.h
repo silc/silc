@@ -1,4 +1,3 @@
-
 /*
 
   regexpr.h
@@ -29,7 +28,11 @@
  * DESCRIPTION
  *
  * SILC regular expression interface provides Unix and POSIX compliant
- * regular expression compilation and matching.
+ * regular expression compilation and matching.  The syntax is compliant
+ * with Unix and POSIX regular expression syntax.
+ *
+ * The interface also provides many convenience functions to make the use
+ * of regular expressions easier.
  *
  * EXAMPLE
  *
@@ -59,7 +62,9 @@
  *
  * DESCRIPTION
  *
- *    The regular expression context.
+ *    The regular expression context.  This context is given as argument
+ *    to all silc_regex_* functions.  It is usually statically allocated
+ *    but can be dynamically allocated by silc_malloc.
  *
  ***/
 typedef struct SilcRegexObject {
@@ -82,6 +87,9 @@ typedef struct SilcRegexObject {
  *
  * DESCRIPTION
  *
+ *    The regular expression match context that provides information on the
+ *    found match.  It provides the start offset and end offset of the
+ *    found match.
  *
  * SOURCE
  */
@@ -134,8 +142,8 @@ SilcBool silc_regex_compile(SilcRegex regexp, const char *regex,
  * SYNOPSIS
  *
  *    SilcBool silc_regex_match(SilcRegex regexp, const char *string,
- *                              SilcUInt32 num_match, SilcRegexMatch match,
- *                              SilcRegexFlags flags);
+ *                              SilcUInt32 string_len, SilcUInt32 num_match,
+ *                              SilcRegexMatch match, SilcRegexFlags flags);
  *
  * DESCRIPTION
  *
@@ -160,13 +168,13 @@ SilcBool silc_regex_compile(SilcRegex regexp, const char *regex,
  * EXAMPLE
  *
  *    // Find first match (check if string matches)
- *    if (!silc_regex_match(&reg, "foo20", 0, NULL, 0))
+ *    if (!silc_regex_match(&reg, "foo20", 5, 0, NULL, 0))
  *      no_match;
  *
  *    // Find multiple matches, one by one
  *    SilcRegexMatchStruct match;
  *
- *    while (silc_regex_match(&reg, string, 1, &match, 0)) {
+ *    while (silc_regex_match(&reg, string, len, 1, &match, 0)) {
  *      match_string = silc_memdup(string + match.start,
  *                                 match.end - match.start);
  *      string += match.end;
@@ -177,12 +185,12 @@ SilcBool silc_regex_compile(SilcRegex regexp, const char *regex,
  *    SilcRegexMatchStruct match[7];
  *
  *    silc_regex_compile(&reg, "^(([^:]+)://)?([^:/]+)(:([0-9]+))?(/.*)", 0);
- *    silc_regex_match(&reg, "http://example.com/page.html", 7, match, 0);
+ *    silc_regex_match(&reg, "http://example.com/page.html", len, 7, match, 0);
  *
  ***/
 SilcBool silc_regex_match(SilcRegex regexp, const char *string,
-			  SilcUInt32 num_match, SilcRegexMatch match,
-			  SilcRegexFlags flags);
+			  SilcUInt32 string_len, SilcUInt32 num_match,
+			  SilcRegexMatch match, SilcRegexFlags flags);
 
 /****f* silcutil/SilcRegexAPI/silc_regex_free
  *
@@ -198,5 +206,67 @@ SilcBool silc_regex_match(SilcRegex regexp, const char *string,
  *
  ***/
 void silc_regex_free(SilcRegex regexp);
+
+/****f* silcutil/SilcRegexAPI/silc_regex
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_regex(const char *string, const char *regex,
+ *                        SilcBuffer match, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Matches the `string' to the regular expression `regex'.  Returns TRUE
+ *    if the `string' matches the regular expression or FALSE if it does not
+ *    match.  The silc_errno is also set to SILC_ERR_NOT_FOUND.
+ *
+ *    The first (whole) match is returned to `match' buffer if it is non-NULL.
+ *    The variable argument list are buffers where multiple matches are
+ *    returned in case of group (parenthesized) regular expression.  The caller
+ *    needs to know how many pointers to provide, in order to get all matches.
+ *    If `match' is non-NULL the variable argument list must be ended with
+ *    NULL.  The data in the `match' and in any other buffer is from `string'
+ *    and must not be freed by the caller.
+ *
+ * EXAMPLE
+ *
+ *    // Simple match
+ *    if (!silc_regex("foobar", "foo.", NULL))
+ *      no_match;
+ *
+ *    // Get the pointer to the first match
+ *    if (!silc_regex("foobar", ".bar", &match, NULL))
+ *      no_match;
+ *
+ *    // Group match
+ *    SilcBufferStruct match, sub1, sub2;
+ *
+ *    if (!silc_regex("Hello World", "(H..).(o..)", &match, &sub1, &sub2, NULL))
+ *      no_match;
+ *
+ ***/
+SilcBool silc_regex(const char *string, const char *regex,
+		    SilcBuffer match, ...);
+
+/****f* silcutil/SilcRegexAPI/silc_regex_buffer
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_regex_buffer(SilcBuffer buffer, const char *regex,
+ *                               SilcBuffer match, ...);
+ *
+ * DESCRIPTION
+ *
+ *    Same as silc_regex but the string to match is in `buffer'.  Returns
+ *    TRUE if the string matches and FALSE if it doesn't.  See examples and
+ *    other information in silc_regex.  The `buffer' and `match' may be the
+ *    same buffer.
+ *
+ ***/
+SilcBool silc_regex_buffer(SilcBuffer buffer, const char *regex,
+			   SilcBuffer match, ...);
+
+/* Backwards support */
+#define silc_string_regex_match(regex, string) silc_regex(string, regex, NULL)
 
 #endif /* SILCREGEX_H */

@@ -1601,11 +1601,11 @@ SilcBool silc_regex_compile(SilcRegex regexp, const char *regex,
 /* Match compiled regular expression */
 
 SilcBool silc_regex_match(SilcRegex regexp, const char *string,
-			  SilcUInt32 num_match, SilcRegexMatch match,
-			  SilcRegexFlags flags)
+			  SilcUInt32 string_len, SilcUInt32 num_match,
+			  SilcRegexMatch match, SilcRegexFlags flags)
 {
   struct re_registers regs;
-  int ret, i, len = strlen(string);
+  int ret, i;
 
   if (!regexp || !string) {
     silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
@@ -1622,7 +1622,7 @@ SilcBool silc_regex_match(SilcRegex regexp, const char *string,
     num_match = RE_NREGS;
 
   /* Search */
-  ret = re_search(regexp, (char *)string, len, 0, len,
+  ret = re_search(regexp, (char *)string, string_len, 0, string_len,
 		  num_match ? &regs : NULL);
   if (ret < 0) {
     if (ret == -2)
@@ -1647,4 +1647,109 @@ SilcBool silc_regex_match(SilcRegex regexp, const char *string,
 void silc_regex_free(SilcRegex regexp)
 {
   silc_free(regexp->buffer);
+}
+
+/* Match string */
+
+SilcBool silc_regex_va(const char *string, SilcUInt32 string_len,
+		       const char *regex, SilcBuffer match, va_list va)
+{
+  SilcRegexStruct reg;
+  SilcRegexMatch m = NULL;
+  SilcBuffer buf, *rets = NULL;
+  int i, c = 0;
+
+  /* Compile */
+  if (!silc_regex_compile(&reg, regex, 0))
+    return FALSE;
+
+  /* Get match pointers */
+  if (match) {
+    rets = silc_malloc(sizeof(*rets));
+    if (!rets)
+      return FALSE;
+    rets[c++] = match;
+
+    while ((buf = va_arg(va, SilcBuffer))) {
+      rets = silc_realloc(rets, (c + 1) * sizeof(*rets));
+      if (!rets)
+	return FALSE;
+      rets[c++] = buf;
+    }
+
+    m = silc_malloc(c * sizeof(*m));
+    if (!m) {
+      silc_free(rets);
+      return FALSE;
+    }
+  }
+
+  /* Match */
+  if (!silc_regex_match(&reg, string, string_len, c, m, 0)) {
+    silc_free(m);
+    silc_free(rets);
+    return FALSE;
+  }
+
+  /* Return matches */
+  for (i = 0; i < c; i++) {
+    if (m[i].start == -1)
+      continue;
+    silc_buffer_set(rets[i], (unsigned char *)string + m[i].start,
+		    m[i].end - m[i].start);
+  }
+
+  silc_free(m);
+  silc_free(rets);
+
+  return TRUE;
+}
+
+/* Match string */
+
+SilcBool silc_regex(const char *string, const char *regex,
+		    SilcBuffer match, ...)
+{
+  SilcBool ret;
+  va_list va;
+
+  if (!string || !regex) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return FALSE;
+  }
+
+  if (match)
+    va_start(va, match);
+
+  ret = silc_regex_va(string, strlen(string), regex, match, va);
+
+  if (match)
+    va_end(va);
+
+  return ret;
+}
+
+/* Match string */
+
+SilcBool silc_regex_buffer(SilcBuffer buffer, const char *regex,
+			   SilcBuffer match, ...)
+{
+  SilcBool ret;
+  va_list va;
+
+  if (!buffer || !regex) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return FALSE;
+  }
+
+  if (match)
+    va_start(va, match);
+
+  ret = silc_regex_va((const char *)silc_buffer_data(buffer),
+		      silc_buffer_len(buffer), regex, match, va);
+
+  if (match)
+    va_end(va);
+
+  return ret;
 }

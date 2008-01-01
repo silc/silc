@@ -99,19 +99,6 @@ char *silc_strncat(char *dest, SilcUInt32 dest_size,
  ***/
 char *silc_string_regexify(const char *string);
 
-/****f* silcutil/SilcStrUtilAPI/silc_string_regex_match
- *
- * SYNOPSIS
- *
- *    int silc_string_regex_match(const char *regex, const char *string);
- *
- * DESCRIPTION
- *
- *    Matches the two strings and returns TRUE if the strings match.
- *
- ***/
-int silc_string_regex_match(const char *regex, const char *string);
-
 /****f* silcutil/SilcStrUtilAPI/silc_string_match
  *
  * SYNOPSIS

@@ -249,23 +249,6 @@ char *silc_string_regex_combine(const char *string1, const char *string2)
   return tmp;
 }
 
-/* Matches the two strings and returns TRUE if the strings match. */
-
-int silc_string_regex_match(const char *regex, const char *string)
-{
-  SilcRegexStruct preg;
-  SilcBool ret;
-
-  if (!silc_regex_compile(&preg, regex, 0))
-    return FALSE;
-
-  ret = silc_regex_match(&preg, string, 0, NULL, 0);
-
-  silc_regex_free(&preg);
-
-  return ret;
-}
-
 /* Do regex match to the two strings `string1' and `string2'. If the
    `string2' matches the `string1' this returns TRUE. */
 
