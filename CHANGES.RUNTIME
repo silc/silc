@@ -1,3 +1,8 @@
+Tue Jan  1 19:40:15 EET 2008  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC_REGEX_NOTBOL and SILC_REGEX_NOTEOL flags to
+	  lib/silcutil/silcregex.[ch].
+
 Tue Jan  1 18:00:47 EET 2008  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_regex and silc_regex_buffer, routines that provide

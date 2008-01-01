@@ -25,8 +25,8 @@
   Emacs-specific code and syntax table code is almost directly borrowed
   from GNU regexp.
 
-  The SILC Regex API by Pekka Riikonen, under the same license as the original
-  code.
+  The SILC Regex API and modifications by Pekka Riikonen, under the same
+  license as the original code.
 
 */
 
@@ -34,7 +34,7 @@
 
 /* Modified for use in SILC Runtime Toolkit.  I think we have disabled many
    features we could use, for the sake of simple API, which we may want to
-   extend later. */
+   extend later.  But, we've added RE_NOTBOL and RE_NOTEOL. */
 
 #define RE_NREGS	128	/* number of registers available */
 
@@ -47,6 +47,8 @@
 #define RE_CONTEXT_INDEP_OPS	32   /* ^$?*+ are special in all contexts */
 #define RE_ANSI_HEX		64   /* ansi sequences (\n etc) and \xhh */
 #define RE_NO_GNU_EXTENSIONS   128   /* no gnu extensions */
+#define RE_NOTBOL              256   /* bol fails to match */
+#define RE_NOTEOL              512   /* eol fails to match */
 
 /* definitions for some common regexp styles */
 #define RE_SYNTAX_AWK	(RE_NO_BK_PARENS|RE_NO_BK_VBAR|RE_CONTEXT_INDEP_OPS)
@@ -74,22 +76,22 @@ SilcResult re_compile_pattern(char *regex, int regex_size, SilcRegex compiled);
    translation table, or NULL if it is not used. */
 
 int re_match(SilcRegex compiled, char *string, int size, int pos,
-	     regexp_registers_t regs);
+	     regexp_registers_t regs, unsigned int flags);
 /* This tries to match the regexp against the string.  This returns the
    length of the matched portion, or -1 if the pattern could not be
    matched and -2 if an error (such as failure stack overflow) is
    encountered. */
 
 int re_match_2(SilcRegex compiled, char *string1, int size1,
-	      char *string2, int size2, int pos, regexp_registers_t regs,
-	       int mstop);
+	       char *string2, int size2, int pos, regexp_registers_t regs,
+	       int mstop, unsigned int flags);
 /* This tries to match the regexp to the concatenation of string1 and
    string2.  This returns the length of the matched portion, or -1 if the
    pattern could not be matched and -2 if an error (such as failure stack
    overflow) is encountered. */
 
 int re_search(SilcRegex compiled, char *string, int size, int startpos,
-	      int range, regexp_registers_t regs);
+	      int range, regexp_registers_t regs, unsigned int flags);
 /* This rearches for a substring matching the regexp.  This returns the first
    index at which a match is found.  range specifies at how many positions to
    try matching; positive values indicate searching forwards, and negative
@@ -99,7 +101,7 @@ int re_search(SilcRegex compiled, char *string, int size, int startpos,
 
 int re_search_2(SilcRegex compiled, char *string1, int size1,
 		char *string2, int size2, int startpos, int range,
-		regexp_registers_t regs, int mstop);
+		regexp_registers_t regs, int mstop, unsigned int flags);
 /* This is like re_search, but search from the concatenation of string1 and
    string2.  */
 
@@ -973,11 +975,12 @@ SilcRegex bufp;
 #define INITIAL_FAILURES  128  /* initial # failure points to allocate */
 #define MAX_FAILURES     4100  /* max # of failure points before failing */
 
-int re_match_2(bufp, string1, size1, string2, size2, pos, regs, mstop)
+int re_match_2(bufp, string1, size1, string2, size2, pos, regs, mstop, flags)
 SilcRegex bufp;
 char *string1, *string2;
 int size1, size2, pos, mstop;
 regexp_registers_t regs;
+unsigned int flags;
 {
   struct failure_point { char *text, *partend, *code; }
     *failure_stack_start, *failure_sp, *failure_stack_end,
@@ -1101,15 +1104,21 @@ regexp_registers_t regs;
 	    silc_free((char *)failure_stack_start);
 	  return match_end - pos;
 	case Cbol:
-	  if (text == string1 || text[-1] == '\n') /* text[-1] always valid */
+	  if (text == string1 || text[-1] == '\n') { /* text[-1] always valid */
+	    if (flags & RE_NOTBOL)
+	      goto fail;
 	    break;
+	  }
 	  goto fail;
 	case Ceol:
 	  if (text == string2 + size2 ||
 	      (text == string1 + size1 ?
 	       (size2 == 0 || *string2 == '\n') :
-	       *text == '\n'))
+	       *text == '\n')) {
+	    if (flags & RE_NOTEOL)
+	      goto fail;
 	    break;
+	  }
 	  goto fail;
 	case Cset:
 	  NEXTCHAR(ch);
@@ -1436,21 +1445,24 @@ regexp_registers_t regs;
 #undef NEXTCHAR
 #undef PUSH_FAILURE
 
-int re_match(bufp, string, size, pos, regs)
+int re_match(bufp, string, size, pos, regs, flags)
 SilcRegex bufp;
 char *string;
 int size, pos;
 regexp_registers_t regs;
+unsigned int flags;
 {
-  return re_match_2(bufp, string, size, (char *)NULL, 0, pos, regs, size);
+  return re_match_2(bufp, string, size, (char *)NULL, 0, pos, regs, size,
+		    flags);
 }
 
 int re_search_2(bufp, string1, size1, string2, size2, pos, range, regs,
-		mstop)
+		mstop, flags)
 SilcRegex bufp;
 char *string1, *string2;
 int size1, size2, pos, range, mstop;
 regexp_registers_t regs;
+unsigned int flags;
 {
   char *fastmap, *translate, *text, *partstart, *partend;
   int dir, ret;
@@ -1550,7 +1562,8 @@ regexp_registers_t regs;
 	    continue;
 	}
       assert(pos >= 0 && pos <= size1 + size2);
-      ret = re_match_2(bufp, string1, size1, string2, size2, pos, regs, mstop);
+      ret = re_match_2(bufp, string1, size1, string2, size2, pos, regs, mstop,
+		       flags);
       if (ret >= 0)
 	return pos;
       if (ret == -2)
@@ -1559,14 +1572,15 @@ regexp_registers_t regs;
   return -1;
 }
 
-int re_search(bufp, string, size, startpos, range, regs)
+int re_search(bufp, string, size, startpos, range, regs, flags)
 SilcRegex bufp;
 char *string;
 int size, startpos, range;
 regexp_registers_t regs;
+unsigned int flags;
 {
   return re_search_2(bufp, string, size, (char *)NULL, 0,
-		     startpos, range, regs, size);
+		     startpos, range, regs, size, flags);
 }
 
 /****************************** SILC Regex API ******************************/
@@ -1605,6 +1619,7 @@ SilcBool silc_regex_match(SilcRegex regexp, const char *string,
 			  SilcRegexMatch match, SilcRegexFlags flags)
 {
   struct re_registers regs;
+  unsigned int f = 0;
   int ret, i;
 
   if (!regexp || !string) {
@@ -1621,9 +1636,15 @@ SilcBool silc_regex_match(SilcRegex regexp, const char *string,
   if (num_match > RE_NREGS)
     num_match = RE_NREGS;
 
+  /* Set flags */
+  if (flags & SILC_REGEX_NOTBOL)
+    f |= RE_NOTBOL;
+  if (flags & SILC_REGEX_NOTEOL)
+    f |= RE_NOTEOL;
+
   /* Search */
   ret = re_search(regexp, (char *)string, string_len, 0, string_len,
-		  num_match ? &regs : NULL);
+		  num_match ? &regs : NULL, f);
   if (ret < 0) {
     if (ret == -2)
       silc_set_errno(SILC_ERR);

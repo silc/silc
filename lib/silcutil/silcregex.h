@@ -112,7 +112,17 @@ typedef struct SilcRegexMatchObject {
  * SOURCE
  */
 typedef enum {
-  SILC_REGEX_FLAG_DEFAULT            = 0,
+  SILC_REGEX_DEFAULT   = 0x00000000,
+
+  /* The following flags can be used with silc_regex_match */
+
+  /* The beginning-of-line (^) always fails to match.  This can be useful
+     when beginning of a string should not be interpreted as the beginning
+     of line. */
+  SILC_REGEX_NOTBOL    = 0x00010000,
+
+  /* The end-of-line ($) always fails to match. */
+  SILC_REGEX_NOTEOL    = 0x00020000,
 } SilcRegexFlags;
 /***/
 
