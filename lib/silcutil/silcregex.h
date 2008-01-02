@@ -1,25 +1,19 @@
 /*
 
-  regexpr.h
+  silcregex.h
 
-  Author: Tatu Ylonen <ylo@ngs.fi>
+  Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (c) 1991 Tatu Ylonen, Espoo, Finland
+  Copyright (C) 2007 Pekka Riikonen
 
-  Permission to use, copy, modify, distribute, and sell this software
-  and its documentation is hereby granted without fee, provided that the
-  above copyright notice appears in all source code copies, the name of
-  Tatu Ylonen is not used to advertise products containing this software
-  or a derivation thereof, and all modified versions are clearly marked
-  as such.
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; version 2 of the License.
 
-  This software is provided "as is" without express or implied warranty.
-
-  Created: Thu Sep 26 17:15:36 1991 ylo
-  Last modified: Fri Jan  3 12:05:45 1992 ylo
-
-  The SILC Regex API by Pekka Riikonen, under the same license as the original
-  code.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
 */
 
@@ -68,11 +62,13 @@
  *
  ***/
 typedef struct SilcRegexObject {
-  char *buffer;		       /* compiled pattern */
-  int allocated;	       /* allocated size of compiled pattern */
-  int used;		       /* actual length of compiled pattern */
+  SilcStack rstack;	       /* Stack for fast allocations */
+  unsigned char *buffer;       /* compiled pattern */
   char *fastmap;               /* fastmap[ch] is true if ch can start pattern */
   char *translate;	       /* translation to apply during comp/match */
+  int allocated;	       /* allocated size of compiled pattern */
+  int used;		       /* actual length of compiled pattern */
+  int num_registers;	       /* number of registers used */
   char fastmap_accurate;       /* true if fastmap is valid */
   char can_be_null;	       /* true if can match empty string */
   char uses_registers;         /* registers used and need to be initialized */

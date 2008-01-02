@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2007 Pekka Riikonen
+  Copyright (C) 2007 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -432,6 +432,8 @@ const char *silc_errno_strings[] =
   "Bad match register number",
   "Badly placed special character",
   "Regular expression too complex",
+  "Bad regular expression opcode",
+  "Bad repeat value",
 };
 
 /* Map error to string */

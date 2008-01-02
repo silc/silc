@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2007 Pekka Riikonen
+  Copyright (C) 2007 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -132,6 +132,8 @@ typedef enum {
   SILC_ERR_REGEX_REG                   = 102, /* Bad register number */
   SILC_ERR_REGEX_SPECIAL               = 103, /* Unmatched special character */
   SILC_ERR_REGEX_TOO_COMPLEX           = 104, /* Too complex expression */
+  SILC_ERR_REGEX_OPCODE                = 105, /* Bad regex opcode */
+  SILC_ERR_REGEX_REPEAT                = 106, /* Bad repeat value */
 
   SILC_ERR_MAX,
 } SilcResult;

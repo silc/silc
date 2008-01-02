@@ -9,6 +9,7 @@ int main(int argc, char **argv)
   SilcRegexMatchStruct match[10];
   int i, num_match = 10;
   char *regex, *string, *sub;
+  SilcBufferStruct bmatch;
 
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_log_debug(TRUE);
@@ -16,6 +17,181 @@ int main(int argc, char **argv)
     silc_log_debug_hexdump(TRUE);
     silc_log_set_debug_string("*regex*,*errno*");
   }
+
+  regex = "^a{0}$";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "^a{0,}$";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "bbbb";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "^a{0,}$";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "aaaaaaaaa";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "^a{0,0}$";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "a";
+  SILC_LOG_DEBUG(("DO NOT Match %s", string));
+  if (silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+
+  regex = "^a{3}$";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "aaa";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "^a{3}$";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "aaaa";
+  SILC_LOG_DEBUG(("DO NOT Match %s", string));
+  if (silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+
+  regex = "^a{3,5}$";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "aaa";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "^a{3,5}$";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "aaaa";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "^a{3,5}$";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "aaaaaa";
+  SILC_LOG_DEBUG(("DO NOT Match %s", string));
+  if (silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+
+  regex = "^a{3,}$";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "aaa";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "^a{3,}$";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "aaaaaaaaaaaaa";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "^a{3,}$";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "aa";
+  SILC_LOG_DEBUG(("DO NOT Match %s", string));
+  if (silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+
+
+  regex = "a*b";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "b";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "a*b";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "ab";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "a*b";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "aaaab";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+
+  regex = "a+b";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "ab";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "a+b";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "aaaab";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "a+b";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "b";
+  SILC_LOG_DEBUG(("DO NOT Match %s", string));
+  if (silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+
+
+  regex = "ca?b";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "cb";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "ca?b";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "cab";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = "ca?b";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "caab";
+  SILC_LOG_DEBUG(("DO NOT Match %s", string));
+  if (silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+
+
+  regex = "^a{2,3}$";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "aaa";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_file_write(1, silc_buffer_data(&bmatch), silc_buffer_len(&bmatch));
+  fflush(stdout);
 
   regex = "(H..).(o..)";
   SILC_LOG_DEBUG(("Regex %s", regex));
