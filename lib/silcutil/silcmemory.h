@@ -203,17 +203,13 @@ void *silc_scalloc(SilcStack stack, SilcUInt32 items, SilcUInt32 size);
  *    size of `size' bytes.  The contents of `ptr' will not be changed.
  *    If `ptr' is NULL the call is equivalent to silc_smalloc.  If `size'
  *    is zero (0) error will occur.  Returns NULL on error and the old
- *    pointer remain intact.
+ *    pointer remain intact.  This may return different pointer from `ptr'
  *
  * NOTES
  *
- *    This function reallocates successfully only if the previous allocation
- *    to `stack' was `ptr'.  If there was another memory allocation between
- *    allocating `ptr' and this call, this routine will return NULL.  The
- *    NULL is also returned if the `size' does not fit to current stack
- *    and allocating new block would require slow copying of the data.  It
- *    is left to the caller to decide whether to allocate new pointer and
- *    copy the old data in case this function returns NULL.
+ *    If the reallocation from `stack' fails, this function will allocate
+ *    new block of size of `size' bytes from `stack' and copy the data from
+ *    `ptr' to the new memory block.
  *
  *    If `stack' is NULL this function calls silc_realloc.
  *

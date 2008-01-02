@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1999 - 2007 Pekka Riikonen
+  Copyright (C) 1999 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -145,8 +145,20 @@ void *silc_scalloc(SilcStack stack, SilcUInt32 items, SilcUInt32 size)
 void *silc_srealloc(SilcStack stack, SilcUInt32 old_size,
 		    void *ptr, SilcUInt32 size)
 {
-  return stack ? silc_stack_realloc(stack, old_size, ptr, size) :
-    silc_realloc(ptr, size);
+  void *new_ptr;
+
+  if (!stack)
+    return silc_realloc(ptr, size);
+
+  new_ptr = silc_stack_realloc(stack, old_size, ptr, size);
+  if (!new_ptr) {
+    new_ptr = silc_smalloc(stack, size);
+    if (!new_ptr)
+      return NULL;
+    memcpy(new_ptr, ptr, old_size);
+  }
+
+  return new_ptr;
 }
 
 void *silc_smemdup(SilcStack stack, const void *ptr, SilcUInt32 size)
