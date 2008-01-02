@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2007 Pekka Riikonen
+  Copyright (C) 2007 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
    with silc_calloc and freeable with silc_free, and must also be able to
    pre-allocate from stack. */
 typedef struct SilcTlsObject {
+  SilcStack stack;			    /* Global stack */
   SilcSchedule schedule;		    /* Global scheduler */
   void *thread_context;		            /* Context set with SILC Tls API */
   void *platform_context;	            /* Platform specific context */
