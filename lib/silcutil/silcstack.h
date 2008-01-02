@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2007 Pekka Riikonen
+  Copyright (C) 2003 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -383,6 +383,42 @@ SilcUInt32 silc_stack_get_alignment(SilcStack stack);
  *
  ***/
 SilcBool silc_stack_purge(SilcStack stack);
+
+/****f* silcutil/SilcStackAPI/silc_stack_set_global
+ *
+ * SYNOPSIS
+ *
+ *    void silc_stack_set_global(SilcStack stack);
+ *
+ * DESCRIPTION
+ *
+ *    Sets global SilcStack `stack' that can be retrieved at any time
+ *    by using silc_stack_get_global.  The global stack is global only
+ *    to the current thread.  Each thread can have their own global stack.
+ *    If each thread must have own stack this must be called in each
+ *    thread.  If the global stack has been set already, new call will
+ *    replace the old one.
+ *
+ *    This routine is provided only as a convenience function to store
+ *    program's or thread's stack in one global place.  It is not mandatory
+ *    to call this function in order to use SilcStack.
+ *
+ ***/
+void silc_stack_set_global(SilcStack stack);
+
+/****f* silcutil/SilcStackAPI/silc_stack_get_global
+ *
+ * SYNOPSIS
+ *
+ *    SilcStack silc_stack_get_global(void);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the thread's global stack that was set by calling the
+ *    silc_stack_set_global or NULL if global stack has not been set.
+ *
+ ***/
+SilcStack silc_stack_get_global(void);
 
 #include "silcstack_i.h"
 

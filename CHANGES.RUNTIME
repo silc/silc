@@ -1,3 +1,20 @@
+Wed Jan  2 22:39:57 EET 2008  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_stack_[set|get]_global to set/get global per-thread
+	  SilcStack.  Affected files are lib/silcutil/silcstack.[ch].
+
+	* Imported new improved free regex implementation.  Added (again)
+	  support for SILC_REGEX_NOTBOL and SILC_REGEX_NOTEOLF flags.
+	  Added also support for POSIX bounded repeat expression (a{n,m}) 
+	  to make it more POSIX compliant.  Added SilcStack support to
+	  the regex too.  Affected files are lib/silcutil/silcregex.[ch].
+
+	* Added silc_buffer_printf to lib/silcutil/silcbuffer.h.
+
+	* Changed silc_srealloc to allocate new memory block if reallocation
+	  from stack fails, and to copy the old data to the new one.
+	  Affected files are lib/silcutil/silcmemory.[ch].
+
 Tue Jan  1 19:40:15 EET 2008  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SILC_REGEX_NOTBOL and SILC_REGEX_NOTEOL flags to

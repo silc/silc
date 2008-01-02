@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2007 Pekka Riikonen
+  Copyright (C) 2003 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -601,6 +601,35 @@ SilcBool silc_stack_purge(SilcStack stack)
   silc_mutex_unlock(stack->lock);
 
   return ret;
+}
+
+/* Set global stack */
+
+void silc_stack_set_global(SilcStack stack)
+{
+  SilcTls tls = silc_thread_get_tls();
+
+  if (!tls) {
+    /* Try to initialize Tls */
+    tls = silc_thread_tls_init();
+    SILC_VERIFY(tls);
+    if (!tls)
+      return;
+  }
+
+  tls->stack = stack;
+}
+
+/* Return global stack */
+
+SilcStack silc_stack_get_global(void)
+{
+  SilcTls tls = silc_thread_get_tls();
+
+  if (!tls)
+    return NULL;
+
+  return tls->stack;
 }
 
 #ifdef SILC_DIST_INPLACE
