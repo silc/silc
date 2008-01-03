@@ -27,12 +27,13 @@
 
 /*
   The SILC Regex API and modifications by Pekka Riikonen, under the same
-  license as the original code.  We've added following features:
+  license as the original code.  We've added the following features:
 
-  - RE_NOTBOL            - bol fails to match (conforming POSIX)
-  - RE_NOTEOL            - eol fails to match (conforming POSIX)
-  - RE_REPEAT a{n,m}     - bounded repeat (conforming POSIX)
-  - SilStack support     - compile without real memory allocations
+  - RE_SYNTAX_POSIX      POSIX extended regular expression syntax
+  - RE_REPEAT            bounded repeat a{n,m} (RE_SYNTAX_POSIX)
+  - RE_NOTBOL            bol fails to match (conforming POSIX regex API)
+  - RE_NOTEOL            eol fails to match (conforming POSIX regex API)
+  - SilcStack support    compile/match without real memory allocations
 */
 
 #include "silc.h"
@@ -50,13 +51,13 @@
 #define RE_NO_GNU_EXTENSIONS   128   /* no gnu extensions */
 #define RE_NOTBOL              256   /* bol fails to match */
 #define RE_NOTEOL              512   /* eol fails to match */
-#define RE_REPEAT             1024   /* bounded repeat, must be quoted without
-					RE_NO_BK_VBAR */
+#define RE_REPEAT             1024   /* bounded repeat expression */
 
 /* definitions for some common regexp styles */
 #define RE_SYNTAX_AWK	(RE_NO_BK_PARENS|RE_NO_BK_VBAR|RE_CONTEXT_INDEP_OPS)
 #define RE_SYNTAX_EGREP	(RE_SYNTAX_AWK|RE_NEWLINE_OR)
 #define RE_SYNTAX_GREP	(RE_BK_PLUS_QM|RE_NEWLINE_OR)
+#define RE_SYNTAX_POSIX	(RE_SYNTAX_AWK|RE_REPEAT)
 #define RE_SYNTAX_EMACS	0
 
 #define Sword       1
@@ -483,9 +484,9 @@ static int regexp_ansi_sequences;
 
 #define SYNTAX(ch) re_syntax_table[(unsigned char)(ch)]
 
-unsigned char re_syntax_table[256];
+static unsigned char re_syntax_table[256];
 
-void re_compile_initialize(void)
+void silc_re_compile_initialize(void)
 {
   int a;
 
@@ -596,17 +597,17 @@ void re_compile_initialize(void)
   regexp_ansi_sequences = (regexp_syntax & RE_ANSI_HEX) != 0;
 }
 
-int re_set_syntax(int syntax)
+int silc_re_set_syntax(int syntax)
 {
   int ret;
 
   ret = regexp_syntax;
   regexp_syntax = syntax;
-  re_compile_initialize();
+  silc_re_compile_initialize();
   return ret;
 }
 
-static int hex_char_to_decimal(int ch)
+static int silc_hex_char_to_decimal(int ch)
 {
   if (ch >= '0' && ch <= '9')
     return ch - '0';
@@ -617,10 +618,10 @@ static int hex_char_to_decimal(int ch)
   return 16;
 }
 
-static int re_compile_fastmap_aux(unsigned char *code, int pos,
-				  unsigned char *visited,
-				  unsigned char *can_be_null,
-				  unsigned char *fastmap)
+static int silc_re_compile_fastmap_aux(unsigned char *code, int pos,
+				       unsigned char *visited,
+				       unsigned char *can_be_null,
+				       unsigned char *fastmap)
 {
   int a;
   int b;
@@ -730,7 +731,8 @@ static int re_compile_fastmap_aux(unsigned char *code, int pos,
 	a = (unsigned char)code[pos++];
 	a |= (unsigned char)code[pos++] << 8;
 	a = pos + (int)SHORT(a);
-	return re_compile_fastmap_aux(code, a, visited, can_be_null, fastmap);
+	return silc_re_compile_fastmap_aux(code, a, visited,
+					   can_be_null, fastmap);
       }
     case Crepeat1:
       {
@@ -746,9 +748,9 @@ static int re_compile_fastmap_aux(unsigned char *code, int pos,
     }
 }
 
-static int re_do_compile_fastmap(unsigned char *buffer, int used, int pos,
-                                 unsigned char *can_be_null,
-                                 unsigned char *fastmap, SilcRegex bufp)
+static int silc_re_do_compile_fastmap(unsigned char *buffer, int used, int pos,
+				      unsigned char *can_be_null,
+				      unsigned char *fastmap, SilcRegex bufp)
 {
   unsigned char small_visited[512], *visited;
   int ret;
@@ -767,7 +769,8 @@ static int re_do_compile_fastmap(unsigned char *buffer, int used, int pos,
   *can_be_null = 0;
   memset(fastmap, 0, 256);
   memset(visited, 0, used);
-  ret = re_compile_fastmap_aux(buffer, pos, visited, can_be_null, fastmap);
+  ret = silc_re_compile_fastmap_aux(buffer, pos, visited,
+				    can_be_null, fastmap);
   if (visited != small_visited) {
     silc_sfree(bufp->rstack, visited);
     silc_stack_pop(bufp->rstack);
@@ -775,16 +778,16 @@ static int re_do_compile_fastmap(unsigned char *buffer, int used, int pos,
   return ret == 0;
 }
 
-int re_compile_fastmap(SilcRegex bufp)
+int silc_re_compile_fastmap(SilcRegex bufp)
 {
   if (!bufp->fastmap || bufp->fastmap_accurate)
     return 0;
   SILC_ASSERT(bufp->used > 0);
-  if (!re_do_compile_fastmap(bufp->buffer,
-			     bufp->used,
-			     0,
-			     &bufp->can_be_null,
-			     bufp->fastmap, bufp))
+  if (!silc_re_do_compile_fastmap(bufp->buffer,
+				  bufp->used,
+				  0,
+				  &bufp->can_be_null,
+				  bufp->fastmap, bufp))
     return -1;
   if (bufp->buffer[0] == Cbol)
     bufp->anchor = 1;   /* begline */
@@ -821,7 +824,7 @@ int re_compile_fastmap(SilcRegex bufp)
  *
  */
 
-static int re_optimize_star_jump(SilcRegex bufp, unsigned char *code)
+static int silc_re_optimize_star_jump(SilcRegex bufp, unsigned char *code)
 {
   unsigned char map[256];
   unsigned char can_be_null;
@@ -847,9 +850,9 @@ static int re_optimize_star_jump(SilcRegex bufp, unsigned char *code)
   SILC_ASSERT(p1[-3] == Cfailure_jump);
   p2 = code;
   /* p1 points inside loop, p2 points to after loop */
-  if (!re_do_compile_fastmap(bufp->buffer, bufp->used,
-			     (int)(p2 - bufp->buffer),
-			     &can_be_null, map, bufp))
+  if (!silc_re_do_compile_fastmap(bufp->buffer, bufp->used,
+				  (int)(p2 - bufp->buffer),
+				  &can_be_null, map, bufp))
     goto make_normal_jump;
 
   /* If we might introduce a new update point inside the
@@ -982,7 +985,7 @@ static int re_optimize_star_jump(SilcRegex bufp, unsigned char *code)
   return 1;
 }
 
-static int re_optimize(SilcRegex bufp)
+static int silc_re_optimize(SilcRegex bufp)
 {
   unsigned char *code;
 
@@ -1025,7 +1028,7 @@ static int re_optimize(SilcRegex bufp)
 	  }
 	case Cstar_jump:
 	  {
-	    if (!re_optimize_star_jump(bufp, code))
+	    if (!silc_re_optimize_star_jump(bufp, code))
 	      {
 		return 0;
 	      }
@@ -1112,11 +1115,11 @@ static int re_optimize(SilcRegex bufp)
   {							\
     unsigned char gethex_ch, gethex_value;		\
     NEXTCHAR(gethex_ch);				\
-    gethex_value = hex_char_to_decimal(gethex_ch);	\
+    gethex_value = silc_hex_char_to_decimal(gethex_ch);	\
     if (gethex_value == 16)				\
       goto hex_error;					\
     NEXTCHAR(gethex_ch);				\
-    gethex_ch = hex_char_to_decimal(gethex_ch);		\
+    gethex_ch = silc_hex_char_to_decimal(gethex_ch);	\
     if (gethex_ch == 16)				\
       goto hex_error;					\
     (var) = gethex_value * 16 + gethex_ch;		\
@@ -1184,7 +1187,8 @@ static int re_optimize(SilcRegex bufp)
       }						\
   }
 
-SilcResult re_compile_pattern(unsigned char *regex, int size, SilcRegex bufp)
+SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
+				   SilcRegex bufp)
 {
   int a;
   int pos;
@@ -1207,7 +1211,7 @@ SilcResult re_compile_pattern(unsigned char *regex, int size, SilcRegex bufp)
   int beginning_context;
 
   if (!re_compile_initialized)
-    re_compile_initialize();
+    silc_re_compile_initialize();
   bufp->used = 0;
   bufp->fastmap_accurate = 0;
   bufp->uses_registers = 1;
@@ -1353,7 +1357,6 @@ SilcResult re_compile_pattern(unsigned char *regex, int size, SilcRegex bufp)
 	case Rstar:
 	case Rplus:
 	  {
-	  store_jump:
 	    if (beginning_context) {
 	      if (regexp_context_indep_ops)
 		goto op_error;
@@ -1362,6 +1365,7 @@ SilcResult re_compile_pattern(unsigned char *regex, int size, SilcRegex bufp)
 	    }
 	    if (CURRENT_LEVEL_START == pattern_offset)
 	      break; /* ignore empty patterns for + and * */
+	  store_jump:
 	    ALLOC(9);
 	    INSERT_JUMP(CURRENT_LEVEL_START, Cfailure_jump,
 			pattern_offset + 6);
@@ -1521,11 +1525,11 @@ SilcResult re_compile_pattern(unsigned char *regex, int size, SilcRegex bufp)
 	    int min, max, i;
 
 	    if (pos >= size)
-	      goto op_error;
+	      goto normal_char;		/* Consider literal */
 
 	    /* Get the preceding atom */
 	    if (pos < 2)
-	      goto op_error;
+	      goto normal_char;		/* Consider literal */
 	    pos -= 2;
 	    NEXTCHAR(a);
 	    NEXTCHAR(ch);
@@ -1533,7 +1537,7 @@ SilcResult re_compile_pattern(unsigned char *regex, int size, SilcRegex bufp)
 	    /* Get min value */
 	    NEXTCHAR(ch);
 	    if (!isdigit(ch))
-	      goto repeat_value_error;
+	      goto normal_char;		/* Consider literal */
 	    min = ch - '0';
 	    NEXTCHAR(ch);
 	    while (isdigit(ch)) {
@@ -1698,7 +1702,7 @@ SilcResult re_compile_pattern(unsigned char *regex, int size, SilcRegex bufp)
   ALLOC(1);
   STORE(Cend);
   SET_FIELDS;
-  if (!re_optimize(bufp))
+  if (!silc_re_optimize(bufp))
     return SILC_ERR;
   return SILC_OK;
 
@@ -1757,8 +1761,8 @@ SilcResult re_compile_pattern(unsigned char *regex, int size, SilcRegex bufp)
   if (translate)				\
     var = translate[var]
 
-int re_match(SilcRegex bufp, unsigned char *string, int size, int pos,
-             regexp_registers_t old_regs, unsigned int flags)
+int silc_re_match(SilcRegex bufp, unsigned char *string, int size, int pos,
+		  regexp_registers_t old_regs, unsigned int flags)
 {
   unsigned char *code;
   unsigned char *translate;
@@ -2181,8 +2185,8 @@ int re_match(SilcRegex bufp, unsigned char *string, int size, int pos,
 #undef PREFETCH
 #undef NEXTCHAR
 
-int re_search(SilcRegex bufp, unsigned char *string, int size, int pos,
-              int range, regexp_registers_t regs, unsigned int flags)
+int silc_re_search(SilcRegex bufp, unsigned char *string, int size, int pos,
+		   int range, regexp_registers_t regs, unsigned int flags)
 {
   unsigned char *fastmap;
   unsigned char *translate;
@@ -2199,7 +2203,7 @@ int re_search(SilcRegex bufp, unsigned char *string, int size, int pos,
   fastmap = bufp->fastmap;
   translate = bufp->translate;
   if (fastmap && !bufp->fastmap_accurate) {
-    if (re_compile_fastmap(bufp))
+    if (silc_re_compile_fastmap(bufp))
       return -2;
   }
 
@@ -2268,7 +2272,7 @@ int re_search(SilcRegex bufp, unsigned char *string, int size, int pos,
 	    continue;
 	}
       SILC_ASSERT(pos >= 0 && pos <= size);
-      ret = re_match(bufp, string, size, pos, regs, flags);
+      ret = silc_re_match(bufp, string, size, pos, regs, flags);
       if (ret >= 0)
 	return pos;
       if (ret == -2)
@@ -2300,14 +2304,19 @@ SilcBool silc_regex_compile(SilcRegex regexp, const char *regex,
     regexp->rstack = silc_stack_alloc(512, regexp->rstack);
 
   /* Set syntax */
-  syntax |= (RE_CONTEXT_INDEP_OPS | RE_NO_BK_PARENS |
-	     RE_NO_BK_VBAR | RE_REPEAT);
-  re_set_syntax(syntax);
+  syntax |= RE_SYNTAX_POSIX;
+  silc_re_set_syntax(syntax);
 
   /* Compile */
-  ret = re_compile_pattern((char *)regex, strlen(regex), regexp);
+  ret = silc_re_compile_pattern((char *)regex, strlen(regex), regexp);
   if (ret != SILC_OK)
     silc_set_errno(ret);
+
+  if (ret != SILC_OK) {
+    silc_regex_free(regexp);
+    regexp->rstack = NULL;
+    regexp->buffer = NULL;
+  }
 
   return ret == SILC_OK;
 }
@@ -2343,8 +2352,8 @@ SilcBool silc_regex_match(SilcRegex regexp, const char *string,
     f |= RE_NOTEOL;
 
   /* Search */
-  ret = re_search(regexp, (char *)string, string_len, 0, string_len,
-		  num_match ? &regs : NULL, f);
+  ret = silc_re_search(regexp, (char *)string, string_len, 0, string_len,
+		       num_match ? &regs : NULL, f);
   if (ret < 0) {
     if (ret == -1)
       silc_set_errno(SILC_ERR_NOT_FOUND);
@@ -2377,37 +2386,52 @@ SilcBool silc_regex_va(const char *string, SilcUInt32 string_len,
   SilcRegexStruct reg;
   SilcRegexMatch m = NULL;
   SilcBuffer buf, *rets = NULL;
+  SilcStack stack;
   int i, c = 0;
 
   /* Compile */
   if (!silc_regex_compile(&reg, regex, 0))
     return FALSE;
 
+  stack = reg.rstack;
+  silc_stack_push(stack, NULL);
+
   /* Get match pointers */
   if (match) {
-    rets = silc_malloc(sizeof(*rets));
-    if (!rets)
+    rets = silc_smalloc(stack, sizeof(*rets));
+    if (!rets) {
+      silc_stack_pop(stack);
+      silc_regex_free(&reg);
       return FALSE;
+    }
     rets[c++] = match;
 
     while ((buf = va_arg(va, SilcBuffer))) {
-      rets = silc_realloc(rets, (c + 1) * sizeof(*rets));
-      if (!rets)
+      rets = silc_srealloc(stack, c * sizeof(*rets),
+			   rets, (c + 1) * sizeof(*rets));
+      if (!rets) {
+	silc_stack_pop(stack);
+	silc_regex_free(&reg);
 	return FALSE;
+      }
       rets[c++] = buf;
     }
 
-    m = silc_malloc(c * sizeof(*m));
+    m = silc_smalloc(stack, c * sizeof(*m));
     if (!m) {
-      silc_free(rets);
+      silc_sfree(stack, rets);
+      silc_stack_pop(stack);
+      silc_regex_free(&reg);
       return FALSE;
     }
   }
 
   /* Match */
   if (!silc_regex_match(&reg, string, string_len, c, m, 0)) {
-    silc_free(m);
-    silc_free(rets);
+    silc_sfree(stack, m);
+    silc_sfree(stack, rets);
+    silc_stack_pop(stack);
+    silc_regex_free(&reg);
     return FALSE;
   }
 
@@ -2419,8 +2443,10 @@ SilcBool silc_regex_va(const char *string, SilcUInt32 string_len,
 		    m[i].end - m[i].start);
   }
 
-  silc_free(m);
-  silc_free(rets);
+  silc_sfree(stack, m);
+  silc_sfree(stack, rets);
+  silc_stack_pop(stack);
+  silc_regex_free(&reg);
 
   return TRUE;
 }

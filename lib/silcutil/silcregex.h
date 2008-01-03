@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2007 Pekka Riikonen
+  Copyright (C) 2007 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,11 +22,57 @@
  * DESCRIPTION
  *
  * SILC regular expression interface provides Unix and POSIX compliant
- * regular expression compilation and matching.  The syntax is compliant
- * with Unix and POSIX regular expression syntax.
+ * regular expression compilation and matching.
  *
  * The interface also provides many convenience functions to make the use
- * of regular expressions easier.
+ * of regular expressions easier.  Especially the silc_regex allows very
+ * simple way to match strings against regular expressions and get the
+ * exact match or matches as a return.
+ *
+ * The regex syntax follows POSIX regex syntax:
+ *
+ * Expressions:
+ *   ^        Match start of line/string
+ *              '^a' matches 'ab' but not 'ba'
+ *   $        Match end of line/string
+ *              'a$' matches 'ba' but not 'ab'
+ *   .        Match any single character (except new line (\n))
+ *              '.a' matches 'ba' but not 'a'
+ *   +        Preceding item is matched one or more times
+ *              'a+b' matches 'aaab' but not 'b'
+ *   *        Preceding item is matched zero or more times
+ *              'a*b' matches 'ab', 'aab' and 'b'
+ *   ?        Preceding item is matched zero or one time
+ *              'ca?b' matches 'cb' and 'cab' but not 'caab'
+ *   |        Joins two expressions and matches either of them (OR)
+ *              'foo|bar' matches 'foo' or 'bar'
+ *   {n}      Preceding item is matched exactly n times (n can be 0-255)
+ *              'a{2}' matches 'aa' but not 'aaa'
+ *   {n,}     Preceding item is matched n or more times
+ *              'a{2,} matches 'aa' and 'aaaa' but not 'a'
+ *   {n,m}    Preceding item is matched at least n times and at most m times
+ *              'a{2,4}' matches 'aa', 'aaa' and 'aaaa' but not 'aaaaa'
+ *   [ ]      Match any single character in the character list inside [ ]
+ *              '[0123]' matches only '0', '1', '2' or '3'
+ *   [ - ]    Match any single character in the specified range
+ *              '[0-5]' matches digits 0-5.
+ *   [^ ]     Match any character not in the character list or range
+ *              '[^09]]' matches any other character except '0' and '9'
+ *   ( )      Subexpression, grouping
+ *
+ * Escaping (C-language style, '\' is written as '\\'):
+ *   \\       Considers following character literal ('\\{' is '{')
+ *   \\\\     Matches literal \
+ *   \a       Matches bell (BEL)
+ *   \t       Matches horizontal tab (HT)
+ *   \n       Matches new line (LF)
+ *   \v       Matches vertical tab (VT)
+ *   \f       Matches form feed (FF)
+ *   \r       Matches carriage ret (CR)
+ *   \\<      Match null string at the start of a word
+ *   \\>      Match null string at the end of a word
+ *   \\b      Match null string at the edge of a wrod
+ *   \\B      Match null string when not at the edge of a word
  *
  * EXAMPLE
  *

@@ -1,3 +1,8 @@
+Thu Jan  3 18:37:42 EET 2008  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SilcStack support to silc_regex and silc_regex_buffer
+	  calls.  Affected files are lib/silcutil/silcregex.[ch].
+
 Wed Jan  2 22:39:57 EET 2008  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_stack_[set|get]_global to set/get global per-thread

@@ -184,15 +184,6 @@ int main(int argc, char **argv)
     goto err;
 
 
-  regex = "^a{2,3}$";
-  SILC_LOG_DEBUG(("Regex %s", regex));
-  string = "aaa";
-  SILC_LOG_DEBUG(("Match %s", string));
-  if (!silc_regex(string, regex, &bmatch, NULL))
-    goto err;
-  silc_file_write(1, silc_buffer_data(&bmatch), silc_buffer_len(&bmatch));
-  fflush(stdout);
-
   regex = "(H..).(o..)";
   SILC_LOG_DEBUG(("Regex %s", regex));
   if (!silc_regex_compile(&reg, regex, 0))
