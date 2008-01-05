@@ -18,6 +18,22 @@ int main(int argc, char **argv)
     silc_log_set_debug_string("*regex*,*errno*");
   }
 
+  regex = ".{5}";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "abcdefghijklmn";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
+  regex = ".....";
+  SILC_LOG_DEBUG(("Regex %s", regex));
+  string = "abcdefghijklmn";
+  SILC_LOG_DEBUG(("Match %s", string));
+  if (!silc_regex(string, regex, &bmatch, NULL))
+    goto err;
+  silc_buffer_printf(&bmatch, TRUE);
+
   regex = "^a{0}$";
   SILC_LOG_DEBUG(("Regex %s", regex));
   string = "";

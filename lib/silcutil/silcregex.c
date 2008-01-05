@@ -1520,7 +1520,7 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
 	       Rnormals and one Rplus.  The third is compiled as n-1 Rnormals
 	       and m-n Rnormals with Roptionals.  0 values have special
 	       compilation. */
-	    int min, max, i;
+	    int min, max, i, alen = 2;
 
 	    if (pos >= size)
 	      goto normal_char;		/* Consider literal */
@@ -1530,6 +1530,16 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
 	      goto normal_char;		/* Consider literal */
 	    pos -= 2;
 	    NEXTCHAR(a);
+	    if (translate)
+	      a = translate[(unsigned char)a];
+	    op = silc_regexp_plain_ops[(unsigned char)a];
+
+	    if (op == Ranychar) {
+	      opcode = Canychar;
+	      a = 0;
+	      alen = 1;
+	    }
+
 	    NEXTCHAR(ch);
 
 	    /* Get min value */
@@ -1559,9 +1569,10 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
 	      /* Store min - 1 many Cexacts. */
 	      for (i = 0; i < min - 1; i++) {
 		SET_LEVEL_START;
-		ALLOC(2);
-		STORE(Cexact);
-		STORE((unsigned char)a);
+		ALLOC(alen);
+		STORE(opcode);
+		if (a)
+		  STORE((unsigned char)a);
 	      }
 	      break;
 	    }
@@ -1581,9 +1592,10 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
 		/* Store min - 1 many Cexacts. */
 		for (i = 0; i < min - 1; i++) {
 		  SET_LEVEL_START;
-		  ALLOC(2);
-		  STORE(Cexact);
-		  STORE((unsigned char)a);
+		  ALLOC(alen);
+		  STORE(opcode);
+		  if (a)
+		    STORE((unsigned char)a);
 		}
 
 		/* Store Rplus */
@@ -1625,17 +1637,19 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
 	      /* Store min - 1 many Cexacts. */
 	      for (i = 0; min && i < min - 1; i++) {
 		SET_LEVEL_START;
-		ALLOC(2);
-		STORE(Cexact);
-		STORE((unsigned char)a);
+		ALLOC(alen);
+		STORE(opcode);
+		if (a)
+		  STORE((unsigned char)a);
 	      }
 
 	      /* Store max - min Cexacts and Roptionals. */
 	      for (i = 0; i < max - min; i++) {
 		SET_LEVEL_START;
-		ALLOC(2);
-		STORE(Cexact);
-		STORE((unsigned char)a);
+		ALLOC(alen);
+		STORE(opcode);
+		if (a)
+		  STORE((unsigned char)a);
 		ALLOC(3);
 		INSERT_JUMP(CURRENT_LEVEL_START, Cfailure_jump,
 			    pattern_offset + 3);
