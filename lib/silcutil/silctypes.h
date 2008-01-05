@@ -299,7 +299,8 @@ typedef SilcUInt32 SilcParam;
 #define SILC_PARAM_END           0xfeeefff1     /* End of parameters */
 /***/
 
-/* Internal parameter types, not publicly documented */
+/* Internal parameter types, not publicly documented, used mainly by the
+   SILC Buffer Format API (silcbuffmt.h). */
 #define SILC_PARAM_UI8_STRING    100	        /* String (max len 8-bits) */
 #define SILC_PARAM_UI16_STRING   101	        /* String (max len 16-bits) */
 #define SILC_PARAM_UI32_STRING   102	        /* String (max len 32-bits) */
@@ -313,6 +314,7 @@ typedef SilcUInt32 SilcParam;
 #define SILC_PARAM_OFFSET_START  110
 #define SILC_PARAM_OFFSET_END    111
 #define SILC_PARAM_APPEND        112
+#define SILC_PARAM_DELETE        113
 #define SILC_PARAM_ALLOC         0x00010000     /* Allocate, bitmask */
 
 /* Macros */

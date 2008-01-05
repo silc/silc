@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 {
   SilcBool success = FALSE;
   char string[1024], *astring;
-  SilcBufferStruct buf, buf2;
+  SilcBufferStruct buf;
 
   if (argc > 1 && !strcmp(argv[1], "-d")) {
     silc_log_debug(TRUE);
@@ -52,6 +52,23 @@ int main(int argc, char **argv)
     goto err;
   silc_buffer_printf(&buf, TRUE);
   if (strcmp("This is barbarbar string!!", silc_buffer_data(&buf)))
+    goto err;
+  silc_buffer_purge(&buf);
+
+  silc_snprintf(string, sizeof(string), "This is foobar string foo!!");
+  astring = silc_memdup(string, strlen(string));
+  silc_buffer_set(&buf, astring, strlen(astring) + 1);
+  SILC_LOG_DEBUG(("sed 's/foo//g'"));
+  SILC_LOG_DEBUG(("string: %s", astring));
+  if (silc_buffer_format(&buf,
+			 SILC_STR_REGEX("foo", SILC_STR_REGEX_ALL |
+					       SILC_STR_REGEX_INCLUSIVE),
+			   SILC_STR_DELETE(-1),
+			 SILC_STR_END,
+			 SILC_STR_END) < 0)
+    goto err;
+  silc_buffer_printf(&buf, TRUE);
+  if (strcmp("This is bar string !!", silc_buffer_data(&buf)))
     goto err;
   silc_buffer_purge(&buf);
 

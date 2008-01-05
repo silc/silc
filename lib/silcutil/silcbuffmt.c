@@ -99,11 +99,11 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
       {
 	const char *regex = va_arg(ap, char *);
 	SilcBufferRegexFlags rflags = va_arg(ap, SilcUInt32);
-	SilcBufferStruct match, saved;
+	SilcBufferStruct match;
 	SilcBool match_all = (rflags & SILC_STR_REGEX_ALL) != 0;
 	SilcBool match_nl = (rflags & SILC_STR_REGEX_NL) != 0;
 	SilcBool ret;
-	SilcUInt32 inclusive_pos = 0;
+	SilcUInt32 saved_pos = 0, inclusive_pos = 0;
 	int matched = 0, ret_len;
 	va_list cp;
 
@@ -113,13 +113,11 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 	if (!regex)
 	  goto fail;
 
-	memset(&saved, 0, sizeof(saved));
-
 	if (match_nl) {
 	start_nl_match:
 	  /* Match for '\n' in the buffer.  If not found, treat as line
 	     without '\n' (buffer has only one line, or this is last line). */
-	  saved = *dst;
+	  saved_pos = silc_buffer_headlen(dst) + silc_buffer_len(dst);
 	  if (silc_regex_buffer(dst, "\n", &match, NULL))
 	    dst->tail = match.tail;
 	}
@@ -178,7 +176,9 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 	  flen += (dst->tail - dst->data);
 	  if (!silc_buffer_pull(dst, (dst->tail - dst->data)))
 	    goto fail;
-	  if (!silc_buffer_pull_tail(dst, (saved.tail - dst->tail)))
+	  if (!silc_buffer_pull_tail(dst, (saved_pos -
+					   silc_buffer_headlen(dst) +
+					   silc_buffer_len(dst))))
 	    goto fail;
 
 	  if (silc_buffer_len(dst) > 0)
@@ -388,6 +388,34 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
       }
       break;
 
+    case SILC_PARAM_DELETE:
+      {
+	int n = va_arg(ap, int);
+
+	if (!process)
+	  break;
+
+	if (n == -1) {
+	  /* Move all data from tail to data area */
+	  if (dst->data != dst->tail) {
+	    memmove(dst->data, dst->tail, silc_buffer_taillen(dst));
+	    memset(dst->end - silc_buffer_len(dst), 0, silc_buffer_len(dst));
+	    silc_buffer_push_tail(dst, silc_buffer_len(dst));
+	  }
+	  break;
+	}
+
+	if (n > silc_buffer_len(dst))
+	  goto fail;
+
+	memmove(dst->data, dst->data + n, (silc_buffer_len(dst) - n) +
+		silc_buffer_taillen(dst));
+	memset(dst->end - n, 0, n);
+	silc_buffer_push_tail(dst, silc_buffer_len(dst) - n);
+
+	break;
+      }
+
     case SILC_PARAM_OFFSET:
       {
 	int offst = va_arg(ap, int);
@@ -538,11 +566,11 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
       {
 	const char *regex = va_arg(ap, char *);
 	SilcBufferRegexFlags rflags = va_arg(ap, SilcUInt32);
-	SilcBufferStruct match, saved;
+	SilcBufferStruct match;
 	SilcBool match_all = (rflags & SILC_STR_REGEX_ALL) != 0;
 	SilcBool match_nl = (rflags & SILC_STR_REGEX_NL) != 0;
 	SilcBool ret;
-	SilcUInt32 inclusive_pos = 0;
+	SilcUInt32 saved_pos = 0, inclusive_pos = 0;
 	int matched = 0, ret_len;
 	va_list cp;
 
@@ -552,13 +580,12 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
 	if (!regex)
 	  goto fail;
 
-	memset(&saved, 0, sizeof(saved));
 
 	if (match_nl) {
 	start_nl_match:
 	  /* Match for '\n' in the buffer.  If not found, treat as line
 	     without '\n' (buffer has only one line, or this is last line). */
-	  saved = *src;
+	  saved_pos = silc_buffer_headlen(src) + silc_buffer_len(src);
 	  if (silc_regex_buffer(src, "\n", &match, NULL))
 	    src->tail = match.tail;
 	}
@@ -617,7 +644,9 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
 	  UNFORMAT_HAS_SPACE(src, src->tail - src->data);
 	  if (!silc_buffer_pull(src, (src->tail - src->data)))
 	    goto fail;
-	  if (!silc_buffer_pull_tail(src, (saved.tail - src->tail)))
+	  if (!silc_buffer_pull_tail(src, (saved_pos -
+					   silc_buffer_headlen(src) +
+					   silc_buffer_len(src))))
 	    goto fail;
 
 	  if (silc_buffer_len(src) > 0)
@@ -1094,6 +1123,9 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
 
     case SILC_PARAM_END:
       goto ok;
+      break;
+
+    case SILC_PARAM_DELETE:
       break;
 
     default:

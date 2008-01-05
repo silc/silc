@@ -1,3 +1,9 @@
+Sat Jan  5 20:19:28 EET 2008  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC_STR_DELETE buffer format macro.  Added support for
+	  deleting data after regex match with SILC_STR_REGEX.  Affected
+	  files are lib/silcutil/silcbuffmt.[ch].
+
 Sat Jan  5 18:00:06 EET 2008  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_buffer_equal to lib/silcutil/silcbuffer.h.

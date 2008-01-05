@@ -876,11 +876,20 @@ typedef enum {
  *
  *    // sed 's/foo/barbar/g', replace all foo's with barbar, without
  *    // overwriting any data in the buffer, but appending it.  The match
- *    // must be SILC_STR_REGEX_INCLUSIVE to make appending work.
+ *    // must be inclusive to make appending work.
  *    silc_buffer_format(buffer,
  *                       SILC_STR_REGEX("foo", SILC_STR_REGEX_ALL |
  *                                             SILC_STR_REGEX_INCLUSIVE),
  *                         SILC_STR_STRING_APPEND("barbar"),
+ *                       SILC_STR_END, SILC_STR_END);
+ *
+ *    // sed 's/foo/B/', replace foo with B, deleting rest of the match from
+ *    // the buffer.  The match must be inclusive to make deleting work.
+ *    silc_buffer_format(buffer,
+ *                       SILC_STR_REGEX("foo", SILC_STR_REGEX_ALL |
+ *                                             SILC_STR_REGEX_INCLUSIVE),
+ *                         SILC_STR_STRING("B"),
+ *                         SILC_STR_DELETE(-1),
  *                       SILC_STR_END, SILC_STR_END);
  *
  *    // sed '/baz/s/foo/bar/g, replace all foo's with bar on lines with baz
@@ -904,6 +913,42 @@ typedef enum {
  *
  ***/
 #define SILC_STR_REGEX(regex, flags) SILC_PARAM_REGEX, (regex), (flags)
+
+/****d* silcutil/SilcBufferFormatAPI/SILC_STR_DELETE
+ *
+ * NAME
+ *
+ *    #define SILC_STR_DELETE(n) ...
+ *
+ * DESCRIPTION
+ *
+ *    Deletes bytes from the buffer by moving data in order to delete it.
+ *    The size of the buffer remains same but the tail area of the buffer
+ *    will get larger as data is deleted from the current data area.
+ *
+ *    The `n' specifies the number of bytes to delete from the current
+ *    data area.  If `n' is -1 this deletes all bytes from the data area.
+ *    This effectively moves the data from the tail area into the current
+ *    data area.  The length of the data area after this is 0 and the tail
+ *    area is larger.
+ *
+ *    Use this only for formatting.
+ *
+ *    Formatting:  SILC_STR_DELETE(int bytes)
+ *
+ * EXAMPLE
+ *
+ *    // sed 's/foo/B/', replace foo with B, deleting rest of the match from
+ *    // the buffer.  The match must be inclusive to make deleting work.
+ *    silc_buffer_format(buffer,
+ *                       SILC_STR_REGEX("foo", SILC_STR_REGEX_ALL |
+ *                                             SILC_STR_REGEX_INCLUSIVE),
+ *                         SILC_STR_STRING("B"),
+ *                         SILC_STR_DELETE(-1),
+ *                       SILC_STR_END, SILC_STR_END);
+ *
+ ***/
+#define SILC_STR_DELETE(x) SILC_PARAM_DELETE, (x)
 
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_OFFSET
  *
