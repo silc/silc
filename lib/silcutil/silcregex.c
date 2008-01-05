@@ -29,11 +29,11 @@
   The SILC Regex API and modifications by Pekka Riikonen, under the same
   license as the original code.  We've added the following features:
 
-  - RE_SYNTAX_POSIX      POSIX extended regular expression syntax
-  - RE_REPEAT            bounded repeat a{n,m} (RE_SYNTAX_POSIX)
-  - RE_NOTBOL            bol fails to match (conforming POSIX regex API)
-  - RE_NOTEOL            eol fails to match (conforming POSIX regex API)
-  - SilcStack support    compile/match without real memory allocations
+  - RE_SYNTAX_POSIX           POSIX extended regular expression syntax
+  - RE_REPEAT                 bounded repeat a{n,m} (RE_SYNTAX_POSIX)
+  - RE_NOTBOL                 bol fails to match (conforming POSIX regex API)
+  - RE_NOTEOL                 eol fails to match (conforming POSIX regex API)
+  - SilcStack support         compile/match without real memory allocations
 */
 
 #include "silc.h"
@@ -59,12 +59,6 @@
 #define RE_SYNTAX_GREP	(RE_BK_PLUS_QM|RE_NEWLINE_OR)
 #define RE_SYNTAX_POSIX	(RE_SYNTAX_AWK|RE_REPEAT)
 #define RE_SYNTAX_EMACS	0
-
-#define Sword       1
-#define Swhitespace 2
-#define Sdigit      4
-#define Soctaldigit 8
-#define Shexdigit   16
 
 /* Registers */
 typedef struct re_registers {
@@ -471,20 +465,24 @@ enum regexp_syntax_op	/* syntax codes for plain and quoted characters */
   Ropenrep,		/* opening bounded repeat */
 };
 
-static int re_compile_initialized = 0;
-static int regexp_syntax = 0;
-static unsigned char regexp_plain_ops[256];
-static unsigned char regexp_quoted_ops[256];
-static unsigned char regexp_precedences[Rnum_ops];
-static int regexp_context_indep_ops;
-static int regexp_ansi_sequences;
+#define Sword       1
+#define Swhitespace 2
+#define Sdigit      4
+#define Soctaldigit 8
+#define Shexdigit   16
 
 #define NUM_LEVELS  5    /* number of precedence levels in use */
 #define MAX_NESTING 100  /* max nesting level of operators */
+#define SYNTAX(ch) silc_re_syntax_table[(unsigned char)(ch)]
 
-#define SYNTAX(ch) re_syntax_table[(unsigned char)(ch)]
-
-static unsigned char re_syntax_table[256];
+static int silc_regexp_syntax = RE_SYNTAX_POSIX;
+static int silc_regexp_context_indep_ops;
+static int silc_regexp_ansi_sequences;
+static int silc_re_compile_initialized = 0;
+static unsigned char silc_re_syntax_table[256];
+static unsigned char silc_regexp_plain_ops[256];
+static unsigned char silc_regexp_quoted_ops[256];
+static unsigned char silc_regexp_precedencess[Rnum_ops];
 
 void silc_re_compile_initialize(void)
 {
@@ -495,114 +493,114 @@ void silc_re_compile_initialize(void)
   if (!syntax_table_inited)
     {
       syntax_table_inited = 1;
-      memset(re_syntax_table, 0, 256);
+      memset(silc_re_syntax_table, 0, 256);
       for (a = 'a'; a <= 'z'; a++)
-	re_syntax_table[a] = Sword;
+	silc_re_syntax_table[a] = Sword;
       for (a = 'A'; a <= 'Z'; a++)
-	re_syntax_table[a] = Sword;
+	silc_re_syntax_table[a] = Sword;
       for (a = '0'; a <= '9'; a++)
-	re_syntax_table[a] = Sword | Sdigit | Shexdigit;
+	silc_re_syntax_table[a] = Sword | Sdigit | Shexdigit;
       for (a = '0'; a <= '7'; a++)
-	re_syntax_table[a] |= Soctaldigit;
+	silc_re_syntax_table[a] |= Soctaldigit;
       for (a = 'A'; a <= 'F'; a++)
-	re_syntax_table[a] |= Shexdigit;
+	silc_re_syntax_table[a] |= Shexdigit;
       for (a = 'a'; a <= 'f'; a++)
-	re_syntax_table[a] |= Shexdigit;
-      re_syntax_table['_'] = Sword;
+	silc_re_syntax_table[a] |= Shexdigit;
+      silc_re_syntax_table['_'] = Sword;
       for (a = 9; a <= 13; a++)
-	re_syntax_table[a] = Swhitespace;
-      re_syntax_table[' '] = Swhitespace;
+	silc_re_syntax_table[a] = Swhitespace;
+      silc_re_syntax_table[' '] = Swhitespace;
     }
-  re_compile_initialized = 1;
+  silc_re_compile_initialized = 1;
   for (a = 0; a < 256; a++)
     {
-      regexp_plain_ops[a] = Rnormal;
-      regexp_quoted_ops[a] = Rnormal;
+      silc_regexp_plain_ops[a] = Rnormal;
+      silc_regexp_quoted_ops[a] = Rnormal;
     }
   for (a = '0'; a <= '9'; a++)
-    regexp_quoted_ops[a] = Rmemory;
-  regexp_plain_ops['\134'] = Rquote;
-  if (regexp_syntax & RE_NO_BK_PARENS)
+    silc_regexp_quoted_ops[a] = Rmemory;
+  silc_regexp_plain_ops['\134'] = Rquote;
+  if (silc_regexp_syntax & RE_NO_BK_PARENS)
     {
-      regexp_plain_ops['('] = Ropenpar;
-      regexp_plain_ops[')'] = Rclosepar;
+      silc_regexp_plain_ops['('] = Ropenpar;
+      silc_regexp_plain_ops[')'] = Rclosepar;
     }
   else
     {
-      regexp_quoted_ops['('] = Ropenpar;
-      regexp_quoted_ops[')'] = Rclosepar;
+      silc_regexp_quoted_ops['('] = Ropenpar;
+      silc_regexp_quoted_ops[')'] = Rclosepar;
     }
-  if (regexp_syntax & RE_NO_BK_VBAR)
-    regexp_plain_ops['\174'] = Ror;
+  if (silc_regexp_syntax & RE_NO_BK_VBAR)
+    silc_regexp_plain_ops['\174'] = Ror;
   else
-    regexp_quoted_ops['\174'] = Ror;
-  regexp_plain_ops['*'] = Rstar;
-  if (regexp_syntax & RE_BK_PLUS_QM)
+    silc_regexp_quoted_ops['\174'] = Ror;
+  silc_regexp_plain_ops['*'] = Rstar;
+  if (silc_regexp_syntax & RE_BK_PLUS_QM)
     {
-      regexp_quoted_ops['+'] = Rplus;
-      regexp_quoted_ops['?'] = Roptional;
+      silc_regexp_quoted_ops['+'] = Rplus;
+      silc_regexp_quoted_ops['?'] = Roptional;
     }
   else
     {
-      regexp_plain_ops['+'] = Rplus;
-      regexp_plain_ops['?'] = Roptional;
+      silc_regexp_plain_ops['+'] = Rplus;
+      silc_regexp_plain_ops['?'] = Roptional;
     }
-  if (regexp_syntax & RE_NEWLINE_OR)
-    regexp_plain_ops['\n'] = Ror;
-  regexp_plain_ops['\133'] = Ropenset;
-  regexp_plain_ops['\136'] = Rbol;
-  regexp_plain_ops['$'] = Reol;
-  regexp_plain_ops['.'] = Ranychar;
-  if (!(regexp_syntax & RE_NO_GNU_EXTENSIONS))
+  if (silc_regexp_syntax & RE_NEWLINE_OR)
+    silc_regexp_plain_ops['\n'] = Ror;
+  silc_regexp_plain_ops['\133'] = Ropenset;
+  silc_regexp_plain_ops['\136'] = Rbol;
+  silc_regexp_plain_ops['$'] = Reol;
+  silc_regexp_plain_ops['.'] = Ranychar;
+  if (!(silc_regexp_syntax & RE_NO_GNU_EXTENSIONS))
     {
-      regexp_quoted_ops['w'] = Rwordchar;
-      regexp_quoted_ops['W'] = Rnotwordchar;
-      regexp_quoted_ops['<'] = Rwordbeg;
-      regexp_quoted_ops['>'] = Rwordend;
-      regexp_quoted_ops['b'] = Rwordbound;
-      regexp_quoted_ops['B'] = Rnotwordbound;
-      regexp_quoted_ops['`'] = Rbegbuf;
-      regexp_quoted_ops['\''] = Rendbuf;
+      silc_regexp_quoted_ops['w'] = Rwordchar;
+      silc_regexp_quoted_ops['W'] = Rnotwordchar;
+      silc_regexp_quoted_ops['<'] = Rwordbeg;
+      silc_regexp_quoted_ops['>'] = Rwordend;
+      silc_regexp_quoted_ops['b'] = Rwordbound;
+      silc_regexp_quoted_ops['B'] = Rnotwordbound;
+      silc_regexp_quoted_ops['`'] = Rbegbuf;
+      silc_regexp_quoted_ops['\''] = Rendbuf;
     }
-  if (regexp_syntax & RE_ANSI_HEX)
-    regexp_quoted_ops['v'] = Rextended_memory;
+  if (silc_regexp_syntax & RE_ANSI_HEX)
+    silc_regexp_quoted_ops['v'] = Rextended_memory;
   for (a = 0; a < Rnum_ops; a++)
-    regexp_precedences[a] = 4;
-  if (regexp_syntax & RE_TIGHT_VBAR)
+    silc_regexp_precedencess[a] = 4;
+  if (silc_regexp_syntax & RE_TIGHT_VBAR)
     {
-      regexp_precedences[Ror] = 3;
-      regexp_precedences[Rbol] = 2;
-      regexp_precedences[Reol] = 2;
+      silc_regexp_precedencess[Ror] = 3;
+      silc_regexp_precedencess[Rbol] = 2;
+      silc_regexp_precedencess[Reol] = 2;
     }
   else
     {
-      regexp_precedences[Ror] = 2;
-      regexp_precedences[Rbol] = 3;
-      regexp_precedences[Reol] = 3;
+      silc_regexp_precedencess[Ror] = 2;
+      silc_regexp_precedencess[Rbol] = 3;
+      silc_regexp_precedencess[Reol] = 3;
     }
-  if (regexp_syntax & RE_REPEAT)
+  if (silc_regexp_syntax & RE_REPEAT)
     {
-      if (regexp_syntax & RE_NO_BK_PARENS)
+      if (silc_regexp_syntax & RE_NO_BK_PARENS)
 	{
-	  regexp_plain_ops['{'] = Ropenrep;
+	  silc_regexp_plain_ops['{'] = Ropenrep;
 	}
       else
 	{
-	  regexp_quoted_ops['{'] = Ropenrep;
+	  silc_regexp_quoted_ops['{'] = Ropenrep;
 	}
     }
-  regexp_precedences[Rclosepar] = 1;
-  regexp_precedences[Rend] = 0;
-  regexp_context_indep_ops = (regexp_syntax & RE_CONTEXT_INDEP_OPS) != 0;
-  regexp_ansi_sequences = (regexp_syntax & RE_ANSI_HEX) != 0;
+  silc_regexp_precedencess[Rclosepar] = 1;
+  silc_regexp_precedencess[Rend] = 0;
+  silc_regexp_context_indep_ops = (silc_regexp_syntax & RE_CONTEXT_INDEP_OPS) != 0;
+  silc_regexp_ansi_sequences = (silc_regexp_syntax & RE_ANSI_HEX) != 0;
 }
 
 int silc_re_set_syntax(int syntax)
 {
   int ret;
 
-  ret = regexp_syntax;
-  regexp_syntax = syntax;
+  ret = silc_regexp_syntax;
+  silc_regexp_syntax = syntax;
   silc_re_compile_initialize();
   return ret;
 }
@@ -1210,7 +1208,7 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
   int open_registers[RE_NREGS];
   int beginning_context;
 
-  if (!re_compile_initialized)
+  if (!silc_re_compile_initialized)
     silc_re_compile_initialize();
   bufp->used = 0;
   bufp->fastmap_accurate = 0;
@@ -1248,16 +1246,16 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
 	  NEXTCHAR(ch);
 	  if (translate)
 	    ch = translate[(unsigned char)ch];
-	  op = regexp_plain_ops[(unsigned char)ch];
+	  op = silc_regexp_plain_ops[(unsigned char)ch];
 	  if (op == Rquote)
 	    {
 	      NEXTCHAR(ch);
-	      op = regexp_quoted_ops[(unsigned char)ch];
-	      if (op == Rnormal && regexp_ansi_sequences)
+	      op = silc_regexp_quoted_ops[(unsigned char)ch];
+	      if (op == Rnormal && silc_regexp_ansi_sequences)
 		ANSI_TRANSLATE(ch);
 	    }
 	}
-      level = regexp_precedences[op];
+      level = silc_regexp_precedencess[op];
       /* printf("ch='%c' op=%d level=%d current_level=%d
 	 curlevstart=%d\n", ch, op, level, current_level,
 	 CURRENT_LEVEL_START); */
@@ -1310,7 +1308,7 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
 	case Rbol:
 	  {
 	    if (!beginning_context) {
-	      if (regexp_context_indep_ops)
+	      if (silc_regexp_context_indep_ops)
 		goto op_error;
 	      else
 		goto normal_char;
@@ -1321,15 +1319,15 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
 	case Reol:
 	  {
 	    if (!((pos >= size) ||
-		  ((regexp_syntax & RE_NO_BK_VBAR) ?
+		  ((silc_regexp_syntax & RE_NO_BK_VBAR) ?
 		   (regex[pos] == '\174') :
 		   (pos+1 < size && regex[pos] == '\134' &&
 		    regex[pos+1] == '\174')) ||
-		  ((regexp_syntax & RE_NO_BK_PARENS)?
+		  ((silc_regexp_syntax & RE_NO_BK_PARENS)?
 		   (regex[pos] == ')'):
 		   (pos+1 < size && regex[pos] == '\134' &&
 		    regex[pos+1] == ')')))) {
-	      if (regexp_context_indep_ops)
+	      if (silc_regexp_context_indep_ops)
 		goto op_error;
 	      else
 		goto normal_char;
@@ -1342,7 +1340,7 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
 	case Roptional:
 	  {
 	    if (beginning_context) {
-	      if (regexp_context_indep_ops)
+	      if (silc_regexp_context_indep_ops)
 		goto op_error;
 	      else
 		goto normal_char;
@@ -1358,7 +1356,7 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
 	case Rplus:
 	  {
 	    if (beginning_context) {
-	      if (regexp_context_indep_ops)
+	      if (silc_regexp_context_indep_ops)
 		goto op_error;
 	      else
 		goto normal_char;
@@ -1413,7 +1411,7 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
 	    if (paren_depth <= 0)
 	      goto parenthesis_error;
 	    POP_LEVEL_STARTS;
-	    current_level = regexp_precedences[Ropenpar];
+	    current_level = silc_regexp_precedencess[Ropenpar];
 	    paren_depth--;
 	    if (paren_depth < num_open_registers)
 	      {
@@ -1482,7 +1480,7 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
 	    while (ch != '\135' || firstchar)
 	      {
 		firstchar = 0;
-		if (regexp_ansi_sequences && ch == '\134')
+		if (silc_regexp_ansi_sequences && ch == '\134')
 		  {
 		    NEXTCHAR(ch);
 		    ANSI_TRANSLATE(ch);
@@ -2289,7 +2287,6 @@ SilcBool silc_regex_compile(SilcRegex regexp, const char *regex,
 			    SilcRegexFlags flags)
 {
   SilcResult ret;
-  int syntax = 0;
 
   if (!regexp || !regex) {
     silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
@@ -2302,10 +2299,6 @@ SilcBool silc_regex_compile(SilcRegex regexp, const char *regex,
   regexp->rstack = silc_stack_get_global();
   if (regexp->rstack)
     regexp->rstack = silc_stack_alloc(512, regexp->rstack);
-
-  /* Set syntax */
-  syntax |= RE_SYNTAX_POSIX;
-  silc_re_set_syntax(syntax);
 
   /* Compile */
   ret = silc_re_compile_pattern((char *)regex, strlen(regex), regexp);
