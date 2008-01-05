@@ -531,6 +531,41 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
  ***/
 #define SILC_STR_STRING(x) SILC_PARAM_UI8_STRING, (x)
 
+/****d* silcutil/SilcBufferFormatAPI/SILC_STR_STRING_APPEND
+ *
+ * NAME
+ *
+ *    #define SILC_STR_STRING_APPEND() ...
+ *
+ * DESCRIPTION
+ *
+ *    Encode NULL terminated string and append it to the buffer without
+ *    replacing any data if the end of the data area is reached before
+ *    encoding the whole string.  If buffer has tail area, it will not be
+ *    replaced if the string is longer than the current data area, but the
+ *    buffer will be enlarged and the tail area will be copied to the new
+ *    tail area in order not to replace any data while appending the string.
+ *    This will then enlarge the current data area.
+ *
+ *    Use this only for formatting.
+ *
+ *    Formatting:  SILC_STR_STRING_APPEND(char *)
+ *
+ *    For unformatting use one of the SILC_STR_*_STRING macros, which
+ *    automatically gets the length of the string from the buffer.  Note
+ *    SILC_STR_STRING_APPEND does not save the length of the string into the
+ *    buffer.  The caller must do that in order for the unformatting macros
+ *    to work.
+ *
+ *    Example:
+ *
+ *    Formatting:    ..., SILC_STR_UINT32(strlen(string)),
+ *                        SILC_STR_STRING_APPEND(string), ...
+ *    Unformatting:  ..., SILC_STR_UI32_STRING(&string), ...
+ *
+ ***/
+#define SILC_STR_STRING_APPEND(x) SILC_PARAM_UI8_STRING | SILC_PARAM_APPEND, (x)
+
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_*_STRING
  *
  * NAME
@@ -839,10 +874,13 @@ typedef enum {
  *                         SILC_STR_STRING("bar"),
  *                       SILC_STR_END, SILC_STR_END);
  *
- *    // sed 's/foo/bar/g', replace all foo's with bar
+ *    // sed 's/foo/barbar/g', replace all foo's with barbar, without
+ *    // overwriting any data in the buffer, but appending it.  The match
+ *    // must be SILC_STR_REGEX_INCLUSIVE to make appending work.
  *    silc_buffer_format(buffer,
- *                       SILC_STR_REGEX("foo", SILC_STR_REGEX_ALL),
- *                         SILC_STR_STRING("bar"),
+ *                       SILC_STR_REGEX("foo", SILC_STR_REGEX_ALL |
+ *                                             SILC_STR_REGEX_INCLUSIVE),
+ *                         SILC_STR_STRING_APPEND("barbar"),
  *                       SILC_STR_END, SILC_STR_END);
  *
  *    // sed '/baz/s/foo/bar/g, replace all foo's with bar on lines with baz

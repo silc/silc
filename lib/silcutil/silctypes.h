@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2007 Pekka Riikonen
+  Copyright (C) 2002 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -312,6 +312,7 @@ typedef SilcUInt32 SilcParam;
 #define SILC_PARAM_REGEX         109
 #define SILC_PARAM_OFFSET_START  110
 #define SILC_PARAM_OFFSET_END    111
+#define SILC_PARAM_APPEND        112
 #define SILC_PARAM_ALLOC         0x00010000     /* Allocate, bitmask */
 
 /* Macros */

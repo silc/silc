@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2007 Pekka Riikonen
+  Copyright (C) 1998 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -725,6 +725,14 @@ unsigned char *silc_buffer_put_head(SilcBuffer sb,
     return NULL;
   }
 
+  if (sb->head > data) {
+    if (sb->head - data <= len)
+      return (unsigned char *)memmove(sb->head, data, len);
+  } else {
+    if (data - sb->head <= len)
+      return (unsigned char *)memmove(sb->head, data, len);
+  }
+
   return (unsigned char *)memcpy(sb->head, data, len);
 }
 
@@ -768,6 +776,14 @@ unsigned char *silc_buffer_put(SilcBuffer sb,
     return NULL;
   }
 
+  if (sb->data > data) {
+    if (sb->data - data <= len)
+      return (unsigned char *)memmove(sb->data, data, len);
+  } else {
+    if (data - sb->data <= len)
+      return (unsigned char *)memmove(sb->data, data, len);
+  }
+
   return (unsigned char *)memcpy(sb->data, data, len);
 }
 
@@ -809,6 +825,14 @@ unsigned char *silc_buffer_put_tail(SilcBuffer sb,
   if (silc_unlikely(len > silc_buffer_taillen(sb))) {
     silc_set_errno(SILC_ERR_OVERFLOW);
     return NULL;
+  }
+
+  if (sb->tail > data) {
+    if (sb->tail - data <= len)
+      return (unsigned char *)memmove(sb->tail, data, len);
+  } else {
+    if (data - sb->tail <= len)
+      return (unsigned char *)memmove(sb->tail, data, len);
   }
 
   return (unsigned char *)memcpy(sb->tail, data, len);
@@ -1165,14 +1189,8 @@ SilcBuffer silc_buffer_srealloc(SilcStack stack,
   dlen = silc_buffer_len(sb);
   h = (unsigned char *)silc_srealloc(stack, silc_buffer_truelen(sb),
 				     sb->head, newsize);
-  if (!h) {
-    /* Do slow and stack wasting realloc.  The old sb->head is lost and
-       is freed eventually. */
-    h = (unsigned char *)silc_smalloc(stack, newsize);
-    if (silc_unlikely(!h))
-      return NULL;
-    memcpy(h, sb->head, silc_buffer_truelen(sb));
-  }
+  if (!h)
+    return NULL;
 
   sb->head = h;
   sb->data = sb->head + hlen;
@@ -1314,6 +1332,106 @@ SilcBool silc_buffer_senlarge(SilcStack stack, SilcBuffer sb, SilcUInt32 size)
   return TRUE;
 }
 
+/****f* silcutil/SilcBufferAPI/silc_buffer_append
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcBuffer silc_buffer_append(SilcBuffer sb, SilcUInt32 size);
+ *
+ * DESCRIPTION
+ *
+ *    Appends the current data area by the amount of `size'.  The tail area
+ *    of the buffer remains intact and contains the same data than the old
+ *    tail area (the data is copied to the new tail area).  After appending
+ *    there is now `size' bytes more free area in the data area.  Returns
+ *    FALSE if system is out of memory.
+ *
+ * EXAMPLE
+ *
+ *    Before appending:
+ *    ---------------------------------
+ *    | head  | data           | tail |
+ *    ---------------------------------
+ *
+ *    After appending:
+ *    ------------------------------------
+ *    | head  | data               | tail |
+ *    -------------------------------------
+ *
+ *    silc_buffer_append(sb, 5);
+ *
+ ***/
+
+static inline
+SilcBool silc_buffer_append(SilcBuffer sb, SilcUInt32 size)
+{
+  if (silc_unlikely(!silc_buffer_realloc(sb, silc_buffer_truelen(sb) + size)))
+    return FALSE;
+
+  /* Enlarge data area */
+  silc_buffer_pull_tail(sb, size);
+
+  /* Copy old tail area to new tail area */
+  silc_buffer_put_tail(sb, sb->tail - size, silc_buffer_taillen(sb));
+
+  return TRUE;
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_append
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcBool silc_buffer_sappend(SilcStack stack, SilcBuffer sb,
+ *                                 SilcUInt32 size)
+ *
+ * DESCRIPTION
+ *
+ *    Appends the current data area by the amount of `size'.  The tail area
+ *    of the buffer remains intact and contains the same data than the old
+ *    tail area (the data is copied to the new tail area).  After appending
+ *    there is now `size' bytes more free area in the data area.  Returns
+ *    FALSE if system is out of memory.
+ *
+ *    This routine use SilcStack are memory source.  If `stack' is NULL
+ *    reverts back to normal allocating routine.
+ *
+ *    Note that this call consumes the `stack'.  The caller should push the
+ *    stack before calling the function and pop it later.
+ *
+ * EXAMPLE
+ *
+ *    Before appending:
+ *    ---------------------------------
+ *    | head  | data           | tail |
+ *    ---------------------------------
+ *
+ *    After appending:
+ *    ------------------------------------
+ *    | head  | data               | tail |
+ *    -------------------------------------
+ *
+ *    silc_buffer_append(sb, 5);
+ *
+ ***/
+
+static inline
+SilcBool silc_buffer_sappend(SilcStack stack, SilcBuffer sb, SilcUInt32 size)
+{
+  if (silc_unlikely(!silc_buffer_srealloc(stack, sb,
+					  silc_buffer_truelen(sb) + size)))
+    return FALSE;
+
+  /* Enlarge data area */
+  silc_buffer_pull_tail(sb, size);
+
+  /* Copy old tail area to new tail area */
+  silc_buffer_put_tail(sb, sb->tail - size, silc_buffer_taillen(sb));
+
+  return TRUE;
+}
+
 /****f* silcutil/SilcBufferAPI/silc_buffer_strchr
  *
  * SYNOPSIS
@@ -1365,6 +1483,51 @@ unsigned char *silc_buffer_strchr(SilcBuffer sb, int c, SilcBool first)
   }
 
   return NULL;
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_cmp
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcBool silc_buffer_equal(SilcBuffer sb1, SilcBuffer sb2)
+ *
+ * DESCRIPTION
+ *
+ *    Compares if the data area of the buffer `sb1' and `sb2' are identical.
+ *    Returns TRUE if they match and FALSE if they differ.
+ *
+ ***/
+
+static inline
+SilcBool silc_buffer_equal(SilcBuffer sb1, SilcBuffer sb2)
+{
+  if (silc_buffer_len(sb1) != silc_buffer_len(sb2))
+    return FALSE;
+  return memcmp(sb1->data, sb2->data, silc_buffer_len(sb1)) == 0;
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_printf
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    void silc_buffer_printf(SilcBuffer sb, SilcBool newline);
+ *
+ * DESCRIPTION
+ *
+ *    Prints the current data area of `sb' into stdout.  If `newline' is
+ *    TRUE prints '\n' after the data in the buffer.
+ *
+ ***/
+
+static inline
+void silc_buffer_printf(SilcBuffer sb, SilcBool newline)
+{
+  silc_file_write(1, silc_buffer_data(sb), silc_buffer_len(sb));
+  if (newline)
+    printf("\n");
+  fflush(stdout);
 }
 
 #endif /* SILCBUFFER_H */

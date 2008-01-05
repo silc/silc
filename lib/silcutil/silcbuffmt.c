@@ -31,6 +31,16 @@ do {							\
   flen += req;						\
 } while(0)
 
+/* Check that buffer has enough room to format data in it, if not
+   allocate more.  This will append, thus not replacing any existing data. */
+#define FORMAT_HAS_SPACE_APPEND(s, b, req)				\
+do {									\
+  if (silc_buffer_len(b) < req)						\
+    if (silc_unlikely(!silc_buffer_sappend(s, b, req - silc_buffer_len(b)))) \
+      goto fail;							\
+  flen += req;								\
+} while(0)
+
 /* Check that there is data to be unformatted */
 #define UNFORMAT_HAS_SPACE(b, req)		        \
 do {							\
@@ -82,8 +92,8 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 	  silc_buffer_pull(dst, tmp_len);
 	  flen += tmp_len;
 	}
+	break;
       }
-      break;
 
     case SILC_PARAM_REGEX:
       {
@@ -93,7 +103,7 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 	SilcBool match_all = (rflags & SILC_STR_REGEX_ALL) != 0;
 	SilcBool match_nl = (rflags & SILC_STR_REGEX_NL) != 0;
 	SilcBool ret;
-	unsigned char *saved_incl = NULL;
+	SilcUInt32 inclusive_pos = 0;
 	int matched = 0, ret_len;
 	va_list cp;
 
@@ -138,7 +148,7 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 	}
 
 	if (rflags & SILC_STR_REGEX_INCLUSIVE) {
-	  saved_incl = dst->tail;
+	  inclusive_pos = dst->tail - match.tail;
 	  dst->tail = match.tail;
 	}
 
@@ -150,7 +160,8 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 	  goto fail;
 
 	if (rflags & SILC_STR_REGEX_INCLUSIVE)
-	  dst->tail = saved_incl;
+	  if (!silc_buffer_pull_tail(dst, inclusive_pos))
+	    goto fail;
 
 	/* Advance buffer after formatting */
 	flen += ret_len;
@@ -176,8 +187,8 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 
 	/* Skip to the next SILC_PARAM_END */
 	silc_buffer_sformat_vp_i(NULL, NULL, ap, FALSE);
+	break;
       }
-      break;
 
     case SILC_PARAM_UI8_STRING:
     case SILC_PARAM_UI16_STRING:
@@ -194,7 +205,25 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 
 	if (x && tmp_len) {
 	  FORMAT_HAS_SPACE(stack, dst, tmp_len);
-	  silc_buffer_put(dst, (unsigned char *)x, tmp_len);
+	  silc_buffer_put(dst, x, tmp_len);
+	  silc_buffer_pull(dst, tmp_len);
+	}
+	break;
+      }
+
+    case SILC_PARAM_UI8_STRING | SILC_PARAM_APPEND:
+    case SILC_PARAM_UI16_STRING | SILC_PARAM_APPEND:
+    case SILC_PARAM_UI32_STRING | SILC_PARAM_APPEND:
+      {
+	char *x = va_arg(ap, char *);
+	SilcUInt32 tmp_len = x ? strlen(x) : 0;
+
+	if (!process)
+	  break;
+
+	if (x && tmp_len) {
+	  FORMAT_HAS_SPACE_APPEND(stack, dst, tmp_len);
+	  silc_buffer_put(dst, x, tmp_len);
 	  silc_buffer_pull(dst, tmp_len);
 	}
 	break;
@@ -513,7 +542,7 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
 	SilcBool match_all = (rflags & SILC_STR_REGEX_ALL) != 0;
 	SilcBool match_nl = (rflags & SILC_STR_REGEX_NL) != 0;
 	SilcBool ret;
-	unsigned char *saved_incl = NULL;
+	SilcUInt32 inclusive_pos = 0;
 	int matched = 0, ret_len;
 	va_list cp;
 
@@ -558,7 +587,7 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
 	}
 
 	if (rflags & SILC_STR_REGEX_INCLUSIVE) {
-	  saved_incl = src->tail;
+	  inclusive_pos = src->tail - match.tail;
 	  src->tail = match.tail;
 	}
 
@@ -570,7 +599,8 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
 	  goto fail;
 
 	if (rflags & SILC_STR_REGEX_INCLUSIVE)
-	  src->tail = saved_incl;
+	  if (!silc_buffer_pull_tail(src, inclusive_pos))
+	    goto fail;
 
 	/* Advance buffer after formatting */
 	UNFORMAT_HAS_SPACE(src, ret_len);
