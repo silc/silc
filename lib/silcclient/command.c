@@ -731,9 +731,8 @@ SILC_FSM_STATE(silc_client_command_whois)
   }
 
   if (nick) {
-    silc_client_nickname_parse(client, conn, cmd->argv[1], &nickname);
-    if (!nickname)
-      nickname = strdup(cmd->argv[1]);
+    if (!silc_client_nickname_parse(client, conn, cmd->argv[1], &nickname))
+      goto out;
   }
 
   /* Send command */
@@ -1051,7 +1050,10 @@ SILC_FSM_STATE(silc_client_command_invite)
   /* Parse the typed nickname. */
   if (cmd->argc == 3) {
     if (cmd->argv[2][0] != '+' && cmd->argv[2][0] != '-') {
-      silc_client_nickname_parse(client, conn, cmd->argv[2], &nickname);
+      if (!silc_client_nickname_parse(client, conn, cmd->argv[2], &nickname)) {
+	silc_client_unref_channel(client, conn, channel);
+	goto out;
+      }
 
       /* Find client entry */
       clients = silc_client_get_clients_local(client, conn, cmd->argv[2],
@@ -2120,7 +2122,8 @@ SILC_FSM_STATE(silc_client_command_cumode)
   }
 
   /* Parse the typed nickname. */
-  silc_client_nickname_parse(client, conn, cmd->argv[3], &nickname);
+  if (!silc_client_nickname_parse(client, conn, cmd->argv[3], &nickname))
+    goto out;
 
   /* Find client entry */
   clients = silc_client_get_clients_local(client, conn, cmd->argv[3], FALSE);

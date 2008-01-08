@@ -85,13 +85,8 @@ SilcDList silc_client_get_clients_local_ext(SilcClient client,
   if (!silc_client_nickname_parse(client, conn, (char *)nick, &parsed))
     return NULL;
 
-  if (!get_all && parsed)
+  if (!get_all)
     format = (char *)nick;
-  if (!parsed) {
-    parsed = silc_memdup(nick, strlen(nick));
-    if (!parsed)
-      return NULL;
-  }
 
   SILC_LOG_DEBUG(("Find clients by nickname %s", parsed));
 
@@ -124,7 +119,7 @@ SilcDList silc_client_get_clients_local_ext(SilcClient client,
   }
   silc_list_start(list);
 
-  if (!format && get_all) {
+  if (get_all) {
     /* Take all without any further checking */
     while ((id_cache = silc_list_get(list))) {
       entry = id_cache->context;
@@ -1298,7 +1293,7 @@ SilcBool silc_client_nickname_parse(SilcClient client,
   int len;
 
   if (!client->internal->params->nickname_format[0]) {
-    *ret_nick = NULL;
+    *ret_nick = silc_strdup(nickname);
     return TRUE;
   }
 
