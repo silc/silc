@@ -1,3 +1,8 @@
+Tue Jan  8 17:09:25 EET 2008  Pekka Riikonen <priikone@silcnet.org>
+
+	* Moved SILC ID utility functions to utility library to	
+	  core library.  Affected files are lib/silccore/silcid.[ch].
+
 Tue Jan  8 16:24:56 EET 2008  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed silc_nickname_parse to always return valid nickname

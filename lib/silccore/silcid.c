@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -424,4 +424,102 @@ void *silc_id_dup(const void *id, SilcIdType type)
   }
 
   return NULL;
+}
+
+/**************************** Utility functions *****************************/
+
+/* Hash a ID. The `user_context' is the ID type. */
+
+SilcUInt32 silc_hash_id(void *key, void *user_context)
+{
+  SilcIdType id_type = (SilcIdType)SILC_PTR_TO_32(user_context);
+  SilcUInt32 h = 0;
+  int i;
+
+  switch (id_type) {
+  case SILC_ID_CLIENT:
+    {
+      SilcClientID *id = (SilcClientID *)key;
+
+      /* The client ID is hashed by hashing the hash of the ID
+	 (which is a truncated MD5 hash of the nickname) so that we
+	 can access the entry from the cache with both Client ID but
+	 with just a hash from the ID as well. */
+      return silc_hash_client_id_hash(id->hash, NULL);
+    }
+    break;
+  case SILC_ID_SERVER:
+    {
+      SilcServerID *id = (SilcServerID *)key;
+
+      h = id->port * id->rnd;
+      for (i = 0; i < id->ip.data_len; i++)
+	h ^= id->ip.data[i];
+
+      return h;
+    }
+    break;
+  case SILC_ID_CHANNEL:
+    {
+      SilcChannelID *id = (SilcChannelID *)key;
+
+      h = id->port * id->rnd;
+      for (i = 0; i < id->ip.data_len; i++)
+	h ^= id->ip.data[i];
+
+      return h;
+    }
+    break;
+  default:
+    break;
+  }
+
+  return h;
+}
+
+/* Hash Client ID's hash. */
+
+SilcUInt32 silc_hash_client_id_hash(void *key, void *user_context)
+{
+  int i;
+  unsigned char *hash = key;
+  SilcUInt32 h = 0, g;
+
+  for (i = 0; i < CLIENTID_HASH_LEN; i++) {
+    h = (h << 4) + hash[i];
+    if ((g = h & 0xf0000000)) {
+      h = h ^ (g >> 24);
+      h = h ^ g;
+    }
+  }
+
+  return h;
+}
+
+/* Compares two ID's. May be used as SilcHashTable comparison function.
+   The Client ID's compares only the hash of the Client ID not any other
+   part of the Client ID. Other ID's are fully compared. */
+
+SilcBool silc_hash_id_compare(void *key1, void *key2, void *user_context)
+{
+  SilcIdType id_type = (SilcIdType)SILC_PTR_TO_32(user_context);
+  return (id_type == SILC_ID_CLIENT ?
+	  SILC_ID_COMPARE_HASH((SilcClientID *)key1, (SilcClientID *)key2) :
+	  SILC_ID_COMPARE_TYPE(key1, key2, id_type));
+}
+
+/* Compares two ID's. Compares full IDs. */
+
+SilcBool silc_hash_id_compare_full(void *key1, void *key2, void *user_context)
+{
+  SilcIdType id_type = (SilcIdType)SILC_PTR_TO_32(user_context);
+  return SILC_ID_COMPARE_TYPE(key1, key2, id_type);
+}
+
+/* Compare two Client ID's entirely and not just the hash from the ID. */
+
+SilcBool silc_hash_client_id_compare(void *key1, void *key2,
+				     void *user_context)
+{
+  return SILC_ID_COMPARE_TYPE(key1, key2, SILC_ID_CLIENT);
 }
