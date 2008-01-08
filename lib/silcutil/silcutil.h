@@ -213,7 +213,9 @@ SilcBool silc_hash_client_id_compare(void *key1, void *key2,
  * DESCRIPTION
  *
  *    Return a textual representation of the fingerprint in *data, the
- *    caller must free the returned string.
+ *    caller must free the returned string.  Returns NULL on error.  If
+ *    the `data_len' is longer than 255 bytes, only the first 255 bytes are
+ *    used to create the fingerprint.
  *
  ***/
 char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len);

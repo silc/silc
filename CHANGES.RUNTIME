@@ -1,3 +1,8 @@
+Tue Jan  8 09:41:57 EET 2008  Pekka Riikonen <priikone@silcnet.org>
+
+        * Fixed printable fingerprint bufferoverlfow, RedHat bug 372021.
+          Affected file is lib/silcutil/silcutil.c.
+
 Sat Jan  5 20:19:28 EET 2008  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SILC_STR_DELETE buffer format macro.  Added support for
