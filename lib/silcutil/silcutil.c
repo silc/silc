@@ -467,28 +467,41 @@ SilcBool silc_hash_public_key_compare(void *key1, void *key2,
 
 char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len)
 {
-  char fingerprint[64], *cp;
-  int i;
+  unsigned char *fingerprint, *cp;
+  unsigned int len, blocks, i;
+  
+  if (!data || !data_len)
+    return NULL;
 
-  memset(fingerprint, 0, sizeof(fingerprint));
-  cp = fingerprint;
+  if (data_len >= 256)
+    data_len = 255;
+
+  /* Align and calculate total length */
+  len = ((data_len + 19) / 20) * 20;
+  blocks = (len / 10);
+  len = (len * 2) + ((blocks - 1) * 2) + (4 * blocks) + 2 + 1;
+
+  cp = fingerprint = silc_calloc(len, sizeof(*fingerprint));
+  if (!cp)
+    return NULL;
+  
   for (i = 0; i < data_len; i++) {
-    silc_snprintf(cp, sizeof(fingerprint), "%02X", data[i]);
+    silc_snprintf(cp, len, "%02X", data[i]);
     cp += 2;
+    len -= 2;
 
     if ((i + 1) % 2 == 0)
-      silc_snprintf(cp++, sizeof(fingerprint), " ");
-
+      silc_snprintf(cp++, len--, " ");
     if ((i + 1) % 10 == 0)
-      silc_snprintf(cp++, sizeof(fingerprint), " ");
+      silc_snprintf(cp++, len--, " ");
   }
   i--;
-  if ((i + 1) % 2 == 0)
-    cp[-2] = 0;
   if ((i + 1) % 10 == 0)
-    cp[-1] = 0;
+    *(--cp) = '\0';  
+  if ((i + 1) % 2 == 0)
+    *(--cp) = '\0';
 
-  return strdup(fingerprint);
+  return fingerprint;
 }
 
 /* Return TRUE if the `data' is ASCII string. */
