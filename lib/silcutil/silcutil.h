@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -130,79 +130,6 @@ void silc_parse_command_line(unsigned char *buffer,
  *
  ***/
 char *silc_format(char *fmt, ...);
-
-/****f* silcutil/SilcUtilAPI/silc_hash_id
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_hash_id(void *key, void *user_context);
- *
- * DESCRIPTION
- *
- *    Hash a ID. The `user_context' is the ID type.
- *
- ***/
-SilcUInt32 silc_hash_id(void *key, void *user_context);
-
-/****f* silcutil/SilcUtilAPI/silc_hash_client_id_hash
- *
- * SYNOPSIS
- *
- *    SilcUInt32 silc_hash_client_id_hash(void *key, void *user_context)
- *
- * DESCRIPTION
- *
- *    Hash Client ID's hash.
- *
- ***/
-SilcUInt32 silc_hash_client_id_hash(void *key, void *user_context);
-
-/****f* silcutil/SilcUtilAPI/silc_hash_id_compare
- *
- * SYNOPSIS
- *
- *    SilcBool silc_hash_id_compare(void *key1, void *key2,
- *                                  void *user_context);
- *
- * DESCRIPTION
- *
- *    Compares two ID's. May be used as SilcHashTable comparison function.
- *    The Client ID's compares only the hash of the Client ID not any other
- *    part of the Client ID. Other ID's are fully compared.
- *
- ***/
-SilcBool silc_hash_id_compare(void *key1, void *key2, void *user_context);
-
-/****f* silcutil/SilcUtilAPI/silc_hash_id_compare_full
- *
- * SYNOPSIS
- *
- *    SilcBool silc_hash_id_compare_full(void *key1, void *key2,
- *                                       void *user_context)
- *
- * DESCRIPTION
- *
- *    Compares two ID's. May be used as SilcHashTable comparison function.
- *    To compare full ID's instead of only partial, like the
- *    silc_hash_id_compare does, use this function.
- *
- ***/
-SilcBool silc_hash_id_compare_full(void *key1, void *key2, void *user_context);
-
-/****f* silcutil/SilcUtilAPI/silc_hash_client_id_compare
- *
- * SYNOPSIS
- *
- *    SilcBool silc_hash_client_id_compare(void *key1, void *key2,
- *                                         void *user_context);
- *
- * DESCRIPTION
- *
- *    Compare two Client ID's entirely and not just the hash from the ID.
- *
- ***/
-SilcBool silc_hash_client_id_compare(void *key1, void *key2,
-				     void *user_context);
 
 /****f* silcutil/SilcUtilAPI/silc_fingerprint
  *

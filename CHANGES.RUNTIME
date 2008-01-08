@@ -1,3 +1,9 @@
+Tue Jan  8 17:08:28 EET 2008  Pekka Riikonen <priikone@silcnet.org>
+
+	* Moved SILC protocol ID specific utility functions to SILC
+	  core library from utility library.  Affected files are
+	  lib/silcutil/silcutil.[ch].
+
 Tue Jan  8 09:41:57 EET 2008  Pekka Riikonen <priikone@silcnet.org>
 
         * Fixed printable fingerprint bufferoverlfow, RedHat bug 372021.
