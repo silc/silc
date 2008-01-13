@@ -1,3 +1,17 @@
+Sun Jan 13 17:11:26 EET 2008  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added silc_buffer_memcmp and silc_buffer_tail.  Fixed SilcBuffer
+	  reallocation when reducing the buffer size.  Affected file is
+	  lib/silcutil/silcbuffer.h.
+
+	* Added SILC_STR_REPLACE.  Removed SILC_STR_STRING_APPEND.
+	  Fixed various SILC_STR_REGEX bugs.  Affected files are
+	  lib/silcutil/silcbuffmt.[ch] and silctypes.h.
+
+	* Added silc_subst.  Regex matching and substitution with the
+	  familiar Sed syntax.  Affected files are 
+	  lib/silcutil/silcregex.[ch] and lib/silcutil/silcerrno.[ch].
+
 Tue Jan  8 17:08:28 EET 2008  Pekka Riikonen <priikone@silcnet.org>
 
 	* Moved SILC protocol ID specific utility functions to SILC
