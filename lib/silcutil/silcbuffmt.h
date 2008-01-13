@@ -531,41 +531,6 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
  ***/
 #define SILC_STR_STRING(x) SILC_PARAM_UI8_STRING, (x)
 
-/****d* silcutil/SilcBufferFormatAPI/SILC_STR_STRING_APPEND
- *
- * NAME
- *
- *    #define SILC_STR_STRING_APPEND() ...
- *
- * DESCRIPTION
- *
- *    Encode NULL terminated string and append it to the buffer without
- *    replacing any data if the end of the data area is reached before
- *    encoding the whole string.  If buffer has tail area, it will not be
- *    replaced if the string is longer than the current data area, but the
- *    buffer will be enlarged and the tail area will be copied to the new
- *    tail area in order not to replace any data while appending the string.
- *    This will then enlarge the current data area.
- *
- *    Use this only for formatting.
- *
- *    Formatting:  SILC_STR_STRING_APPEND(char *)
- *
- *    For unformatting use one of the SILC_STR_*_STRING macros, which
- *    automatically gets the length of the string from the buffer.  Note
- *    SILC_STR_STRING_APPEND does not save the length of the string into the
- *    buffer.  The caller must do that in order for the unformatting macros
- *    to work.
- *
- *    Example:
- *
- *    Formatting:    ..., SILC_STR_UINT32(strlen(string)),
- *                        SILC_STR_STRING_APPEND(string), ...
- *    Unformatting:  ..., SILC_STR_UI32_STRING(&string), ...
- *
- ***/
-#define SILC_STR_STRING_APPEND(x) SILC_PARAM_UI8_STRING | SILC_PARAM_APPEND, (x)
-
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_*_STRING
  *
  * NAME
@@ -721,6 +686,58 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
 #define SILC_STR_BUFFER(x) SILC_PARAM_BUFFER, (x)
 #define SILC_STR_BUFFER_ALLOC(x) SILC_PARAM_BUFFER | SILC_PARAM_ALLOC, (x)
 
+/****d* silcutil/SilcBufferFormatAPI/SILC_STR_REPLACE
+ *
+ * NAME
+ *
+ *    #define SILC_STR_REPLACE(unsigned char *data, SilcUInt32 len) ...
+ *
+ * DESCRIPTION
+ *
+ *    Encode the `data' of length of `len' bytes into the buffer, replacing
+ *    existing data.
+ *
+ *    If the length of the current data area is equal to `len' the data area
+ *    is replaced with `data'.
+ *
+ *    If `len' is longer than the data area, it will be enlarged to fit the
+ *    `data'.  If there is data in the tail area, it will not be replaced,
+ *    but the buffer is enlarged and the old tail area will be copied to the
+ *    new tail area, thus preserving any data in the buffer (the data is
+ *    in effect appended to the current data area).
+ *
+ *    If `len' is shorter than than the data area, only the bytes in `data'
+ *    are replaced, and rest are deleted from the data area.  The buffer size
+ *    is also reduced but no other data is lost in the process.
+ *
+ *    If `len' is 0 but `data' is non-NULL, this will delete all bytes from
+ *    the current data area.  If `data' is NULL this macro has no effect to
+ *    the buffer.
+ *
+ *    Use this only for formatting.
+ *
+ *    Formatting:  SILC_STR_REPLACE(unsigned char *, SilcUInt32)
+ *
+ *    Example:
+ *
+ *    Before replacing
+ *    -------------------------
+ *    | head  | 12345 | 67890 |
+ *    -------------------------
+ *
+ *    After replacing with 12345XXX (appends)
+ *    ----------------------------
+ *    | head  | 12345XXX | 67890 |
+ *    ----------------------------
+ *
+ *    After replacing with YYY (deletes)
+ *    -----------------------
+ *    | head  | YYY | 67890 |
+ *    -----------------------
+ *
+ ***/
+#define SILC_STR_REPLACE(x, l) SILC_PARAM_UICHAR | SILC_PARAM_REPLACE, (x), (l)
+
 /****d* silcutil/SilcBufferFormatAPI/SILC_STR_FUNC
  *
  * NAME
@@ -791,8 +808,9 @@ int silc_buffer_sstrformat(SilcStack stack, SilcBuffer dst, ...);
 typedef enum {
   SILC_STR_REGEX_NONE                 = 0x00000000,
 
-  /* By default mismatch will be skipped.  Set this flag if mismatch should
-     cause error and stopping of the formatting/unformatting. */
+  /* By default mismatch will be skipped.  Skipping means that none of the
+     operations inside the SILC_STR_REGEX are executed.  Set this flag if
+     mismatch should cause error and stopping of the formatting/unformatting. */
   SILC_STR_REGEX_MISMATCH             = 0x00000001,
 
   /* By default only the first match is found.  Set this flag to find
@@ -866,6 +884,10 @@ typedef enum {
  *    string matching and parsing, but not editing, except with SILC_STR_FUNC
  *    macro, which can do anything caller wants.
  *
+ *    Typically the following encoding macros are used with SILC_STR_REGEX:
+ *    SILC_STR_REPLACE, SILC_STR_STRING and SILC_STR_FUNC.  If you use
+ *    SILC_STR_REPLACE always set SILC_STR_REGEX_INCLUSIVE.
+ *
  * EXAMPLE
  *
  *    // sed 's/foo/bar/', replace first foo with bar
@@ -880,7 +902,7 @@ typedef enum {
  *    silc_buffer_format(buffer,
  *                       SILC_STR_REGEX("foo", SILC_STR_REGEX_ALL |
  *                                             SILC_STR_REGEX_INCLUSIVE),
- *                         SILC_STR_STRING_APPEND("barbar"),
+ *                         SILC_STR_REPLACE("barbar", 5),
  *                       SILC_STR_END, SILC_STR_END);
  *
  *    // sed 's/foo/B/', replace foo with B, deleting rest of the match from
@@ -888,8 +910,7 @@ typedef enum {
  *    silc_buffer_format(buffer,
  *                       SILC_STR_REGEX("foo", SILC_STR_REGEX_ALL |
  *                                             SILC_STR_REGEX_INCLUSIVE),
- *                         SILC_STR_STRING("B"),
- *                         SILC_STR_DELETE(-1),
+ *                         SILC_STR_REPLACE("B", 1),
  *                       SILC_STR_END, SILC_STR_END);
  *
  *    // sed '/baz/s/foo/bar/g, replace all foo's with bar on lines with baz
@@ -923,29 +944,17 @@ typedef enum {
  * DESCRIPTION
  *
  *    Deletes bytes from the buffer by moving data in order to delete it.
- *    The size of the buffer remains same but the tail area of the buffer
- *    will get larger as data is deleted from the current data area.
+ *    The size of the buffer is also reduced, but no data is lost in the
+ *    process.
  *
  *    The `n' specifies the number of bytes to delete from the current
  *    data area.  If `n' is -1 this deletes all bytes from the data area.
  *    This effectively moves the data from the tail area into the current
- *    data area.  The length of the data area after this is 0 and the tail
- *    area is larger.
+ *    data area.  The length of the data area after this is 0.
  *
  *    Use this only for formatting.
  *
  *    Formatting:  SILC_STR_DELETE(int bytes)
- *
- * EXAMPLE
- *
- *    // sed 's/foo/B/', replace foo with B, deleting rest of the match from
- *    // the buffer.  The match must be inclusive to make deleting work.
- *    silc_buffer_format(buffer,
- *                       SILC_STR_REGEX("foo", SILC_STR_REGEX_ALL |
- *                                             SILC_STR_REGEX_INCLUSIVE),
- *                         SILC_STR_STRING("B"),
- *                         SILC_STR_DELETE(-1),
- *                       SILC_STR_END, SILC_STR_END);
  *
  ***/
 #define SILC_STR_DELETE(x) SILC_PARAM_DELETE, (x)

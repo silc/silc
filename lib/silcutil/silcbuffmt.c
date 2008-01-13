@@ -54,6 +54,84 @@ do {							\
   }							\
 } while(0)
 
+#if defined(SILC_DEBUG)
+static const char *silc_param_string(SilcParam fmt)
+{
+  if (fmt == SILC_PARAM_SINT8)
+    return "SINT8";
+  if (fmt == SILC_PARAM_UINT8)
+    return "UINT8";
+  if (fmt == SILC_PARAM_SINT16)
+    return "SINT16";
+  if (fmt == SILC_PARAM_UINT16)
+    return "UINT16";
+  if (fmt == SILC_PARAM_SINT32)
+    return "SINT32";
+  if (fmt == SILC_PARAM_UINT32)
+    return "UINT32";
+  if (fmt == SILC_PARAM_SINT64)
+    return "SINT64";
+  if (fmt == SILC_PARAM_UINT64)
+    return "UINT64";
+  if (fmt == SILC_PARAM_SICHAR)
+    return "SICHAR";
+  if (fmt == (SILC_PARAM_SICHAR | SILC_PARAM_ALLOC))
+    return "SICHAR ALLOC";
+  if (fmt == SILC_PARAM_UICHAR)
+    return "UICHAR";
+  if (fmt == (SILC_PARAM_UICHAR | SILC_PARAM_ALLOC))
+    return "UICHAR ALLOC";
+  if (fmt == (SILC_PARAM_UICHAR | SILC_PARAM_REPLACE))
+    return "UICHAR REPLACE";
+  if (fmt == SILC_PARAM_BUFFER)
+    return "BUFFER";
+  if (fmt == (SILC_PARAM_BUFFER | SILC_PARAM_ALLOC))
+    return "BUFFER ALLOC";
+  if (fmt == SILC_PARAM_PTR)
+    return "PTR";
+  if (fmt == SILC_PARAM_END)
+    return "END";
+  if (fmt == SILC_PARAM_UI8_STRING)
+    return "UI8_STRING";
+  if (fmt == SILC_PARAM_UI16_STRING)
+    return "UI16_STRING";
+  if (fmt == SILC_PARAM_UI32_STRING)
+    return "UI32_STRING";
+  if (fmt == SILC_PARAM_UI8_NSTRING)
+    return "UI8_STRING";
+  if (fmt == SILC_PARAM_UI16_NSTRING)
+    return "UI16_STRING";
+  if (fmt == SILC_PARAM_UI32_NSTRING)
+    return "UI32_STRING";
+  if (fmt == (SILC_PARAM_UI8_STRING | SILC_PARAM_ALLOC))
+    return "UI8_STRING ALLOC";
+  if (fmt == (SILC_PARAM_UI16_STRING | SILC_PARAM_ALLOC))
+    return "UI16_STRING ALLOC";
+  if (fmt == (SILC_PARAM_UI32_STRING | SILC_PARAM_ALLOC))
+    return "UI32_STRING ALLOC";
+  if (fmt == (SILC_PARAM_UI8_NSTRING | SILC_PARAM_ALLOC))
+    return "UI8_STRING ALLOC";
+  if (fmt == (SILC_PARAM_UI16_NSTRING | SILC_PARAM_ALLOC))
+    return "UI16_STRING ALLOC";
+  if (fmt == (SILC_PARAM_UI32_NSTRING | SILC_PARAM_ALLOC))
+    return "UI32_STRING";
+  if (fmt == SILC_PARAM_OFFSET)
+    return "OFFSET";
+  if (fmt == SILC_PARAM_ADVANCE)
+    return "ADDVANCE";
+  if (fmt == SILC_PARAM_FUNC)
+    return "FUNC";
+  if (fmt == SILC_PARAM_REGEX)
+    return "REGEX";
+  if (fmt == SILC_PARAM_OFFSET_START)
+    return "OFFSET_START";
+  if (fmt == SILC_PARAM_OFFSET_END)
+    return "OFFSET_END";
+  if (fmt == SILC_PARAM_DELETE)
+    return "DELETE";
+  return "";
+}
+#endif /* SILC_DEBUG */
 
 /******************************* Formatting *********************************/
 
@@ -68,7 +146,11 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
   while (1) {
     fmt = va_arg(ap, SilcParam);
 
-    SILC_LOG_DEBUG(("Buffer format type %d", fmt));
+#if defined(SILC_DEBUG)
+    if (process)
+      SILC_LOG_DEBUG(("Buffer format type %s (%d)",
+		      silc_param_string(fmt), fmt));
+#endif /* SILC_DEBUG */
 
     switch (fmt) {
     case SILC_PARAM_FUNC:
@@ -103,7 +185,7 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 	SilcBool match_all = (rflags & SILC_STR_REGEX_ALL) != 0;
 	SilcBool match_nl = (rflags & SILC_STR_REGEX_NL) != 0;
 	SilcBool ret;
-	SilcUInt32 saved_pos = 0, inclusive_pos = 0;
+	SilcUInt32 inclusive_pos = 0;
 	int matched = 0, ret_len;
 	va_list cp;
 
@@ -111,13 +193,12 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 	  break;
 
 	if (!regex)
-	  goto fail;
+	  break;
 
 	if (match_nl) {
 	start_nl_match:
 	  /* Match for '\n' in the buffer.  If not found, treat as line
 	     without '\n' (buffer has only one line, or this is last line). */
-	  saved_pos = silc_buffer_headlen(dst) + silc_buffer_len(dst);
 	  if (silc_regex_buffer(dst, "\n", &match, NULL))
 	    dst->tail = match.tail;
 	}
@@ -176,9 +257,7 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 	  flen += (dst->tail - dst->data);
 	  if (!silc_buffer_pull(dst, (dst->tail - dst->data)))
 	    goto fail;
-	  if (!silc_buffer_pull_tail(dst, (saved_pos -
-					   silc_buffer_headlen(dst) +
-					   silc_buffer_len(dst))))
+	  if (!silc_buffer_pull_tail(dst, silc_buffer_taillen(dst)))
 	    goto fail;
 
 	  if (silc_buffer_len(dst) > 0)
@@ -211,20 +290,39 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 	break;
       }
 
-    case SILC_PARAM_UI8_STRING | SILC_PARAM_APPEND:
-    case SILC_PARAM_UI16_STRING | SILC_PARAM_APPEND:
-    case SILC_PARAM_UI32_STRING | SILC_PARAM_APPEND:
+    case SILC_PARAM_UICHAR | SILC_PARAM_REPLACE:
       {
-	char *x = va_arg(ap, char *);
-	SilcUInt32 tmp_len = x ? strlen(x) : 0;
+	unsigned char *x = va_arg(ap, unsigned char *);
+	SilcUInt32 x_len = va_arg(ap, SilcUInt32);
 
 	if (!process)
 	  break;
 
-	if (x && tmp_len) {
-	  FORMAT_HAS_SPACE_APPEND(stack, dst, tmp_len);
-	  silc_buffer_put(dst, x, tmp_len);
-	  silc_buffer_pull(dst, tmp_len);
+	if (!x)
+	  break;
+
+	if (silc_buffer_len(dst) == x_len) {
+	  /* Replace */
+	  if (x_len) {
+	    silc_buffer_put(dst, x, x_len);
+	    silc_buffer_pull(dst, x_len);
+	    flen += x_len;
+	  }
+	} else if (silc_buffer_len(dst) < x_len) {
+	  /* Append */
+	  if (x_len) {
+	    FORMAT_HAS_SPACE_APPEND(stack, dst, x_len);
+	    silc_buffer_put(dst, x, x_len);
+	    silc_buffer_pull(dst, x_len);
+	  }
+	} else {
+	  /* Delete */
+	  if (x_len) {
+	    silc_buffer_put(dst, x, x_len);
+	    silc_buffer_pull(dst, x_len);
+	    flen += x_len;
+	  }
+	  goto delete_rest;
 	}
 	break;
       }
@@ -398,9 +496,13 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 	if (n == -1) {
 	  /* Move all data from tail to data area */
 	  if (dst->data != dst->tail) {
+	  delete_rest:
+	    n = silc_buffer_len(dst);
 	    memmove(dst->data, dst->tail, silc_buffer_taillen(dst));
-	    memset(dst->end - silc_buffer_len(dst), 0, silc_buffer_len(dst));
-	    silc_buffer_push_tail(dst, silc_buffer_len(dst));
+	    silc_buffer_push_tail(dst, n);
+	    if (!silc_buffer_srealloc(stack, dst,
+				      silc_buffer_truelen(dst) - n))
+	      goto fail;
 	  }
 	  break;
 	}
@@ -410,8 +512,9 @@ int silc_buffer_sformat_vp_i(SilcStack stack, SilcBuffer dst, va_list ap,
 
 	memmove(dst->data, dst->data + n, (silc_buffer_len(dst) - n) +
 		silc_buffer_taillen(dst));
-	memset(dst->end - n, 0, n);
 	silc_buffer_push_tail(dst, silc_buffer_len(dst) - n);
+	if (!silc_buffer_srealloc(stack, dst, silc_buffer_truelen(dst) - n))
+	  goto fail;
 
 	break;
       }
@@ -536,7 +639,8 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
   while (1) {
     fmt = va_arg(ap, SilcParam);
 
-    SILC_LOG_DEBUG(("Buffer unformat type %d", fmt));
+    SILC_LOG_DEBUG(("Buffer unformat type %s (%d)",
+		    silc_param_string(fmt), fmt));
 
     switch (fmt) {
     case SILC_PARAM_FUNC:
@@ -570,7 +674,7 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
 	SilcBool match_all = (rflags & SILC_STR_REGEX_ALL) != 0;
 	SilcBool match_nl = (rflags & SILC_STR_REGEX_NL) != 0;
 	SilcBool ret;
-	SilcUInt32 saved_pos = 0, inclusive_pos = 0;
+	SilcUInt32 inclusive_pos = 0;
 	int matched = 0, ret_len;
 	va_list cp;
 
@@ -578,14 +682,12 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
 	  break;
 
 	if (!regex)
-	  goto fail;
-
+	  break;
 
 	if (match_nl) {
 	start_nl_match:
 	  /* Match for '\n' in the buffer.  If not found, treat as line
 	     without '\n' (buffer has only one line, or this is last line). */
-	  saved_pos = silc_buffer_headlen(src) + silc_buffer_len(src);
 	  if (silc_regex_buffer(src, "\n", &match, NULL))
 	    src->tail = match.tail;
 	}
@@ -608,7 +710,6 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
 
 	if (!(rflags & SILC_STR_REGEX_NO_ADVANCE)) {
 	  /* Advance buffer after match */
-	  UNFORMAT_HAS_SPACE(src, (match.data - src->data));
 	  if (!silc_buffer_pull(src, (match.data - src->data)))
 	    goto fail;
 	}
@@ -630,7 +731,6 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
 	    goto fail;
 
 	/* Advance buffer after formatting */
-	UNFORMAT_HAS_SPACE(src, ret_len);
 	if (!silc_buffer_pull(src, ret_len))
 	  goto fail;
 
@@ -641,12 +741,9 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
 	if (match_nl) {
 	  /* Go to next line, it is at the end of the data area.  Adjust
 	     the tail area of the target buffer to show rest of the buffer. */
-	  UNFORMAT_HAS_SPACE(src, src->tail - src->data);
 	  if (!silc_buffer_pull(src, (src->tail - src->data)))
 	    goto fail;
-	  if (!silc_buffer_pull_tail(src, (saved_pos -
-					   silc_buffer_headlen(src) +
-					   silc_buffer_len(src))))
+	  if (!silc_buffer_pull_tail(src, silc_buffer_taillen(src)))
 	    goto fail;
 
 	  if (silc_buffer_len(src) > 0)
@@ -655,6 +752,7 @@ int silc_buffer_sunformat_vp_i(SilcStack stack, SilcBuffer src, va_list ap,
 
 	/* Skip to the next SILC_PARAM_END */
 	silc_buffer_sunformat_vp_i(NULL, src, ap, FALSE);
+	break;
       }
       break;
 

@@ -315,7 +315,7 @@ typedef SilcUInt32 SilcParam;
 #define SILC_PARAM_OFFSET_END    111
 #define SILC_PARAM_DELETE        112
 #define SILC_PARAM_ALLOC         0x00010000     /* Allocate, bitmask */
-#define SILC_PARAM_APPEND        0x00020000	/* Append, bitmask */
+#define SILC_PARAM_REPLACE       0x00020000	/* Replace, bitmask */
 
 /* Macros */
 
