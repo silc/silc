@@ -155,7 +155,7 @@ void *silc_srealloc(SilcStack stack, SilcUInt32 old_size,
     new_ptr = silc_smalloc(stack, size);
     if (!new_ptr)
       return NULL;
-    memcpy(new_ptr, ptr, old_size);
+    memcpy(new_ptr, ptr, old_size > size ? size : old_size);
   }
 
   return new_ptr;
