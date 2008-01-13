@@ -135,6 +135,21 @@ typedef struct SilcBufferObject {
 #define silc_buffer_data(x) (x)->data
 /***/
 
+/****f* silcutil/SilcBufferAPI/silc_buffer_tail
+ *
+ * NAME
+ *
+ *    unsigned char *silc_buffer_tail(SilcBuffer sb)
+ *
+ * DESCRIPTION
+ *
+ *    Returns pointer to the tail area of the buffer.
+ *
+ * SOURCE
+ */
+#define silc_buffer_tail(x) (x)->tail
+/***/
+
 /****f* silcutil/SilcBufferAPI/silc_buffer_datalen
  *
  * NAME
@@ -1116,9 +1131,14 @@ SilcBuffer silc_buffer_sclone(SilcStack stack, SilcBuffer sb)
  * DESCRIPTION
  *
  *    Reallocates buffer. Old data is saved into the new buffer. The buffer
- *    is exact clone of the old one except that there is now more space
+ *    is exact clone of the old one except that there is now more/less space
  *    at the end of buffer.  This always returns the same `sb' unless `sb'
  *    was NULL. Returns NULL if system is out of memory.
+ *
+ *    If the `newsize' is shorter than the current buffer size, the data
+ *    and tail area of the buffer must be set to correct position before
+ *    calling this function so that buffer overflow would not occur when
+ *    the buffer size is reduced.
  *
  ***/
 
@@ -1131,7 +1151,7 @@ SilcBuffer silc_buffer_realloc(SilcBuffer sb, SilcUInt32 newsize)
   if (!sb)
     return silc_buffer_alloc(newsize);
 
-  if (silc_unlikely(newsize <= silc_buffer_truelen(sb)))
+  if (silc_unlikely(newsize == silc_buffer_truelen(sb)))
     return sb;
 
   hlen = silc_buffer_headlen(sb);
@@ -1158,8 +1178,14 @@ SilcBuffer silc_buffer_realloc(SilcBuffer sb, SilcUInt32 newsize)
  * DESCRIPTION
  *
  *    Reallocates buffer. Old data is saved into the new buffer. The buffer
- *    is exact clone of the old one except that there is now more space
- *    at the end of buffer.  Returns NULL if system is out of memory.
+ *    is exact clone of the old one except that there is now more/less space
+ *    at the end of buffer.  Returns NULL if system is out of memory.  This
+ *    always returns `sb' unless `sb' was NULL.
+ *
+ *    If the `newsize' is shorter than the current buffer size, the data
+ *    and tail area of the buffer must be set to correct position before
+ *    calling this function so that buffer overflow would not occur when
+ *    the buffer size is reduced.
  *
  *    This routine use SilcStack are memory source.  If `stack' is NULL
  *    reverts back to normal allocating routine.
@@ -1182,7 +1208,7 @@ SilcBuffer silc_buffer_srealloc(SilcStack stack,
   if (!sb)
     return silc_buffer_salloc(stack, newsize);
 
-  if (newsize <= silc_buffer_truelen(sb))
+  if (newsize == silc_buffer_truelen(sb))
     return sb;
 
   hlen = silc_buffer_headlen(sb);
@@ -1485,7 +1511,7 @@ unsigned char *silc_buffer_strchr(SilcBuffer sb, int c, SilcBool first)
   return NULL;
 }
 
-/****f* silcutil/SilcBufferAPI/silc_buffer_cmp
+/****f* silcutil/SilcBufferAPI/silc_buffer_equal
  *
  * SYNOPSIS
  *
@@ -1505,6 +1531,31 @@ SilcBool silc_buffer_equal(SilcBuffer sb1, SilcBuffer sb2)
   if (silc_buffer_len(sb1) != silc_buffer_len(sb2))
     return FALSE;
   return memcmp(sb1->data, sb2->data, silc_buffer_len(sb1)) == 0;
+}
+
+/****f* silcutil/SilcBufferAPI/silc_buffer_memcmp
+ *
+ * SYNOPSIS
+ *
+ *    static inline
+ *    SilcBool silc_buffer_memcmp(SilcBuffer buffer,
+ *                                const unsigned char *data,
+ *                                SilcUInt32 data_len)
+ *
+ * DESCRIPTION
+ *
+ *    Compares the data area of the buffer with the `data'.  Returns TRUE
+ *    if the data area is identical to `data' or FALSE if they differ.
+ *
+ ***/
+
+static inline
+SilcBool silc_buffer_memcmp(SilcBuffer buffer, const unsigned char *data,
+			    SilcUInt32 data_len)
+{
+  if (silc_buffer_len(buffer) != data_len)
+    return FALSE;
+  return memcmp(buffer->data, data, data_len) == 0;
 }
 
 /****f* silcutil/SilcBufferAPI/silc_buffer_printf
