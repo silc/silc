@@ -21,7 +21,7 @@
  *
  * DESCRIPTION
  *
- * Implementation of data stack which can be used to allocate memory from
+ * Implementation of data stack which can be used to do fast allocations from
  * the stack.  Basically SilcStack is a pre-allocated memory pool system
  * which allows fast memory allocation for routines and applications that
  * frequently allocate small amounts of memory.  Other advantage of this

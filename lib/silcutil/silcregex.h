@@ -27,7 +27,8 @@
  * The interface also provides many convenience functions to make the use
  * of regular expressions easier.  Especially the silc_regex allows very
  * simple way to match strings against regular expressions and get the
- * exact match or matches as a return.
+ * exact match or matches as a return.  The silc_subst provides simple and
+ * familiar way to match and substitute strings (Sed syntax).
  *
  * The regex syntax follows POSIX regex syntax:
  *
@@ -275,7 +276,11 @@ void silc_regex_free(SilcRegex regexp);
  *    The first (whole) match is returned to `match' buffer if it is non-NULL.
  *    The variable argument list are buffers where multiple matches are
  *    returned in case of group (parenthesized) regular expression.  The caller
- *    needs to know how many pointers to provide, in order to get all matches.
+ *    needs to know how many pointers to provide in order to get all matches.
+ *    If a particular group is optional, a buffer pointer still must be given
+ *    as argument for it, however, if it did not match the returned buffer
+ *    length is 0 and data pointer is NULL.
+ *
  *    If `match' is non-NULL the variable argument list must be ended with
  *    NULL.  The data in the `match' and in any other buffer is from `string'
  *    and must not be freed by the caller.
@@ -317,6 +322,61 @@ SilcBool silc_regex(const char *string, const char *regex,
  ***/
 SilcBool silc_regex_buffer(SilcBuffer buffer, const char *regex,
 			   SilcBuffer match, ...);
+
+/****f* silcutil/SilcRegexAPI/silc_subst
+ *
+ * SYNOPSIS
+ *
+ *    SilcBool silc_subst(SilcBuffer buffer, const char *subst);
+ *
+ * DESCRIPTION
+ *
+ *    Regular expression matching and substitution in `buffer' according
+ *    to the substitution expression `subst'.  This function provides
+ *    Sed (Stream Editor) style substitution interface.  The `subst' may
+ *    be of following formats:
+ *
+ *    's/REGEXP/REPLACEMENT/FLAGS'
+ *
+ *    Matches regular expression REGEXP in each line in the buffer and
+ *    substitutes the match with REPLACEMENT.
+ *
+ *    'ADDRs/REGEXP/REPLACEMENT/FLAGS'
+ *
+ *    Selects lines in the buffer matching the address ADDR and matches the
+ *    regular expression REGEXP in the line and substitutes the match with
+ *    REPLACEMENT.
+ *
+ *    The ADDR may be of following format:
+ *
+ *    /REGEXP/       Matches only lines matching the regular expression
+ *    NUMBER         Matches only the specified line number (1-n)
+ *    $              Matches only the last line
+ *
+ *    The FLAGS may be of following format:
+ *
+ *    no FLAGS       Finds first match in the line and replaces that
+ *    g              Finds and replaces all matches in the line
+ *
+ *    An '!' may precede the 's'.  In that case the ADDR is not matched.
+ *
+ *    Returns TRUE if the match and replacement was done, FALSE in case
+ *    of error, and sets the silc_errno.
+ *
+ *    If you need to match and/or replace '/' characters, they must be
+ *    escaped with '\' (C-style escaping for '\' is '\\').
+ *
+ *    If you need more versatile ways to modify the buffer you may consider
+ *    using the SILC_STR_REGEX in SILC Buffer Format API directly.  This
+ *    function only provides basic matching and substitution.
+ *
+ * EXAMPLE
+ *
+ *    // Replace all foos with bar on all lines in the buffer
+ *    silc_subst(buffer, "s/foo/bar/g");
+ *
+ ***/
+SilcBool silc_subst(SilcBuffer buffer, const char *subst);
 
 /* Backwards support */
 #define silc_string_regex_match(regex, string) silc_regex(string, regex, NULL)
