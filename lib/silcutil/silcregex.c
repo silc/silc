@@ -1193,7 +1193,7 @@ SilcResult silc_re_compile_pattern(unsigned char *regex, int size,
   int op;
   int current_level;
   int level;
-  int opcode;
+  int opcode = 0;
   int pattern_offset = 0, alloc;
   int starts[NUM_LEVELS * MAX_NESTING];
   int starts_base;
@@ -2444,8 +2444,10 @@ SilcBool silc_regex_va(const char *string, SilcUInt32 string_len,
 
   /* Return matches */
   for (i = 0; i < c; i++) {
-    if (m[i].start == -1)
+    if (m[i].start == -1) {
+      silc_buffer_set(rets[i], NULL, 0);
       continue;
+    }
     silc_buffer_set(rets[i], (unsigned char *)string + m[i].start,
 		    m[i].end - m[i].start);
   }
@@ -2505,4 +2507,225 @@ SilcBool silc_regex_buffer(SilcBuffer buffer, const char *regex,
     va_end(va);
 
   return ret;
+}
+
+/***************************** Substitution API *****************************/
+
+/* Regexp to parse sed substitution command syntax */
+#define SILC_REGEXP_SUBST \
+  "^(/?.+/?[^!s]|[0-9]+|\\$)?(!?s)(/)(.*[^\\])?(/)(.*[^\\])?(/)(!?.+)?"
+
+/* Substitution context */
+typedef struct {
+  SilcInt32 addr_number;	    /* Line number to match, -1 for last line */
+  SilcUInt32 line;		    /* Current line number */
+  char *str_regexp;		    /* REGEXP to match */
+  SilcBufferRegexFlags match_flags; /* Match flags */
+  SilcBufferRegexFlags addr_flags;  /* ADDR flags */
+  SilcBuffer rep;		    /* REPLACEMENT */
+} SilcSubstContext;
+
+/* Function to check the ADDR match and do rest of the match and
+   substitution. */
+
+static int silc_subst_addr(SilcStack stack, SilcBuffer buffer, void *value,
+			   void *context)
+{
+  SilcSubstContext *ctx = context;
+
+  ctx->line++;
+
+  /* If NUMBER was set in ADDR, match for specific line number */
+  if (ctx->addr_number > 0 && ctx->addr_number != ctx->line &&
+      !(ctx->addr_flags & SILC_STR_REGEX_NOT))
+    return 0;
+  if (ctx->addr_number > 0 && ctx->addr_number == ctx->line &&
+      ctx->addr_flags & SILC_STR_REGEX_NOT)
+    return 0;
+
+  /* Check for last line if ADDR was '$' */
+  if (buffer->tail != buffer->end && ctx->addr_number == -1 &&
+      !(ctx->addr_flags & SILC_STR_REGEX_NOT))
+    return 0;
+  if (buffer->tail == buffer->end && ctx->addr_number == -1 &&
+      ctx->addr_flags & SILC_STR_REGEX_NOT)
+    return 0;
+
+  /* Match and replace */
+  return silc_buffer_format(buffer,
+			    SILC_STR_REGEX(ctx->str_regexp, ctx->match_flags),
+			      SILC_STR_REPLACE(silc_buffer_data(ctx->rep) ?
+					       silc_buffer_data(ctx->rep) :
+					       (unsigned char *)"",
+					       silc_buffer_len(ctx->rep)),
+			    SILC_STR_END, SILC_STR_END);
+}
+
+/* Matching and substitution ala sed. */
+
+SilcBool silc_subst(SilcBuffer buffer, const char *subst)
+{
+  SilcSubstContext ctx;
+  SilcBufferStruct match, addr, command, exp_start, exp, exp_end;
+  SilcBufferStruct rep, rep_end, flags;
+  SilcBufferRegexFlags addr_flags = 0, match_flags = 0;
+  char *str_addr = "";
+  int ret = -1;
+
+  memset(&ctx, 0, sizeof(ctx));
+
+  if (!buffer || !subst) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    goto out;
+  }
+
+  SILC_LOG_DEBUG(("Substitution '%s'", subst));
+
+  /* Parse the expression syntax */
+  if (!silc_regex(subst, SILC_REGEXP_SUBST, &match, &addr, &command,
+		  &exp_start, &exp, &exp_end, &rep, &rep_end, &flags, NULL)) {
+    silc_set_errno_reason(SILC_ERR_SYNTAX, "Invalid substitution expression");
+    goto out;
+  }
+
+  /* Check address syntax */
+  if (silc_buffer_len(&addr)) {
+    if (*silc_buffer_data(&addr) == '/') {
+      silc_buffer_pull(&addr, 1);
+      if (addr.tail[-1] != '/') {
+	silc_set_errno_reason(SILC_ERR_SYNTAX,
+			      "Invalid address syntax, missing '/'");
+	goto out;
+      }
+      silc_buffer_push_tail(&addr, 1);
+
+      if (!silc_buffer_len(&addr)) {
+	silc_set_errno_reason(SILC_ERR_SYNTAX,
+			      "Invalid address syntax, missing regular "
+			      "expression");
+	goto out;
+      }
+      str_addr = silc_memdup(silc_buffer_data(&addr),
+			     silc_buffer_len(&addr));
+
+    } else if (*silc_buffer_data(&addr) == '$' &&
+	       silc_buffer_len(&addr) == 1) {
+      ctx.addr_number = -1;
+
+    } else if (isdigit((int)*silc_buffer_data(&addr))) {
+      ctx.addr_number = *silc_buffer_data(&addr) - '0';
+      silc_buffer_pull(&addr, 1);
+      while (silc_buffer_len(&addr) &&
+	     isdigit((int)*silc_buffer_data(&addr))) {
+	ctx.addr_number *= 10;
+	ctx.addr_number += *silc_buffer_data(&addr) - '0';
+	silc_buffer_pull(&addr, 1);
+      }
+
+      if (silc_buffer_len(&addr)) {
+	silc_set_errno_reason(SILC_ERR_SYNTAX,
+			      "Invalid address syntax, not a number");
+	goto out;
+      }
+
+      if (ctx.addr_number == 0) {
+	silc_set_errno_reason(SILC_ERR_SYNTAX,
+			      "Invalid address syntax, line address is 0");
+	goto out;
+      }
+
+    } else {
+      silc_set_errno_reason(SILC_ERR_SYNTAX, "Unsupported address syntax");
+      goto out;
+    }
+  }
+
+  /* Check command syntax */
+  if (!silc_buffer_len(&command) || silc_buffer_len(&command) > 2) {
+    silc_set_errno_reason(SILC_ERR_SYNTAX, "Invalid commmand");
+    goto out;
+  }
+  if ((silc_buffer_len(&command) == 1 &&
+       !silc_buffer_memcmp(&command, "s", 1)) ||
+      (silc_buffer_len(&command) == 2 &&
+       !silc_buffer_memcmp(&command, "!s", 2))) {
+    silc_set_errno_reason(SILC_ERR_SYNTAX, "Invalid command");
+    goto out;
+  }
+  if (silc_buffer_len(&command) == 2)
+    addr_flags |= SILC_STR_REGEX_NOT;
+
+  /* Check REGEXP syntax */
+  if (!silc_buffer_len(&exp_start) ||
+      !silc_buffer_memcmp(&exp_start, "/", 1)) {
+    silc_set_errno_reason(SILC_ERR_SYNTAX,
+			  "Invalid substitution syntax, missing '/'");
+    goto out;
+  }
+  if (!silc_buffer_len(&exp_end) ||
+      !silc_buffer_memcmp(&exp_end, "/", 1)) {
+    silc_set_errno_reason(SILC_ERR_SYNTAX,
+			  "Invalid substitution syntax, missing '/'");
+    goto out;
+  }
+
+  /* Check FLAGS syntax */
+  if (silc_buffer_len(&flags)) {
+    if (silc_buffer_len(&flags) > 1) {
+      silc_set_errno_reason(SILC_ERR_SYNTAX, "Invalid flags");
+      goto out;
+    }
+
+    /* Check supported flags */
+    if (silc_buffer_len(&flags) == 1) {
+      if (silc_buffer_memcmp(&flags, "g", 1)) {
+	match_flags |= SILC_STR_REGEX_ALL;
+      } else {
+	silc_set_errno_reason(SILC_ERR_SYNTAX, "Unsupported flag");
+	goto out;
+      }
+    }
+  }
+
+  /* Set flags */
+  match_flags |= SILC_STR_REGEX_INCLUSIVE;
+  addr_flags |= SILC_STR_REGEX_NL | SILC_STR_REGEX_NO_ADVANCE;
+
+  ctx.str_regexp = silc_memdup(silc_buffer_data(&exp),
+			       silc_buffer_len(&exp));
+  ctx.addr_flags = addr_flags;
+  ctx.match_flags = match_flags;
+
+  /* Unescape escapes from REPLACEMENT */
+  ctx.rep = silc_buffer_copy(&rep);
+  if (!ctx.rep)
+    goto out;
+  if (silc_buffer_len(ctx.rep))
+    silc_buffer_format(ctx.rep,
+		       SILC_STR_REGEX("\\\\/", (SILC_STR_REGEX_ALL |
+						SILC_STR_REGEX_INCLUSIVE)),
+		         SILC_STR_REPLACE("/", 1),
+		       SILC_STR_END, SILC_STR_END);
+
+  /* If NUMBER or $ is specified, handle NOT flag in the silc_subst_addr */
+  if (ctx.addr_number)
+    addr_flags &= ~SILC_STR_REGEX_NOT;
+
+  SILC_LOG_DEBUG(("ADDR '%s' flags 0x%x, NUMBER %d", str_addr, addr_flags,
+		  ctx.addr_number));
+  SILC_LOG_DEBUG(("REGEXP '%s' flags 0x%x", ctx.str_regexp, match_flags));
+
+  /* Match and replace */
+  ret = silc_buffer_format(buffer,
+			   SILC_STR_REGEX(str_addr, addr_flags),
+			     SILC_STR_FUNC(silc_subst_addr, NULL, &ctx),
+			   SILC_STR_END, SILC_STR_END);
+
+ out:
+  if (str_addr && strlen(str_addr))
+    silc_free(str_addr);
+  silc_free(ctx.str_regexp);
+  silc_buffer_free(ctx.rep);
+
+  return ret >= 0 ? TRUE : FALSE;
 }

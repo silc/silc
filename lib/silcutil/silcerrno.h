@@ -94,6 +94,7 @@ typedef enum {
   SILC_ERR_INTERRUPTED                 = 23,  /* Interrupted */
   SILC_ERR_NOT_VALID                   = 24,  /* Not valid */
   SILC_ERR_LIMIT                       = 25,  /* Limit reached */
+  SILC_ERR_SYNTAX                      = 26,  /* Syntax error */
 
   /* File, directory and device errors */
   SILC_ERR_NO_SUCH_FILE                = 40,  /* No such file */

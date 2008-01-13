@@ -350,7 +350,7 @@ const char *silc_errno_strings[] =
   "Interrupted",
   "Not valid",
   "Limit reached",
-  "",
+  "Syntax error",
   "",
   "",
   "",

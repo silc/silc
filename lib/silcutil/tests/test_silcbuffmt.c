@@ -46,7 +46,7 @@ int main(int argc, char **argv)
   if (silc_buffer_format(&buf,
 			 SILC_STR_REGEX("foo", SILC_STR_REGEX_ALL |
 					       SILC_STR_REGEX_INCLUSIVE),
-			   SILC_STR_STRING_APPEND("barbar"),
+			   SILC_STR_REPLACE("barbar", 6),
 			 SILC_STR_END,
 			 SILC_STR_END) < 0)
     goto err;
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
   if (silc_buffer_format(&buf,
 			 SILC_STR_REGEX("foo", SILC_STR_REGEX_ALL |
 					       SILC_STR_REGEX_INCLUSIVE),
-			   SILC_STR_DELETE(-1),
+			   SILC_STR_REPLACE("", 0),
 			 SILC_STR_END,
 			 SILC_STR_END) < 0)
     goto err;
