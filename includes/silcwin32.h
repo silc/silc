@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2003 Pekka Riikonen
+  Copyright (C) 2001 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@
 #include "regexpr.h"
 #endif /* HAVE_SILCDEFS_H */
 
-#define snprintf _snprintf
-#define vsnprintf _vsnprintf
+#define snprintf silc_snprintf
+#define vsnprintf silc_vsnprintf
 
 #ifdef WIN32
 #define strcasecmp stricmp

@@ -1,3 +1,9 @@
+Tue Jan 15 19:44:36 EET 2008  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC Dir API to lib/silcutil/silcdir.h.  Implemented it
+	  for Unix (POSIX).  Affected files are lib/silcutil/silcdir.h,
+	  lib/silcutil/unix/silcunixdir.c.
+
 Sun Jan 13 17:11:26 EET 2008  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added silc_buffer_memcmp and silc_buffer_tail.  Fixed SilcBuffer

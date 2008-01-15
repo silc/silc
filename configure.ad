@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2007 Pekka Riikonen
+#  Copyright (C) 2000 - 2008 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -228,7 +228,7 @@ AC_CHECK_HEADERS(unistd.h string.h errno.h fcntl.h assert.h)
 AC_CHECK_HEADERS(sys/types.h sys/stat.h sys/time.h stddef.h)
 AC_CHECK_HEADERS(netinet/in.h netinet/tcp.h xti.h netdb.h sys/resource.h)
 AC_CHECK_HEADERS(pwd.h grp.h termcap.h paths.h)
-AC_CHECK_HEADERS(ncurses.h signal.h ctype.h utime.h)
+AC_CHECK_HEADERS(ncurses.h signal.h ctype.h utime.h dirent.h)
 AC_CHECK_HEADERS(arpa/inet.h sys/mman.h limits.h termios.h locale.h langinfo.h)
 
 # Data type checking

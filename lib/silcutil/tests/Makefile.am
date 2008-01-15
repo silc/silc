@@ -22,7 +22,7 @@ bin_PROGRAMS = 	test_silcstrutil test_silcstringprep test_silchashtable \
 	test_silcnet test_silcstack test_silcmime test_silcfdstream \
 	test_silcatomic test_silcmutex test_silctime test_silcthread \
 	test_silcdll test_silcenv test_silctimer test_silcbitops \
-	test_silcregex test_silcbuffmt
+	test_silcregex test_silcbuffmt test_silcdir
 
 test_silcstrutil_SOURCES = test_silcstrutil.c
 test_silcstringprep_SOURCES = test_silcstringprep.c
@@ -45,6 +45,7 @@ test_silctimer_SOURCES = test_silctimer.c
 test_silcbitops_SOURCES = test_silcbitops.c
 test_silcregex_SOURCES = test_silcregex.c
 test_silcbuffmt_SOURCES = test_silcbuffmt.c
+test_silcdir_SOURCES = test_silcdir.c
 
 LIBS = $(SILC_COMMON_LIBS)
 LDADD = -L.. -L../.. -lsilc

@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2001 - 2006 Pekka Riikonen
+#  Copyright (C) 2001 - 2008 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ libsilcunixutil_la_SOURCES = 	\
 	silcunixnet.c		\
 	silcunixutil.c		\
 	silcunixsocketstream.c	\
-	silcunixthread.c
+	silcunixthread.c	\
+	silcunixdir.c
 
 include $(top_srcdir)/Makefile.defines.in

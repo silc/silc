@@ -97,10 +97,6 @@ Runtime library, lib/silcutil/
 
  o Fix universal time decoding (doesn't accept all formats) in silctime.c.
 
- o Add directory opening/traversing functions
-
- o regex from /lib/contrib to lib/silcutil, define SILC Regex API. (***DONE)
-
  o Additional scheduler changes: optimize silc_schedule_wakeup.  Wakeup
    only if the scheduler is actually waiting something.  If it is
    delivering tasks wakeup is not needed.
@@ -110,6 +106,10 @@ Runtime library, lib/silcutil/
  o Add builtin SOCKS and HTTP Proxy support, well the SOCKS at least.
    SILC currently supports SOCKS4 and SOCKS5 but it needs to be compiled
    in separately.
+
+ o Add directory opening/traversing functions (***DONE, TODO Windows & Symbian)
+
+ o regex from /lib/contrib to lib/silcutil, define SILC Regex API. (***DONE)
 
  o Add functions to manipulate environment variables. (***DONE)
 

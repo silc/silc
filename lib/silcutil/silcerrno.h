@@ -44,7 +44,7 @@
  * // Get the detailed reason for the error too
  * if (silc_some_routine() == FALSE) {
  *   fprintf(stderr, "%s (%d) (%s)", silc_errno_string(silc_errno),
- *          silc_errno, silc_errno_reason);
+ *          silc_errno, silc_errno_reason());
  *   exit(1);
  * }
  *
