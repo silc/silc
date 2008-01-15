@@ -49,7 +49,7 @@ do {							\
     goto fail;						\
   }							\
   if (silc_unlikely((req + 1) <= 0)) {			\
-    silc_set_errno(SILC_ERR_UNDERFLOW);			\
+    silc_set_errno(SILC_ERR_OVERFLOW);			\
     goto fail;						\
   }							\
 } while(0)

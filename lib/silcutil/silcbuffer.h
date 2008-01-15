@@ -569,7 +569,7 @@ unsigned char *silc_buffer_pull(SilcBuffer sb, SilcUInt32 len)
  *    Pushes current data area towards beginning. Length of the currently
  *    valid data area is also incremented. Returns a pointer to the
  *    data area before pushing. Returns NULL if the push would lead to
- *    buffer underflow or would go under the valid data area.
+ *    go beyond the buffer boundaries or current data area.
  *
  * EXAMPLE
  *
@@ -597,7 +597,7 @@ unsigned char *silc_buffer_push(SilcBuffer sb, SilcUInt32 len)
   SILC_ASSERT((sb->data - len) >= sb->head);
 #endif /* SILC_DIST_INPLACE */
   if (silc_unlikely((sb->data - len) < sb->head)) {
-    silc_set_errno(SILC_ERR_UNDERFLOW);
+    silc_set_errno(SILC_ERR_OVERFLOW);
     return NULL;
   }
 
@@ -664,7 +664,7 @@ unsigned char *silc_buffer_pull_tail(SilcBuffer sb, SilcUInt32 len)
  *    Pushes current tail section towards beginning. Length of the current
  *    valid data area is also decremented. Returns a pointer to the
  *    tail section before pushing. Returns NULL if the push would lead to
- *    buffer underflow or go under valid tail area.
+ *    go beyond buffer boundaries or current tail area.
  *
  * EXAMPLE
  *
@@ -692,7 +692,7 @@ unsigned char *silc_buffer_push_tail(SilcBuffer sb, SilcUInt32 len)
   SILC_ASSERT((sb->tail - len) >= sb->data);
 #endif /* SILC_DIST_INPLACE */
   if (silc_unlikely((sb->tail - len) < sb->data)) {
-    silc_set_errno(SILC_ERR_UNDERFLOW);
+    silc_set_errno(SILC_ERR_OVERFLOW);
     return NULL;
   }
 
