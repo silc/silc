@@ -565,16 +565,22 @@ ad_process_ads()
   for i in $files
   do
     fname=`echo $i | sed s/\.ad//`
+    orig=$i
 
     ad_debug "Processing $i to be $fname"
     ad_log "  $i into $fname"
 
     # Run the distribution processing for this file
-    ad_process_file $i $fname false
-    if test -f $fname; then
-      cp -p $i $fname || exit 1
+    ad_process_file $i $fname.tmp false
+
+    # Remove any trailing backslashes
+    if test -f "$fname.tmp"; then
+      sed -e :a -e '/\\$/N; s/[ 	]*\\\n//; ta' < $fname.tmp > $fname
+    else
+      cp -p $orig $fname || exit 1
     fi
 
+    rm -f $fname.tmp
   done
   ad_log ""
 
