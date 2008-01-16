@@ -571,16 +571,11 @@ ad_process_ads()
     ad_log "  $i into $fname"
 
     # Run the distribution processing for this file
-    ad_process_file $i $fname.tmp false
+    ad_process_file $i $fname false
 
-    # Remove any trailing backslashes
-    if test -f "$fname.tmp"; then
-      sed -e :a -e '/\\$/N; s/[ 	]*\\\n//; ta' < $fname.tmp > $fname
-    else
+    if test '!' -f "$fname"; then
       cp -p $orig $fname || exit 1
     fi
-
-    rm -f $fname.tmp
   done
   ad_log ""
 
