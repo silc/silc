@@ -42,6 +42,11 @@ SilcDir silc_dir_open(const char *name)
 {
   SilcDir dir;
 
+  if (!name || !strlen(!name)) {
+    silc_set_errno(SILC_ERR_INVALID_ARGUMENT);
+    return NULL;
+  }
+
   SILC_LOG_DEBUG(("Open directory '%s'", name));
 
   dir = silc_calloc(1, sizeof(*dir));
