@@ -21,11 +21,24 @@
  *
  * DESCRIPTION
  *
- * Implementation of the SilcList interface.  This interface provides
- * simple linked list.  This interface does not allocate any memory.
+ * Generic list interface that can turn any structure with list pointers
+ * into a SilcList.  The interface can provide both singly and doubly linked
+ * lists.  The interface does not allocate any memory.
  *
  * SILC List is not thread-safe.  If the same list context must be used
  * in multithreaded environment concurrency control must be employed.
+ *
+ * EXAMPLE
+ *
+ * struct EntryStruct {
+ *   char *dummy;
+ *   struct EntryStruct *next;        // The list member pointer
+ * };
+ *
+ * SilcList list;
+ *
+ * // Initialize list
+ * silc_list_init(list, struct EntryStruct, next);
  *
  ***/
 

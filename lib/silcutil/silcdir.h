@@ -69,7 +69,7 @@ typedef struct SilcDirStruct *SilcDir;
  ***/
 typedef struct SilcDirEntryStruct *SilcDirEntry;
 
-/****d* silcutil/SilcDirAPI/SilcDirEntryModen
+/****d* silcutil/SilcDirAPI/SilcDirEntryMode
  *
  * NAME
  *

@@ -27,7 +27,7 @@
  * DESCRIPTION
  *
  * SILC Dynamic List API can be used to add opaque contexts to list that
- * will automatically allocate list entries.  Normal SILC List API cannot
+ * will automatically allocate list entries.  The simpler SilcList cannot
  * be used for this purpose because in that case the context passed to the
  * list must be defined as list structure already.  This is not the case in
  * SilcDList.  But SilcDList is a bit slower than SilcList because it
