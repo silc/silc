@@ -1,3 +1,7 @@
+Thu Jan 17 16:40:49 EET 2008  Pekka Riikonen <priikone@silcnet.org>
+
+	* Added SILC Thread Queue API to lib/silcutil/silcthreadqueue.[ch].
+
 Tue Jan 15 19:44:36 EET 2008  Pekka Riikonen <priikone@silcnet.org>
 
 	* Added SILC Dir API to lib/silcutil/silcdir.h.  Implemented it
