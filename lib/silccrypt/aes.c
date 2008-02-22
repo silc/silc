@@ -190,13 +190,7 @@ SILC_CIPHER_API_CONTEXT_LEN(aes_ctr)
 SILC_CIPHER_API_ENCRYPT(aes_ctr)
 {
   AesContext *aes = context;
-  SilcUInt32 ctr[4];
-  int i;
-
-  SILC_GET32_MSB(ctr[0], iv);
-  SILC_GET32_MSB(ctr[1], iv + 4);
-  SILC_GET32_MSB(ctr[2], iv + 8);
-  SILC_GET32_MSB(ctr[3], iv + 12);
+  int i, k;
 
   i = aes->u.enc.inf.b[2];
   if (!i)
@@ -204,27 +198,16 @@ SILC_CIPHER_API_ENCRYPT(aes_ctr)
 
   while (len-- > 0) {
     if (i == 16) {
-      if (++ctr[3] == 0)
-	if (++ctr[2] == 0)
-	  if (++ctr[1] == 0)
-	    ++ctr[0];
+      for (k = 15; k >= 0; k--)
+	if (++iv[k])
+	  break;
 
-      SILC_PUT32_MSB(ctr[0], iv);
-      SILC_PUT32_MSB(ctr[1], iv + 4);
-      SILC_PUT32_MSB(ctr[2], iv + 8);
-      SILC_PUT32_MSB(ctr[3], iv + 12);
-
-      aes_encrypt(iv, iv, &aes->u.enc);
+      aes_encrypt(iv, aes->u.enc.pad, &aes->u.enc);
       i = 0;
     }
-    *dst++ = *src++ ^ iv[i++];
+    *dst++ = *src++ ^ aes->u.enc.pad[i++];
   }
   aes->u.enc.inf.b[2] = i;
-
-  SILC_PUT32_MSB(ctr[0], iv);
-  SILC_PUT32_MSB(ctr[1], iv + 4);
-  SILC_PUT32_MSB(ctr[2], iv + 8);
-  SILC_PUT32_MSB(ctr[3], iv + 12);
 
   return TRUE;
 }

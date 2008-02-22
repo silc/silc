@@ -44,6 +44,7 @@ typedef union {
 typedef struct {
   uint_32t ks[KS_LENGTH];
   aes_inf inf;
+  unsigned char pad[16];
 } aes_encrypt_ctx;
 
 typedef struct {
