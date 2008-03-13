@@ -1,3 +1,9 @@
+Thu Mar 13 13:31:35 EET 2008  Pekka Riikonen <priikone@silcnet.org>
+
+	* Fixed silcd crash in NEW_CLIENT packet handling when nickname
+	  is not present in the packet.  Affected files are
+	  apps/silcd/packet_receive.c.
+
 Fri Feb 22 16:12:27 EET 2008  Pekka Riikonen <priikone@silcnet.org>
 
 	* Fixed partial encryption in CTR mode in AES.  Change does not

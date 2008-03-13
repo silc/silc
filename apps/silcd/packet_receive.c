@@ -2145,7 +2145,7 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   if (silc_buffer_unformat(buffer,
 			   SILC_STR_UI16_NSTRING_ALLOC(&nickname,
 						       &nickname_len),
-			   SILC_STR_END)) {
+			   SILC_STR_END) >= 0) {
     if (nickname_len > 128) {
       nickname_len = 128;
       nickname[nickname_len - 1] = '\0';
