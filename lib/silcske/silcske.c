@@ -1506,9 +1506,9 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
 
     /* Sign the hash value */
     SILC_FSM_CALL(ske->key_op =
-		  silc_pkcs_sign(ske->private_key, hash, hash_len, FALSE,
-				 ske->prop->hash, ske->rng,
-				 silc_ske_initiator_sign_cb, ske));
+		  silc_pkcs_sign_async(ske->private_key, hash, hash_len, FALSE,
+				       ske->prop->hash, ske->rng,
+				       silc_ske_initiator_sign_cb, ske));
     /* NOT REACHED */
   }
 
@@ -1715,9 +1715,11 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
 
     /* Verify signature */
     SILC_FSM_CALL(ske->key_op =
-		  silc_pkcs_verify(ske->prop->public_key, payload->sign_data,
-				   payload->sign_len, hash, hash_len, NULL,
-				   silc_ske_verify_cb, ske));
+		  silc_pkcs_verify_async(ske->prop->public_key,
+					 payload->sign_data,
+					 payload->sign_len, hash,
+					 hash_len, FALSE, NULL,
+					 silc_ske_verify_cb, ske));
     /* NOT REACHED */
   }
 
@@ -2245,11 +2247,11 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
 
     /* Verify signature */
     SILC_FSM_CALL(ske->key_op =
-		  silc_pkcs_verify(ske->prop->public_key,
-				   recv_payload->sign_data,
-				   recv_payload->sign_len,
-				   hash, hash_len, NULL,
-				   silc_ske_verify_cb, ske));
+		  silc_pkcs_verify_async(ske->prop->public_key,
+					 recv_payload->sign_data,
+					 recv_payload->sign_len,
+					 hash, hash_len, FALSE, NULL,
+					 silc_ske_verify_cb, ske));
     /* NOT REACHED */
   }
 
@@ -2343,9 +2345,9 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
 
     /* Sign the hash value */
     SILC_FSM_CALL(ske->key_op =
-		  silc_pkcs_sign(ske->private_key, hash, hash_len, FALSE,
-				 ske->prop->hash, ske->rng,
-				 silc_ske_responder_sign_cb, ske));
+		  silc_pkcs_sign_async(ske->private_key, hash, hash_len, FALSE,
+				       ske->prop->hash, ske->rng,
+				       silc_ske_responder_sign_cb, ske));
     /* NOT REACHED */
   }
 

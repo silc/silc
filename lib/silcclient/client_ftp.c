@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2007 Pekka Riikonen
+  Copyright (C) 2001 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
   GNU General Public License for more details.
 
 */
-/* $Id$ */
 
 #include "silc.h"
 #include "silcclient.h"
@@ -193,7 +192,7 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
 					SILC_CLIENT_MESSAGE_ERROR,
 					"File `%s' open failed: %s",
 					session->filepath,
-					strerror(errno));
+					silc_errno_string(silc_errno));
 
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
@@ -738,7 +737,8 @@ silc_client_file_send(SilcClient client,
     if (!session->listener) {
       client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 				 "Cannot create listener for file transfer: "
-				 "%s", strerror(errno));
+				 "%s", silc_errno_string(silc_errno));
+
       silc_free(session);
       return SILC_CLIENT_FILE_NO_MEMORY;
     }
@@ -871,7 +871,8 @@ silc_client_file_receive(SilcClient client,
     if (!session->listener) {
       client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 				 "Cannot create listener for file transfer: "
-				 "%s", strerror(errno));
+				 "%s", silc_errno_string(silc_errno));
+
       silc_free(session);
       return SILC_CLIENT_FILE_NO_MEMORY;
     }

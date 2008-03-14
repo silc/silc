@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2007 Pekka Riikonen
+  Copyright (C) 2007 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -334,7 +334,8 @@ silc_client_listener_add(SilcClient client,
 		     client, NULL, SILC_CLIENT_MESSAGE_ERROR,
 		     "Cannot create UDP listener on %s on port %d: %s",
 		     params->bind_ip ? params->bind_ip :
-		     params->local_ip, params->local_port, strerror(errno));
+		     params->local_ip, params->local_port,
+		     silc_errno_string(silc_errno));
       silc_client_listener_free(listener);
       if (stream)
 	silc_stream_destroy(stream);
@@ -364,7 +365,8 @@ silc_client_listener_add(SilcClient client,
 		     client, NULL, SILC_CLIENT_MESSAGE_ERROR,
 		     "Cannot create listener on %s on port %d: %s",
 		     params->bind_ip ? params->bind_ip :
-		     params->local_ip, params->local_port, strerror(errno));
+		     params->local_ip, params->local_port,
+		     silc_errno_string(silc_errno));
 
       silc_client_listener_free(listener);
       return NULL;

@@ -335,9 +335,9 @@ silc_message_signed_payload_encode(SilcBuffer payload,
   }
 
   /* Compute signature */
-  op = silc_pkcs_sign(private_key, sign->data, silc_buffer_len(sign),
-		      TRUE, hash, rng,
-		      silc_message_signed_payload_encode_cb, e);
+  op = silc_pkcs_sign_async(private_key, sign->data, silc_buffer_len(sign),
+			    TRUE, hash, rng,
+			    silc_message_signed_payload_encode_cb, e);
 
   return op;
 }
@@ -876,9 +876,10 @@ silc_message_signed_verify(SilcMessagePayload message,
   }
 
   /* Verify the authentication data */
-  op = silc_pkcs_verify(remote_public_key, sig->sign_data, sig->sign_len,
-			silc_buffer_data(sign), silc_buffer_len(sign),
-			hash, result, context);
+  op = silc_pkcs_verify_async(remote_public_key, sig->sign_data,
+			      sig->sign_len,
+			      silc_buffer_data(sign), silc_buffer_len(sign),
+			      TRUE, hash, result, context);
 
   silc_buffer_clear(sign);
   silc_buffer_sfree(stack, sign);

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2007 Pekka Riikonen
+  Copyright (C) 2001 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,6 +36,11 @@
 
 #ifndef SILCAUTH_H
 #define SILCAUTH_H
+
+#define SILC_DEFAULT_HMAC "hmac-sha1-96"
+#define SILC_DEFAULT_HASH "sha1"
+#define SILC_DEFAULT_PKCS "rsa"
+#define SILC_DEFAULT_CIPHER "aes-256-cbc"
 
 /****d* silccore/SilcAuthAPI/SilcAuthMethod
  *

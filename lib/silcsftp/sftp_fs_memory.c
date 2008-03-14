@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2007 Pekka Riikonen
+  Copyright (C) 2001 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -575,7 +575,7 @@ void memfs_open(void *context, SilcSFTP sftp,
 			   (attrs->flags & SILC_SFTP_ATTR_PERMISSIONS ?
 			    attrs->permissions : 0600));
   if (fd == -1) {
-    (*callback)(sftp, silc_sftp_map_errno(errno), NULL, callback_context);
+    (*callback)(sftp, silc_sftp_map_errno(silc_errno), NULL, callback_context);
     return;
   }
 
@@ -601,7 +601,7 @@ void memfs_close(void *context, SilcSFTP sftp,
   if (h->fd != -1) {
     ret = silc_file_close(h->fd);
     if (ret == -1) {
-      (*callback)(sftp, silc_sftp_map_errno(errno), NULL, NULL,
+      (*callback)(sftp, silc_sftp_map_errno(silc_errno), NULL, NULL,
 		  callback_context);
       return;
     }
@@ -630,7 +630,8 @@ void memfs_read(void *context, SilcSFTP sftp,
     if (!ret)
       (*callback)(sftp, SILC_SFTP_STATUS_EOF, NULL, 0, callback_context);
     else
-      (*callback)(sftp, silc_sftp_map_errno(errno), NULL, 0, callback_context);
+      (*callback)(sftp, silc_sftp_map_errno(silc_errno),
+		  NULL, 0, callback_context);
     return;
   }
 
@@ -640,7 +641,8 @@ void memfs_read(void *context, SilcSFTP sftp,
     if (!ret)
       (*callback)(sftp, SILC_SFTP_STATUS_EOF, NULL, 0, callback_context);
     else
-      (*callback)(sftp, silc_sftp_map_errno(errno), NULL, 0, callback_context);
+      (*callback)(sftp, silc_sftp_map_errno(silc_errno),
+		  NULL, 0, callback_context);
     return;
   }
 
@@ -665,7 +667,7 @@ void memfs_write(void *context, SilcSFTP sftp,
   /* Attempt to write */
   ret = silc_file_write(h->fd, data, data_len);
   if (ret <= 0) {
-    (*callback)(sftp, silc_sftp_map_errno(errno), NULL, NULL,
+    (*callback)(sftp, silc_sftp_map_errno(silc_errno), NULL, NULL,
 		callback_context);
     return;
   }
@@ -769,7 +771,7 @@ void memfs_readdir(void *context, SilcSFTP sftp,
   char long_name[256];
   SilcUInt64 filesize = 0;
   char *date;
-  struct stat stats;
+  SilcFileStatStruct stats;
 
   if (!h->entry->directory) {
     (*callback)(sftp, SILC_SFTP_STATUS_FAILURE, NULL, callback_context);
@@ -803,8 +805,7 @@ void memfs_readdir(void *context, SilcSFTP sftp,
 
     if (!entry->directory) {
       filesize = silc_file_size(entry->data + 7);
-      memset(&stats, 0, sizeof(stats));
-      stat(entry->data + 7, &stats);
+      silc_file_stat(entry->data + 7, TRUE, &stats);
     }
 
     /* Long name format is:
@@ -839,8 +840,8 @@ void memfs_readdir(void *context, SilcSFTP sftp,
     attrs->gid = 0;
     if (!entry->directory) {
       attrs->flags |= SILC_SFTP_ATTR_ACMODTIME;
-      attrs->atime = stats.st_atime;
-      attrs->mtime = stats.st_mtime;
+      attrs->atime = silc_time_epoch(&stats.last_access);
+      attrs->mtime = silc_time_epoch(&stats.last_mod);
     }
 
     /* Add the name */
@@ -875,8 +876,7 @@ void memfs_stat(void *context, SilcSFTP sftp,
   MemFS fs = (MemFS)context;
   MemFSEntry entry;
   SilcSFTPAttributes attrs;
-  int ret;
-  struct stat stats;
+  SilcFileStatStruct stats;
 
   if (!path || !strlen(path))
     path = (const char *)DIR_SEPARATOR;
@@ -894,9 +894,8 @@ void memfs_stat(void *context, SilcSFTP sftp,
   }
 
   /* Get real stat */
-  ret = stat(entry->data + 7, &stats);
-  if (ret == -1) {
-    (*callback)(sftp, silc_sftp_map_errno(errno), NULL, callback_context);
+  if (!silc_file_stat(entry->data + 7, TRUE, &stats)) {
+    (*callback)(sftp, silc_sftp_map_errno(silc_errno), NULL, callback_context);
     return;
   }
 
@@ -908,11 +907,11 @@ void memfs_stat(void *context, SilcSFTP sftp,
   attrs->flags = (SILC_SFTP_ATTR_SIZE |
 		  SILC_SFTP_ATTR_UIDGID |
 		  SILC_SFTP_ATTR_ACMODTIME);
-  attrs->size = stats.st_size;
+  attrs->size = stats.size;
   attrs->uid = 0;		    /* We use always 0 UID and GID */
   attrs->gid = 0;
-  attrs->atime = stats.st_atime;
-  attrs->mtime = stats.st_mtime;
+  attrs->atime = silc_time_epoch(&stats.last_access);
+  attrs->mtime = silc_time_epoch(&stats.last_mod);
 
   /* Return attributes */
   (*callback)(sftp, SILC_SFTP_STATUS_OK, (const SilcSFTPAttributes)attrs,
@@ -929,8 +928,7 @@ void memfs_lstat(void *context, SilcSFTP sftp,
   MemFS fs = (MemFS)context;
   MemFSEntry entry;
   SilcSFTPAttributes attrs;
-  int ret;
-  struct stat stats;
+  SilcFileStatStruct stats;
 
   if (!path || !strlen(path))
     path = (const char *)DIR_SEPARATOR;
@@ -948,17 +946,8 @@ void memfs_lstat(void *context, SilcSFTP sftp,
   }
 
   /* Get real stat */
-#ifdef SILC_WIN32
-  ret = stat(entry->data + 7, &stats);
-#endif /* SILC_WIN32 */
-#ifdef SILC_UNIX
-  ret = lstat(entry->data + 7, &stats);
-#endif /* SILC_UNIX */
-#ifdef SILC_SYMBIAN
-  ret = stat(entry->data + 7, &stats);
-#endif /* SILC_SYMBIAN */
-  if (ret == -1) {
-    (*callback)(sftp, silc_sftp_map_errno(errno), NULL, callback_context);
+  if (!silc_file_stat(entry->data + 7, FALSE, &stats)) {
+    (*callback)(sftp, silc_sftp_map_errno(silc_errno), NULL, callback_context);
     return;
   }
 
@@ -970,11 +959,11 @@ void memfs_lstat(void *context, SilcSFTP sftp,
   attrs->flags = (SILC_SFTP_ATTR_SIZE |
 		  SILC_SFTP_ATTR_UIDGID |
 		  SILC_SFTP_ATTR_ACMODTIME);
-  attrs->size = stats.st_size;
+  attrs->size = stats.size;
   attrs->uid = 0;		    /* We use always 0 UID and GID */
   attrs->gid = 0;
-  attrs->atime = stats.st_atime;
-  attrs->mtime = stats.st_mtime;
+  attrs->atime = silc_time_epoch(&stats.last_access);
+  attrs->mtime = silc_time_epoch(&stats.last_mod);
 
   /* Return attributes */
   (*callback)(sftp, SILC_SFTP_STATUS_OK, (const SilcSFTPAttributes)attrs,
@@ -990,8 +979,7 @@ void memfs_fstat(void *context, SilcSFTP sftp,
 {
   MemFSFileHandle h = (MemFSFileHandle)handle;
   SilcSFTPAttributes attrs;
-  int ret;
-  struct stat stats;
+  SilcFileStatStruct stats;
 
   if (h->entry->directory || !h->entry->data) {
     (*callback)(sftp, SILC_SFTP_STATUS_FAILURE, NULL, callback_context);
@@ -999,9 +987,8 @@ void memfs_fstat(void *context, SilcSFTP sftp,
   }
 
   /* Get real stat */
-  ret = fstat(h->fd, &stats);
-  if (ret == -1) {
-    (*callback)(sftp, silc_sftp_map_errno(errno), NULL, callback_context);
+  if (!silc_file_fstat(h->fd, &stats)) {
+    (*callback)(sftp, silc_sftp_map_errno(silc_errno), NULL, callback_context);
     return;
   }
 
@@ -1013,11 +1000,11 @@ void memfs_fstat(void *context, SilcSFTP sftp,
   attrs->flags = (SILC_SFTP_ATTR_SIZE |
 		  SILC_SFTP_ATTR_UIDGID |
 		  SILC_SFTP_ATTR_ACMODTIME);
-  attrs->size = stats.st_size;
+  attrs->size = stats.size;
   attrs->uid = 0;		    /* We use always 0 UID and GID */
   attrs->gid = 0;
-  attrs->atime = stats.st_atime;
-  attrs->mtime = stats.st_mtime;
+  attrs->atime = silc_time_epoch(&stats.last_access);
+  attrs->mtime = silc_time_epoch(&stats.last_mod);
 
   /* Return attributes */
   (*callback)(sftp, SILC_SFTP_STATUS_OK, (const SilcSFTPAttributes)attrs,

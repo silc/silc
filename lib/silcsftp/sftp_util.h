@@ -1,6 +1,6 @@
 /*
 
-  sftp_util.h 
+  sftp_util.h
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
@@ -64,13 +64,13 @@ typedef SilcUInt32 SilcSFTPPacket;
    buffer. If `packet_buf' is non-NULL then the new packet data is put
    to that buffer instead of allocating new one.  If the new data cannot
    fit to `packet_buf' will be reallocated. */
-SilcBuffer silc_sftp_packet_encode(SilcSFTPPacket packet, 
+SilcBuffer silc_sftp_packet_encode(SilcSFTPPacket packet,
 				   SilcBuffer packet_buf, SilcUInt32 len, ...);
 
 /* Same as silc_sftp_packet_encode but takes the variable argument list
    pointer as argument. */
-SilcBuffer silc_sftp_packet_encode_vp(SilcSFTPPacket packet, 
-				      SilcBuffer packet_buf, SilcUInt32 len, 
+SilcBuffer silc_sftp_packet_encode_vp(SilcSFTPPacket packet,
+				      SilcBuffer packet_buf, SilcUInt32 len,
 				      va_list vp);
 
 /* Decodes the SFTP packet data `data' and return the SFTP packet type.
@@ -95,7 +95,7 @@ void silc_sftp_attr_free(SilcSFTPAttributes attr);
 void silc_sftp_name_add(SilcSFTPName name, const char *short_name,
 			const char *long_name, SilcSFTPAttributes attrs);
 
-/* Encodes the SilcSFTPName to a buffer and returns the allocated buffer. 
+/* Encodes the SilcSFTPName to a buffer and returns the allocated buffer.
    The caller must free the buffer. */
 SilcBuffer silc_sftp_name_encode(SilcSFTPName name);
 
@@ -108,6 +108,6 @@ SilcSFTPName silc_sftp_name_decode(SilcUInt32 count, SilcBuffer buffer);
 void silc_sftp_name_free(SilcSFTPName name);
 
 /* Maps errno to SFTP status message. */
-SilcSFTPStatus silc_sftp_map_errno(int err);
+SilcSFTPStatus silc_sftp_map_errno(SilcResult err);
 
 #endif /* SFTP_UTIL_H */

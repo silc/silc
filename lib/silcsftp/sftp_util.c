@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2007 Pekka Riikonen
+  Copyright (C) 2001 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -475,7 +475,7 @@ void silc_sftp_name_free(SilcSFTPName name)
 
 /* Maps errno to SFTP status message. */
 
-SilcSFTPStatus silc_sftp_map_errno(int err)
+SilcSFTPStatus silc_sftp_map_errno(SilcResult err)
 {
   SilcSFTPStatus ret;
 
@@ -483,18 +483,15 @@ SilcSFTPStatus silc_sftp_map_errno(int err)
   case 0:
     ret = SILC_SFTP_STATUS_OK;
     break;
-  case ENOENT:
-  case ENOTDIR:
-  case EBADF:
+  case SILC_ERR_NOT_DIRECTORY:
+  case SILC_ERR_NO_SUCH_FILE:
+  case SILC_ERR_BAD_FD:
     ret = SILC_SFTP_STATUS_NO_SUCH_FILE;
     break;
-  case EPERM:
-  case EACCES:
-  case EFAULT:
+  case SILC_ERR_PERMISSION_DENIED:
     ret = SILC_SFTP_STATUS_PERMISSION_DENIED;
     break;
-  case ENAMETOOLONG:
-  case EINVAL:
+  case SILC_ERR_INVALID_ARGUMENT:
     ret = SILC_SFTP_STATUS_BAD_MESSAGE;
     break;
   default:

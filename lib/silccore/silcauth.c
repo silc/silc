@@ -370,8 +370,8 @@ silc_auth_public_key_auth_generate_wpub(SilcPublicKey public_key,
   }
 
   /* Compute the hash and the signature. */
-  op = silc_pkcs_sign(private_key, tmp, tmp_len, TRUE, hash, rng,
-		      silc_auth_public_key_auth_generate_cb, a);
+  op = silc_pkcs_sign_async(private_key, tmp, tmp_len, TRUE, hash, rng,
+			    silc_auth_public_key_auth_generate_cb, a);
 
   memset(tmp, 0, tmp_len);
   silc_sfree(stack, tmp);
@@ -408,9 +408,9 @@ silc_auth_public_key_auth_verify(SilcAuthPayload payload,
   }
 
   /* Verify the authentication data */
-  op = silc_pkcs_verify(public_key, payload->auth_data,
-			payload->auth_len, tmp, tmp_len, hash,
-			result, context);
+  op = silc_pkcs_verify_async(public_key, payload->auth_data,
+			      payload->auth_len, tmp, tmp_len, TRUE, hash,
+			      result, context);
 
   memset(tmp, 0, tmp_len);
   silc_sfree(payload->stack, tmp);

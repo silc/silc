@@ -170,9 +170,9 @@ void silc_client_attributes_process(SilcClient client,
   s->buffer = buffer;
 
   /* Finally compute the digital signature of all the data we provided. */
-  silc_pkcs_sign(conn->private_key, silc_buffer_data(buffer),
-		 silc_buffer_len(buffer), TRUE, conn->internal->sha1hash,
-		 client->rng, silc_client_attributes_process_signed, s);
+  silc_pkcs_sign_async(conn->private_key, silc_buffer_data(buffer),
+		       silc_buffer_len(buffer), TRUE, NULL,
+		       client->rng, silc_client_attributes_process_signed, s);
 }
 
 static void silc_client_attribute_destruct(void *key, void *context,
