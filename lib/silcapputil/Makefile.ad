@@ -21,16 +21,12 @@ noinst_LTLIBRARIES = libsilcapputil.la
 
 libsilcapputil_la_SOURCES = 	\
 	silcapputil.c		\
-#ifdef SILC_DIST_IDCACHE
 	silcidcache.c
-#endif SILC_DIST_IDCACHE
 
 #ifdef SILC_DIST_TOOLKIT
 include_HEADERS =		\
 	silcapputil.h		\
-#ifdef SILC_DIST_IDCACHE
 	silcidcache.h
-#endif SILC_DIST_IDCACHE
 
 SILC_EXTRA_DIST = 
 #endif SILC_DIST_TOOLKIT

@@ -21,341 +21,93 @@
   by all files in SILC (directly or through other global include file).
 */
 
-#ifndef SILCINCLUDES_H
-#define SILCINCLUDES_H
+#ifndef SILC_H
+#define SILC_H
+
+/* Version check macro.  Use this to check that package is of specific
+   version compile time.  Use the __SILC_XXX_VERSION below in comparison.
+   Example:
+
+   #if __SILC_TOOLKIT_VERSION < SILC_VERSION(1,2,0)
+     ...
+   #endif
+*/
+#ifndef SILC_VERSION
+#define SILC_VERSION(a, b, c) (((a) << 24) + ((b) << 16) + ((c) << 8)
+#endif /* !SILC_VERSION */
+
+/* SILC Crypto Toolkit version */
+@__SILC_PACKAGE_VERSION@
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define SILC_UNIX
-
-#ifdef WIN32
-#ifndef SILC_WIN32
-#define SILC_WIN32
-#undef SILC_UNIX
-#endif
-#endif
-
-#if defined(__EPOC32__) || defined(__SYMBIAN32__)
-#ifndef SILC_SYMBIAN
-#define SILC_SYMBIAN
-#undef SILC_UNIX
-#undef SILC_WIN32
-#endif
-#endif
-
-#if defined(__MACH__) && defined(__APPLE__)
-#ifndef SILC_MACOSX
-#define SILC_MACOSX
-#undef SILC_WIN32
-#undef SILC_SYMBIAN
-#endif
-#endif
-
-/* Types */
-#define SILC_SIZEOF_LONG_LONG @SILC_SIZEOF_LONG_LONG@
-#define SILC_SIZEOF_LONG @SILC_SIZEOF_LONG@
-#define SILC_SIZEOF_INT @SILC_SIZEOF_INT@
-#define SILC_SIZEOF_SHORT @SILC_SIZEOF_SHORT@
-#define SILC_SIZEOF_CHAR @SILC_SIZEOF_CHAR@
-#define SILC_SIZEOF_VOID_P @SILC_SIZEOF_VOID_P@
-
-/* Compilation time defines, for third-party software */
-@__SILC_HAVE_PTHREAD@
-@__SILC_HAVE_SIM@
-@__SILC_ENABLE_DEBUG@
-
-#if defined(HAVE_SILCDEFS_H)
-
-/* Automatically generated configuration header */
-#ifndef SILC_SYMBIAN
-#include "silcdefs.h"
-#else
-#include "../symbian/silcdefs.h"
-#endif /* SILC_SYMBIAN */
-#include "silcdistdefs.h"
-
-#else
-
-/* Autodetect CPU so that inline assembly in headers are enabled */
-
-#if defined(__i386__)
-#undef SILC_I386
-#define SILC_I386
-#undef SILC_I486
-#define SILC_I486
-#endif /* __i386__ */
-
-#if defined(__x86_64__)
-#undef SILC_X86_64
-#define SILC_X86_64
-#endif /* __x86_64__ */
-
-#if defined(__ia64__)
-#undef SILC_IA64
-#define SILC_IA64
-#endif /* __ia64__ */
-
-#if defined(__ppc__) || defined(__ppc64__)
-#undef SILC_POWERPC
-#define SILC_POWERPC
-#endif /* __ppc__ || __ppc64__ */
-
-#ifndef SILC_ALIGNMENT
-#define SILC_ALIGNMENT SILC_SIZEOF_VOID_P
-#endif /* SILC_ALIGNMENT */
-
-#endif /* HAVE_SILCDEFS_H */
-
-/* Platform specific includes */
-
-#if defined(SILC_WIN32)
-#include "silcwin32.h"
-#endif
-
-#if defined(SILC_SYMBIAN)
-#include "silcsymbian.h"
-#endif
-
-#ifndef DLLAPI
-#define DLLAPI
-#endif
-
+/* We except all systems to have these include files */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
-#include <ctype.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <dirent.h>
 
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-
-#ifdef HAVE_FCNTL_H
-#include <fcntl.h>
-#endif
-
-#ifdef HAVE_ERRNO_H
-#include <errno.h>
-#endif
-
-#ifdef HAVE_ASSERT_H
-#include <assert.h>
-#endif
-
-#if !defined(SILC_WIN32)
-
-#include <unistd.h>
-#include <sys/time.h>
-#include <pwd.h>
-#include <sys/times.h>
-
-#ifdef HAVE_GRP_H
-#include <grp.h>
-#endif
-
-#ifdef SOCKS5
-#include "socks.h"
-#endif
-
-#include <sys/socket.h>
-#ifdef HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
-
-#ifdef HAVE_XTI_H
-#include <xti.h>
+#if defined(HAVE_SILCDEFS_H)
+/* Automatically generated configuration header.  These are included only
+   when the SILC Toolkit itself is compiled. */
+#ifndef SILC_SYMBIAN
+#include "silcdefs.h"
 #else
-#ifdef HAVE_NETINET_TCP_H
-#include <netinet/tcp.h>
-#endif
-#endif
+#include "../../symbian/silcdefs.h"
+#endif /* SILC_SYMBIAN */
+#include "silcdistdefs.h"
+#include "silccompile.h"
+#endif /* HAVE_CRYPTODEFS_H */
 
-#ifdef HAVE_NETDB_H
-#include <netdb.h>
-#endif
+/* SRT and SCT include */
+#include <silcruntime.h>
+#include <silccrypto.h>
 
-#ifdef HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-
-#ifdef HAVE_SYS_MMAN_H
-#include <sys/mman.h>
-#endif
-
-#ifdef HAVE_DLFCN_H
-#include <dlfcn.h>
-#endif
-
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
-#ifdef SILC_HAVE_PTHREAD
-#include <pthread.h>
-#endif
-
-#ifdef HAVE_STDDEF_H
-#include <stddef.h>
-#endif
-
-#ifdef HAVE_TERMIOS_H
-#include <termios.h>
-#endif
-
-#ifdef HAVE_UTIME_H
-#include <utime.h>
-#endif
-
-#ifdef HAVE_ICONV_H
-#include <iconv.h>
-#endif
-
-#ifdef HAVE_LOCALE_H
-#include <locale.h>
-#endif
-
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
-#endif
-
-#ifdef HAVE_SYS_RESOURCE_H
-#include <sys/resource.h>
-#endif
-
-#endif				/* !SILC_WIN32 */
-
-/* Include generic SILC type definitions */
-#include "silcerrno.h"
-#include "silctypes.h"
-#include "silcbitops.h"
-#include "silcmutex.h"
-#include "silcatomic.h"
-#include "silcversion.h"
-
-/* SILC util library includes */
-#include "silcgetopt.h"
-#include "silclist.h"
-#include "silcstack.h"
-#include "silcmemory.h"
-#include "silcsnprintf.h"
-
-/* Math library includes */
-#include "silcmp.h"
-#include "silcmath.h"
-
-/* More SILC util library includes */
-#include "silctime.h"
-#include "silctimer.h"
-#include "silccond.h"
-#include "silcthread.h"
-#include "silcschedule.h"
-#include "silclog.h"
-#include "silcdir.h"
-#include "silcfileutil.h"
-#include "silcbuffer.h"
-#include "silcbuffmt.h"
-#include "silcasync.h"
-#include "silcdlist.h"
-
-/* Crypto library includes */
-#include "silccrypto.h"
-#include "silccipher.h"
-#include "silchash.h"
-#include "silchmac.h"
-#include "silcrng.h"
-#include "silcpkcs.h"
-#include "silcpk.h"
-#include "silcpkcs1.h"
-#ifdef SILC_DIST_ACC
-#include "silcacc.h"
-#endif /* SILC_DIST_ACC */
-#ifdef SILC_DIST_SSH
-#include "silcssh.h"
-#endif /* SILC_DIST_SSH */
-
-/* More SILC util library includes */
-#include "silcregex.h"
-#include "silcenv.h"
-#include "silcdll.h"
-#include "silchashtable.h"
-#include "silcstream.h"
-#include "silcnet.h"
-#include "silcbase64.h"
-#include "silcstrutil.h"
-#include "silcutf8.h"
-#include "silcstringprep.h"
-#include "silcutil.h"
-#include "silcconfig.h"
-#include "silcfsm.h"
-#include "silcsocketstream.h"
-#include "silcfdstream.h"
-#include "silcmime.h"
+#include <silcversion.h>
 
 #ifdef SILC_DIST_VCARD
-#include "silcvcard.h"
+#include <silcvcard.h>
 #endif /* SILC_DIST_VCARD */
 
-#ifdef SILC_DIST_ASN1
-#include "silcasn1.h"
-#include "silcber.h"
-#endif /* SILC_DIST_ASN1 */
-
 /* SILC core library includes */
-#include "silcargument.h"
-#include "silcstatus.h"
-#include "silcid.h"
-#include "silccommand.h"
-#include "silcauth.h"
-#include "silcmessage.h"
-#include "silcchannel.h"
-#include "silcpacket.h"
-#include "silcnotify.h"
-#include "silcmode.h"
-#include "silcattrs.h"
-#include "silcpubkey.h"
+#include <silcargument.h>
+#include <silcstatus.h>
+#include <silcid.h>
+#include <silccommand.h>
+#include <silcauth.h>
+#include <silcmessage.h>
+#include <silcchannel.h>
+#include <silcpacket.h>
+#include <silcnotify.h>
+#include <silcmode.h>
+#include <silcattrs.h>
+#include <silcpubkey.h>
 
 /* Application utility includes */
-#include "silcapputil.h"
-#ifdef SILC_DIST_IDCACHE
-#include "silcidcache.h"
-#endif /* SILC_DIST_IDCACHE */
-
-#ifdef SILC_DIST_SKR
-#include "silcskr.h"
-#endif /* SILC_DIST_SKR */
-
-#if defined(SILC_SIM)
-/* SILC Module library includes */
-#include "silcsim.h"
-#include "silcsimutil.h"
-#endif
+#include <silcapputil.h>
+#include <silcidcache.h>
 
 /* SILC Key Exchange library includes */
-#include "silcske.h"
-#include "silcske_payload.h"
-#include "silcske_groups.h"
-#include "silcconnauth.h"
+#include <silcske.h>
+#include <silcske_payload.h>
+#include <silcske_groups.h>
+#include <silcconnauth.h>
 
 #ifdef SILC_DIST_SFTP
 /* SILC SFTP library */
-#include "silcsftp.h"
-#include "silcsftp_fs.h"
+#include <silcsftp.h>
+#include <silcsftp_fs.h>
 #endif /* SILC_DIST_SFTP */
 
 #ifdef SILC_DIST_HTTP
 /* SILC HTTP library */
-#include "silchttpserver.h"
-#include "silchttpphp.h"
+#include <silchttpserver.h>
+#include <silchttpphp.h>
 #endif /* SILC_DIST_HTTP */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* SILCINCLUDES_H */
+#endif /* SILC_H */

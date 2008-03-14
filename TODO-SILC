@@ -15,7 +15,7 @@ point.
    names in all commands and notify types.
 
  o Add acknowlegments section to specification documents.
-   
+
  o Group Diffie-Hellman protocol for establishig key with two or more
    users on a channel.
 
@@ -29,14 +29,16 @@ point.
    to
 
     Truncated HASH from SKE (4 bytes) - This value is the first 4
-    bytes from the HASH value that was computed in SKE.  In each rekey 
+    bytes from the HASH value that was computed in SKE.  In each rekey
     the value MUST be recomputed as follows:
 
       HASH = hash(new Sending/Receiving IV from SKE)
 
-    The hash function is the one used in SKE.  The 'new Sending/Receiving 
-    IV from SKE' is the first 8 bytes of the new value computed during 
+    The hash function is the one used in SKE.  The 'new Sending/Receiving
+    IV from SKE' is the first 8 bytes of the new value computed during
     rekey.  The first 4 bytes are used from the recomputed HASH.
+
+ o Consider for future authenticated encryption modes, especially GCM.
 
  o Extend the Channel ID port to be actually a counter, allowing the
    2^32 channels per cell, instead of 2^16 like now.  The port with
@@ -54,12 +56,12 @@ point.
  o Define clearly the SSH2 signature format is the one specified for SSH2
    protocol.
 
- o Dynamic server and router connections, ala Jabber.  SILC has allowed 
+ o Dynamic server and router connections, ala Jabber.  SILC has allowed
    this from the beginning.  It should be written out clearly in the
    specs.  Connection would be created with nick strings (which are of
    format nick@server).
 
- o NAT detection protocool during SKE so that party behind NAT can 
+ o NAT detection protocool during SKE so that party behind NAT can
    detect if it is behind NAT and receive the public IP address and port
    that it may need (servers need it to create valid Server ID).  (***DONE)
 
@@ -73,7 +75,7 @@ point.
  o Add Source and Destination ID in message MAC computation to fully
    associate the Message Payload with the true sender and the true
    recipient of the message.  This will fix some security issues that
-   currently exists.  It is currently possible in some specific set of 
+   currently exists.  It is currently possible in some specific set of
    conditions to mount a replay attack using Message Payload.  This change
    will remove the possibility of these attacks.
 
@@ -87,12 +89,12 @@ point.
       has changed nickname, has detached and resumed, or has reconnected
       to other server.
    4. the original receiver of the message is still in the network, has
-      not changed nickname, has not detached and resumed, and has not  
+      not changed nickname, has not detached and resumed, and has not
       reconnected to any other server, or, some other user has the same
       client ID.
-   5. the attacker is able to get the same client ID as the original   
+   5. the attacker is able to get the same client ID as the original
       sender.
-   6. the original receiver still has the static key set for the same  
+   6. the original receiver still has the static key set for the same
       remote client ID (for original sender's client ID).
 
    All this is possible to happen though likelyhood is quite small.  It
@@ -100,7 +102,7 @@ point.
 
  o The SILC public key identifier separator is ', ' not ','.  The
    whitespace is mandatory. (***DONE)
-   
+
  o Definition of EAP as new authentication method for connection auth
    protocol (RFC 3748).
 
@@ -114,5 +116,3 @@ point.
    silc-users.  (This is very old issue)
 
  o The time values in STATS is 32-bits.  After 2038 it's over 32-bits.
-
- o Consider for future authenticated encryption modes.

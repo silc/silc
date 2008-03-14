@@ -19,25 +19,8 @@ AUTOMAKE_OPTIONS = 1.0 no-dependencies foreign
 
 # SILC Library dirs
 SILCLIB_DIRS = 		\
-	contrib 	\
 	silccore	\
-	silcutil 	\
 	silcapputil 	\
-#ifdef SILC_DIST_CRYPTO
-	silccrypt 	\
-#endif SILC_DIST_CRYPTO
-#ifdef SILC_DIST_SKR
-	silcskr 	\
-#endif SILC_DIST_SKR
-#ifdef SILC_DIST_MATH
-	silcmath 	\
-#endif SILC_DIST_MATH
-#ifdef SILC_DIST_SIM
-	silcsim 	\
-#endif SILC_DIST_SIM
-#ifdef SILC_DIST_ASN1
-	silcasn1	\
-#endif SILC_DIST_ASN1
 	silcske 	\
 #ifdef SILC_DIST_HTTP
 	silchttp	\
@@ -48,12 +31,6 @@ SILCLIB_DIRS = 		\
 #ifdef SILC_DIST_VCARD
 	silcvcard	\
 #endif SILC_DIST_VCARD
-#ifdef SILC_DIST_ACC
-	silcacc		\
-#endif SILC_DIST_ACC
-#ifdef SILC_DIST_SSH
-	silcssh		\
-#endif SILC_DIST_SSH
 
 if SILC_ENABLE_SHARED
 if SILC_WIN32

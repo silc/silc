@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2007 Pekka Riikonen
+  Copyright (C) 2002 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -364,7 +364,8 @@ void silc_query_attributes_default(SilcClient client,
 	mask |= SILC_ATTRIBUTE_MOOD_ANXIOUS;
     }
     silc_client_attribute_add(silc_client, conn,
-			      SILC_ATTRIBUTE_STATUS_MOOD, (void *)mask,
+			      SILC_ATTRIBUTE_STATUS_MOOD,
+			      SILC_32_TO_PTR(mask),
 			      sizeof(SilcUInt32));
     g_strfreev(list);
   }
@@ -435,7 +436,8 @@ void silc_query_attributes_default(SilcClient client,
 	mask |= SILC_ATTRIBUTE_CONTACT_VIDEO;
     }
     silc_client_attribute_add(silc_client, conn,
-			      SILC_ATTRIBUTE_PREFERRED_CONTACT, (void *)mask,
+			      SILC_ATTRIBUTE_PREFERRED_CONTACT,
+			      SILC_32_TO_PTR(mask),
 			      sizeof(SilcUInt32));
     g_strfreev(list);
   }
@@ -852,9 +854,10 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
     if (verify->public_key) {
       verifyd = silc_attribute_get_verify_data(attrs, FALSE, &verify_len);
       if (verifyd)
-	silc_pkcs_verify(verify->public_key, usersign.data,
-			 usersign.data_len, verifyd, verify_len, sha1hash,
-			 silc_query_attributes_verify, &verified);
+	silc_pkcs_verify_async(verify->public_key, usersign.data,
+			       usersign.data_len, verifyd, verify_len,
+			       TRUE, sha1hash,
+			       silc_query_attributes_verify, &verified);
 
       if (verified) {
 	printformat_module("fe-common/silc", server, NULL,
@@ -896,9 +899,10 @@ void silc_query_attributes_print(SILC_SERVER_REC *server,
 				   &public_key)) {
       verifyd = silc_attribute_get_verify_data(attrs, TRUE, &verify_len);
       if (verifyd)
-	silc_pkcs_verify(public_key, serversign.data,
-			 serversign.data_len, verifyd, verify_len, sha1hash,
-			 silc_query_attributes_verify, &verified);
+	silc_pkcs_verify_async(public_key, serversign.data,
+			       serversign.data_len, verifyd,
+			       verify_len, TRUE, sha1hash,
+			       silc_query_attributes_verify, &verified);
       if (verified) {
 	printformat_module("fe-common/silc", server, NULL,
 			   MSGLEVEL_CRAP, SILCTXT_ATTR_SERVER_SIGN_VERIFIED);

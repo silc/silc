@@ -19,7 +19,4 @@ define SILC_DIST_INPLACE
 define SILC_DIST_SFTP
 define SILC_DIST_VCARD
 
-# Apps
-define SILC_DIST_ASN1UTILS
-
 pre-hook distdir/pre-run

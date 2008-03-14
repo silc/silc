@@ -7,22 +7,4 @@ define SILC_DIST_INCLUDES
 define SILC_DIST_DOC
 define SILC_DIST_SFTP
 define SILC_DIST_COMPILER
-define SILC_DIST_IDCACHE
 define SILC_DIST_VCARD
-define SILC_DIST_CRYPTO
-
-# Math library, define only TMA or TFM, not both.
-define SILC_DIST_MATH
-define SILC_DIST_TMA
-#define SILC_DIST_TFM
-
-# ASN.1 library
-define SILC_DIST_ASN1
-
-# Accelerator library
-define SILC_DIST_ACC
-
-define SILC_DIST_SSH
-
-# Key Repository library
-define SILC_DIST_SKR

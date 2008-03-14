@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,9 @@ extern "C" {
 
 /* Version check macro.  Use this to check that package is of specific
    version compile time.  Use the __SILC_XXX_VERSION below in comparison. */
+#ifndef SILC_VERSION
 #define SILC_VERSION(a, b, c) (((a) << 24) + ((b) << 16) + ((c) << 8)
+#endif /* !SILC_VERSION */
 @__SILC_PACKAGE_VERSION@
 
 #define SILC_VERSION_STRING "@VERSION@"
