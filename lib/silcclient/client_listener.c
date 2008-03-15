@@ -181,6 +181,9 @@ silc_client_listener_new_connection(SilcClientListener listener,
     return;
   }
   conn->stream = stream;
+  conn->socket_stream = silc_packet_stream_get_stream(stream);
+  silc_socket_stream_get_info(conn->socket_stream, &conn->sock, NULL,
+			      NULL, NULL);
   conn->internal->schedule = listener->schedule;
   silc_packet_set_context(conn->stream, conn);
 

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 - 2007 Pekka Riikonen
+  Copyright (C) 2006 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -454,6 +454,11 @@ SILC_FSM_STATE(silc_client_st_connect_set_stream)
 
   silc_packet_set_context(conn->stream, conn);
 
+  /* Save socket stream and socket into connection context */
+  conn->socket_stream = silc_packet_stream_get_stream(conn->stream);
+  silc_socket_stream_get_info(conn->socket_stream, &conn->sock, NULL,
+			      NULL, NULL);
+
   /** Start key exchange */
   silc_fsm_next(fsm, silc_client_st_connect_key_exchange);
   return SILC_FSM_CONTINUE;
@@ -551,6 +556,9 @@ SILC_FSM_STATE(silc_client_st_connect_setup_udp)
   /* Set the new stream to packet stream */
   old = silc_packet_stream_get_stream(conn->stream);
   silc_packet_stream_set_stream(conn->stream, stream);
+  conn->socket_stream = stream;
+  silc_socket_stream_get_info(conn->socket_stream, &conn->sock, NULL,
+			      NULL, NULL);
   silc_packet_stream_set_iv_included(conn->stream);
   silc_packet_set_sid(conn->stream, 0);
 
