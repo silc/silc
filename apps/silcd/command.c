@@ -4370,8 +4370,10 @@ SILC_SERVER_CMD_FUNC(watch)
 
     pk = silc_argument_get_next_arg(pkargs, &type, &pk_len);
     while (pk) {
-      if (!silc_public_key_payload_decode(pk, pk_len, &public_key))
+      if (!silc_public_key_payload_decode(pk, pk_len, &public_key)) {
+        pk = silc_argument_get_next_arg(pkargs, &type, &pk_len);
 	continue;
+      }
       if (type == 0x03)
         type = 0x00;
 
