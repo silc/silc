@@ -640,10 +640,11 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
 
     /* Check the private key file permissions. */
     if ((stat(file_tmp, &st)) != -1) {
-      if ((st.st_mode & 0777) != 0600) {
+      if (((st.st_mode & 0777) != 0600) &&
+	  ((st.st_mode & 0777) != 0640)) {
 	SILC_SERVER_LOG_ERROR(("Wrong permissions in private key "
 			      "file \"%s\".  The permissions must be "
-			      "0600.", file_tmp));
+			      "0600 or 0640.", file_tmp));
         return SILC_CONFIG_ESILENT;
       }
     }
