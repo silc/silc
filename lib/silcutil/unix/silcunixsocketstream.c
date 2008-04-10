@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -106,8 +106,9 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
   /* If QoS was applied, return the data that was pending. */
   if (sock->qos->applied && sock->qos->data_len) {
     memcpy(buf, qosbuf, sock->qos->data_len);
+    len = sock->qos->data_len;
     sock->qos->data_len = 0;
-    return sock->qos->data_len;
+    return len;
   }
 
   /* If we have active QoS data pending, return with no data */
@@ -116,7 +117,8 @@ int silc_socket_stream_read(SilcStream stream, unsigned char *buf,
     return -1;
   }
 
-  /* Read the data from the socket.  Never read more than the max limit. */
+  /* Read the data from the socket.  The qosbuf size is always the max
+     read limit size. */
   len = (buf_len < sock->qos->read_limit_bytes ? buf_len :
 	 sock->qos->read_limit_bytes);
   len = read(sock->sock, qosbuf, len);

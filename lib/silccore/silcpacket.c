@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -336,7 +336,6 @@ static inline SilcBool silc_packet_stream_read(SilcPacketStream ps,
 	silc_mutex_unlock(ps->lock);
 	if (ret == -1) {
 	  /* Cannot read now, do it later. */
-	  silc_buffer_pull(inbuf, silc_buffer_len(inbuf));
 	  return FALSE;
 	}
 
@@ -394,7 +393,6 @@ static inline SilcBool silc_packet_stream_read(SilcPacketStream ps,
 
     if (ret == -1) {
       /* Cannot read now, do it later. */
-      silc_buffer_pull(inbuf, silc_buffer_len(inbuf));
       return FALSE;
     }
 
@@ -887,6 +885,8 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
     return;
 
   if (silc_atomic_sub_int8(&stream->refcnt, 1) > 0) {
+    if (stream->destroyed)
+      return;
     stream->destroyed = TRUE;
 
     SILC_LOG_DEBUG(("Marking packet stream %p destroyed", stream));
