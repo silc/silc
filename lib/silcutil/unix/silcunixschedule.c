@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1998 - 2007 Pekka Riikonen
+  Copyright (C) 1998 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -288,6 +288,7 @@ SilcBool silc_schedule_internal_schedule_fd(SilcSchedule schedule,
       SILC_LOG_DEBUG(("epoll_ctl (DEL): %s", strerror(errno)));
       return FALSE;
     }
+    task->scheduled = FALSE;
     return TRUE;
   }
 
