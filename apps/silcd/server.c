@@ -269,6 +269,9 @@ static void silc_server_packet_error(SilcPacketEngine engine,
 		  SILC_CONNTYPE_STRING(idata->conn_type),
 		  silc_packet_error_string(error)));
 
+  if (!silc_packet_stream_is_valid(stream))
+    return;
+
   silc_schedule_task_add_timeout(server->schedule,
 				 silc_server_packet_error_timeout,
 				 stream, 0, 0);
@@ -2845,7 +2848,7 @@ static void silc_server_rekey(SilcServer server, SilcPacketStream sock,
 
 SILC_TASK_CALLBACK(silc_server_close_connection_final)
 {
-  silc_packet_stream_destroy(context);
+  silc_packet_stream_unref(context);
 }
 
 /* Closes connection to socket connection */
@@ -2857,6 +2860,9 @@ void silc_server_close_connection(SilcServer server,
   char tmp[128];
   const char *hostname;
   SilcUInt16 port;
+
+  if (!silc_packet_stream_is_valid(sock))
+    return;
 
   memset(tmp, 0, sizeof(tmp));
   //  silc_socket_get_error(sock, tmp, sizeof(tmp));
@@ -2872,6 +2878,11 @@ void silc_server_close_connection(SilcServer server,
     silc_server_connection_free(idata->sconn);
     idata->sconn = NULL;
   }
+
+  /* Take a reference and then destroy the stream.  The last reference
+     is released later in a timeout callback. */
+  silc_packet_stream_ref(sock);
+  silc_packet_stream_destroy(sock);
 
   /* Close connection with timeout */
   server->stat.conn_num--;
