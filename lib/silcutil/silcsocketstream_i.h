@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 - 2006 Pekka Riikonen
+  Copyright (C) 2005 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -56,8 +56,8 @@ struct SilcSocketStreamStruct {
   unsigned int connected : 1;	    /* UDP connected state */
 };
 
-#define SILC_IS_SOCKET_STREAM(s) (s->ops == &silc_socket_stream_ops)
-#define SILC_IS_SOCKET_STREAM_UDP(s) (s->ops == &silc_socket_udp_stream_ops)
+#define SILC_IS_SOCKET_STREAM(s) (s && s->ops == &silc_socket_stream_ops)
+#define SILC_IS_SOCKET_STREAM_UDP(s) (s && s->ops == &silc_socket_udp_stream_ops)
 
 extern const SilcStreamOps silc_socket_stream_ops;
 extern const SilcStreamOps silc_socket_udp_stream_ops;
