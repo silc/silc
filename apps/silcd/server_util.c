@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -997,7 +997,7 @@ SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip,
 
   silc_dlist_start(server->conns);
   while ((conn = silc_dlist_get(server->conns))) {
-    if (!conn->sock)
+    if (!conn->sock || !silc_packet_stream_is_valid(conn->sock))
       continue;
     silc_socket_stream_get_info(silc_packet_stream_get_stream(conn->sock),
 				NULL, NULL, &ipaddr, NULL);
@@ -1023,7 +1023,7 @@ silc_server_find_socket_by_host(SilcServer server,
 
   silc_dlist_start(server->conns);
   while ((conn = silc_dlist_get(server->conns))) {
-    if (!conn->sock)
+    if (!conn->sock || !silc_packet_stream_is_valid(conn->sock))
       continue;
     idata = silc_packet_get_context(conn->sock);
     silc_socket_stream_get_info(silc_packet_stream_get_stream(conn->sock),
