@@ -632,8 +632,7 @@ void silc_skr_free(SilcSKR skr)
 
 SilcBool silc_skr_init(SilcSKR skr)
 {
-  if (!silc_mutex_alloc(&skr->lock))
-    return FALSE;
+  silc_mutex_alloc(&skr->lock);
 
   skr->keys = silc_hash_table_alloc(0, silc_skr_hash, NULL,
 				    silc_skr_compare, NULL,
