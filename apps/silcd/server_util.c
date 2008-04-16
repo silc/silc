@@ -1753,10 +1753,11 @@ SilcBool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
 				     SilcUInt8 type, void *check)
 {
   unsigned char *tmp = NULL;
-  SilcUInt32 len = 0, t;
+  SilcUInt32 len = 0;
   SilcHashTableList htl;
   SilcBuffer entry, idp = NULL, pkp = NULL;
   SilcBool ret = FALSE;
+  void *t;
 
   SILC_LOG_DEBUG(("Matching invite/ban"));
 
@@ -1786,13 +1787,14 @@ SilcBool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
   /* Compare the list */
   silc_hash_table_list(list, &htl);
   while (silc_hash_table_get(&htl, (void *)&t, (void *)&entry)) {
-    if (type == t) {
+    if (type == SILC_PTR_TO_32(t)) {
       if (type == 1) {
 	if (silc_string_match(entry->data, tmp)) {
 	  ret = TRUE;
 	  break;
 	}
-      } else if (!memcmp(entry->data, tmp, len)) {
+      } else if (silc_buffer_len(entry) == len &&
+		 !memcmp(entry->data, tmp, len)) {
 	ret = TRUE;
 	break;
       }
@@ -1816,6 +1818,7 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 {
   unsigned char *tmp;
   SilcUInt32 type, len;
+  void *ptype;
   SilcBuffer tmp2;
   SilcHashTableList htl;
 
@@ -1842,8 +1845,9 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 
 	/* Check if the string is added already */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-	  if (type == 1 && silc_string_match(tmp2->data, tmp)) {
+	while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2)) {
+	  if (SILC_PTR_TO_32(ptype) == 1 &&
+	      silc_string_match(tmp2->data, tmp)) {
 	    tmp = NULL;
 	    break;
 	  }
@@ -1873,8 +1877,8 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 
 	/* Check if the public key is in the list already */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-	  if (type == 2 && !memcmp(tmp2->data, tmp, len)) {
+	while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2)) {
+	  if (SILC_PTR_TO_32(ptype) == 2 && !memcmp(tmp2->data, tmp, len)) {
 	    tmp = NULL;
 	    break;
 	  }
@@ -1893,8 +1897,8 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 
 	/* Check if the ID is in the list already */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-	  if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
+	while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2)) {
+	  if (SILC_PTR_TO_32(ptype) == 3 && !memcmp(tmp2->data, tmp, len)) {
 	    tmp = NULL;
 	    break;
 	  }
@@ -1932,8 +1936,9 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 
 	/* Delete from the list */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-	  if (type == 1 && silc_string_match(tmp2->data, tmp)) {
+	while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2)) {
+	  if (SILC_PTR_TO_32(ptype) == 1 &&
+	      silc_string_match(tmp2->data, tmp)) {
 	    silc_hash_table_del_by_context(list, (void *)1, tmp2);
 	    break;
 	  }
@@ -1953,8 +1958,8 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 
 	/* Delete from the invite list */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-	  if (type == 2 && !memcmp(tmp2->data, tmp, len)) {
+	while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2)) {
+	  if (SILC_PTR_TO_32(ptype) == 2 && !memcmp(tmp2->data, tmp, len)) {
 	    silc_hash_table_del_by_context(list, (void *)2, tmp2);
 	    break;
 	  }
@@ -1966,8 +1971,8 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 
 	/* Delete from the invite list */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-	  if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
+	while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2)) {
+	  if (SILC_PTR_TO_32(ptype) == 3 && !memcmp(tmp2->data, tmp, len)) {
 	    silc_hash_table_del_by_context(list, (void *)3, tmp2);
 	    break;
 	  }

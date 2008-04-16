@@ -45,7 +45,7 @@ EXTRA_DIST = 		\
 #endif SILC_DIST_CLIENT
 #ifdef SILC_DIST_SILC
 	libtoolfix 	\
-	CHANGES CREDITS
+	CREDITS
 #endif SILC_DIST_SILC
 
 #ifdef SILC_DIST_SILC

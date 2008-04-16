@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -1051,7 +1051,8 @@ SILC_SERVER_CMD_FUNC(invite)
   SilcBuffer list, tmp2;
   SilcBufferStruct alist;
   unsigned char *tmp, *atype = NULL;
-  SilcUInt32 len, type, len2;
+  SilcUInt32 len, len2, ttype;
+  void *type;
   SilcUInt16 argc = 0, ident = silc_command_get_ident(cmd->payload);
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_INVITE, cmd, 1, 4);
@@ -1163,7 +1164,7 @@ SILC_SERVER_CMD_FUNC(invite)
     tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
     silc_hash_table_list(channel->invite_list, &htl);
     while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-      if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
+      if (SILC_PTR_TO_32(type) == 3 && !memcmp(tmp2->data, tmp, len)) {
 	tmp = NULL;
 	break;
       }
@@ -1252,7 +1253,8 @@ SILC_SERVER_CMD_FUNC(invite)
     silc_hash_table_list(channel->invite_list, &htl);
     while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2))
       list = silc_argument_payload_encode_one(list, tmp2->data,
-					      silc_buffer_len(tmp2), type);
+					      silc_buffer_len(tmp2),
+					      SILC_PTR_TO_32(type));
     silc_hash_table_list_reset(&htl);
   }
 
@@ -1290,16 +1292,16 @@ SILC_SERVER_CMD_FUNC(invite)
   type = 0;
   argc = silc_argument_get_arg_num(cmd->args);
   if (argc == 1)
-    type = 1;
+    ttype = 1;
   if (silc_argument_get_arg_type(cmd->args, 3, &len))
-    type = 1;
+    ttype = 1;
 
   /* Send command reply */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
   silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_INVITE,
 				 SILC_STATUS_OK, 0, ident, 2,
 				 2, tmp, len,
-				 3, type && list ?
+				 3, ttype && list ?
 				 list->data : NULL,
 				 type && list ? silc_buffer_len(list) : 0);
   silc_buffer_free(list);
@@ -1828,6 +1830,7 @@ static void silc_server_command_join_channel(SilcServer server,
   SilcBuffer user_list, mode_list, invite_list, ban_list;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   char check[512], check2[512];
+  void *plen;
   SilcBool founder = FALSE;
   SilcBool resolve;
   SilcBuffer fkey = NULL, chpklist = NULL;
@@ -2144,10 +2147,11 @@ static void silc_server_command_join_channel(SilcServer server,
 		       SILC_STR_END);
 
     silc_hash_table_list(channel->invite_list, &htl);
-    while (silc_hash_table_get(&htl, (void *)&tmp_len, (void *)&reply))
+    while (silc_hash_table_get(&htl, (void *)&plen, (void *)&reply))
       invite_list = silc_argument_payload_encode_one(invite_list,
 						     reply->data,
-						     silc_buffer_len(reply), tmp_len);
+						     silc_buffer_len(reply),
+						     SILC_PTR_TO_32(plen));
     silc_hash_table_list_reset(&htl);
   }
 
@@ -2163,10 +2167,11 @@ static void silc_server_command_join_channel(SilcServer server,
 		       SILC_STR_END);
 
     silc_hash_table_list(channel->ban_list, &htl);
-    while (silc_hash_table_get(&htl, (void *)&tmp_len, (void *)&reply))
+    while (silc_hash_table_get(&htl, (void *)&plen, (void *)&reply))
       ban_list = silc_argument_payload_encode_one(ban_list,
 						  reply->data,
-						  silc_buffer_len(reply), tmp_len);
+						  silc_buffer_len(reply),
+						  SILC_PTR_TO_32(plen));
     silc_hash_table_list_reset(&htl);
   }
 
@@ -4600,7 +4605,7 @@ SILC_SERVER_CMD_FUNC(ban)
   SilcUInt32 id_len, len, len2;
   SilcArgumentPayload args;
   SilcHashTableList htl;
-  SilcUInt32 type;
+  void *type;
   SilcUInt16 argc = 0, ident = silc_command_get_ident(cmd->payload);
   SilcBufferStruct blist;
 
@@ -4709,7 +4714,8 @@ SILC_SERVER_CMD_FUNC(ban)
     silc_hash_table_list(channel->ban_list, &htl);
     while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2))
       list = silc_argument_payload_encode_one(list, tmp2->data,
-					      silc_buffer_len(tmp2), type);
+					      silc_buffer_len(tmp2),
+					      SILC_PTR_TO_32(type));
     silc_hash_table_list_reset(&htl);
   }
 

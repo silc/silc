@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -4135,6 +4135,7 @@ void silc_server_announce_get_inviteban(SilcServer server,
 {
   SilcBuffer list, idp, idp2, tmp2;
   SilcUInt32 type;
+  void *ptype;
   SilcHashTableList htl;
   const unsigned char a[1] = { 0x03 };
 
@@ -4146,9 +4147,10 @@ void silc_server_announce_get_inviteban(SilcServer server,
     type = silc_hash_table_count(channel->invite_list);
     SILC_PUT16_MSB(type, list->data);
     silc_hash_table_list(channel->invite_list, &htl);
-    while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2))
-      list = silc_argument_payload_encode_one(list, tmp2->data, silc_buffer_len(tmp2),
-                                              type);
+    while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2))
+      list = silc_argument_payload_encode_one(list, tmp2->data,
+					      silc_buffer_len(tmp2),
+					      SILC_PTR_TO_32(ptype));
     silc_hash_table_list_reset(&htl);
 
     idp2 = silc_id_payload_encode(server->id, SILC_ID_SERVER);
@@ -4170,9 +4172,10 @@ void silc_server_announce_get_inviteban(SilcServer server,
     type = silc_hash_table_count(channel->ban_list);
     SILC_PUT16_MSB(type, list->data);
     silc_hash_table_list(channel->ban_list, &htl);
-    while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2))
-      list = silc_argument_payload_encode_one(list, tmp2->data, silc_buffer_len(tmp2),
-                                              type);
+    while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2))
+      list = silc_argument_payload_encode_one(list, tmp2->data,
+					      silc_buffer_len(tmp2),
+					      SILC_PTR_TO_32(ptype));
     silc_hash_table_list_reset(&htl);
 
     *ban =
