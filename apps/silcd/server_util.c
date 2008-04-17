@@ -1195,6 +1195,7 @@ SilcBool silc_server_connection_allowed(SilcServer server,
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_BAD_VERSION,
 				    "You support too old protocol version");
+      silc_server_free_sock_user_data(server, sock, NULL);
       return FALSE;
     }
 
@@ -1206,6 +1207,7 @@ SilcBool silc_server_connection_allowed(SilcServer server,
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_BAD_VERSION,
 				    "You support too old software version");
+      silc_server_free_sock_user_data(server, sock, NULL);
       return FALSE;
     }
 
@@ -1217,6 +1219,7 @@ SilcBool silc_server_connection_allowed(SilcServer server,
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_BAD_VERSION,
 				    "Your software is not supported");
+      silc_server_free_sock_user_data(server, sock, NULL);
       return FALSE;
     }
   }
@@ -1236,6 +1239,7 @@ SilcBool silc_server_connection_allowed(SilcServer server,
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT,
 				  "Server is full, try again later");
+    silc_server_free_sock_user_data(server, sock, NULL);
     return FALSE;
   }
 
@@ -1247,6 +1251,7 @@ SilcBool silc_server_connection_allowed(SilcServer server,
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT,
 				  "Too many connections from your host");
+    silc_server_free_sock_user_data(server, sock, NULL);
     return FALSE;
   }
 

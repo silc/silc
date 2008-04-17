@@ -1357,6 +1357,7 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 				  SILC_STATUS_ERR_AUTH_FAILED, NULL);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
+    silc_server_free_sock_user_data(server, sconn->sock, NULL);
     silc_server_connection_free(sconn);
     return;
   }
@@ -1383,6 +1384,7 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 				    SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
       if (sconn->callback)
 	(*sconn->callback)(server, NULL, sconn->callback_context);
+      silc_server_free_sock_user_data(server, sconn->sock, NULL);
       silc_server_connection_free(sconn);
       silc_free(entry);
       return;
@@ -1413,6 +1415,7 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 				    SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
       if (sconn->callback)
 	(*sconn->callback)(server, NULL, sconn->callback_context);
+      silc_server_free_sock_user_data(server, sconn->sock, NULL);
       silc_server_connection_free(sconn);
       silc_free(entry);
       return;
@@ -1452,6 +1455,7 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 				    SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
       if (sconn->callback)
 	(*sconn->callback)(server, NULL, sconn->callback_context);
+      silc_server_free_sock_user_data(server, sconn->sock, NULL);
       silc_server_connection_free(sconn);
       silc_free(entry);
       return;
@@ -1535,6 +1539,7 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 				  SILC_STATUS_ERR_AUTH_FAILED, NULL);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
+    silc_server_free_sock_user_data(server, sconn->sock, NULL);
     silc_server_connection_free(sconn);
     silc_free(entry);
     return;
@@ -1602,6 +1607,7 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
+    silc_server_free_sock_user_data(server, sconn->sock, NULL);
     silc_server_connection_free(sconn);
     return;
   }
@@ -1620,6 +1626,7 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
+    silc_server_free_sock_user_data(server, sconn->sock, NULL);
     silc_server_connection_free(sconn);
     return;
   }
@@ -1639,6 +1646,7 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
+    silc_server_free_sock_user_data(server, sconn->sock, NULL);
     silc_server_connection_free(sconn);
     return;
   }
@@ -2147,6 +2155,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
     server->stat.auth_failures++;
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
+    silc_server_free_sock_user_data(server, sock, NULL);
     goto out;
   }
 
@@ -2185,6 +2194,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 					SILC_STATUS_ERR_PERM_DENIED,
 					"We do not have connection to backup "
 					"router established, try later");
+	  silc_server_free_sock_user_data(server, sock, NULL);
 	  server->stat.auth_failures++;
 
 	  /* From here on, wait 20 seconds for the backup router to appear. */
@@ -2209,6 +2219,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 	server->stat.auth_failures++;
 	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_AUTH_FAILED, NULL);
+	silc_server_free_sock_user_data(server, sock, NULL);
 	goto out;
       }
       entry->data.status |= SILC_IDLIST_STATUS_LOCAL;
@@ -2275,6 +2286,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 				      SILC_STATUS_ERR_PERM_DENIED,
 				      "We do not have connection to primary "
 				      "router established, try later");
+	silc_server_free_sock_user_data(server, sock, NULL);
 	server->stat.auth_failures++;
 	goto out;
       }
@@ -2362,6 +2374,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 					SILC_STATUS_ERR_PERM_DENIED,
 					"We do not have connection to backup "
 					"router established, try later");
+	  silc_server_free_sock_user_data(server, sock, NULL);
 	  server->stat.auth_failures++;
 
 	  /* From here on, wait 20 seconds for the backup router to appear. */
@@ -2402,6 +2415,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 	SILC_LOG_ERROR(("Could not add new server to cache"));
 	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_AUTH_FAILED, NULL);
+	silc_server_free_sock_user_data(server, sock, NULL);
 	server->stat.auth_failures++;
 	goto out;
       }
@@ -2525,6 +2539,7 @@ silc_server_accept_completed(SilcSKE ske, SilcSKEStatus status,
     silc_ske_free(ske);
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
+    silc_server_free_sock_user_data(server, sock, NULL);
     return;
   }
 
@@ -2537,6 +2552,7 @@ silc_server_accept_completed(SilcSKE ske, SilcSKEStatus status,
     silc_ske_free(ske);
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
+    silc_server_free_sock_user_data(server, sock, NULL);
     return;
   }
   silc_packet_set_keys(sock, send_key, receive_key, hmac_send,
@@ -2559,6 +2575,7 @@ silc_server_accept_completed(SilcSKE ske, SilcSKEStatus status,
     silc_ske_free(ske);
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
+    silc_server_free_sock_user_data(server, sock, NULL);
     return;
   }
 
@@ -2637,6 +2654,7 @@ static void silc_server_accept_new_connection(SilcNetStatus status,
     silc_server_disconnect_remote(server, packet_stream,
 				  SILC_STATUS_ERR_BANNED_FROM_SERVER,
 				  deny->reason);
+    silc_server_free_sock_user_data(server, packet_stream, NULL);
     return;
   }
 
@@ -2655,6 +2673,7 @@ static void silc_server_accept_new_connection(SilcNetStatus status,
     server->stat.conn_failures++;
     silc_server_disconnect_remote(server, packet_stream,
 				  SILC_STATUS_ERR_BANNED_FROM_SERVER, NULL);
+    silc_server_free_sock_user_data(server, packet_stream, NULL);
     return;
   }
 
@@ -2664,6 +2683,7 @@ static void silc_server_accept_new_connection(SilcNetStatus status,
     server->stat.conn_failures++;
     silc_server_disconnect_remote(server, packet_stream,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
+    silc_server_free_sock_user_data(server, packet_stream, NULL);
     return;
   }
   entry->hostname = hostname;
@@ -2699,6 +2719,7 @@ static void silc_server_accept_new_connection(SilcNetStatus status,
     server->stat.conn_failures++;
     silc_server_disconnect_remote(server, packet_stream,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
+    silc_server_free_sock_user_data(server, packet_stream, NULL);
     return;
   }
   silc_ske_set_callbacks(ske, silc_server_verify_key,
@@ -3013,7 +3034,7 @@ void silc_server_free_sock_user_data(SilcServer server,
   if (!idata)
     return;
 
-  silc_schedule_task_del_by_context(server->schedule, sock);
+  //  silc_schedule_task_del_by_context(server->schedule, sock);
 
   /* Cancel active protocols */
   if (idata) {
