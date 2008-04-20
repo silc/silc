@@ -3036,7 +3036,8 @@ void silc_server_free_sock_user_data(SilcServer server,
   if (!idata)
     return;
 
-  //  silc_schedule_task_del_by_context(server->schedule, sock);
+  silc_schedule_task_del_by_all(server->schedule, 0, silc_server_do_rekey,
+				sock);
 
   /* Cancel active protocols */
   if (idata) {
