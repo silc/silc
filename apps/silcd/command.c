@@ -1474,9 +1474,8 @@ SILC_SERVER_CMD_FUNC(kill)
     sock = remote_client->connection;
     silc_server_remove_from_channels(server, NULL, remote_client,
 				     TRUE, (char *)"Killed", TRUE, TRUE);
-    silc_server_free_client_data(server, NULL, remote_client, TRUE,
-				 comment ? comment :
-				 (unsigned char *)"Killed");
+    silc_server_free_sock_user_data(server, sock, comment ? comment :
+				    (unsigned char *)"Killed");
     if (sock)
       silc_server_close_connection(server, sock);
   } else {

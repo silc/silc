@@ -2996,8 +2996,10 @@ void silc_server_free_client_data(SilcServer server,
   SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
   silc_schedule_task_del_by_context(server->schedule, client);
 
-  if (client->data.sconn)
+  if (client->data.sconn) {
     silc_server_connection_free(client->data.sconn);
+    client->data.sconn = NULL;
+  }
 
   /* We will not delete the client entry right away. We will take it
      into history (for WHOWAS command) for 5 minutes, unless we're
