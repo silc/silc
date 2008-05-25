@@ -595,3 +595,7 @@ stk_spc equ    20   ; stack space
 %endif
 
     end
+
+%ifidn __OUTPUT_FORMAT__,elf
+section .note.GNU-stack noalloc noexec nowrite progbits
+%endif
