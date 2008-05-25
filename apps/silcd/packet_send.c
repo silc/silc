@@ -1442,10 +1442,11 @@ void silc_server_send_channel_key(SilcServer server,
   tmp_len = strlen(cipher);
   packet = silc_channel_key_payload_encode(cid_len, cid, tmp_len, cipher,
                                            channel->key_len / 8, channel->key);
-  silc_server_packet_send_to_channel(server, sender, channel,
-				     SILC_PACKET_CHANNEL_KEY,
-                                     route, TRUE, packet->data,
-				     silc_buffer_len(packet));
+  if (packet)
+    silc_server_packet_send_to_channel(server, sender, channel,
+				       SILC_PACKET_CHANNEL_KEY,
+                                       route, TRUE, packet->data,
+				       silc_buffer_len(packet));
   silc_buffer_free(packet);
 }
 

@@ -194,7 +194,7 @@ static void silc_server_packet_eos(SilcPacketEngine engine,
   SilcServer server = callback_context;
   SilcIDListData idata = silc_packet_get_context(stream);
 
-  SILC_LOG_DEBUG(("End of stream received"));
+  SILC_LOG_DEBUG(("End of stream received, sock %p", stream));
 
   if (!idata)
     return;
@@ -258,6 +258,8 @@ static void silc_server_packet_error(SilcPacketEngine engine,
   SilcStream sock = silc_packet_stream_get_stream(stream);
   const char *ip;
   SilcUInt16 port;
+
+  SILC_LOG_DEBUG(("Packet error, sock %p", stream));
 
   if (!idata || !sock)
     return;
@@ -1345,7 +1347,8 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
   SilcID remote_id;
   const char *ip;
 
-  SILC_LOG_DEBUG(("Connection %p authentication completed", sconn));
+  SILC_LOG_DEBUG(("Connection %p authentication completed, entry %p",
+		  sconn, entry));
 
   entry->op = NULL;
 
@@ -1592,7 +1595,7 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
   SilcHmac hmac_send, hmac_receive;
   SilcHash hash;
 
-  SILC_LOG_DEBUG(("Connection %p, SKE completed", sconn));
+  SILC_LOG_DEBUG(("Connection %p, SKE completed, entry %p", sconn, entry));
 
   entry->op = NULL;
 
@@ -1725,6 +1728,8 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
   }
   entry->server = server;
   silc_packet_set_context(sconn->sock, entry);
+
+  SILC_LOG_DEBUG(("Created unknown connection %p", entry));
 
   /* Set Key Exchange flags from configuration, but fall back to global
      settings too. */
@@ -2155,6 +2160,9 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
     server->stat.auth_failures++;
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
+    silc_server_config_unref(&entry->cconfig);
+    silc_server_config_unref(&entry->sconfig);
+    silc_server_config_unref(&entry->rconfig);
     silc_server_free_sock_user_data(server, sock, NULL);
     goto out;
   }
@@ -2194,6 +2202,9 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 					SILC_STATUS_ERR_PERM_DENIED,
 					"We do not have connection to backup "
 					"router established, try later");
+	  silc_server_config_unref(&entry->cconfig);
+	  silc_server_config_unref(&entry->sconfig);
+	  silc_server_config_unref(&entry->rconfig);
 	  silc_server_free_sock_user_data(server, sock, NULL);
 	  server->stat.auth_failures++;
 
@@ -2219,6 +2230,9 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 	server->stat.auth_failures++;
 	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_AUTH_FAILED, NULL);
+	silc_server_config_unref(&entry->cconfig);
+	silc_server_config_unref(&entry->sconfig);
+	silc_server_config_unref(&entry->rconfig);
 	silc_server_free_sock_user_data(server, sock, NULL);
 	goto out;
       }
@@ -2286,6 +2300,9 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 				      SILC_STATUS_ERR_PERM_DENIED,
 				      "We do not have connection to primary "
 				      "router established, try later");
+	silc_server_config_unref(&entry->cconfig);
+	silc_server_config_unref(&entry->sconfig);
+	silc_server_config_unref(&entry->rconfig);
 	silc_server_free_sock_user_data(server, sock, NULL);
 	server->stat.auth_failures++;
 	goto out;
@@ -2298,6 +2315,9 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 					    &server->config->param,
 					    rconn ? rconn->param : NULL,
 					    silc_connauth_get_ske(connauth))) {
+	  silc_server_config_unref(&entry->cconfig);
+	  silc_server_config_unref(&entry->sconfig);
+	  silc_server_config_unref(&entry->rconfig);
 	  server->stat.auth_failures++;
 	  goto out;
 	}
@@ -2374,6 +2394,9 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 					SILC_STATUS_ERR_PERM_DENIED,
 					"We do not have connection to backup "
 					"router established, try later");
+	  silc_server_config_unref(&entry->cconfig);
+	  silc_server_config_unref(&entry->sconfig);
+	  silc_server_config_unref(&entry->rconfig);
 	  silc_server_free_sock_user_data(server, sock, NULL);
 	  server->stat.auth_failures++;
 
@@ -2415,6 +2438,9 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 	SILC_LOG_ERROR(("Could not add new server to cache"));
 	silc_server_disconnect_remote(server, sock,
 				      SILC_STATUS_ERR_AUTH_FAILED, NULL);
+	silc_server_config_unref(&entry->cconfig);
+	silc_server_config_unref(&entry->sconfig);
+	silc_server_config_unref(&entry->rconfig);
 	silc_server_free_sock_user_data(server, sock, NULL);
 	server->stat.auth_failures++;
 	goto out;
@@ -2539,6 +2565,9 @@ silc_server_accept_completed(SilcSKE ske, SilcSKEStatus status,
     silc_ske_free(ske);
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
+    silc_server_config_unref(&entry->cconfig);
+    silc_server_config_unref(&entry->sconfig);
+    silc_server_config_unref(&entry->rconfig);
     silc_server_free_sock_user_data(server, sock, NULL);
     return;
   }
@@ -2575,6 +2604,9 @@ silc_server_accept_completed(SilcSKE ske, SilcSKEStatus status,
     silc_ske_free(ske);
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
+    silc_server_config_unref(&entry->cconfig);
+    silc_server_config_unref(&entry->sconfig);
+    silc_server_config_unref(&entry->rconfig);
     silc_server_free_sock_user_data(server, sock, NULL);
     return;
   }
@@ -2635,6 +2667,8 @@ static void silc_server_accept_new_connection(SilcNetStatus status,
   }
   server->stat.conn_num++;
 
+  SILC_LOG_DEBUG(("Created packet stream %p", packet_stream));
+
   /* Set source ID to packet stream */
   if (!silc_packet_set_ids(packet_stream, SILC_ID_SERVER, server->id,
 			   0, NULL)) {
@@ -2692,6 +2726,8 @@ static void silc_server_accept_new_connection(SilcNetStatus status,
   entry->server = server;
   entry->data.conn_type = SILC_CONN_UNKNOWN;
   silc_packet_set_context(packet_stream, entry);
+
+  SILC_LOG_DEBUG(("Created unknown connection %p", entry));
 
   silc_server_config_ref(&entry->cconfig, server->config, cconfig);
   silc_server_config_ref(&entry->sconfig, server->config, sconfig);
@@ -2842,9 +2878,9 @@ static void silc_server_rekey(SilcServer server, SilcPacketStream sock,
   SilcIDListData idata = silc_packet_get_context(sock);
   SilcSKE ske;
 
-  SILC_LOG_DEBUG(("Executing rekey protocol with %s:%d [%s]",
+  SILC_LOG_DEBUG(("Executing rekey protocol with %s:%d [%s], sock %p",
 		  idata->sconn->remote_host, idata->sconn->remote_port,
-		  SILC_CONNTYPE_STRING(idata->conn_type)));
+		  SILC_CONNTYPE_STRING(idata->conn_type), sock));
 
   /* Allocate SKE */
   ske = silc_ske_alloc(server->rng, server->schedule, NULL,
@@ -2928,7 +2964,7 @@ void silc_server_disconnect_remote(SilcServer server,
   if (!sock)
     return;
 
-  SILC_LOG_DEBUG(("Disconnecting remote host"));
+  SILC_LOG_DEBUG(("Disconnecting remote host, sock %p", sock));
 
   va_start(ap, status);
   cp = va_arg(ap, char *);
@@ -3031,7 +3067,7 @@ void silc_server_free_sock_user_data(SilcServer server,
   const char *ip;
   SilcUInt16 port;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Start, sock %p", sock));
 
   if (!idata)
     return;
@@ -3265,10 +3301,12 @@ void silc_server_free_sock_user_data(SilcServer server,
     {
       SilcUnknownEntry entry = (SilcUnknownEntry)idata;
 
-      SILC_LOG_DEBUG(("Freeing unknown connection data"));
+      SILC_LOG_DEBUG(("Freeing unknown connection data %p", entry));
 
-      if (idata->sconn)
+      if (idata->sconn) {
 	silc_server_connection_free(idata->sconn);
+	idata->sconn = NULL;
+      }
       silc_idlist_del_data(idata);
       silc_free(entry);
       silc_packet_set_context(sock, NULL);

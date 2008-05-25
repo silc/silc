@@ -2107,6 +2107,8 @@ SilcBuffer silc_server_get_channel_pk_list(SilcServer server,
   silc_hash_table_list(channel->channel_pubkeys, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&pk)) {
     pkp = silc_public_key_payload_encode(pk);
+    if (!pkp)
+      continue;
     list = silc_argument_payload_encode_one(list, pkp->data,
 					    silc_buffer_len(pkp),
 					    announce ? 0x03 :
