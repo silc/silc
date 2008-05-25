@@ -721,8 +721,8 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
 			    (void *)&ps->sc)) {
     ps->sc = silc_calloc(1, sizeof(*ps->sc));
     if (!ps->sc) {
-      silc_packet_stream_destroy(ps);
       silc_mutex_unlock(engine->lock);
+      silc_packet_stream_destroy(ps);
       return NULL;
     }
     ps->sc->engine = engine;
@@ -733,8 +733,8 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
     if (!inbuf) {
       silc_free(ps->sc);
       ps->sc = NULL;
-      silc_packet_stream_destroy(ps);
       silc_mutex_unlock(engine->lock);
+      silc_packet_stream_destroy(ps);
       return NULL;
     }
     silc_buffer_reset(inbuf);
@@ -744,8 +744,8 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
       silc_buffer_free(inbuf);
       silc_free(ps->sc);
       ps->sc = NULL;
-      silc_packet_stream_destroy(ps);
       silc_mutex_unlock(engine->lock);
+      silc_packet_stream_destroy(ps);
       return NULL;
     }
     silc_dlist_add(ps->sc->inbufs, inbuf);
@@ -756,8 +756,8 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
       silc_dlist_del(ps->sc->inbufs, inbuf);
       silc_free(ps->sc);
       ps->sc = NULL;
-      silc_packet_stream_destroy(ps);
       silc_mutex_unlock(engine->lock);
+      silc_packet_stream_destroy(ps);
       return NULL;
     }
   }
@@ -901,17 +901,18 @@ void silc_packet_stream_destroy(SilcPacketStream stream)
 
   if (!stream->udp) {
     /* Delete from engine */
-    engine = stream->sc->engine;
-    silc_mutex_lock(engine->lock);
-    silc_list_del(engine->streams, stream);
-
-    /* Remove per scheduler context, if it is not used anymore */
     if (stream->sc) {
+      engine = stream->sc->engine;
+      silc_mutex_lock(engine->lock);
+      silc_list_del(engine->streams, stream);
+
+      /* Remove per scheduler context, if it is not used anymore */
       stream->sc->stream_count--;
       if (!stream->sc->stream_count)
 	silc_hash_table_del(engine->contexts, stream->sc->schedule);
+
+      silc_mutex_unlock(engine->lock);
     }
-    silc_mutex_unlock(engine->lock);
 
     /* Destroy the underlaying stream */
     if (stream->stream)
