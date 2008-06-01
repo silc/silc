@@ -1334,6 +1334,7 @@ SilcBool silc_packet_set_ids(SilcPacketStream stream,
     SILC_LOG_DEBUG(("Setting source ID to packet stream %p", stream));
 
     silc_free(stream->src_id);
+    stream->src_id = NULL;
     if (!silc_id_id2str(src_id, src_id_type, tmp, sizeof(tmp), &len)) {
       silc_mutex_unlock(stream->lock);
       return FALSE;
@@ -1351,6 +1352,7 @@ SilcBool silc_packet_set_ids(SilcPacketStream stream,
     SILC_LOG_DEBUG(("Setting destination ID to packet stream %p", stream));
 
     silc_free(stream->dst_id);
+    stream->dst_id = NULL;
     if (!silc_id_id2str(dst_id, dst_id_type, tmp, sizeof(tmp), &len)) {
       silc_mutex_unlock(stream->lock);
       return FALSE;
