@@ -177,13 +177,13 @@ typedef signed short SilcInt16;
  *
  * SOURCE
  */
-#if SILC_SIZEOF_LONG == 4
-typedef unsigned long SilcUInt32;
-typedef signed long SilcInt32;
-#else
 #if SILC_SIZEOF_INT == 4
 typedef unsigned int SilcUInt32;
 typedef signed int SilcInt32;
+#else
+#if SILC_SIZEOF_LONG == 4
+typedef unsigned long SilcUInt32;
+typedef signed long SilcInt32;
 #else
 #if SILC_SIZEOF_LONG_LONG >= 4
 #ifndef WIN32
