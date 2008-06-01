@@ -361,7 +361,7 @@ typedef struct {
  ***/
 SilcPacketEngine
 silc_packet_engine_start(SilcRng rng, SilcBool router,
-			 SilcPacketCallbacks *callbacks,
+			 const SilcPacketCallbacks *callbacks,
 			 void *callback_context);
 
 /****f* silccore/SilcPacketAPI/silc_packet_engine_stop
@@ -651,7 +651,7 @@ SilcStream silc_packet_stream_get_stream(SilcPacketStream stream);
  *
  ***/
 SilcBool silc_packet_stream_link(SilcPacketStream stream,
-				 SilcPacketCallbacks *callbacks,
+				 const SilcPacketCallbacks *callbacks,
 				 void *callback_context,
 				 int priority, ...);
 
@@ -671,7 +671,7 @@ SilcBool silc_packet_stream_link(SilcPacketStream stream,
  *
  ***/
 void silc_packet_stream_unlink(SilcPacketStream stream,
-			       SilcPacketCallbacks *callbacks,
+			       const SilcPacketCallbacks *callbacks,
 			       void *callback_context);
 
 /****f* silccore/SilcPacketAPI/SilcPacketWrapCoder
