@@ -1030,6 +1030,7 @@ static SilcBool silc_packet_stream_link_va(SilcPacketStream stream,
     stream->process = silc_dlist_init();
     if (!stream->process) {
       silc_mutex_unlock(stream->lock);
+      silc_free(p);
       return FALSE;
     }
   }
