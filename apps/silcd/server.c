@@ -1292,6 +1292,8 @@ SILC_TASK_CALLBACK(silc_server_purge_expired_clients)
 
 void silc_server_connection_free(SilcServerConnection sconn)
 {
+  if (!sconn)
+    return;
   SILC_LOG_DEBUG(("Free connection %p", sconn));
   silc_dlist_del(sconn->server->conns, sconn);
   silc_server_config_unref(&sconn->conn);
@@ -1361,7 +1363,6 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_free_sock_user_data(server, sconn->sock, NULL);
-    silc_server_connection_free(sconn);
     return;
   }
 
@@ -1388,8 +1389,6 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
       if (sconn->callback)
 	(*sconn->callback)(server, NULL, sconn->callback_context);
       silc_server_free_sock_user_data(server, sconn->sock, NULL);
-      silc_server_connection_free(sconn);
-      silc_free(entry);
       return;
     }
 
@@ -1419,8 +1418,6 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
       if (sconn->callback)
 	(*sconn->callback)(server, NULL, sconn->callback_context);
       silc_server_free_sock_user_data(server, sconn->sock, NULL);
-      silc_server_connection_free(sconn);
-      silc_free(entry);
       return;
     }
 
@@ -1459,8 +1456,6 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
       if (sconn->callback)
 	(*sconn->callback)(server, NULL, sconn->callback_context);
       silc_server_free_sock_user_data(server, sconn->sock, NULL);
-      silc_server_connection_free(sconn);
-      silc_free(entry);
       return;
     }
 
@@ -1523,8 +1518,7 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 				      SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
 	if (sconn->callback)
 	  (*sconn->callback)(server, NULL, sconn->callback_context);
-	silc_server_connection_free(sconn);
-	silc_free(entry);
+	silc_server_free_sock_user_data(server, sconn->sock, NULL);
 	return;
 #endif /* 0 */
       }
@@ -1543,8 +1537,6 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_free_sock_user_data(server, sconn->sock, NULL);
-    silc_server_connection_free(sconn);
-    silc_free(entry);
     return;
   }
 
@@ -1584,7 +1576,7 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
 {
   SilcPacketStream sock = context;
   SilcUnknownEntry entry = silc_packet_get_context(sock);
-  SilcServerConnection sconn = silc_ske_get_context(ske);
+  SilcServerConnection sconn = entry->data.sconn;
   SilcServer server = entry->server;
   SilcServerConfigRouter *conn = sconn->conn.ref_ptr;
   SilcAuthMethod auth_meth = SILC_AUTH_NONE;
@@ -1611,7 +1603,6 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_free_sock_user_data(server, sconn->sock, NULL);
-    silc_server_connection_free(sconn);
     return;
   }
 
@@ -1630,7 +1621,6 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_free_sock_user_data(server, sconn->sock, NULL);
-    silc_server_connection_free(sconn);
     return;
   }
   silc_packet_set_keys(sconn->sock, send_key, receive_key, hmac_send,
@@ -1650,7 +1640,6 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_free_sock_user_data(server, sconn->sock, NULL);
-    silc_server_connection_free(sconn);
     return;
   }
 
@@ -1727,6 +1716,7 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
     return;
   }
   entry->server = server;
+  entry->data.sconn = sconn;
   silc_packet_set_context(sconn->sock, entry);
 
   SILC_LOG_DEBUG(("Created unknown connection %p", entry));
@@ -3063,12 +3053,16 @@ void silc_server_free_sock_user_data(SilcServer server,
 				     SilcPacketStream sock,
 				     const char *signoff_message)
 {
-  SilcIDListData idata = silc_packet_get_context(sock);
+  SilcIDListData idata;
   const char *ip;
   SilcUInt16 port;
 
+  if (!sock)
+    return;
+
   SILC_LOG_DEBUG(("Start, sock %p", sock));
 
+  idata = silc_packet_get_context(sock);
   if (!idata)
     return;
 
@@ -3256,8 +3250,10 @@ void silc_server_free_sock_user_data(SilcServer server,
       }
       server->backup_noswitch = FALSE;
 
-      if (idata->sconn)
+      if (idata->sconn) {
 	silc_server_connection_free(idata->sconn);
+	idata->sconn = NULL;
+      }
 
       /* Statistics */
       if (idata->conn_type == SILC_CONN_SERVER) {
