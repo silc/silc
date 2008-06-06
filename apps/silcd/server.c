@@ -1358,11 +1358,11 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
     /* Authentication failed */
     /* XXX retry connecting */
 
-    silc_server_disconnect_remote(server, sconn->sock,
-				  SILC_STATUS_ERR_AUTH_FAILED, NULL);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_free_sock_user_data(server, sconn->sock, NULL);
+    silc_server_disconnect_remote(server, sconn->sock,
+				  SILC_STATUS_ERR_AUTH_FAILED, NULL);
     return;
   }
 
@@ -1384,11 +1384,11 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 				      strdup(sconn->remote_host),
 				      SILC_SERVER, NULL, NULL, sconn->sock);
     if (!id_entry) {
-      silc_server_disconnect_remote(server, sconn->sock,
-				    SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
       if (sconn->callback)
 	(*sconn->callback)(server, NULL, sconn->callback_context);
       silc_server_free_sock_user_data(server, sconn->sock, NULL);
+      silc_server_disconnect_remote(server, sconn->sock,
+				    SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
       return;
     }
 
@@ -1413,11 +1413,11 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 			     SILC_STR_DATA(server->server_name,
 					   strlen(server->server_name)),
 			     SILC_STR_END)) {
-      silc_server_disconnect_remote(server, sconn->sock,
-				    SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
       if (sconn->callback)
 	(*sconn->callback)(server, NULL, sconn->callback_context);
       silc_server_free_sock_user_data(server, sconn->sock, NULL);
+      silc_server_disconnect_remote(server, sconn->sock,
+				    SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
       return;
     }
 
@@ -1451,11 +1451,11 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 						  SILC_ID_SERVER),
 				      NULL, sconn->sock);
     if (!id_entry) {
-      silc_server_disconnect_remote(server, sconn->sock,
-				    SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
       if (sconn->callback)
 	(*sconn->callback)(server, NULL, sconn->callback_context);
       silc_server_free_sock_user_data(server, sconn->sock, NULL);
+      silc_server_disconnect_remote(server, sconn->sock,
+				    SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
       return;
     }
 
@@ -1514,11 +1514,11 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 	/* We already have primary router.  Disconnect this connection */
 	SILC_LOG_DEBUG(("We already have primary router, disconnect"));
 	silc_idlist_del_server(server->global_list, id_entry);
-	silc_server_disconnect_remote(server, sconn->sock,
-				      SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
 	if (sconn->callback)
 	  (*sconn->callback)(server, NULL, sconn->callback_context);
 	silc_server_free_sock_user_data(server, sconn->sock, NULL);
+	silc_server_disconnect_remote(server, sconn->sock,
+				      SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
 	return;
 #endif /* 0 */
       }
@@ -1532,11 +1532,11 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
     break;
 
   default:
-    silc_server_disconnect_remote(server, sconn->sock,
-				  SILC_STATUS_ERR_AUTH_FAILED, NULL);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_free_sock_user_data(server, sconn->sock, NULL);
+    silc_server_disconnect_remote(server, sconn->sock,
+				  SILC_STATUS_ERR_AUTH_FAILED, NULL);
     return;
   }
 
@@ -1598,11 +1598,11 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
 
     /* XXX retry connecting */
     silc_ske_free(ske);
-    silc_server_disconnect_remote(server, sconn->sock,
-				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_free_sock_user_data(server, sconn->sock, NULL);
+    silc_server_disconnect_remote(server, sconn->sock,
+				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     return;
   }
 
@@ -1616,11 +1616,11 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
 
     /* Error setting keys */
     silc_ske_free(ske);
-    silc_server_disconnect_remote(server, sconn->sock,
-				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_free_sock_user_data(server, sconn->sock, NULL);
+    silc_server_disconnect_remote(server, sconn->sock,
+				  SILC_STATUS_ERR_KEY_EXCHANGE_FAILED, NULL);
     return;
   }
   silc_packet_set_keys(sconn->sock, send_key, receive_key, hmac_send,
@@ -1635,11 +1635,11 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
 
     /** Error allocating auth protocol */
     silc_ske_free(ske);
-    silc_server_disconnect_remote(server, sconn->sock,
-				  SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_free_sock_user_data(server, sconn->sock, NULL);
+    silc_server_disconnect_remote(server, sconn->sock,
+				  SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
     return;
   }
 
@@ -1701,9 +1701,9 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
   /* Set source ID to packet stream */
   if (!silc_packet_set_ids(sconn->sock, SILC_ID_SERVER, server->id,
 			   0, NULL)) {
-    silc_packet_stream_destroy(sconn->sock);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
+    silc_packet_stream_destroy(sconn->sock);
     silc_server_connection_free(sconn);
     return;
   }
@@ -1734,9 +1734,9 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
 		       server->public_key, server->private_key, sconn);
   if (!ske) {
     silc_free(entry);
-    silc_packet_stream_destroy(sconn->sock);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
+    silc_packet_stream_destroy(sconn->sock);
     silc_server_connection_free(sconn);
     return;
   }
