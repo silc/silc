@@ -701,6 +701,9 @@ SILC_FSM_STATE(silc_net_connect_st_finish)
       silc_async_free(conn->op);
   }
 
+  if (conn->sock && conn->status != SILC_NET_OK)
+    silc_net_close_connection(conn->sock);
+
   return SILC_FSM_FINISH;
 }
 
