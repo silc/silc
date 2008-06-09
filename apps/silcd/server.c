@@ -3300,6 +3300,12 @@ void silc_server_free_sock_user_data(SilcServer server,
       SILC_LOG_DEBUG(("Freeing unknown connection data %p", entry));
 
       if (idata->sconn) {
+	if (server->router_conn == idata->sconn) {
+	  if (!server->no_reconnect)
+	    silc_server_create_connections(server);
+	  server->router_conn = NULL;
+	}
+
 	silc_server_connection_free(idata->sconn);
 	idata->sconn = NULL;
       }
@@ -3975,6 +3981,7 @@ static void silc_server_announce_get_servers(SilcServer server,
   SilcIDCacheEntry id_cache;
   SilcServerEntry entry;
   SilcBuffer idp;
+  void *tmp;
 
   /* Go through all clients in the list */
   if (silc_idcache_get_all(id_list->servers, &list)) {
@@ -3991,11 +3998,14 @@ static void silc_server_announce_get_servers(SilcServer server,
 
       idp = silc_id_payload_encode(entry->id, SILC_ID_SERVER);
 
-      *servers = silc_buffer_realloc(*servers,
-				     (*servers ?
-				      silc_buffer_truelen((*servers)) +
-				      silc_buffer_len(idp) :
-				      silc_buffer_len(idp)));
+      tmp = silc_buffer_realloc(*servers,
+				(*servers ?
+				 silc_buffer_truelen((*servers)) +
+				 silc_buffer_len(idp) :
+				 silc_buffer_len(idp)));
+      if (!tmp)
+	return;
+      *servers = tmp;
       silc_buffer_pull_tail(*servers, ((*servers)->end - (*servers)->data));
       silc_buffer_put(*servers, idp->data, silc_buffer_len(idp));
       silc_buffer_pull(*servers, silc_buffer_len(idp));
@@ -4069,6 +4079,7 @@ static void silc_server_announce_get_clients(SilcServer server,
   SilcBuffer idp;
   SilcBuffer tmp;
   unsigned char mode[4];
+  void *tmp2;
 
   /* Go through all clients in the list */
   if (silc_idcache_get_all(id_list->clients, &list)) {
@@ -4087,12 +4098,17 @@ static void silc_server_announce_get_clients(SilcServer server,
 		      silc_id_render(client->id, SILC_ID_CLIENT)));
 
       idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+      if (!idp)
+	return;
 
-      *clients = silc_buffer_realloc(*clients,
-				     (*clients ?
-				      silc_buffer_truelen((*clients)) +
-				      silc_buffer_len(idp) :
-				      silc_buffer_len(idp)));
+      tmp2 = silc_buffer_realloc(*clients,
+				(*clients ?
+				 silc_buffer_truelen((*clients)) +
+				 silc_buffer_len(idp) :
+				 silc_buffer_len(idp)));
+      if (!tmp2)
+	return;
+      *clients = tmp2;
       silc_buffer_pull_tail(*clients, ((*clients)->end - (*clients)->data));
       silc_buffer_put(*clients, idp->data, silc_buffer_len(idp));
       silc_buffer_pull(*clients, silc_buffer_len(idp));
@@ -4102,11 +4118,14 @@ static void silc_server_announce_get_clients(SilcServer server,
 	silc_server_announce_encode_notify(SILC_NOTIFY_TYPE_UMODE_CHANGE,
 					   2, idp->data, silc_buffer_len(idp),
 					   mode, 4);
-      *umodes = silc_buffer_realloc(*umodes,
-				    (*umodes ?
-				     silc_buffer_truelen((*umodes)) +
-				     silc_buffer_len(tmp) :
-				     silc_buffer_len(tmp)));
+      tmp2 = silc_buffer_realloc(*umodes,
+				 (*umodes ?
+				  silc_buffer_truelen((*umodes)) +
+				  silc_buffer_len(tmp) :
+				  silc_buffer_len(tmp)));
+      if (!tmp2)
+	return;
+      *umodes = tmp2;
       silc_buffer_pull_tail(*umodes, ((*umodes)->end - (*umodes)->data));
       silc_buffer_put(*umodes, tmp->data, silc_buffer_len(tmp));
       silc_buffer_pull(*umodes, silc_buffer_len(tmp));
@@ -4262,6 +4281,7 @@ void silc_server_announce_get_channel_users(SilcServer server,
   int len;
   unsigned char mode[4], ulimit[4];
   char *hmac;
+  void *tmp2;
 
   SILC_LOG_DEBUG(("Start"));
 
@@ -4298,10 +4318,13 @@ void silc_server_announce_get_channel_users(SilcServer server,
 					SILC_CHANNEL_MODE_ULIMIT ?
 					sizeof(ulimit) : 0));
   len = silc_buffer_len(tmp);
-  *channel_modes =
+  tmp2 =
     silc_buffer_realloc(*channel_modes,
 			(*channel_modes ?
 			 silc_buffer_truelen((*channel_modes)) + len : len));
+  if (!tmp2)
+    return;
+  *channel_modes = tmp2;
   silc_buffer_pull_tail(*channel_modes,
 			((*channel_modes)->end -
 			 (*channel_modes)->data));
@@ -4326,10 +4349,13 @@ void silc_server_announce_get_channel_users(SilcServer server,
 					     chidp->data,
 					     silc_buffer_len(chidp));
     len = silc_buffer_len(tmp);
-    *channel_users =
+    tmp2 =
       silc_buffer_realloc(*channel_users,
 			  (*channel_users ?
 			   silc_buffer_truelen((*channel_users)) + len : len));
+    if (!tmp2)
+      return;
+    *channel_users = tmp2;
     silc_buffer_pull_tail(*channel_users,
 			  ((*channel_users)->end -
 			   (*channel_users)->data));
@@ -4351,11 +4377,14 @@ void silc_server_announce_get_channel_users(SilcServer server,
 					     fkey ? fkey->data : NULL,
 					     fkey ? silc_buffer_len(fkey) : 0);
     len = silc_buffer_len(tmp);
-    *channel_users_modes =
+    tmp2 =
       silc_buffer_realloc(*channel_users_modes,
 			  (*channel_users_modes ?
 			   silc_buffer_truelen((*channel_users_modes)) +
 			   len : len));
+    if (!tmp2)
+      return;
+    *channel_users_modes = tmp2;
     silc_buffer_pull_tail(*channel_users_modes,
 			  ((*channel_users_modes)->end -
 			   (*channel_users_modes)->data));
@@ -4397,6 +4426,7 @@ void silc_server_announce_get_channels(SilcServer server,
   SilcUInt16 name_len;
   int len;
   int i = *channel_users_modes_c;
+  void *tmp;
   SilcBool announce;
 
   SILC_LOG_DEBUG(("Start"));
@@ -4420,11 +4450,15 @@ void silc_server_announce_get_channels(SilcServer server,
 
       if (announce) {
 	len = 4 + name_len + id_len + 4;
-	*channels =
+	tmp =
 	  silc_buffer_realloc(*channels,
 			      (*channels ?
 			       silc_buffer_truelen((*channels)) +
 			       len : len));
+	if (!tmp)
+	  break;
+	*channels = tmp;
+
 	silc_buffer_pull_tail(*channels,
 			      ((*channels)->end - (*channels)->data));
 	silc_buffer_format(*channels,
@@ -4445,15 +4479,23 @@ void silc_server_announce_get_channels(SilcServer server,
 
       if (announce) {
 	/* Channel user modes */
-	*channel_users_modes = silc_realloc(*channel_users_modes,
-					    sizeof(**channel_users_modes) *
-					    (i + 1));
+	tmp = silc_realloc(*channel_users_modes,
+			    sizeof(**channel_users_modes) * (i + 1));
+	if (!tmp)
+	  break;
+	*channel_users_modes = tmp;
 	(*channel_users_modes)[i] = NULL;
-	*channel_modes = silc_realloc(*channel_modes,
-				      sizeof(**channel_modes) * (i + 1));
+	tmp = silc_realloc(*channel_modes,
+			   sizeof(**channel_modes) * (i + 1));
+	if (!tmp)
+	  break;
+	*channel_modes = tmp;
 	(*channel_modes)[i] = NULL;
-	*channel_ids = silc_realloc(*channel_ids,
-				      sizeof(**channel_ids) * (i + 1));
+	tmp = silc_realloc(*channel_ids,
+			   sizeof(**channel_ids) * (i + 1));
+	if (!tmp)
+	  break;
+	*channel_ids = tmp;
 	(*channel_ids)[i] = NULL;
 	silc_server_announce_get_channel_users(server, channel,
 					       &(*channel_modes)[i],
@@ -4462,18 +4504,27 @@ void silc_server_announce_get_channels(SilcServer server,
 	(*channel_ids)[i] = channel->id;
 
 	/* Channel's topic */
-	*channel_topics = silc_realloc(*channel_topics,
-				       sizeof(**channel_topics) * (i + 1));
+	tmp = silc_realloc(*channel_topics,
+			   sizeof(**channel_topics) * (i + 1));
+	if (!tmp)
+	  break;
+	*channel_topics = tmp;
 	(*channel_topics)[i] = NULL;
 	silc_server_announce_get_channel_topic(server, channel,
 					       &(*channel_topics)[i]);
 
 	/* Channel's invite and ban list */
-	*channel_invites = silc_realloc(*channel_invites,
-					sizeof(**channel_invites) * (i + 1));
+	tmp = silc_realloc(*channel_invites,
+			   sizeof(**channel_invites) * (i + 1));
+	if (!tmp)
+	  break;
+	*channel_invites = tmp;
 	(*channel_invites)[i] = NULL;
-	*channel_bans = silc_realloc(*channel_bans,
-				     sizeof(**channel_bans) * (i + 1));
+	tmp = silc_realloc(*channel_bans,
+			   sizeof(**channel_bans) * (i + 1));
+	if (!tmp)
+	  break;
+	*channel_bans = tmp;
 	(*channel_bans)[i] = NULL;
 	silc_server_announce_get_inviteban(server, channel,
 					   &(*channel_invites)[i],
