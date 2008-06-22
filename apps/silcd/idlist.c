@@ -326,7 +326,7 @@ silc_idlist_add_client(SilcIDList id_list, char *nickname, char *username,
     int ret;
 
     ret = silc_parse_userfqdn(username, u, sizeof(u), h, sizeof(h));
-    if (!u)
+    if (!ret)
       return NULL;
     if (!silc_identifier_verify(u, strlen(u), SILC_STRING_UTF8, 128))
       return NULL;

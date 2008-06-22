@@ -356,6 +356,7 @@ static void silc_server_notify_process(SilcServer server,
     client->mode = 0;
     client->router = NULL;
     client->connection = NULL;
+    silc_dlist_del(server->expired_clients, client);
     silc_dlist_add(server->expired_clients, client);
     break;
 
@@ -1504,6 +1505,7 @@ static void silc_server_notify_process(SilcServer server,
       client->mode = 0;
       client->router = NULL;
       client->connection = NULL;
+      silc_dlist_del(server->expired_clients, client);
       silc_dlist_add(server->expired_clients, client);
       break;
     }
@@ -3950,6 +3952,7 @@ void silc_server_resume_client(SilcServer server,
     detached_client->mode &= ~SILC_UMODE_DETACHED;
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
     detached_client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
+    silc_dlist_del(server->expired_clients, detached_client);
     silc_dlist_del(server->expired_clients, detached_client);
 
     /* Check if anyone is watching this client */

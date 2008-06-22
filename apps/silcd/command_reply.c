@@ -533,6 +533,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     client->servername = servername[0] ? strdup(servername) : NULL;
     client->data.status |= SILC_IDLIST_STATUS_RESOLVED;
     client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
+    client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
 
     /* Update cache entry */
     silc_idcache_update_by_context(global ? server->global_list->clients :
@@ -543,10 +544,12 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
   /* If client is global and is not on any channel then add that we'll
      expire the entry after a while. */
   if (global) {
-    silc_idlist_find_client_by_id(server->global_list, client->id,
-				  FALSE, &cache);
-    if (!silc_hash_table_count(client->channels))
+    client = silc_idlist_find_client_by_id(server->global_list, client->id,
+					   FALSE, &cache);
+    if (client && !silc_hash_table_count(client->channels)) {
+      silc_dlist_del(server->expired_clients, client);
       silc_dlist_add(server->expired_clients, client);
+    }
   }
 
   return TRUE;

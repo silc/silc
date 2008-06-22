@@ -1263,13 +1263,10 @@ SILC_TASK_CALLBACK(silc_server_purge_expired_clients)
 
   silc_dlist_start(server->expired_clients);
   while ((client = silc_dlist_get(server->expired_clients))) {
-    if (client->data.status & SILC_IDLIST_STATUS_REGISTERED)
-      continue;
-
     /* For unregistered clients the created timestamp is actually
        unregistered timestamp.  Make sure client remains in history
        at least 500 seconds. */
-    if (curtime - client->data.created < 500)
+    if (client->data.created && curtime - client->data.created < 500)
       continue;
 
     id_list = (client->data.status & SILC_IDLIST_STATUS_LOCAL ?
@@ -3036,6 +3033,7 @@ void silc_server_free_client_data(SilcServer server,
     client->router = NULL;
     client->connection = NULL;
     client->data.created = silc_time();
+    silc_dlist_del(server->expired_clients, client);
     silc_dlist_add(server->expired_clients, client);
   } else {
     /* Delete directly since we're shutting down server */

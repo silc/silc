@@ -228,6 +228,7 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
 	client->mode = 0;
 	client->router = NULL;
 	client->connection = NULL;
+	silc_dlist_del(server->expired_clients, client);
 	silc_dlist_add(server->expired_clients, client);
       } else {
 	silc_idlist_del_data(client);
@@ -289,6 +290,7 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
 	client->mode = 0;
 	client->router = NULL;
 	client->connection = NULL;
+	silc_dlist_del(server->expired_clients, client);
 	silc_dlist_add(server->expired_clients, client);
       } else {
 	silc_idlist_del_data(client);
