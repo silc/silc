@@ -116,7 +116,7 @@ int silc_parse_userfqdn(const char *string,
 {
   SilcUInt32 tlen;
 
-  if (!user && !fqdn)
+  if (!user || !fqdn)
     return 0;
 
   memset(user, 0, user_size);
@@ -469,7 +469,7 @@ char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len)
 {
   unsigned char *fingerprint, *cp;
   unsigned int len, blocks, i;
-  
+
   if (!data || !data_len)
     return NULL;
 
@@ -484,7 +484,7 @@ char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len)
   cp = fingerprint = silc_calloc(len, sizeof(*fingerprint));
   if (!cp)
     return NULL;
-  
+
   for (i = 0; i < data_len; i++) {
     silc_snprintf(cp, len, "%02X", data[i]);
     cp += 2;
@@ -497,7 +497,7 @@ char *silc_fingerprint(const unsigned char *data, SilcUInt32 data_len)
   }
   i--;
   if ((i + 1) % 10 == 0)
-    *(--cp) = '\0';  
+    *(--cp) = '\0';
   if ((i + 1) % 2 == 0)
     *(--cp) = '\0';
 
