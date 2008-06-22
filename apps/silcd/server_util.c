@@ -228,6 +228,7 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
 	client->mode = 0;
 	client->router = NULL;
 	client->connection = NULL;
+	client->data.created = silc_time();
 	silc_dlist_del(server->expired_clients, client);
 	silc_dlist_add(server->expired_clients, client);
       } else {
@@ -290,6 +291,7 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
 	client->mode = 0;
 	client->router = NULL;
 	client->connection = NULL;
+	client->data.created = silc_time();
 	silc_dlist_del(server->expired_clients, client);
 	silc_dlist_add(server->expired_clients, client);
       } else {
@@ -1568,6 +1570,7 @@ void silc_server_kill_client(SilcServer server,
     }
 
     /* Remove remote client */
+    silc_dlist_del(server->expired_clients, remote_client);
     silc_idlist_del_data(remote_client);
     if (!silc_idlist_del_client(server->global_list, remote_client)) {
       /* Remove this client from watcher list if it is */

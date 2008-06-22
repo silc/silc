@@ -152,6 +152,7 @@ silc_server_command_process_error(SilcServerCommandReplyContext cmd,
 
       silc_server_remove_from_channels(server, NULL, client, TRUE,
 				       NULL, TRUE, FALSE);
+      silc_dlist_del(server->expired_clients, client);
       silc_idlist_del_data(client);
       silc_idlist_del_client(server->global_list, client);
     }
@@ -547,6 +548,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     client = silc_idlist_find_client_by_id(server->global_list, client->id,
 					   FALSE, &cache);
     if (client && !silc_hash_table_count(client->channels)) {
+      client->data.created = silc_time();
       silc_dlist_del(server->expired_clients, client);
       silc_dlist_add(server->expired_clients, client);
     }

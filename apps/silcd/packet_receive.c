@@ -356,6 +356,7 @@ static void silc_server_notify_process(SilcServer server,
     client->mode = 0;
     client->router = NULL;
     client->connection = NULL;
+    client->data.created = silc_time();
     silc_dlist_del(server->expired_clients, client);
     silc_dlist_add(server->expired_clients, client);
     break;
@@ -1264,6 +1265,7 @@ static void silc_server_notify_process(SilcServer server,
 	      silc_server_del_from_watcher_list(server, client);
 
 	    /* Remove the client */
+	    silc_dlist_del(server->expired_clients, client);
 	    silc_idlist_del_data(client);
 	    silc_idlist_del_client(local ? server->local_list :
 				   server->global_list, client);
@@ -1505,6 +1507,7 @@ static void silc_server_notify_process(SilcServer server,
       client->mode = 0;
       client->router = NULL;
       client->connection = NULL;
+      client->data.created = silc_time();
       silc_dlist_del(server->expired_clients, client);
       silc_dlist_add(server->expired_clients, client);
       break;
@@ -1666,6 +1669,7 @@ static void silc_server_notify_process(SilcServer server,
 
 	silc_server_remove_from_channels(server, NULL, client, TRUE,
 					 NULL, TRUE, FALSE);
+	silc_dlist_del(server->expired_clients, client);
 	silc_idlist_del_data(client);
 	silc_idlist_del_client(server->global_list, client);
       }
@@ -3717,6 +3721,7 @@ void silc_server_resume_client(SilcServer server,
     detached_client->data.status &= ~SILC_IDLIST_STATUS_RESUME_RES;
     detached_client->mode &= ~SILC_UMODE_DETACHED;
     server->stat.my_detached--;
+    silc_dlist_del(server->expired_clients, detached_client);
 
     /* We are finished - reset resuming client */
     detached_client->resuming_client = NULL;
@@ -3734,6 +3739,7 @@ void silc_server_resume_client(SilcServer server,
     silc_server_remove_from_channels(server, NULL, client, FALSE,
 				     NULL, FALSE, FALSE);
     silc_server_del_from_watcher_list(server, client);
+    silc_dlist_del(server->expired_clients, client);
     if (!silc_idlist_del_client(server->local_list, client))
       silc_idlist_del_client(server->global_list, client);
     client = detached_client;
@@ -3952,7 +3958,6 @@ void silc_server_resume_client(SilcServer server,
     detached_client->mode &= ~SILC_UMODE_DETACHED;
     detached_client->data.status |= SILC_IDLIST_STATUS_RESUMED;
     detached_client->data.status &= ~SILC_IDLIST_STATUS_LOCAL;
-    silc_dlist_del(server->expired_clients, detached_client);
     silc_dlist_del(server->expired_clients, detached_client);
 
     /* Check if anyone is watching this client */
