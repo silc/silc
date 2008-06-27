@@ -31,6 +31,7 @@
 #include "rawlog.h"
 #include "misc.h"
 #include "settings.h"
+#include "special-vars.h"
 
 #include "channels-setup.h"
 
@@ -159,6 +160,25 @@ static void sig_server_quit(SILC_SERVER_REC *server, const char *msg)
 {
   if (IS_SILC_SERVER(server) && server->conn)
     silc_command_exec(server, "QUIT", msg);
+}
+
+static void sig_silc_channel_joined(SILC_CHANNEL_REC *channel)
+{
+  CHANNEL_SETUP_REC *rec;
+
+  if (!IS_SILC_CHANNEL(channel))
+    return;
+  if (channel->server && channel->server->disconnected)
+    return;
+  if (channel->session_rejoin)
+    return;
+  
+  rec = channel_setup_find(channel->name, channel->server->connrec->chatnet); 
+
+  if (rec == NULL || rec->autosendcmd == NULL || !*rec->autosendcmd)
+    return;
+
+  eval_special_string(rec->autosendcmd, "", (SERVER_REC*)channel->server, (CHANNEL_REC*)channel);
 }
 
 /* Find Irssi channel entry by SILC channel entry */
@@ -698,7 +718,7 @@ static void command_key(const char *data, SILC_SERVER_REC *server,
 					    argv[4], argv_lens[4]);
       } else if (type == 2) {
 	/* Set private channel key */
-	if (!(channel_entry->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
+	if (!(channel_entry) || !(channel_entry->mode & SILC_CHANNEL_MODE_PRIVKEY)) {
 	  printformat_module("fe-common/silc", server, NULL, MSGLEVEL_CRAP,
 			     SILCTXT_CH_PRIVATE_KEY_NOMODE,
 			     channel_entry->channel_name);
@@ -1261,6 +1281,7 @@ void silc_channels_init(void)
   signal_add("server connected", (SIGNAL_FUNC) sig_connected);
   signal_add("server quit", (SIGNAL_FUNC) sig_server_quit);
   signal_add("mime", (SIGNAL_FUNC) sig_mime);
+  signal_add("channel joined", (SIGNAL_FUNC) sig_silc_channel_joined);
 
   command_bind_silc("part", MODULE_NAME, (SIGNAL_FUNC) command_part);
   command_bind_silc("me", MODULE_NAME, (SIGNAL_FUNC) command_me);
@@ -1283,6 +1304,7 @@ void silc_channels_deinit(void)
   signal_remove("server connected", (SIGNAL_FUNC) sig_connected);
   signal_remove("server quit", (SIGNAL_FUNC) sig_server_quit);
   signal_remove("mime", (SIGNAL_FUNC) sig_mime);
+  signal_remove("channel joined", (SIGNAL_FUNC) sig_silc_channel_joined);
 
   command_unbind("part", (SIGNAL_FUNC) command_part);
   command_unbind("me", (SIGNAL_FUNC) command_me);
