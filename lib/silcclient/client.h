@@ -60,7 +60,9 @@ typedef struct SilcClientEntryInternalStruct {
   unsigned int prv_resp    : 1; /* TRUE if we are responder when using
 				   private message keys. */
   SilcUInt16 resolve_cmd_ident;	/* Command identifier when resolving */
-  SilcAtomic8 refcnt;		/* Reference counter */
+  SilcAtomic32 refcnt;		/* Reference counter */
+  SilcAtomic32 deleted;     /* Flag indicating whether the client object is
+									   already scheduled for deletion.*/
 } SilcClientEntryInternal;
 
 /* Internal channel entry context */
@@ -87,14 +89,16 @@ typedef struct SilcChannelEntryInternalStruct {
 						stuff that relates to the
 						channel. Not used for the
 						channel resolving itself. */
-  SilcAtomic16 refcnt;		             /* Reference counter */
+  SilcAtomic32 refcnt;		             /* Reference counter */
+  SilcAtomic32 deleted;     /* Flag indicating whether the channel object is
+									   already scheduled for deletion.*/
 } SilcChannelEntryInternal;
 
 /* Internal server entry context */
 typedef struct SilcServerEntryInternalStruct {
   SilcRwLock lock;		             /* Read/write lock */
   SilcUInt16 resolve_cmd_ident;		     /* Resolving identifier */
-  SilcAtomic8 refcnt;		             /* Reference counter */
+  SilcAtomic32 refcnt;		             /* Reference counter */
 } SilcServerEntryInternal;
 
 #endif /* CLIENT_H */
