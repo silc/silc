@@ -595,6 +595,10 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
     CONFIG_IS_DOUBLE(server_info->server_type);
     server_info->server_type = strdup((char *) val);
   }
+  else if (!strcmp(name, "externalip")) {
+    CONFIG_IS_DOUBLE(server_info->external_ip);
+    server_info->external_ip = strdup((char *) val);
+  }
   else if (!strcmp(name, "admin")) {
     CONFIG_IS_DOUBLE(server_info->admin);
     server_info->admin = strdup((char *) val);
@@ -1256,6 +1260,7 @@ static const SilcConfigTable table_serverinfo[] = {
   { "primary",		SILC_CONFIG_ARG_BLOCK,	fetch_serverinfo, table_serverinfo_c},
   { "secondary",	SILC_CONFIG_ARG_BLOCK,	fetch_serverinfo, table_serverinfo_c},
   { "servertype",	SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
+  { "externalip",	SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
   { "location",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
   { "admin",		SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
   { "adminemail",	SILC_CONFIG_ARG_STR,	fetch_serverinfo, NULL},
@@ -1639,6 +1644,7 @@ void silc_server_config_destroy(SilcServerConfig config)
       silc_free(di);
     }
     silc_free(si->server_type);
+    silc_free(si->external_ip);
     silc_free(si->location);
     silc_free(si->admin);
     silc_free(si->email);

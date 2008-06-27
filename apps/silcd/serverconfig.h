@@ -59,6 +59,7 @@ typedef struct SilcServerConfigServerInfoStruct {
   char *server_name;
   SilcServerConfigServerInfoInterface *primary;
   SilcServerConfigServerInfoInterface *secondary;
+  char *external_ip;    /* E.g. public IP if we're in a NAT */
   char *server_type;	/* E.g. "Test Server" */
   char *location;	/* geographic location */
   char *admin;		/* admin full name */

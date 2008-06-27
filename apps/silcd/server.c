@@ -767,6 +767,7 @@ SilcBool silc_server_init(SilcServer server)
   SilcNetListener listener;
   SilcUInt16 *port;
   char **ip;
+  char *external_ip;
 
   SILC_LOG_DEBUG(("Initializing server"));
 
@@ -870,8 +871,11 @@ SilcBool silc_server_init(SilcServer server)
   /* Create a Server ID for the server. */
   port = silc_net_listener_get_port(listener, NULL);
   ip = silc_net_listener_get_ip(listener, NULL);
-  silc_id_create_server_id(server->config->server_info->primary->public_ip ?
-			   server->config->server_info->primary->public_ip :
+  external_ip = server->config->server_info->external_ip ?
+  		server->config->server_info->external_ip :
+		server->config->server_info->primary->public_ip;
+  silc_id_create_server_id(external_ip ?
+			   external_ip :
 			   ip[0], port[0], server->rng, &id);
   if (!id)
     goto err;
