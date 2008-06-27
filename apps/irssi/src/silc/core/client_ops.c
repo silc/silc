@@ -1807,8 +1807,8 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       if (!ownnick)
 	break;
       nicklist_set_own(CHANNEL(chanrec), ownnick);
-      signal_emit("channel joined", 1, chanrec);
       chanrec->entry = channel_entry;
+      signal_emit("channel joined", 1, chanrec);
 
       if (chanrec->topic)
 	printformat_module("fe-common/silc", server,
