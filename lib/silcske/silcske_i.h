@@ -91,9 +91,7 @@ struct SilcSKEStruct {
   SilcUInt16 refcnt;		      /* Reference counter */
 
   unsigned int aborted    : 1;        /* Set when SKE aborted */
-  unsigned int freed      : 1;	      /* Set when freed during session */
   unsigned int responder  : 1;	      /* Set when we are responder side */
-  unsigned int running    : 1;	      /* Set when SKE is running */
   unsigned int rekeying   : 1;	      /* Set when rekeying */
 };
 
