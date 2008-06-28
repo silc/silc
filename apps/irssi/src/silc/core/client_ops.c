@@ -1438,6 +1438,21 @@ void silc_getkey_cb(bool success, void *context)
 		       entity, name);
   }
 
+  /*
+	* XXX: What if the connection or client went away?  They're not even
+	* refcounted and we don't have a way to cancel the input callback.  Bad!
+	*/
+  switch (getkey->id_type)
+  {
+    case SILC_ID_CLIENT:
+	   silc_client_unref_client(getkey->client, getkey->conn, (SilcClientEntry)getkey->entry);
+	   break;
+
+    case SILC_ID_SERVER:
+	   silc_client_unref_server(getkey->client, getkey->conn, (SilcServerEntry)getkey->entry);
+		break;
+  }
+
   silc_free(getkey);
 }
 
@@ -2096,6 +2111,19 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 	name = (id_type == SILC_ID_CLIENT ?
 		((SilcClientEntry)entry)->nickname :
 		((SilcServerEntry)entry)->server_name);
+
+	switch (id_type)
+	{
+		case SILC_ID_CLIENT:
+			name = ((SilcClientEntry)entry)->nickname;
+			silc_client_ref_client(client, conn, (SilcClientEntry)entry);
+			break;
+
+		case SILC_ID_SERVER:
+			name = ((SilcServerEntry)entry)->server_name;
+			silc_client_ref_server(client, conn, (SilcServerEntry)entry);
+			break;
+	}
 
 	silc_verify_public_key_internal(client, conn, name,
 					(id_type == SILC_ID_CLIENT ?
