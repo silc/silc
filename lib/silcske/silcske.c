@@ -957,7 +957,7 @@ static SilcBool silc_ske_packet_send(SilcSKE ske,
 static void silc_ske_completion(SilcSKE ske)
 {
   /* Call the completion callback */
-  if (!ske->freed && !ske->aborted && ske->callbacks->completed) {
+  if (!ske->aborted && ske->callbacks->completed) {
     if (ske->status != SILC_SKE_STATUS_OK)
       ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL,
 			        ske->callbacks->context);
@@ -973,8 +973,6 @@ static void silc_ske_finished(SilcFSM fsm, void *fsm_context,
 			      void *destructor_context)
 {
   SilcSKE ske = fsm_context;
-  ske->running = FALSE;
-  if (ske->freed)
     silc_ske_free(ske);
 }
 
@@ -1036,13 +1034,10 @@ SilcSKE silc_ske_alloc(SilcRng rng, SilcSchedule schedule,
 
 void silc_ske_free(SilcSKE ske)
 {
-  SILC_LOG_DEBUG(("Freeing Key Exchange object"));
-
   if (!ske)
     return;
 
-  if (ske->running) {
-    ske->freed = TRUE;
+  SILC_LOG_DEBUG(("Freeing Key Exchange object %p: aborted=%u refcount=%hu", ske, ske->aborted, ske->refcnt));
 
     if (ske->aborted) {
       /* If already aborted, destroy the session immediately */
@@ -1054,8 +1049,6 @@ void silc_ske_free(SilcSKE ske)
 	silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
       silc_fsm_continue_sync(&ske->fsm);
     }
-    return;
-  }
 
   ske->refcnt--;
   if (ske->refcnt > 0)
@@ -1102,7 +1095,7 @@ void silc_ske_free(SilcSKE ske)
   silc_free(ske->hash);
   silc_free(ske->callbacks);
 
-  memset(ske, 'F', sizeof(*ske));
+  memset(ske, 0xdd, sizeof(*ske));
   silc_free(ske);
 }
 
@@ -1805,7 +1798,7 @@ SilcAsyncOperation silc_ske_initiator(SilcSKE ske,
 				      SilcSKEParams params,
 				      SilcSKEStartPayload start_payload)
 {
-  SILC_LOG_DEBUG(("Start SKE as initiator"));
+  SILC_LOG_DEBUG(("Start SKE %p as initiator; stream=%p; params=%p; start_payload=%p", ske, stream, params, start_payload));
 
   if (!ske || !stream || !params || !params->version)
     return NULL;
@@ -1831,7 +1824,7 @@ SilcAsyncOperation silc_ske_initiator(SilcSKE ske,
   ske->timeout = params->timeout_secs ? params->timeout_secs : 30;
   ske->start_payload = start_payload;
   ske->version = params->version;
-  ske->running = TRUE;
+  ++ ske->refcnt;
 
   /* Link to packet stream to get key exchange packets */
   ske->stream = stream;
@@ -2418,7 +2411,7 @@ SilcAsyncOperation silc_ske_responder(SilcSKE ske,
   ske->version = params->version;
   if (!ske->version)
     return NULL;
-  ske->running = TRUE;
+  ++ ske->refcnt;
 
   /* Link to packet stream to get key exchange packets */
   ske->stream = stream;
@@ -2676,8 +2669,8 @@ silc_ske_rekey_initiator(SilcSKE ske,
 
   ske->rekey = rekey;
   ske->responder = FALSE;
-  ske->running = TRUE;
   ske->rekeying = TRUE;
+  ++ ske->refcnt;
 
   /* Link to packet stream to get key exchange packets */
   ske->stream = stream;
@@ -2953,9 +2946,9 @@ silc_ske_rekey_responder(SilcSKE ske,
 
   ske->rekey = rekey;
   ske->responder = TRUE;
-  ske->running = TRUE;
   ske->rekeying = TRUE;
   ske->packet = packet;
+  ++ ske->refcnt;
 
   /* Link to packet stream to get key exchange packets */
   ske->stream = stream;
