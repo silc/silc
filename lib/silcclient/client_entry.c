@@ -2125,37 +2125,18 @@ SilcServerEntry silc_client_add_server(SilcClient client,
 SilcBool silc_client_del_server(SilcClient client, SilcClientConnection conn,
 				SilcServerEntry server)
 {
-  SilcIDCacheEntry id_cache;
-  SilcBool ret = TRUE;
-  char *namec;
-
   if (!server)
     return FALSE;
 
-  if (silc_atomic_sub_int32(&server->internal.refcnt, 1) > 0)
-    return FALSE;
-
-  SILC_LOG_DEBUG(("Deleting server %p", server));
-
-  silc_mutex_lock(conn->internal->lock);
-  if (silc_idcache_find_by_context(conn->internal->server_cache, server,
-				   &id_cache)) {
-    namec = id_cache->name;
-    ret = silc_idcache_del_by_context(conn->internal->server_cache,
-				      server, NULL);
-    silc_free(namec);
+  if (silc_atomic_sub_int32(&server->internal.deleted, 1) != 0)
+  {
+	  SILC_LOG_DEBUG(("** WARNING ** Deleting a server twice %p", server));
+//	  asm("int3");
+	  return FALSE;
   }
-  silc_mutex_unlock(conn->internal->lock);
 
-  silc_free(server->server_name);
-  silc_free(server->server_info);
-  if (server->public_key)
-    silc_pkcs_public_key_free(server->public_key);
-  silc_atomic_uninit32(&server->internal.refcnt);
-  silc_rwlock_free(server->internal.lock);
-  silc_free(server);
-
-  return ret;
+  silc_client_unref_server(client, conn, server);
+  return TRUE;
 }
 
 /* Updates the `server_entry' with the new information sent as argument. */
@@ -2231,13 +2212,35 @@ SilcServerEntry silc_client_ref_server(SilcClient client,
 void silc_client_unref_server(SilcClient client, SilcClientConnection conn,
 			      SilcServerEntry server_entry)
 {
-  if (server_entry) {
-    SILC_LOG_DEBUG(("Server %p refcnt %d->%d", server_entry,
-		    silc_atomic_get_int32(&server_entry->internal.refcnt),
-		    silc_atomic_get_int32(&server_entry->internal.refcnt)
-		    - 1));
-    silc_client_del_server(client, conn, server_entry);
+  SilcBool ret;
+  SilcIDCacheEntry id_cache;
+  char *namec;
+
+  if (!server_entry)
+    return;
+
+  if (silc_atomic_sub_int32(&server_entry->internal.refcnt, 1) > 0)
+    return;
+
+  SILC_LOG_DEBUG(("Deleting server %p", server_entry));
+
+  silc_mutex_lock(conn->internal->lock);
+  if (silc_idcache_find_by_context(conn->internal->server_cache, server_entry,
+				   &id_cache)) {
+    namec = id_cache->name;
+    ret = silc_idcache_del_by_context(conn->internal->server_cache,
+				      server_entry, NULL);
+    silc_free(namec);
   }
+  silc_mutex_unlock(conn->internal->lock);
+
+  silc_free(server_entry->server_name);
+  silc_free(server_entry->server_info);
+  if (server_entry->public_key)
+    silc_pkcs_public_key_free(server_entry->public_key);
+  silc_atomic_uninit32(&server_entry->internal.refcnt);
+  silc_rwlock_free(server_entry->internal.lock);
+  silc_free(server_entry);
 }
 
 /* Free server entry list */

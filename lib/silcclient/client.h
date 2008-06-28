@@ -101,6 +101,8 @@ typedef struct SilcServerEntryInternalStruct {
   SilcRwLock lock;		             /* Read/write lock */
   SilcUInt16 resolve_cmd_ident;		     /* Resolving identifier */
   SilcAtomic32 refcnt;		             /* Reference counter */
+  SilcAtomic32 deleted;     /* Flag indicating whether the server object is
+									   already scheduled for deletion.*/
 } SilcServerEntryInternal;
 
 #endif /* CLIENT_H */
