@@ -815,6 +815,9 @@ SilcClientEntry silc_client_add_client(SilcClient client,
 						 NULL, NULL, NULL, TRUE);
   if (!client_entry->channels) {
     silc_free(client_entry->realname);
+	 silc_atomic_uninit32(&client_entry->internal.deleted);
+	 silc_atomic_uninit32(&client_entry->internal.refcnt);
+	 silc_rwlock_free(client_entry->internal.lock);
     silc_free(client_entry);
     return NULL;
   }
@@ -824,8 +827,11 @@ SilcClientEntry silc_client_add_client(SilcClient client,
     nick = silc_identifier_check(parsed, strlen(parsed),
 				 SILC_STRING_UTF8, 128, NULL);
     if (!nick) {
-      silc_free(client_entry->realname);
       silc_hash_table_free(client_entry->channels);
+      silc_free(client_entry->realname);
+	   silc_atomic_uninit32(&client_entry->internal.deleted);
+	   silc_atomic_uninit32(&client_entry->internal.refcnt);
+	   silc_rwlock_free(client_entry->internal.lock);
       silc_free(client_entry);
       return NULL;
     }
@@ -837,8 +843,11 @@ SilcClientEntry silc_client_add_client(SilcClient client,
   if (!silc_idcache_add(conn->internal->client_cache, nick,
 			&client_entry->id, client_entry)) {
     silc_free(nick);
-    silc_free(client_entry->realname);
     silc_hash_table_free(client_entry->channels);
+    silc_free(client_entry->realname);
+	 silc_atomic_uninit32(&client_entry->internal.deleted);
+	 silc_atomic_uninit32(&client_entry->internal.refcnt);
+	 silc_rwlock_free(client_entry->internal.lock);
     silc_free(client_entry);
     silc_mutex_unlock(conn->internal->lock);
     return NULL;
@@ -1652,6 +1661,7 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   if (!channel->channel_name) {
     silc_rwlock_free(channel->internal.lock);
     silc_atomic_uninit32(&channel->internal.refcnt);
+	 silc_atomic_uninit32(&channel->internal.deleted);
     silc_free(channel);
     return NULL;
   }
@@ -1661,6 +1671,7 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   if (!channel->user_list) {
     silc_rwlock_free(channel->internal.lock);
     silc_atomic_uninit32(&channel->internal.refcnt);
+	 silc_atomic_uninit32(&channel->internal.deleted);
     silc_free(channel->channel_name);
     silc_free(channel);
     return NULL;
@@ -1672,6 +1683,7 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
   if (!channel_namec) {
     silc_rwlock_free(channel->internal.lock);
     silc_atomic_uninit32(&channel->internal.refcnt);
+	 silc_atomic_uninit32(&channel->internal.deleted);
     silc_free(channel->channel_name);
     silc_hash_table_free(channel->user_list);
     silc_free(channel);
@@ -1685,6 +1697,7 @@ SilcChannelEntry silc_client_add_channel(SilcClient client,
 			&channel->id, channel)) {
     silc_rwlock_free(channel->internal.lock);
     silc_atomic_uninit32(&channel->internal.refcnt);
+	 silc_atomic_uninit32(&channel->internal.deleted);
     silc_free(channel_namec);
     silc_free(channel->channel_name);
     silc_hash_table_free(channel->user_list);
@@ -2081,6 +2094,7 @@ SilcServerEntry silc_client_add_server(SilcClient client,
 
   silc_rwlock_alloc(&server_entry->internal.lock);
   silc_atomic_init32(&server_entry->internal.refcnt, 0);
+  silc_atomic_init32(&server_entry->internal.deleted, 1);
   server_entry->id = *server_id;
   if (server_name)
     server_entry->server_name = strdup(server_name);
@@ -2094,6 +2108,9 @@ SilcServerEntry silc_client_add_server(SilcClient client,
     if (!server_namec) {
       silc_free(server_entry->server_name);
       silc_free(server_entry->server_info);
+      silc_atomic_uninit32(&server_entry->internal.deleted);
+      silc_atomic_uninit32(&server_entry->internal.refcnt);
+      silc_rwlock_free(server_entry->internal.lock);
       silc_free(server_entry);
       return NULL;
     }
@@ -2107,6 +2124,9 @@ SilcServerEntry silc_client_add_server(SilcClient client,
     silc_free(server_namec);
     silc_free(server_entry->server_name);
     silc_free(server_entry->server_info);
+    silc_atomic_uninit32(&server_entry->internal.deleted);
+    silc_atomic_uninit32(&server_entry->internal.refcnt);
+    silc_rwlock_free(server_entry->internal.lock);
     silc_free(server_entry);
     silc_mutex_unlock(conn->internal->lock);
     return NULL;
@@ -2238,6 +2258,7 @@ void silc_client_unref_server(SilcClient client, SilcClientConnection conn,
   silc_free(server_entry->server_info);
   if (server_entry->public_key)
     silc_pkcs_public_key_free(server_entry->public_key);
+  silc_atomic_uninit32(&server_entry->internal.deleted);
   silc_atomic_uninit32(&server_entry->internal.refcnt);
   silc_rwlock_free(server_entry->internal.lock);
   silc_free(server_entry);
