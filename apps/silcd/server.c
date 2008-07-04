@@ -19,6 +19,7 @@
 
 #include "serverincludes.h"
 #include "server_internal.h"
+#include <assert.h>
 
 /************************* Types and definitions ****************************/
 
@@ -3133,6 +3134,7 @@ void silc_server_free_client_data(SilcServer server,
 
   /* Update statistics */
   server->stat.my_clients--;
+  assert(server->stat.clients > 0);
   server->stat.clients--;
   if (server->stat.cell_clients)
     server->stat.cell_clients--;

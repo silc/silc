@@ -20,6 +20,7 @@
 
 #include "serverincludes.h"
 #include "server_internal.h"
+#include <assert.h>
 
 /* Received notify packet. Server can receive notify packets from router.
    Server then relays the notify messages to clients if needed. */
@@ -326,6 +327,7 @@ static void silc_server_notify_process(SilcServer server,
       tmp_len = 128;
 
     /* Update statistics */
+	assert(server->stat.clients > 0);
     server->stat.clients--;
     if (server->stat.cell_clients)
       server->stat.cell_clients--;
@@ -1245,6 +1247,7 @@ static void silc_server_notify_process(SilcServer server,
 	    }
 
 	    /* Update statistics */
+		assert(server->stat.clients > 0);
 	    server->stat.clients--;
 	    if (server->stat.cell_clients)
 	      server->stat.cell_clients--;
@@ -1490,6 +1493,7 @@ static void silc_server_notify_process(SilcServer server,
       }
 
       /* Update statistics */
+	  assert(server->stat.clients > 0);
       server->stat.clients--;
       if (server->stat.cell_clients)
 	server->stat.cell_clients--;
@@ -3733,6 +3737,7 @@ void silc_server_resume_client(SilcServer server,
 
     /* Delete this current client entry since we're resuming to old one. */
     server->stat.my_clients--;
+	assert(server->stat.clients > 0);
     server->stat.clients--;
     if (server->stat.cell_clients)
       server->stat.cell_clients--;
