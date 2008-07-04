@@ -21,6 +21,7 @@
 #include "silc.h"
 #include "silcserver.h"
 #include "server_internal.h"
+#include <assert.h>
 
 /* Return next available command identifier. */
 

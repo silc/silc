@@ -20,6 +20,7 @@
 
 #include "serverincludes.h"
 #include "server_internal.h"
+#include <assert.h>
 
 extern char *server_version;
 
@@ -205,6 +206,7 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
       }
 
       /* Update statistics */
+	  assert(server->stat.clients > 0);
       server->stat.clients--;
       if (server->stat.cell_clients)
 	server->stat.cell_clients--;
@@ -268,6 +270,7 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
       }
 
       /* Update statistics */
+	  assert(server->stat.clients > 0);
       server->stat.clients--;
       if (server->stat.cell_clients)
 	server->stat.cell_clients--;
@@ -1560,6 +1563,7 @@ void silc_server_kill_client(SilcServer server,
     }
   } else {
     /* Update statistics */
+	assert(server->stat.clients > 0);
     server->stat.clients--;
     if (server->stat.cell_clients)
       server->stat.cell_clients--;
