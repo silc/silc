@@ -745,8 +745,8 @@ int main(int argc, char **argv)
       silc_file_writefile(pidfile, buf, strlen(buf));
     }
 
-    silc_server_drop_privs(silcd);
   }
+  silc_server_drop_privs(silcd);
 
   /* Run the server. When this returns the server has been stopped
      and we will exit. */
