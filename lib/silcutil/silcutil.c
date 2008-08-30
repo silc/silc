@@ -557,13 +557,18 @@ char *silc_get_input(const char *prompt, SilcBool echo_off)
     printf("%s", prompt);
     fflush(stdout);
 
+  read_again1:
     if ((read(fd, input, sizeof(input))) < 0) {
+      if (errno == EAGAIN || errno == EINTR)
+	goto read_again1;
       fprintf(stderr, "silc: %s\n", strerror(errno));
+      signal(SIGINT, SIG_DFL);
       tcsetattr(fd, TCSANOW, &to_old);
       return NULL;
     }
 
     if (strlen(input) <= 1) {
+      signal(SIGINT, SIG_DFL);
       tcsetattr(fd, TCSANOW, &to_old);
       return NULL;
     }
@@ -591,10 +596,18 @@ char *silc_get_input(const char *prompt, SilcBool echo_off)
     printf("%s", prompt);
     fflush(stdout);
 
+    signal(SIGINT, SIG_IGN);
+
+  read_again2:
     if ((read(fd, input, sizeof(input))) < 0) {
+      if (errno == EAGAIN || errno == EINTR)
+	goto read_again2;
       fprintf(stderr, "silc: %s\n", strerror(errno));
+      signal(SIGINT, SIG_DFL);
       return NULL;
     }
+
+    signal(SIGINT, SIG_DFL);
 
     if (strlen(input) <= 1)
       return NULL;
