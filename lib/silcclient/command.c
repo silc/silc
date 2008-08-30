@@ -411,6 +411,7 @@ SilcUInt16 silc_client_command_call(SilcClient client,
   SilcUInt32 argc = 0;
   unsigned char **argv = NULL;
   SilcUInt32 *argv_lens = NULL, *argv_types = NULL;
+  SilcUInt16 cmd_ident;
   SilcClientCommand command;
   SilcClientCommandContext cmd;
   char *arg;
@@ -480,7 +481,7 @@ SilcUInt16 silc_client_command_call(SilcClient client,
   cmd->argv = argv;
   cmd->argv_lens = argv_lens;
   cmd->argv_types = argv_types;
-  cmd->cmd_ident = silc_client_cmd_ident(conn);
+  cmd_ident = cmd->cmd_ident = silc_client_cmd_ident(conn);
   cmd->called = TRUE;
   cmd->verbose = TRUE;
   silc_list_init(cmd->reply_callbacks,
@@ -492,7 +493,7 @@ SilcUInt16 silc_client_command_call(SilcClient client,
 		       silc_client_command_destructor, NULL, FALSE);
   silc_fsm_start_sync(&cmd->thread, command->command);
 
-  return cmd->cmd_ident;
+  return cmd_ident;
 }
 
 /* Generic function to send any command. The arguments must be sent already
