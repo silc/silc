@@ -563,25 +563,26 @@ SILC_FSM_STATE(silc_client_st_resume_completed)
 				      &conn->local_entry->id);
 
   /* Call JOIN command replies for all joined channel */
-  silc_idcache_get_all(conn->internal->channel_cache, &channels);
-  silc_list_start(channels);
-  while ((entry = silc_list_get(channels))) {
-    SilcHashTableList htl;
-    const char *cipher, *hmac;
+  if (silc_idcache_get_all(conn->internal->channel_cache, &channels)) {
+    silc_list_start(channels);
+    while ((entry = silc_list_get(channels))) {
+      SilcHashTableList htl;
+      const char *cipher, *hmac;
 
-    channel = entry->context;
-    cipher = (channel->internal.send_key ?
-	      silc_cipher_get_name(channel->internal.send_key) : NULL);
-    hmac = (channel->internal.hmac ?
-	    silc_hmac_get_name(channel->internal.hmac) : NULL);
-    silc_hash_table_list(channel->user_list, &htl);
-    silc_client_resume_command_callback(client, conn, SILC_COMMAND_JOIN,
-					channel->channel_name, channel,
-					channel->mode, &htl, channel->topic,
-					cipher, hmac, channel->founder_key,
-					channel->channel_pubkeys,
-					channel->user_limit);
-    silc_hash_table_list_reset(&htl);
+      channel = entry->context;
+      cipher = (channel->internal.send_key ?
+		silc_cipher_get_name(channel->internal.send_key) : NULL);
+      hmac = (channel->internal.hmac ?
+	      silc_hmac_get_name(channel->internal.hmac) : NULL);
+      silc_hash_table_list(channel->user_list, &htl);
+      silc_client_resume_command_callback(client, conn, SILC_COMMAND_JOIN,
+					  channel->channel_name, channel,
+					  channel->mode, &htl, channel->topic,
+					  cipher, hmac, channel->founder_key,
+					  channel->channel_pubkeys,
+					  channel->user_limit);
+      silc_hash_table_list_reset(&htl);
+    }
   }
 
   conn->internal->registering = FALSE;
