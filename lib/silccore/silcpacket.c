@@ -621,7 +621,7 @@ void silc_packet_engine_stop(SilcPacketEngine engine)
   silc_free(engine);
 }
 
-static const char *packet_error[] = {
+static const char * const packet_error[] = {
   "Cannot read from stream",
   "Cannot write to stream",
   "Packet MAC failed",
