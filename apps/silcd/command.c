@@ -1289,7 +1289,7 @@ SILC_SERVER_CMD_FUNC(invite)
 
   /* Send invite list back only if the list was modified, or no arguments
      was given. */
-  type = 0;
+  ttype = 0;
   argc = silc_argument_get_arg_num(cmd->args);
   if (argc == 1)
     ttype = 1;
@@ -1303,7 +1303,7 @@ SILC_SERVER_CMD_FUNC(invite)
 				 2, tmp, len,
 				 3, ttype && list ?
 				 list->data : NULL,
-				 type && list ? silc_buffer_len(list) : 0);
+				 ttype && list ? silc_buffer_len(list) : 0);
   silc_buffer_free(list);
 
  out:
