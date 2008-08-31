@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2006 Pekka Riikonen
+  Copyright (C) 2003 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -65,6 +65,9 @@ SilcStack silc_stack_alloc(SilcUInt32 stack_size)
 void silc_stack_free(SilcStack stack)
 {
   int i;
+
+  if (!stack)
+    return;
 
   silc_free(stack->frames);
   for (i = 0; i < SILC_STACK_BLOCK_NUM; i++)
