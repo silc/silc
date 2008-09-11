@@ -1506,8 +1506,9 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 	  silc_server_backup_add(server, server->id_entry, ip,
 				 sconn->remote_port, TRUE);
 	}
+      }
 #if 0
-      } else {
+	  else {
 	/* We already have primary router.  Disconnect this connection */
 	SILC_LOG_DEBUG(("We already have primary router, disconnect"));
 	silc_idlist_del_server(server->global_list, id_entry);
@@ -1517,8 +1518,8 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 	silc_server_disconnect_remote(server, sconn->sock,
 				      SILC_STATUS_ERR_RESOURCE_LIMIT, NULL);
 	return;
-#endif /* 0 */
       }
+#endif /* 0 */
     } else {
       /* Add this server to be our backup router */
       id_entry->server_type = SILC_BACKUP_ROUTER;

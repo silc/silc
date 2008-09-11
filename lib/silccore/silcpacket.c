@@ -40,7 +40,7 @@ struct SilcPacketEngineStruct {
   SilcMutex lock;			 /* Engine lock */
   SilcRng rng;		                 /* RNG for engine */
   SilcHashTable contexts;		 /* Per scheduler contexts */
-  SilcPacketCallbacks *callbacks;	 /* Packet callbacks */
+  const SilcPacketCallbacks *callbacks;	 /* Packet callbacks */
   void *callback_context;		 /* Context for callbacks */
   SilcList streams;			 /* All streams in engine */
   SilcList packet_pool;       		 /* Free list for received packets */
@@ -51,7 +51,7 @@ struct SilcPacketEngineStruct {
 /* Packet processor context */
 typedef struct SilcPacketProcessStruct {
   SilcPacketType *types;		 /* Packets to process */
-  SilcPacketCallbacks *callbacks;	 /* Callbacks or NULL */
+  const SilcPacketCallbacks *callbacks;	 /* Callbacks or NULL */
   void *callback_context;
   SilcInt32 priority;		         /* Priority */
 } *SilcPacketProcess;
@@ -540,7 +540,7 @@ static void silc_packet_engine_context_destr(void *key, void *context,
 
 SilcPacketEngine
 silc_packet_engine_start(SilcRng rng, SilcBool router,
-			 SilcPacketCallbacks *callbacks,
+			 const SilcPacketCallbacks *callbacks,
 			 void *callback_context)
 {
   SilcPacketEngine engine;
@@ -1001,7 +1001,7 @@ void silc_packet_stream_set_iv_included(SilcPacketStream stream)
 /* Links `callbacks' to `stream' for specified packet types */
 
 static SilcBool silc_packet_stream_link_va(SilcPacketStream stream,
-					   SilcPacketCallbacks *callbacks,
+					   const SilcPacketCallbacks *callbacks,
 					   void *callback_context,
 					   int priority, va_list ap)
 {
@@ -1079,7 +1079,7 @@ static SilcBool silc_packet_stream_link_va(SilcPacketStream stream,
 /* Links `callbacks' to `stream' for specified packet types */
 
 SilcBool silc_packet_stream_link(SilcPacketStream stream,
-				 SilcPacketCallbacks *callbacks,
+				 const SilcPacketCallbacks *callbacks,
 				 void *callback_context,
 				 int priority, ...)
 {
@@ -1097,7 +1097,7 @@ SilcBool silc_packet_stream_link(SilcPacketStream stream,
 /* Unlinks `callbacks' from `stream'. */
 
 void silc_packet_stream_unlink(SilcPacketStream stream,
-			       SilcPacketCallbacks *callbacks,
+			       const SilcPacketCallbacks *callbacks,
 			       void *callback_context)
 {
   SilcPacketProcess p;
@@ -2340,7 +2340,7 @@ silc_packet_wait_packet_receive(SilcPacketEngine engine,
 				void *stream_context);
 
 /* Packet waiting callbacks */
-static SilcPacketCallbacks silc_packet_wait_cbs =
+static const SilcPacketCallbacks silc_packet_wait_cbs =
 {
   silc_packet_wait_packet_receive, NULL, NULL
 };
@@ -2529,7 +2529,7 @@ typedef struct {
 } *SilcPacketWrapperStream;
 
 /* Packet wrapper callbacks */
-static SilcPacketCallbacks silc_packet_wrap_cbs =
+static const SilcPacketCallbacks silc_packet_wrap_cbs =
 {
   silc_packet_wrap_packet_receive, NULL, NULL
 };
