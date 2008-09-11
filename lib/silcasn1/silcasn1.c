@@ -53,7 +53,7 @@ SilcBool silc_asn1_init(SilcAsn1 asn1)
 
   asn1->stack2 = silc_stack_alloc(768);
   if (!asn1->stack2) {
-    silc_stack_free(asn1->stack2);
+    silc_stack_free(asn1->stack1);
     return FALSE;
   }
 
