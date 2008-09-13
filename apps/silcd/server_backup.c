@@ -786,6 +786,9 @@ SILC_TASK_CALLBACK(silc_server_backup_connected_again)
   SilcServer server = app_context;
   SilcServerConfigRouter *primary;
 
+  if (server->server_shutdown)
+    return;
+
   primary = silc_server_config_get_primary_router(server);
   if (primary) {
     if (!silc_server_find_socket_by_host(server, SILC_CONN_ROUTER,
