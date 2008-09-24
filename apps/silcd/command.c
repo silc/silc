@@ -1557,12 +1557,13 @@ SILC_SERVER_CMD_FUNC(info)
     char info_string[256];
 
     memset(info_string, 0, sizeof(info_string));
-    snprintf(info_string, sizeof(info_string),
-	     "location: %s server: %s admin: %s <%s>",
-	     server->config->server_info->location,
-	     server->config->server_info->server_type,
-	     server->config->server_info->admin,
-	     server->config->server_info->email);
+    silc_snprintf(info_string, sizeof(info_string),
+		  "location: %s server: %s admin: %s <%s> version: %s",
+		  server->config->server_info->location,
+		  server->config->server_info->server_type,
+		  server->config->server_info->admin,
+		  server->config->server_info->email,
+		  silc_dist_version);
 
     server_info = info_string;
     entry = server->id_entry;
@@ -2823,7 +2824,7 @@ SILC_SERVER_CMD_FUNC(umode)
   SilcServer server = cmd->server;
   SilcClientEntry client = silc_packet_get_context(cmd->sock);
   unsigned char *tmp_mask, m[4];
-  SilcUInt32 mask = 0;
+  SilcUInt32 mask = 0, tmp_len;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   SilcBool set_mask = FALSE;
 
@@ -2833,8 +2834,8 @@ SILC_SERVER_CMD_FUNC(umode)
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_UMODE, cmd, 1, 2);
 
   /* Get the client's mode mask */
-  tmp_mask = silc_argument_get_arg_type(cmd->args, 2, NULL);
-  if (tmp_mask) {
+  tmp_mask = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (tmp_mask && tmp_len == 4) {
     SILC_GET32_MSB(mask, tmp_mask);
     set_mask = TRUE;
   }
@@ -2947,7 +2948,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 
   /* Get the channel mode mask */
   tmp_mask = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (tmp_mask) {
+  if (tmp_mask && tmp_len == 4) {
     SILC_GET32_MSB(mode_mask, tmp_mask);
     set_mask = TRUE;
   }

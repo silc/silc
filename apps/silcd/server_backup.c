@@ -786,6 +786,8 @@ SILC_TASK_CALLBACK(silc_server_backup_connected_again)
   SilcServer server = app_context;
   SilcServerConfigRouter *primary;
 
+  SILC_LOG_DEBUG(("Reconnecting"));
+
   if (server->server_shutdown)
     return;
 
@@ -813,6 +815,7 @@ void silc_server_backup_connected(SilcServer server,
 
   if (!server_entry) {
     /* Try again */
+    SILC_LOG_DEBUG(("Connecting failed"));
     silc_schedule_task_add_timeout(server->schedule,
 				   silc_server_backup_connected_again,
 				   context, 5, 0);

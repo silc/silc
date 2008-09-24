@@ -201,6 +201,8 @@ static void silc_server_packet_eos(SilcPacketEngine engine,
 
   if (server->router_conn && server->router_conn->sock == stream &&
       !server->router && server->standalone) {
+    if (idata->sconn->callback)
+      (*idata->sconn->callback)(server, NULL, idata->sconn->callback_context);
     silc_server_create_connections(server);
     silc_server_free_sock_user_data(server, stream, NULL);
   } else {
@@ -212,6 +214,8 @@ static void silc_server_packet_eos(SilcPacketEngine engine,
         server->backup_closed = TRUE;
     }
 
+    if (idata->sconn->callback)
+      (*idata->sconn->callback)(server, NULL, idata->sconn->callback_context);
     silc_server_free_sock_user_data(server, stream, NULL);
   }
 
@@ -239,6 +243,8 @@ SILC_TASK_CALLBACK(silc_server_packet_error_timeout)
         server->backup_closed = TRUE;
     }
 
+    if (idata->sconn->callback)
+      (*idata->sconn->callback)(server, NULL, idata->sconn->callback_context);
     silc_server_free_sock_user_data(server, stream, NULL);
   }
 
@@ -1322,7 +1328,8 @@ void silc_server_create_connection(SilcServer server,
   sconn->no_conf = dynamic;
   sconn->server = server;
 
-  SILC_LOG_DEBUG(("Created connection %p", sconn));
+  SILC_LOG_DEBUG(("Created connection %p to %s:%d", sconn,
+		  remote_host, port));
 
   silc_schedule_task_add_timeout(server->schedule, silc_server_connect_router,
 				 sconn, 0, 0);
@@ -1479,6 +1486,7 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
     idata->status |= (SILC_IDLIST_STATUS_REGISTERED |
 		      SILC_IDLIST_STATUS_LOCAL);
     idata->sconn = sconn;
+    idata->sconn->callback = NULL;
 
     /* Statistics */
     server->stat.my_routers++;
@@ -2595,6 +2603,7 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
   sconn->remote_port = port;
   silc_dlist_add(server->conns, sconn);
   idata->sconn = sconn;
+  idata->sconn->callback = NULL;
   idata->last_receive = time(NULL);
 
   /* Add the common data structure to the ID entry. */
