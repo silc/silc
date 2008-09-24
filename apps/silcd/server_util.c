@@ -1547,8 +1547,17 @@ void silc_server_kill_client(SilcServer server,
   if (remote_client->connection) {
     /* Remove locally conneted client */
     SilcPacketStream sock = remote_client->connection;
+
+    if (sock)
+      silc_packet_stream_ref(sock);
+
     silc_server_free_sock_user_data(server, sock, NULL);
-    silc_server_close_connection(server, sock);
+
+    if (sock) {
+      silc_packet_set_context(sock, NULL);
+      silc_server_close_connection(server, sock);
+      silc_packet_stream_unref(sock);
+    }
   } else {
     /* Update statistics */
     server->stat.clients--;

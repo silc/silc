@@ -53,14 +53,17 @@ typedef struct SilcClientEntryInternalStruct {
   SilcUInt32 key_len;		/* Key data length */
   SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
 
+  SilcAtomic32 refcnt;		/* Reference counter */
+  SilcAtomic32 deleted;	        /* Flag indicating whether the client object is
+				   already scheduled for deletion */
+  SilcUInt16 resolve_cmd_ident;	/* Command identifier when resolving */
+
   /* Flags */
   unsigned int valid       : 1;	/* FALSE if this entry is not valid.  Entry
 				   without nickname is not valid. */
   unsigned int generated   : 1; /* TRUE if library generated `key' */
   unsigned int prv_resp    : 1; /* TRUE if we are responder when using
 				   private message keys. */
-  SilcUInt16 resolve_cmd_ident;	/* Command identifier when resolving */
-  SilcAtomic8 refcnt;		/* Reference counter */
 } SilcClientEntryInternal;
 
 /* Internal channel entry context */
@@ -81,20 +84,23 @@ typedef struct SilcChannelEntryInternalStruct {
   SilcHmac hmac;			     /* Current HMAC */
   unsigned char iv[SILC_CIPHER_MAX_IV_SIZE]; /* Current IV */
 
+  SilcAtomic32 refcnt;		             /* Reference counter */
+  SilcAtomic32 deleted;                      /* Flag indicating whether the
+						channel object is already
+						scheduled for deletion */
   SilcUInt16 resolve_cmd_ident;		     /* Channel information resolving
 						identifier. This is used when
 						resolving users, and other
 						stuff that relates to the
 						channel. Not used for the
 						channel resolving itself. */
-  SilcAtomic16 refcnt;		             /* Reference counter */
 } SilcChannelEntryInternal;
 
 /* Internal server entry context */
 typedef struct SilcServerEntryInternalStruct {
   SilcRwLock lock;		             /* Read/write lock */
   SilcUInt16 resolve_cmd_ident;		     /* Resolving identifier */
-  SilcAtomic8 refcnt;		             /* Reference counter */
+  SilcAtomic32 refcnt;		             /* Reference counter */
 } SilcServerEntryInternal;
 
 #endif /* CLIENT_H */

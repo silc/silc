@@ -1472,12 +1472,19 @@ SILC_SERVER_CMD_FUNC(kill)
 
     /* Do normal signoff for the destination client */
     sock = remote_client->connection;
+
+    if (sock)
+      silc_packet_stream_ref(sock);
+
     silc_server_remove_from_channels(server, NULL, remote_client,
 				     TRUE, (char *)"Killed", TRUE, TRUE);
     silc_server_free_sock_user_data(server, sock, comment ? comment :
 				    (unsigned char *)"Killed");
-    if (sock)
+    if (sock) {
+      silc_packet_set_context(sock, NULL);
       silc_server_close_connection(server, sock);
+      silc_packet_stream_unref(sock);
+    }
   } else {
     /* Router operator killing */
 
