@@ -793,7 +793,7 @@ SILC_TASK_CALLBACK(silc_server_backup_connected_again)
   if (primary) {
     if (!silc_server_find_socket_by_host(server, SILC_CONN_ROUTER,
 					 primary->host, primary->port))
-      silc_server_create_connection(server, FALSE, FALSE,
+      silc_server_create_connection(server, TRUE, FALSE,
 				    primary->host, primary->port,
 				    silc_server_backup_connected,
 				    context);
@@ -843,7 +843,7 @@ SILC_TASK_CALLBACK(silc_server_backup_connect_primary_again)
   if (primary) {
     if (!silc_server_find_socket_by_host(server, SILC_CONN_ROUTER,
 					 primary->host, primary->port))
-      silc_server_create_connection(server, FALSE, FALSE,
+      silc_server_create_connection(server, TRUE, FALSE,
 				    primary->host, primary->port,
 				    silc_server_backup_connect_primary,
 				    context);
@@ -1043,7 +1043,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup)
 	SILC_LOG_DEBUG(("Received START (session %d), reconnect to router",
 			ctx->session));
 	silc_packet_stream_ref(ctx->sock);
-	silc_server_create_connection(server, FALSE, FALSE,
+	silc_server_create_connection(server, TRUE, FALSE,
 				      primary->host, primary->port,
 				      silc_server_backup_connect_primary,
 				      ctx->sock);

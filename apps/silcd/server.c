@@ -1353,7 +1353,15 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 
   if (success == FALSE) {
     /* Authentication failed */
-    /* XXX retry connecting */
+
+    /* Try reconnecting if configuration wants it */
+    if (!sconn->no_reconnect) {
+      silc_schedule_task_add_timeout(server->schedule,
+				     silc_server_connect_to_router_retry,
+			     	     sconn, 1, 0);
+      silc_dlist_del(server->conns, sconn);
+      return;
+    }
 
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
@@ -1448,6 +1456,15 @@ silc_server_ke_auth_compl(SilcConnAuth connauth, SilcBool success,
 						  SILC_ID_SERVER),
 				      NULL, sconn->sock);
     if (!id_entry) {
+      /* Try reconnecting if configuration wants it */
+      if (!sconn->no_reconnect) {
+        silc_schedule_task_add_timeout(server->schedule,
+				       silc_server_connect_to_router_retry,
+			     	       sconn, 1, 0);
+        silc_dlist_del(server->conns, sconn);
+        return;
+      }
+
       if (sconn->callback)
 	(*sconn->callback)(server, NULL, sconn->callback_context);
       silc_server_free_sock_user_data(server, sconn->sock, NULL);
@@ -1593,9 +1610,17 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
     /* SKE failed */
     SILC_LOG_ERROR(("Error (%s) during Key Exchange protocol with %s (%s)",
 		    silc_ske_map_status(status), entry->hostname, entry->ip));
-
-    /* XXX retry connecting */
     silc_ske_free(ske);
+
+    /* Try reconnecting if configuration wants it */
+    if (!sconn->no_reconnect) {
+      silc_schedule_task_add_timeout(server->schedule,
+				     silc_server_connect_to_router_retry,
+			     	     sconn, 1, 0);
+      silc_dlist_del(server->conns, sconn);
+      return;
+    }
+
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_free_sock_user_data(server, sconn->sock, NULL);
@@ -1609,11 +1634,18 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
   /* Set the keys into use.  The data will be encrypted after this. */
   if (!silc_ske_set_keys(ske, keymat, prop, &send_key, &receive_key,
 			 &hmac_send, &hmac_receive, &hash)) {
+    silc_ske_free(ske);
 
-    /* XXX retry connecting */
+    /* Try reconnecting if configuration wants it */
+    if (!sconn->no_reconnect) {
+      silc_schedule_task_add_timeout(server->schedule,
+				     silc_server_connect_to_router_retry,
+			     	     sconn, 1, 0);
+      silc_dlist_del(server->conns, sconn);
+      return;
+    }
 
     /* Error setting keys */
-    silc_ske_free(ske);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_free_sock_user_data(server, sconn->sock, NULL);
@@ -1629,10 +1661,18 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
   connauth = silc_connauth_alloc(server->schedule, ske,
 				 server->config->conn_auth_timeout);
   if (!connauth) {
-    /* XXX retry connecting */
+    silc_ske_free(ske);
+
+    /* Try reconnecting if configuration wants it */
+    if (!sconn->no_reconnect) {
+      silc_schedule_task_add_timeout(server->schedule,
+				     silc_server_connect_to_router_retry,
+			     	     sconn, 1, 0);
+      silc_dlist_del(server->conns, sconn);
+      return;
+    }
 
     /** Error allocating auth protocol */
-    silc_ske_free(ske);
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_free_sock_user_data(server, sconn->sock, NULL);
@@ -1689,6 +1729,16 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
   if (!sconn->sock) {
     SILC_LOG_ERROR(("Cannot connect: cannot create packet stream"));
     silc_stream_destroy(sconn->stream);
+
+    /* Try reconnecting if configuration wants it */
+    if (!sconn->no_reconnect) {
+      silc_schedule_task_add_timeout(server->schedule,
+				     silc_server_connect_to_router_retry,
+			     	     sconn, 1, 0);
+      silc_dlist_del(server->conns, sconn);
+      return;
+    }
+
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_connection_free(sconn);
@@ -1699,9 +1749,19 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
   /* Set source ID to packet stream */
   if (!silc_packet_set_ids(sconn->sock, SILC_ID_SERVER, server->id,
 			   0, NULL)) {
+    silc_packet_stream_destroy(sconn->sock);
+
+    /* Try reconnecting if configuration wants it */
+    if (!sconn->no_reconnect) {
+      silc_schedule_task_add_timeout(server->schedule,
+				     silc_server_connect_to_router_retry,
+			     	     sconn, 1, 0);
+      silc_dlist_del(server->conns, sconn);
+      return;
+    }
+
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
-    silc_packet_stream_destroy(sconn->sock);
     silc_server_connection_free(sconn);
     return;
   }
@@ -1710,6 +1770,18 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
   entry = silc_calloc(1, sizeof(*entry));
   if (!entry) {
     silc_packet_stream_destroy(sconn->sock);
+
+    /* Try reconnecting if configuration wants it */
+    if (!sconn->no_reconnect) {
+      silc_schedule_task_add_timeout(server->schedule,
+				     silc_server_connect_to_router_retry,
+			     	     sconn, 1, 0);
+      silc_dlist_del(server->conns, sconn);
+      return;
+    }
+
+    if (sconn->callback)
+      (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_connection_free(sconn);
     return;
   }
@@ -1732,9 +1804,19 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
 		       server->public_key, server->private_key, sconn);
   if (!ske) {
     silc_free(entry);
+    silc_packet_stream_destroy(sconn->sock);
+
+    /* Try reconnecting if configuration wants it */
+    if (!sconn->no_reconnect) {
+      silc_schedule_task_add_timeout(server->schedule,
+				     silc_server_connect_to_router_retry,
+			     	     sconn, 1, 0);
+      silc_dlist_del(server->conns, sconn);
+      return;
+    }
+
     if (sconn->callback)
       (*sconn->callback)(server, NULL, sconn->callback_context);
-    silc_packet_stream_destroy(sconn->sock);
     silc_server_connection_free(sconn);
     return;
   }
@@ -1777,7 +1859,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router_retry)
 
   /* If we've reached max retry count, give up. */
   if ((sconn->retry_count > param->reconnect_count) &&
-      !param->reconnect_keep_trying) {
+      sconn->no_reconnect) {
     SILC_LOG_ERROR(("Could not connect, giving up"));
 
     if (sconn->callback)
@@ -1824,10 +1906,16 @@ static void silc_server_connection_established(SilcNetStatus status,
     SILC_LOG_ERROR(("Could not connect to %s:%d: %s",
 		    sconn->remote_host, sconn->remote_port,
 		    silc_net_get_error_string(status)));
-
-    if (sconn->callback)
-      (*sconn->callback)(server, NULL, sconn->callback_context);
-    silc_server_connection_free(sconn);
+    if (!sconn->no_reconnect) {
+      silc_schedule_task_add_timeout(sconn->server->schedule,
+				     silc_server_connect_to_router_retry,
+				     sconn, 1, 0);
+      silc_dlist_del(server->conns, sconn);
+    } else {
+      if (sconn->callback)
+	(*sconn->callback)(server, NULL, sconn->callback_context);
+      silc_server_connection_free(sconn);
+    }
     break;
 
   default:
@@ -1878,6 +1966,8 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
       SILC_LOG_INFO(("Unconfigured %s connection %s:%d, cannot connect",
 		     (sconn->backup ? "backup router" : "router"),
 		     sconn->remote_host, sconn->remote_port));
+      if (sconn->callback)
+	(*sconn->callback)(server, NULL, sconn->callback_context);
       silc_server_connection_free(sconn);
       return;
     }
@@ -1894,6 +1984,8 @@ SILC_TASK_CALLBACK(silc_server_connect_router)
   if (!sconn->op) {
     SILC_LOG_ERROR(("Could not connect to router %s:%d",
 		    sconn->remote_host, sconn->remote_port));
+    if (sconn->callback)
+      (*sconn->callback)(server, NULL, sconn->callback_context);
     silc_server_connection_free(sconn);
     return;
   }
@@ -1912,6 +2004,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
   SilcServer server = context;
   SilcServerConnection sconn;
   SilcServerConfigRouter *ptr;
+  SilcServerConfigConnParams *param;
 
   /* Don't connect if we are shutting down. */
   if (server->server_shutdown)
@@ -1987,6 +2080,8 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
       }
     }
 
+    param = (ptr->param ? ptr->param : &server->config->param);
+
     /* Allocate connection object for hold connection specific stuff. */
     sconn = silc_calloc(1, sizeof(*sconn));
     if (!sconn)
@@ -1999,6 +2094,7 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router)
       sconn->backup_replace_ip = strdup(ptr->backup_replace_ip);
       sconn->backup_replace_port = ptr->backup_replace_port;
     }
+    sconn->no_reconnect = param->reconnect_keep_trying == FALSE;
 
     SILC_LOG_DEBUG(("Created connection %p", sconn));
 
@@ -3154,7 +3250,7 @@ void silc_server_free_sock_user_data(SilcServer server,
 
 	    /* We'll need to constantly try to reconnect to the primary
 	       router so that we'll see when it comes back online. */
-	    silc_server_create_connection(server, FALSE, FALSE, ip, port,
+	    silc_server_create_connection(server, TRUE, FALSE, ip, port,
 					 silc_server_backup_connected,
 					 NULL);
 	  }
