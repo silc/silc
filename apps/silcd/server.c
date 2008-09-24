@@ -201,7 +201,7 @@ static void silc_server_packet_eos(SilcPacketEngine engine,
 
   if (server->router_conn && server->router_conn->sock == stream &&
       !server->router && server->standalone) {
-    if (idata->sconn->callback)
+    if (idata->sconn && idata->sconn->callback)
       (*idata->sconn->callback)(server, NULL, idata->sconn->callback_context);
     silc_server_create_connections(server);
     silc_server_free_sock_user_data(server, stream, NULL);
@@ -214,7 +214,7 @@ static void silc_server_packet_eos(SilcPacketEngine engine,
         server->backup_closed = TRUE;
     }
 
-    if (idata->sconn->callback)
+    if (idata->sconn && idata->sconn->callback)
       (*idata->sconn->callback)(server, NULL, idata->sconn->callback_context);
     silc_server_free_sock_user_data(server, stream, NULL);
   }
@@ -243,7 +243,7 @@ SILC_TASK_CALLBACK(silc_server_packet_error_timeout)
         server->backup_closed = TRUE;
     }
 
-    if (idata->sconn->callback)
+    if (idata->sconn && idata->sconn->callback)
       (*idata->sconn->callback)(server, NULL, idata->sconn->callback_context);
     silc_server_free_sock_user_data(server, stream, NULL);
   }
@@ -1599,9 +1599,9 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
 {
   SilcPacketStream sock = context;
   SilcUnknownEntry entry = silc_packet_get_context(sock);
-  SilcServerConnection sconn = entry->data.sconn;
-  SilcServer server = entry->server;
-  SilcServerConfigRouter *conn = sconn->conn.ref_ptr;
+  SilcServerConnection sconn;
+  SilcServer server;
+  SilcServerConfigRouter *conn;
   SilcAuthMethod auth_meth = SILC_AUTH_NONE;
   void *auth_data = NULL;
   SilcUInt32 auth_data_len = 0;
@@ -1610,9 +1610,12 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
   SilcHmac hmac_send, hmac_receive;
   SilcHash hash;
 
-  SILC_LOG_DEBUG(("Connection %p, SKE completed, entry %p", sconn, entry));
-
+  server = entry->server;
+  sconn = entry->data.sconn;
+  conn = sconn->conn.ref_ptr;
   entry->op = NULL;
+
+  SILC_LOG_DEBUG(("Connection %p, SKE completed, entry %p", sconn, entry));
 
   if (status != SILC_SKE_STATUS_OK) {
     /* SKE failed */
@@ -2818,6 +2821,7 @@ static void silc_server_accept_new_connection(SilcNetStatus status,
   entry->port = port;
   entry->server = server;
   entry->data.conn_type = SILC_CONN_UNKNOWN;
+  entry->data.status |= SILC_IDLIST_STATUS_LOCAL;
   silc_packet_set_context(packet_stream, entry);
 
   SILC_LOG_DEBUG(("Created unknown connection %p", entry));
