@@ -135,6 +135,75 @@ __SILC_PACKAGE_VERSION="#define __SILC_TOOLKIT_VERSION SILC_VERSION($maj,$min,$b
 
 
 ##
+## Required dependencies
+##
+
+compile_libs=true
+LIBSUBDIR=lib
+LDFLAGS="-L\$(silc_top_srcdir)/lib $LDFLAGS"
+
+# SILC Runtime Toolkit checking
+AC_ARG_WITH(srt-includes,
+  [  --with-srt-includes=DIR  SILC Runtime Toolkit includes [search in DIR]],
+  [ac_srt_includes="$withval"], [ac_srt_includes="no"])
+AC_ARG_WITH(srt-libs,
+  [  --with-srt-libs=DIR      SILC Runtime Toolkit libraries [search in DIR]],
+  [ac_srt_libs="$withval"], [ac_srt_libs="no"])
+
+if test -n "$with_srt_includes" || test -n "$with_srt_libs"; then
+  # Manually provided libs
+  if test "$ac_srt_includes" != "no"; then
+    SILC_LIB_INCLUDES="-I$ac_srt_includes"
+  fi
+  if test "$ac_srt_libs" != "no"; then
+    LDFLAGS="-L$ac_srt_libs $LDFLAGS"
+  fi
+
+  # Check libs to link against
+  f=`$EGREP __SILC_HAVE_PTHREAD $ac_srt_includes/silc.h`
+  if test -n "$f"; then
+    LIBS="$LIBS -lpthread"
+    has_threads=true
+  fi
+else
+  # pkg-config check
+  PKG_CHECK_MODULES(SRT, [srt >= 1.2])
+  LIBS="$SRT_LIBS $LIBS"
+  CFLAGS="$CFLAGS $SRT_CFLAGS"
+fi
+
+# SILC Crypto Toolkit checking
+AC_ARG_WITH(sct-includes,
+  [  --with-sct-includes=DIR  SILC Crypto Toolkit includes [search in DIR]],
+  [ac_sct_includes="$withval"], [ac_sct_includes="no"])
+AC_ARG_WITH(sct-libs,
+  [  --with-sct-libs=DIR      SILC Crypto Toolkit libraries [search in DIR]],
+  [ac_sct_libs="$withval"], [ac_sct_libs="no"])
+
+if test -n "$with_sct_includes" || test -n "$with_sct_libs"; then
+  # Manually provided libs
+  if test "$ac_sct_includes" != "no"; then
+    SILC_LIB_INCLUDES="-I$ac_sct_includes"
+  fi
+  if test "$ac_sct_libs" != "no"; then
+    LDFLAGS="-L$ac_sct_libs $LDFLAGS"
+  fi
+
+  # Check libs to link against
+  f=`$EGREP __SILC_HAVE_PTHREAD $ac_sct_includes/silc.h`
+  if test -n "$f"; then
+    LIBS="$LIBS -lpthread"
+    has_threads=true
+  fi
+else
+  # pkg-config check
+  PKG_CHECK_MODULES(SCT, [sct >= 1.2])
+  LIBS="$SCT_LIBS $LIBS"
+  CFLAGS="$CFLAGS $SCT_CFLAGS"
+fi
+
+
+##
 ## Detect CPU
 ##
 
@@ -461,70 +530,6 @@ AM_CONDITIONAL(SILC_NO_ASM, test x$want_asm = xfalse)
 ##  With/without checkings
 ##
 
-compile_libs=true
-LIBSUBDIR=lib
-LDFLAGS="-L\$(silc_top_srcdir)/lib $LDFLAGS"
-
-# SILC Runtime Toolkit checking
-AC_ARG_WITH(srt-includes,
-  [  --with-srt-includes=DIR  SILC Runtime Toolkit includes [search in DIR]],
-  [ac_srt_includes="$withval"], [ac_srt_includes="no"])
-AC_ARG_WITH(srt-libs,
-  [  --with-srt-libs=DIR      SILC Runtime Toolkit libraries [search in DIR]],
-  [ac_srt_libs="$withval"], [ac_srt_libs="no"])
-
-if test -n "$with_srt_includes" || test -n "$with_srt_libs"; then
-  # Manually provided libs
-  if test "$ac_srt_includes" != "no"; then
-    SILC_LIB_INCLUDES="-I$ac_srt_includes"
-  fi
-  if test "$ac_srt_libs" != "no"; then
-    LDFLAGS="-L$ac_srt_libs $LDFLAGS"
-  fi
-
-  # Check libs to link against
-  f=`$EGREP __SILC_HAVE_PTHREAD $ac_srt_includes/silc.h`
-  if test -n "$f"; then
-    LIBS="$LIBS -lpthread"
-    has_threads=true
-  fi
-else
-  # pkg-config check
-  PKG_CHECK_MODULES(SRT, [srt >= 1.2])
-  LIBS="$SRT_LIBS $LIBS"
-  CFLAGS="$CFLAGS $SRT_CFLAGS"
-fi
-
-# SILC Crypto Toolkit checking
-AC_ARG_WITH(sct-includes,
-  [  --with-sct-includes=DIR  SILC Crypto Toolkit includes [search in DIR]],
-  [ac_sct_includes="$withval"], [ac_sct_includes="no"])
-AC_ARG_WITH(sct-libs,
-  [  --with-sct-libs=DIR      SILC Crypto Toolkit libraries [search in DIR]],
-  [ac_sct_libs="$withval"], [ac_sct_libs="no"])
-
-if test -n "$with_sct_includes" || test -n "$with_sct_libs"; then
-  # Manually provided libs
-  if test "$ac_sct_includes" != "no"; then
-    SILC_LIB_INCLUDES="-I$ac_sct_includes"
-  fi
-  if test "$ac_sct_libs" != "no"; then
-    LDFLAGS="-L$ac_sct_libs $LDFLAGS"
-  fi
-
-  # Check libs to link against
-  f=`$EGREP __SILC_HAVE_PTHREAD $ac_sct_includes/silc.h`
-  if test -n "$f"; then
-    LIBS="$LIBS -lpthread"
-    has_threads=true
-  fi
-else
-  # pkg-config check
-  PKG_CHECK_MODULES(SCT, [sct >= 1.2])
-  LIBS="$SCT_LIBS $LIBS"
-  CFLAGS="$CFLAGS $SCT_CFLAGS"
-fi
-
 #ifndef SILC_DIST_TOOLKIT
 # SILC Protocol Toolkit checking
 AC_ARG_WITH(silc-includes,
@@ -599,9 +604,6 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcclient"
 #ifdef SILC_DIST_SERVERLIB
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcserver"
 #endif SILC_DIST_SERVERLIB
-#ifdef SILC_DIST_HTTP
-SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silchttp"
-#endif SILC_DIST_HTTP
 #ifdef SILC_DIST_VCARD
 SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcvcard"
 #endif SILC_DIST_VCARD
@@ -858,15 +860,6 @@ lib/silcserver/Makefile
 lib/silcserver/tests/Makefile
 )
 #endif SILC_DIST_SERVERLIB
-
-#ifdef SILC_DIST_HTTP
-AC_CONFIG_FILES(
-lib/silchttp/Makefile
-#ifdef SILC_DIST_INPLACE
-lib/silchttp/tests/Makefile
-#endif SILC_DIST_INPLACE
-)
-#endif SILC_DIST_HTTP
 
 #ifdef SILC_DIST_VCARD
 AC_CONFIG_FILES(

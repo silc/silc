@@ -152,6 +152,7 @@ silc_server_command_process_error(SilcServerCommandReplyContext cmd,
 
       silc_server_remove_from_channels(server, NULL, client, TRUE,
 				       NULL, TRUE, FALSE);
+      silc_dlist_del(server->expired_clients, client);
       silc_idlist_del_data(client);
       silc_idlist_del_client(server->global_list, client);
     }
@@ -515,7 +516,7 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     if (!nickname) {
       SILC_LOG_ERROR(("Malformed nickname '%s' received in WHOWAS reply "
 		      "from %s",
-		      hostname ? hostname : "", nick));
+		      nick, hostname ? hostname : ""));
       return FALSE;
     }
 
@@ -533,22 +534,24 @@ silc_server_command_reply_whowas_save(SilcServerCommandReplyContext cmd)
     client->servername = servername[0] ? strdup(servername) : NULL;
     client->data.status |= SILC_IDLIST_STATUS_RESOLVED;
     client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
+    client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
 
-    /* Remove the old cache entry and create a new one */
-    silc_idcache_del_by_context(global ? server->global_list->clients :
-				server->local_list->clients, client, NULL);
-    silc_idcache_add(global ? server->global_list->clients :
-		     server->local_list->clients, nickname, client->id,
-		     client);
+    /* Update cache entry */
+    silc_idcache_update_by_context(global ? server->global_list->clients :
+				   server->local_list->clients, client, NULL,
+				   nickname, TRUE);
   }
 
   /* If client is global and is not on any channel then add that we'll
      expire the entry after a while. */
   if (global) {
-    silc_idlist_find_client_by_id(server->global_list, client->id,
-				  FALSE, &cache);
-    if (!silc_hash_table_count(client->channels))
+    client = silc_idlist_find_client_by_id(server->global_list, client->id,
+					   FALSE, &cache);
+    if (client && !silc_hash_table_count(client->channels)) {
+      client->data.created = silc_time();
+      silc_dlist_del(server->expired_clients, client);
       silc_dlist_add(server->expired_clients, client);
+    }
   }
 
   return TRUE;
@@ -675,17 +678,13 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 	  return FALSE;
 	}
 
-	/* Remove the old cache entry */
-	silc_idcache_del_by_context(global ? server->global_list->clients :
-				    server->local_list->clients, client, NULL);
-
 	silc_free(client->nickname);
 	client->nickname = strdup(nick);
 
-	/* Add new cache entry */
-	silc_idcache_add(global ? server->global_list->clients :
-			 server->local_list->clients, name, client->id,
-			 client);
+	/* Update the context */
+	silc_idcache_update_by_context(global ? server->global_list->clients :
+				       server->local_list->clients, client,
+				       NULL, name, TRUE);
       }
 
       if (info) {

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -228,6 +228,8 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
 	client->mode = 0;
 	client->router = NULL;
 	client->connection = NULL;
+	client->data.created = silc_time();
+	silc_dlist_del(server->expired_clients, client);
 	silc_dlist_add(server->expired_clients, client);
       } else {
 	silc_idlist_del_data(client);
@@ -289,6 +291,8 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
 	client->mode = 0;
 	client->router = NULL;
 	client->connection = NULL;
+	client->data.created = silc_time();
+	silc_dlist_del(server->expired_clients, client);
 	silc_dlist_add(server->expired_clients, client);
       } else {
 	silc_idlist_del_data(client);
@@ -997,7 +1001,7 @@ SilcUInt32 silc_server_num_sockets_by_ip(SilcServer server, const char *ip,
 
   silc_dlist_start(server->conns);
   while ((conn = silc_dlist_get(server->conns))) {
-    if (!conn->sock)
+    if (!conn->sock || !silc_packet_stream_is_valid(conn->sock))
       continue;
     silc_socket_stream_get_info(silc_packet_stream_get_stream(conn->sock),
 				NULL, NULL, &ipaddr, NULL);
@@ -1023,7 +1027,7 @@ silc_server_find_socket_by_host(SilcServer server,
 
   silc_dlist_start(server->conns);
   while ((conn = silc_dlist_get(server->conns))) {
-    if (!conn->sock)
+    if (!conn->sock || !silc_packet_stream_is_valid(conn->sock))
       continue;
     idata = silc_packet_get_context(conn->sock);
     silc_socket_stream_get_info(silc_packet_stream_get_stream(conn->sock),
@@ -1112,6 +1116,13 @@ SilcPublicKey silc_server_get_public_key(SilcServer server,
   silc_skr_find(server->repository, server->schedule,
 		find, find_callback, &public_key);
 
+#ifdef SILC_DEBUG
+  if (public_key)
+    SILC_LOG_DEBUG(("Found public key"));
+  else
+    SILC_LOG_DEBUG(("Public key not found"));
+#endif /* SILC_DEBUG */
+
   return public_key;
 }
 
@@ -1188,6 +1199,7 @@ SilcBool silc_server_connection_allowed(SilcServer server,
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_BAD_VERSION,
 				    "You support too old protocol version");
+      silc_server_free_sock_user_data(server, sock, NULL);
       return FALSE;
     }
 
@@ -1199,6 +1211,7 @@ SilcBool silc_server_connection_allowed(SilcServer server,
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_BAD_VERSION,
 				    "You support too old software version");
+      silc_server_free_sock_user_data(server, sock, NULL);
       return FALSE;
     }
 
@@ -1210,6 +1223,7 @@ SilcBool silc_server_connection_allowed(SilcServer server,
       silc_server_disconnect_remote(server, sock,
 				    SILC_STATUS_ERR_BAD_VERSION,
 				    "Your software is not supported");
+      silc_server_free_sock_user_data(server, sock, NULL);
       return FALSE;
     }
   }
@@ -1229,6 +1243,7 @@ SilcBool silc_server_connection_allowed(SilcServer server,
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT,
 				  "Server is full, try again later");
+    silc_server_free_sock_user_data(server, sock, NULL);
     return FALSE;
   }
 
@@ -1240,6 +1255,7 @@ SilcBool silc_server_connection_allowed(SilcServer server,
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_RESOURCE_LIMIT,
 				  "Too many connections from your host");
+    silc_server_free_sock_user_data(server, sock, NULL);
     return FALSE;
   }
 
@@ -1531,8 +1547,17 @@ void silc_server_kill_client(SilcServer server,
   if (remote_client->connection) {
     /* Remove locally conneted client */
     SilcPacketStream sock = remote_client->connection;
-    silc_server_free_client_data(server, sock, remote_client, FALSE, NULL);
-    silc_server_close_connection(server, sock);
+
+    if (sock)
+      silc_packet_stream_ref(sock);
+
+    silc_server_free_sock_user_data(server, sock, NULL);
+
+    if (sock) {
+      silc_packet_set_context(sock, NULL);
+      silc_server_close_connection(server, sock);
+      silc_packet_stream_unref(sock);
+    }
   } else {
     /* Update statistics */
     server->stat.clients--;
@@ -1554,6 +1579,7 @@ void silc_server_kill_client(SilcServer server,
     }
 
     /* Remove remote client */
+    silc_dlist_del(server->expired_clients, remote_client);
     silc_idlist_del_data(remote_client);
     if (!silc_idlist_del_client(server->global_list, remote_client)) {
       /* Remove this client from watcher list if it is */
@@ -1746,10 +1772,11 @@ SilcBool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
 				     SilcUInt8 type, void *check)
 {
   unsigned char *tmp = NULL;
-  SilcUInt32 len = 0, t;
+  SilcUInt32 len = 0;
   SilcHashTableList htl;
   SilcBuffer entry, idp = NULL, pkp = NULL;
   SilcBool ret = FALSE;
+  void *t;
 
   SILC_LOG_DEBUG(("Matching invite/ban"));
 
@@ -1779,13 +1806,14 @@ SilcBool silc_server_inviteban_match(SilcServer server, SilcHashTable list,
   /* Compare the list */
   silc_hash_table_list(list, &htl);
   while (silc_hash_table_get(&htl, (void *)&t, (void *)&entry)) {
-    if (type == t) {
+    if (type == SILC_PTR_TO_32(t)) {
       if (type == 1) {
 	if (silc_string_match(entry->data, tmp)) {
 	  ret = TRUE;
 	  break;
 	}
-      } else if (!memcmp(entry->data, tmp, len)) {
+      } else if (silc_buffer_len(entry) == len &&
+		 !memcmp(entry->data, tmp, len)) {
 	ret = TRUE;
 	break;
       }
@@ -1809,6 +1837,7 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 {
   unsigned char *tmp;
   SilcUInt32 type, len;
+  void *ptype;
   SilcBuffer tmp2;
   SilcHashTableList htl;
 
@@ -1835,8 +1864,9 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 
 	/* Check if the string is added already */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-	  if (type == 1 && silc_string_match(tmp2->data, tmp)) {
+	while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2)) {
+	  if (SILC_PTR_TO_32(ptype) == 1 &&
+	      silc_string_match(tmp2->data, tmp)) {
 	    tmp = NULL;
 	    break;
 	  }
@@ -1866,8 +1896,8 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 
 	/* Check if the public key is in the list already */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-	  if (type == 2 && !memcmp(tmp2->data, tmp, len)) {
+	while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2)) {
+	  if (SILC_PTR_TO_32(ptype) == 2 && !memcmp(tmp2->data, tmp, len)) {
 	    tmp = NULL;
 	    break;
 	  }
@@ -1886,8 +1916,8 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 
 	/* Check if the ID is in the list already */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-	  if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
+	while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2)) {
+	  if (SILC_PTR_TO_32(ptype) == 3 && !memcmp(tmp2->data, tmp, len)) {
 	    tmp = NULL;
 	    break;
 	  }
@@ -1925,8 +1955,9 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 
 	/* Delete from the list */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-	  if (type == 1 && silc_string_match(tmp2->data, tmp)) {
+	while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2)) {
+	  if (SILC_PTR_TO_32(ptype) == 1 &&
+	      silc_string_match(tmp2->data, tmp)) {
 	    silc_hash_table_del_by_context(list, (void *)1, tmp2);
 	    break;
 	  }
@@ -1946,8 +1977,8 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 
 	/* Delete from the invite list */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-	  if (type == 2 && !memcmp(tmp2->data, tmp, len)) {
+	while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2)) {
+	  if (SILC_PTR_TO_32(ptype) == 2 && !memcmp(tmp2->data, tmp, len)) {
 	    silc_hash_table_del_by_context(list, (void *)2, tmp2);
 	    break;
 	  }
@@ -1959,8 +1990,8 @@ SilcBool silc_server_inviteban_process(SilcServer server,
 
 	/* Delete from the invite list */
 	silc_hash_table_list(list, &htl);
-	while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-	  if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
+	while (silc_hash_table_get(&htl, (void *)&ptype, (void *)&tmp2)) {
+	  if (SILC_PTR_TO_32(ptype) == 3 && !memcmp(tmp2->data, tmp, len)) {
 	    silc_hash_table_del_by_context(list, (void *)3, tmp2);
 	    break;
 	  }
@@ -2090,6 +2121,8 @@ SilcBuffer silc_server_get_channel_pk_list(SilcServer server,
   silc_hash_table_list(channel->channel_pubkeys, &htl);
   while (silc_hash_table_get(&htl, NULL, (void *)&pk)) {
     pkp = silc_public_key_payload_encode(pk);
+    if (!pkp)
+      continue;
     list = silc_argument_payload_encode_one(list, pkp->data,
 					    silc_buffer_len(pkp),
 					    announce ? 0x03 :

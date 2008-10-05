@@ -54,7 +54,7 @@ static void silc_client_connection_finished(SilcFSMThread fsm,
   SilcClient client = silc_fsm_get_state_context(fsm);
 
   /* Signal client that we have finished */
-  silc_atomic_sub_int16(&client->internal->conns, 1);
+  silc_atomic_sub_int32(&client->internal->conns, 1);
   client->internal->connection_closed = TRUE;
   SILC_FSM_EVENT_SIGNAL(&client->internal->wait_event);
 
@@ -536,7 +536,7 @@ SILC_FSM_STATE(silc_client_st_run)
     /* A connection finished */
     SILC_LOG_DEBUG(("Event: connection closed"));
     client->internal->connection_closed = FALSE;
-    if (silc_atomic_get_int16(&client->internal->conns) == 0 &&
+    if (silc_atomic_get_int32(&client->internal->conns) == 0 &&
 	client->internal->stop)
       SILC_FSM_EVENT_SIGNAL(&client->internal->wait_event);
     return SILC_FSM_CONTINUE;
@@ -545,7 +545,7 @@ SILC_FSM_STATE(silc_client_st_run)
   if (client->internal->stop) {
     /* Stop client libarry.  If we have running connections, wait until
        they finish first. */
-    if (silc_atomic_get_int16(&client->internal->conns) == 0) {
+    if (silc_atomic_get_int32(&client->internal->conns) == 0) {
       SILC_LOG_DEBUG(("Event: stop"));
       silc_fsm_next(fsm, silc_client_st_stop);
     }
@@ -681,7 +681,7 @@ silc_client_add_connection(SilcClient client,
   silc_fsm_start(thread, silc_client_connection_st_start);
 
   SILC_LOG_DEBUG(("New connection %p", conn));
-  silc_atomic_add_int16(&client->internal->conns, 1);
+  silc_atomic_add_int32(&client->internal->conns, 1);
 
   return conn;
 }
@@ -945,7 +945,7 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
     nickname_format[sizeof(new_client->internal->
 			   params->nickname_format) - 1] = 0;
 
-  silc_atomic_init16(&new_client->internal->conns, 0);
+  silc_atomic_init32(&new_client->internal->conns, 0);
 
   return new_client;
 }
@@ -954,7 +954,8 @@ SilcClient silc_client_alloc(SilcClientOperations *ops,
 
 void silc_client_free(SilcClient client)
 {
-  silc_schedule_uninit(client->schedule);
+  if (client->schedule)
+    silc_schedule_uninit(client->schedule);
 
   if (client->rng)
     silc_rng_free(client->rng);
@@ -962,10 +963,13 @@ void silc_client_free(SilcClient client)
   if (!client->internal->params->dont_register_crypto_library)
     silc_crypto_uninit();
 
-  silc_packet_engine_stop(client->internal->packet_engine);
-  silc_dlist_uninit(client->internal->ftp_sessions);
-  silc_atomic_uninit16(&client->internal->conns);
-  silc_mutex_free(client->internal->lock);
+  if (client->internal->packet_engine)
+    silc_packet_engine_stop(client->internal->packet_engine);
+  if (client->internal->ftp_sessions)
+    silc_dlist_uninit(client->internal->ftp_sessions);
+  if (client->internal->lock)
+    silc_mutex_free(client->internal->lock);
+  silc_atomic_uninit32(&client->internal->conns);
   silc_free(client->username);
   silc_free(client->hostname);
   silc_free(client->realname);

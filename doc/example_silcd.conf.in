@@ -32,11 +32,6 @@ Include "@ETCDIR@/silcalgs.conf";
 # for different connections.
 #
 General {
-	# This is the default path where to search modules.  If omitted
-	# built-in modules will be used.  Built-in modules will also be
-	# used if a module file cannot be located.
-	module_path = "@MODULESDIR@";
-
 	# If both passphrase and public key authentication is set for a
 	# connection the public key authentication is the preferred one
 	# to use.  Set this to `true' to prefer passphrase authentication
@@ -78,6 +73,17 @@ General {
 	# Default keepalive frequency (seconds).  This can be overridden with
 	# with ConnectionParams.
 	keepalive_secs = 300;
+
+	# Dynamic router connections.  If this is set for normal SILC server
+	# the connection to primary router is not created untill it is actually
+	# needed.  Giving for example /WHOIS foobar@silcnet.org would then
+	# create connection to the primary router to resolve user foobar.
+	# On the other hand giving /WHOIS foobar would try to search the
+	# user foobar locally, without creating the connection.  Note that
+	# giving /JOIN foobar will also created the connection as current
+	# SILC Server version supports only global channels (all JOINs require
+	# connection to router, if one is configured).
+	#dynamic_server = true;
 
 	# Default reconnection parameters defines how the server reconnect
 	# to the remote if the connection was lost.  The reconnection phase
@@ -184,10 +190,12 @@ ServerInfo {
 
 	#
 	# Primary listener.  Specify the IP address and the port to bind
-	# the server.
+	# the server.  The public_ip can be used to specify the public IP
+	# if the server is behind NAT.
 	#
 	Primary {
 		ip = "10.2.1.6";
+		# public_ip = "11.1.1.1";
 		port = 706;
 	};
 

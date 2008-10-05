@@ -704,6 +704,8 @@ SILC_FSM_STATE(silc_connauth_st_responder_authenticate_pk)
 					       connauth->auth_data,
 					       connauth->auth_data_len));
   /* NOT REACHED */
+
+  SILC_LOG_DEBUG(("Signature is Ok"));
 }
 
 SILC_FSM_STATE(silc_connauth_st_responder_success)

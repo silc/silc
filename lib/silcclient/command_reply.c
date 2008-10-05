@@ -118,6 +118,7 @@ static void silc_client_command_process_error(SilcClientCommandContext cmd,
     client_entry = silc_client_get_client_by_id(client, conn, &id.u.client_id);
     if (client_entry) {
       silc_client_remove_from_channels(client, conn, client_entry);
+      client_entry->internal.valid = FALSE;
       silc_client_del_client(client, conn, client_entry);
       silc_client_unref_client(client, conn, client_entry);
     }
@@ -947,6 +948,7 @@ SILC_FSM_STATE(silc_client_command_reply_kill)
   /* Remove the client */
   if (client_entry) {
     silc_client_remove_from_channels(client, conn, client_entry);
+    client_entry->internal.valid = FALSE;
     silc_client_del_client(client, conn, client_entry);
     silc_client_unref_client(client, conn, client_entry);
   }

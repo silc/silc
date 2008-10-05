@@ -554,6 +554,7 @@ typedef struct {
   const char *hostname;
   const char *ip;
   SilcUInt16 port;
+  SilcConnectionType conn_type;
 } *SilcUnknownEntry;
 
 /* Prototypes */

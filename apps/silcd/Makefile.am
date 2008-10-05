@@ -39,7 +39,7 @@ silcd_SOURCES = \
 LIBS = $(SILC_COMMON_LIBS)
 LDADD =
 
-EXTRA_DIST = *.h
+EXTRA_DIST = silc-server.spec *.h
 
 install-dirs-server:
 	-mkdir -p $(docdir)

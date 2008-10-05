@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -298,8 +298,14 @@ SILC_FSM_STATE(silc_client_notify_invite)
 
   /* Get the channel entry */
   channel = silc_client_get_channel_by_id(client, conn, &id.u.channel_id);
-  if (!channel)
-    goto out;
+  if (!channel) {
+    /** Resolve channel */
+    SILC_FSM_CALL(silc_client_get_channel_by_id_resolve(
+				          client, conn, &id.u.channel_id,
+					  silc_client_notify_resolved,
+					  notify));
+    /* NOT REACHED */
+  }
 
   /* If channel is being resolved handle notify after resolving */
   if (channel->internal.resolve_cmd_ident) {

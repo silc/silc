@@ -108,7 +108,7 @@ struct SilcClientInternalStruct {
   char *silc_client_version;		 /* Version set by application */
   SilcClientRunning running;	         /* Running/Stopped callback */
   void *running_context;		 /* Context for runnign callback */
-  SilcAtomic16 conns;			 /* Number of connections in client */
+  SilcAtomic32 conns;			 /* Number of connections in client */
   SilcUInt16 next_session_id;		 /* Next FTP session ID */
 
   /* Events */

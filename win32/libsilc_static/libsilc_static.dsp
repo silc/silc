@@ -292,19 +292,11 @@ SOURCE=..\..\lib\silccrypt\blowfish.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\lib\silccrypt\cast.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\lib\silccrypt\md5.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\lib\silccrypt\none.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\lib\silccrypt\rc5.c
 # End Source File
 # Begin Source File
 

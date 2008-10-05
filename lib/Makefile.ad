@@ -22,9 +22,6 @@ SILCLIB_DIRS = 		\
 	silccore	\
 	silcapputil 	\
 	silcske 	\
-#ifdef SILC_DIST_HTTP
-	silchttp	\
-#endif SILC_DIST_HTTP
 #ifdef SILC_DIST_SFTP
 	silcsftp	\
 #endif SILC_DIST_SFTP

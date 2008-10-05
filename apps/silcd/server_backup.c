@@ -786,11 +786,16 @@ SILC_TASK_CALLBACK(silc_server_backup_connected_again)
   SilcServer server = app_context;
   SilcServerConfigRouter *primary;
 
+  SILC_LOG_DEBUG(("Reconnecting"));
+
+  if (server->server_shutdown)
+    return;
+
   primary = silc_server_config_get_primary_router(server);
   if (primary) {
     if (!silc_server_find_socket_by_host(server, SILC_CONN_ROUTER,
 					 primary->host, primary->port))
-      silc_server_create_connection(server, FALSE, FALSE,
+      silc_server_create_connection(server, TRUE, FALSE,
 				    primary->host, primary->port,
 				    silc_server_backup_connected,
 				    context);
@@ -810,6 +815,7 @@ void silc_server_backup_connected(SilcServer server,
 
   if (!server_entry) {
     /* Try again */
+    SILC_LOG_DEBUG(("Connecting failed"));
     silc_schedule_task_add_timeout(server->schedule,
 				   silc_server_backup_connected_again,
 				   context, 5, 0);
@@ -840,7 +846,7 @@ SILC_TASK_CALLBACK(silc_server_backup_connect_primary_again)
   if (primary) {
     if (!silc_server_find_socket_by_host(server, SILC_CONN_ROUTER,
 					 primary->host, primary->port))
-      silc_server_create_connection(server, FALSE, FALSE,
+      silc_server_create_connection(server, TRUE, FALSE,
 				    primary->host, primary->port,
 				    silc_server_backup_connect_primary,
 				    context);
@@ -1040,7 +1046,7 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup)
 	SILC_LOG_DEBUG(("Received START (session %d), reconnect to router",
 			ctx->session));
 	silc_packet_stream_ref(ctx->sock);
-	silc_server_create_connection(server, FALSE, FALSE,
+	silc_server_create_connection(server, TRUE, FALSE,
 				      primary->host, primary->port,
 				      silc_server_backup_connect_primary,
 				      ctx->sock);

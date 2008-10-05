@@ -19,13 +19,17 @@ lib/silccore
 
  o All payload encoding routines should take SilcStack as argument.
 
- o Remove SilcCommandCb from silccommand.h.
+ o Remove SilcCommandCb from silccommand.h. (***DONE)
 
  o All payload test routines into lib/silccore/tests/.
 
 
 lib/silcclient, The Client Library
 ==================================
+
+ o LIST command should take server name as argument, a server name whose
+   channels to list.  This way it is possible to list channels from
+   any server in internet, eg.  /LIST example.com.
 
  o UDP SILC connection support to SILC server
 
@@ -40,11 +44,6 @@ lib/silcclient, The Client Library
  o in JOIN notify handle resolving that timedout.  Currently the user is
    never joined the channel if this happens.  What to do if message is
    received from user that hasn't been resolved/joined?
-
- o Add the SilcStream (socket stream) from the SilcPacketStream and
-   SilcSocket from the socket stream to SilcClientConnection for easier
-   access to them for programmers.  Currently these have to be digged up
-   from the packet stream.
 
  o Connection option that attemps to connect to remot host with various
    different mechanisms: UDP 706, TCP 706, TCP 80, TCP 443, UDP 7706 and
@@ -61,6 +60,11 @@ lib/silcclient, The Client Library
    developing the SILC app with callbacks or with events.
 
  o Ability to recover from rekey errors, at least try to.
+
+ o Add the SilcStream (socket stream) from the SilcPacketStream and
+   SilcSocket from the socket stream to SilcClientConnection for easier
+   access to them for programmers.  Currently these have to be digged up
+   from the packet stream. (***DONE)
 
 
 SFTP Library, lib/silcsftp/
@@ -154,6 +158,14 @@ lib/silcserver
  o Ability to recover from rekey errors, at least try to.
 
  o Reference count all Silc*Entry structures.
+
+ o All channel names in any command (where appropriate) must be allowed to
+   be in format channel@server so that the server can be connected to do
+   the command for the channel.  Change protocol if it doesn't allow it.
+
+ o All nicknames in any command (where appropriate) must be allowed to be
+   in format nick@server so that the server can be connected to do the
+   command for the nickname.  Change protocol if it doesn't allow it.
 
  Some issues that must be kept in mind from 1.0 and 1.1 silcd's:
 

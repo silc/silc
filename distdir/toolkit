@@ -15,7 +15,6 @@ license-header distdir/GPL-header distdir/TOOLKIT-header
 # Distdefs
 define SILC_DIST_TOOLKIT
 define SILC_DIST_CLIENTLIB
-define SILC_DIST_HTTP
 
 # Includes
 include README.CVS

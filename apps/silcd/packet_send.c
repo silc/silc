@@ -295,7 +295,7 @@ void silc_server_packet_send_to_channel(SilcServer server,
   int k;
 
   /* This doesn't send channel message packets */
-  assert(type != SILC_PACKET_CHANNEL_MESSAGE);
+  SILC_ASSERT(type != SILC_PACKET_CHANNEL_MESSAGE);
 
   /* If there are global users in the channel we will send the message
      first to our router for further routing. */
@@ -399,6 +399,8 @@ void silc_server_packet_send_to_channel(SilcServer server,
 static SilcBool
 silc_server_packet_relay_to_channel_encrypt(SilcServer server,
 					    SilcPacketStream sender,
+					    void *sender_id,
+					    SilcIdType sender_type,
 					    SilcChannelEntry channel,
 					    unsigned char *data,
 					    unsigned int data_len)
@@ -451,8 +453,9 @@ silc_server_packet_relay_to_channel_encrypt(SilcServer server,
 
     memcpy(iv, data + (data_len - iv_len - mac_len), iv_len);
 
-    src_id.type = SILC_ID_SERVER;
-    src_id.u.server_id = *((SilcServerEntry)idata)->id;
+    SILC_ASSERT(sender_type == SILC_ID_CLIENT);
+    src_id.type = SILC_ID_CLIENT;
+    src_id.u.client_id = *((SilcClientID *)sender_id);
     dst_id.type = SILC_ID_CHANNEL;
     dst_id.u.channel_id = *channel->id;
 
@@ -502,6 +505,7 @@ void silc_server_packet_relay_to_channel(SilcServer server,
      channel key. If the channel key does not exist, then we know we
      don't have a single local user on the channel. */
   if (!silc_server_packet_relay_to_channel_encrypt(server, sender_sock,
+						   sender_id, sender_type,
 						   channel, data,
 						   data_len))
     return;
@@ -767,6 +771,10 @@ void silc_server_send_notify(SilcServer server,
   va_start(ap, argc);
 
   packet = silc_notify_payload_encode(type, argc, ap);
+  if (!packet) {
+    va_end(ap);
+    return;
+  }
   silc_server_packet_send(server, sock, SILC_PACKET_NOTIFY,
 			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
 			  packet->data, silc_buffer_len(packet));
@@ -797,9 +805,10 @@ void silc_server_send_notify_args(SilcServer server,
   SilcBuffer packet;
 
   packet = silc_notify_payload_encode_args(type, argc, args);
-  silc_server_packet_send(server, sock, SILC_PACKET_NOTIFY,
-			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
-			  packet->data, silc_buffer_len(packet));
+  if (packet)
+    silc_server_packet_send(server, sock, SILC_PACKET_NOTIFY,
+			    broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
+			    packet->data, silc_buffer_len(packet));
   silc_buffer_free(packet);
 }
 
@@ -817,10 +826,11 @@ void silc_server_send_notify_channel_change(SilcServer server,
   idp1 = silc_id_payload_encode((void *)old_id, SILC_ID_CHANNEL);
   idp2 = silc_id_payload_encode((void *)new_id, SILC_ID_CHANNEL);
 
-  silc_server_send_notify(server, sock, broadcast,
-			  SILC_NOTIFY_TYPE_CHANNEL_CHANGE,
-			  2, idp1->data, silc_buffer_len(idp1),
-			  idp2->data, silc_buffer_len(idp2));
+  if (idp1 && idp2)
+    silc_server_send_notify(server, sock, broadcast,
+			    SILC_NOTIFY_TYPE_CHANNEL_CHANGE,
+			    2, idp1->data, silc_buffer_len(idp1),
+			    idp2->data, silc_buffer_len(idp2));
   silc_buffer_free(idp1);
   silc_buffer_free(idp2);
 }
@@ -840,11 +850,12 @@ void silc_server_send_notify_nick_change(SilcServer server,
   idp1 = silc_id_payload_encode((void *)old_id, SILC_ID_CLIENT);
   idp2 = silc_id_payload_encode((void *)new_id, SILC_ID_CLIENT);
 
-  silc_server_send_notify(server, sock, broadcast,
-			  SILC_NOTIFY_TYPE_NICK_CHANGE,
-			  3, idp1->data, silc_buffer_len(idp1),
-			  idp2->data, silc_buffer_len(idp2),
-			  nickname, nickname ? strlen(nickname) : 0);
+  if (idp1 && idp2)
+    silc_server_send_notify(server, sock, broadcast,
+			    SILC_NOTIFY_TYPE_NICK_CHANGE,
+			    3, idp1->data, silc_buffer_len(idp1),
+			    idp2->data, silc_buffer_len(idp2),
+			    nickname, nickname ? strlen(nickname) : 0);
   silc_buffer_free(idp1);
   silc_buffer_free(idp2);
 }
@@ -862,9 +873,11 @@ void silc_server_send_notify_join(SilcServer server,
 
   idp1 = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
   idp2 = silc_id_payload_encode((void *)channel->id, SILC_ID_CHANNEL);
-  silc_server_send_notify(server, sock, broadcast, SILC_NOTIFY_TYPE_JOIN,
-			  2, idp1->data, silc_buffer_len(idp1),
-			  idp2->data, silc_buffer_len(idp2));
+
+  if (idp1 && idp2)
+    silc_server_send_notify(server, sock, broadcast, SILC_NOTIFY_TYPE_JOIN,
+			    2, idp1->data, silc_buffer_len(idp1),
+			    idp2->data, silc_buffer_len(idp2));
   silc_buffer_free(idp1);
   silc_buffer_free(idp2);
 }
@@ -881,9 +894,10 @@ void silc_server_send_notify_leave(SilcServer server,
   SilcBuffer idp;
 
   idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
-  silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
-			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_LEAVE,
-			       1, idp->data, silc_buffer_len(idp));
+  if (idp)
+    silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
+				 SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_LEAVE,
+				 1, idp->data, silc_buffer_len(idp));
   silc_buffer_free(idp);
 }
 
@@ -906,6 +920,8 @@ void silc_server_send_notify_cmode(SilcServer server,
   unsigned char mode[4], ulimit[4];
 
   idp = silc_id_payload_encode((void *)id, id_type);
+  if (!idp)
+    return;
   SILC_PUT32_MSB(mode_mask, mode);
   if (founder_key)
     fkey = silc_public_key_payload_encode(founder_key);
@@ -951,6 +967,8 @@ void silc_server_send_notify_cumode(SilcServer server,
 
   idp1 = silc_id_payload_encode((void *)id, id_type);
   idp2 = silc_id_payload_encode((void *)target, SILC_ID_CLIENT);
+  if (!idp1 || !idp2)
+    return;
   SILC_PUT32_MSB(mode_mask, mode);
   if (founder_key)
     fkey = silc_public_key_payload_encode(founder_key);
@@ -982,10 +1000,11 @@ void silc_server_send_notify_signoff(SilcServer server,
   SilcBuffer idp;
 
   idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
-  silc_server_send_notify(server, sock, broadcast,
-			  SILC_NOTIFY_TYPE_SIGNOFF,
-			  message ? 2 : 1, idp->data, silc_buffer_len(idp),
-			  message, message ? strlen(message): 0);
+  if (idp)
+    silc_server_send_notify(server, sock, broadcast,
+			    SILC_NOTIFY_TYPE_SIGNOFF,
+			    message ? 2 : 1, idp->data, silc_buffer_len(idp),
+			    message, message ? strlen(message): 0);
   silc_buffer_free(idp);
 }
 
@@ -1004,12 +1023,13 @@ void silc_server_send_notify_topic_set(SilcServer server,
   SilcBuffer idp;
 
   idp = silc_id_payload_encode(id, id_type);
-  silc_server_send_notify_dest(server, sock, broadcast,
-			       (void *)channel->id, SILC_ID_CHANNEL,
-			       SILC_NOTIFY_TYPE_TOPIC_SET,
-			       topic ? 2 : 1,
-			       idp->data, silc_buffer_len(idp),
-			       topic, topic ? strlen(topic) : 0);
+  if (idp)
+    silc_server_send_notify_dest(server, sock, broadcast,
+				 (void *)channel->id, SILC_ID_CHANNEL,
+				 SILC_NOTIFY_TYPE_TOPIC_SET,
+				 topic ? 2 : 1,
+				 idp->data, silc_buffer_len(idp),
+				 topic, topic ? strlen(topic) : 0);
   silc_buffer_free(idp);
 }
 
@@ -1031,11 +1051,13 @@ void silc_server_send_notify_kicked(SilcServer server,
 
   idp1 = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
   idp2 = silc_id_payload_encode((void *)kicker, SILC_ID_CLIENT);
-  silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
-			       SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_KICKED, 3,
-			       idp1->data, silc_buffer_len(idp1),
-			       comment, comment ? strlen(comment) : 0,
-			       idp2->data, silc_buffer_len(idp2));
+
+  if (idp1 && idp2)
+    silc_server_send_notify_dest(server, sock, broadcast, (void *)channel->id,
+				 SILC_ID_CHANNEL, SILC_NOTIFY_TYPE_KICKED, 3,
+				 idp1->data, silc_buffer_len(idp1),
+				 comment, comment ? strlen(comment) : 0,
+				 idp2->data, silc_buffer_len(idp2));
   silc_buffer_free(idp1);
   silc_buffer_free(idp2);
 }
@@ -1056,11 +1078,13 @@ void silc_server_send_notify_killed(SilcServer server,
 
   idp1 = silc_id_payload_encode(client_id, SILC_ID_CLIENT);
   idp2 = silc_id_payload_encode(killer, killer_type);
-  silc_server_send_notify_dest(server, sock, broadcast, (void *)client_id,
-			       SILC_ID_CLIENT, SILC_NOTIFY_TYPE_KILLED,
-			       3, idp1->data, silc_buffer_len(idp1),
-			       comment, comment ? strlen(comment) : 0,
-			       idp2->data, silc_buffer_len(idp2));
+
+  if (idp1 && idp2)
+    silc_server_send_notify_dest(server, sock, broadcast, (void *)client_id,
+				 SILC_ID_CLIENT, SILC_NOTIFY_TYPE_KILLED,
+				 3, idp1->data, silc_buffer_len(idp1),
+				 comment, comment ? strlen(comment) : 0,
+				 idp2->data, silc_buffer_len(idp2));
   silc_buffer_free(idp1);
   silc_buffer_free(idp2);
 }
@@ -1081,10 +1105,11 @@ void silc_server_send_notify_umode(SilcServer server,
   idp = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
   SILC_PUT32_MSB(mode_mask, mode);
 
-  silc_server_send_notify(server, sock, broadcast,
-			  SILC_NOTIFY_TYPE_UMODE_CHANGE, 2,
-			  idp->data, silc_buffer_len(idp),
-			  mode, 4);
+  if (idp)
+    silc_server_send_notify(server, sock, broadcast,
+			    SILC_NOTIFY_TYPE_UMODE_CHANGE, 2,
+			    idp->data, silc_buffer_len(idp),
+			    mode, 4);
   silc_buffer_free(idp);
 }
 
@@ -1102,12 +1127,14 @@ void silc_server_send_notify_ban(SilcServer server,
   SilcBuffer idp;
 
   idp = silc_id_payload_encode((void *)channel->id, SILC_ID_CHANNEL);
-  silc_server_send_notify(server, sock, broadcast,
-			  SILC_NOTIFY_TYPE_BAN, 3,
-			  idp->data, silc_buffer_len(idp),
-			  action ? action : NULL, action ? 1 : 0,
-			  list ? list->data : NULL,
-			  list ? silc_buffer_len(list) : 0);
+
+  if (idp)
+    silc_server_send_notify(server, sock, broadcast,
+			    SILC_NOTIFY_TYPE_BAN, 3,
+			    idp->data, silc_buffer_len(idp),
+			    action ? action : NULL, action ? 1 : 0,
+			    list ? list->data : NULL,
+			    list ? silc_buffer_len(list) : 0);
   silc_buffer_free(idp);
 }
 
@@ -1128,14 +1155,17 @@ void silc_server_send_notify_invite(SilcServer server,
 
   idp = silc_id_payload_encode((void *)channel->id, SILC_ID_CHANNEL);
   idp2 = silc_id_payload_encode((void *)client_id, SILC_ID_CLIENT);
-  silc_server_send_notify(server, sock, broadcast,
-			  SILC_NOTIFY_TYPE_INVITE, 5,
-			  idp->data, silc_buffer_len(idp),
-			  channel->channel_name, strlen(channel->channel_name),
-			  idp2->data, silc_buffer_len(idp2),
-			  action ? action : NULL, action ? 1 : 0,
-			  list ? list->data : NULL,
-			  list ? silc_buffer_len(list) : 0);
+
+  if (idp && idp2)
+    silc_server_send_notify(server, sock, broadcast,
+			    SILC_NOTIFY_TYPE_INVITE, 5,
+			    idp->data, silc_buffer_len(idp),
+			    channel->channel_name,
+			    strlen(channel->channel_name),
+			    idp2->data, silc_buffer_len(idp2),
+			    action ? action : NULL, action ? 1 : 0,
+			    list ? list->data : NULL,
+			    list ? silc_buffer_len(list) : 0);
   silc_buffer_free(idp);
   silc_buffer_free(idp2);
 }
@@ -1155,6 +1185,8 @@ void silc_server_send_notify_watch(SilcServer server,
   unsigned char mode[4], n[2];
 
   idp = silc_id_payload_encode(client->id, SILC_ID_CLIENT);
+  if (!idp)
+    return;
   SILC_PUT16_MSB(type, n);
   SILC_PUT32_MSB(client->mode, mode);
   if (public_key)
@@ -1188,6 +1220,10 @@ void silc_server_send_notify_dest(SilcServer server,
   va_start(ap, argc);
 
   packet = silc_notify_payload_encode(type, argc, ap);
+  if (!packet) {
+    va_end(ap);
+    return;
+  }
   silc_server_packet_send_dest(server, sock, SILC_PACKET_NOTIFY,
 			       broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
 			       dest_id, dest_id_type,
@@ -1228,10 +1264,11 @@ void silc_server_send_notify_to_channel(SilcServer server,
   va_start(ap, argc);
 
   packet = silc_notify_payload_encode(type, argc, ap);
-  silc_server_packet_send_to_channel(server, sender, channel,
-				     SILC_PACKET_NOTIFY, route_notify,
-				     send_to_clients,
-				     packet->data, silc_buffer_len(packet));
+  if (packet)
+    silc_server_packet_send_to_channel(server, sender, channel,
+				       SILC_PACKET_NOTIFY, route_notify,
+				       send_to_clients,
+				       packet->data, silc_buffer_len(packet));
   silc_buffer_free(packet);
   va_end(ap);
 }
@@ -1273,6 +1310,10 @@ void silc_server_send_notify_on_channels(SilcServer server,
 
   va_start(ap, argc);
   packet = silc_notify_payload_encode(type, argc, ap);
+  if (!packet) {
+    va_end(ap);
+    return;
+  }
   data = packet->data;
   data_len = silc_buffer_len(packet);
 
@@ -1366,9 +1407,10 @@ void silc_server_send_new_id(SilcServer server,
   SILC_LOG_DEBUG(("Sending new ID"));
 
   idp = silc_id_payload_encode(id, id_type);
-  silc_server_packet_send(server, sock, SILC_PACKET_NEW_ID,
-			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
-			  idp->data, silc_buffer_len(idp));
+  if (idp)
+    silc_server_packet_send(server, sock, SILC_PACKET_NEW_ID,
+			    broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
+			    idp->data, silc_buffer_len(idp));
   silc_buffer_free(idp);
 }
 
@@ -1397,10 +1439,10 @@ void silc_server_send_new_channel(SilcServer server,
   /* Encode the channel payload */
   packet = silc_channel_payload_encode(channel_name, name_len,
 				       cid, channel_id_len, mode);
-
-  silc_server_packet_send(server, sock, SILC_PACKET_NEW_CHANNEL,
-			  broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
-			  packet->data, silc_buffer_len(packet));
+  if (packet)
+    silc_server_packet_send(server, sock, SILC_PACKET_NEW_CHANNEL,
+			    broadcast ? SILC_PACKET_FLAG_BROADCAST : 0,
+			    packet->data, silc_buffer_len(packet));
 
   silc_buffer_free(packet);
 }
@@ -1438,10 +1480,11 @@ void silc_server_send_channel_key(SilcServer server,
   tmp_len = strlen(cipher);
   packet = silc_channel_key_payload_encode(cid_len, cid, tmp_len, cipher,
                                            channel->key_len / 8, channel->key);
-  silc_server_packet_send_to_channel(server, sender, channel,
-				     SILC_PACKET_CHANNEL_KEY,
-                                     route, TRUE, packet->data,
-				     silc_buffer_len(packet));
+  if (packet)
+    silc_server_packet_send_to_channel(server, sender, channel,
+				       SILC_PACKET_CHANNEL_KEY,
+                                       route, TRUE, packet->data,
+				       silc_buffer_len(packet));
   silc_buffer_free(packet);
 }
 
@@ -1463,8 +1506,9 @@ void silc_server_send_command(SilcServer server,
   va_start(ap, argc);
 
   packet = silc_command_payload_encode_vap(command, ident, argc, ap);
-  silc_server_packet_send(server, sock, SILC_PACKET_COMMAND, 0,
-			  packet->data, silc_buffer_len(packet));
+  if (packet)
+    silc_server_packet_send(server, sock, SILC_PACKET_COMMAND, 0,
+			    packet->data, silc_buffer_len(packet));
   silc_buffer_free(packet);
   va_end(ap);
 }
@@ -1490,8 +1534,9 @@ void silc_server_send_command_reply(SilcServer server,
 
   packet = silc_command_reply_payload_encode_vap(command, status, error,
 						 ident, argc, ap);
-  silc_server_packet_send(server, sock, SILC_PACKET_COMMAND_REPLY, 0,
-			  packet->data, silc_buffer_len(packet));
+  if (packet)
+    silc_server_packet_send(server, sock, SILC_PACKET_COMMAND_REPLY, 0,
+			    packet->data, silc_buffer_len(packet));
   silc_buffer_free(packet);
   va_end(ap);
 }
@@ -1519,9 +1564,10 @@ void silc_server_send_dest_command_reply(SilcServer server,
 
   packet = silc_command_reply_payload_encode_vap(command, status, error,
 						 ident, argc, ap);
-  silc_server_packet_send_dest(server, sock, SILC_PACKET_COMMAND_REPLY, 0,
-			       dst_id, dst_id_type, packet->data,
-			       silc_buffer_len(packet));
+  if (packet)
+    silc_server_packet_send_dest(server, sock, SILC_PACKET_COMMAND_REPLY, 0,
+				 dst_id, dst_id_type, packet->data,
+				 silc_buffer_len(packet));
   silc_buffer_free(packet);
   va_end(ap);
 }
@@ -1536,6 +1582,9 @@ void silc_server_send_connection_auth_request(SilcServer server,
   SilcBuffer packet;
 
   packet = silc_buffer_alloc(4);
+  if (!packet)
+    return;
+
   silc_buffer_pull_tail(packet, silc_buffer_truelen(packet));
   silc_buffer_format(packet,
 		     SILC_STR_UI_SHORT(conn_type),
@@ -1709,8 +1758,9 @@ void silc_server_send_opers_notify(SilcServer server,
 
   va_start(ap, argc);
   packet = silc_notify_payload_encode(type, argc, ap);
-  silc_server_send_opers(server, SILC_PACKET_NOTIFY, 0,
-			 route, local, packet->data, silc_buffer_len(packet));
+  if (packet)
+    silc_server_send_opers(server, SILC_PACKET_NOTIFY, 0,
+			   route, local, packet->data, silc_buffer_len(packet));
   silc_buffer_free(packet);
   va_end(ap);
 }

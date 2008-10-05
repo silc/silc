@@ -650,8 +650,14 @@ SilcBool silc_client_del_channel_private_keys(SilcClient client,
   }
 
   channel->internal.curr_key = NULL;
-  channel->cipher = silc_cipher_get_name(channel->internal.send_key);
-  channel->hmac = silc_hmac_get_name(channel->internal.hmac);
+  if (channel->internal.send_key)
+    channel->cipher = silc_cipher_get_name(channel->internal.send_key);
+  else
+    channel->cipher = NULL;
+  if (channel->internal.hmac)
+    channel->hmac = silc_hmac_get_name(channel->internal.hmac);
+  else
+    channel->hmac = NULL;
 
   silc_dlist_uninit(channel->internal.private_keys);
   channel->internal.private_keys = NULL;

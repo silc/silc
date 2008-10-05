@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2007 Pekka Riikonen
+  Copyright (C) 2000 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -142,9 +142,8 @@ silc_idcache_add(SilcIDCache cache, char *name, void *id, void *context)
   if (id) {
     /* See if this entry is added already to cache */
     if (silc_idcache_find_by_id_one(cache, id, NULL)) {
-      SILC_LOG_ERROR(("Attempted to add same ID twice to ID Cache, id %s",
+      SILC_LOG_DEBUG(("Attempted to add same ID twice to ID Cache, id %s",
 		      silc_id_render(id, cache->id_type)));
-      SILC_ASSERT(FALSE);
       goto err;
     }
   }

@@ -183,8 +183,8 @@ static SilcBool my_parse_authdata(SilcAuthMethod auth_meth, const char *p,
   return TRUE;
 }
 
-static SilcBool my_parse_publickeydir(const char *dirname, void **auth_data,
-				      SilcSKRKeyUsage usage)
+static int my_parse_publickeydir(const char *dirname, void **auth_data,
+				 SilcSKRKeyUsage usage)
 {
   int total = 0;
   struct dirent *get_file;
@@ -193,7 +193,7 @@ static SilcBool my_parse_publickeydir(const char *dirname, void **auth_data,
   if (!(dp = opendir(dirname))) {
     SILC_SERVER_LOG_ERROR(("Error while parsing config file: "
 			   "Could not open directory \"%s\"", dirname));
-    return FALSE;
+    return -1;
   }
 
   /* errors are not considered fatal */
@@ -216,14 +216,14 @@ static SilcBool my_parse_publickeydir(const char *dirname, void **auth_data,
       SILC_SERVER_LOG_ERROR(("Error stating file %s: %s", buf,
 			     strerror(errno)));
     } else if (S_ISREG(check_file.st_mode)) {
-      my_parse_authdata(SILC_AUTH_PUBLIC_KEY, buf, auth_data, NULL,
-			usage, NULL);
-      total++;
+      if (my_parse_authdata(SILC_AUTH_PUBLIC_KEY, buf, auth_data, NULL,
+			    usage, NULL))
+	total++;
     }
   }
 
   SILC_LOG_DEBUG(("Tried to load %d public keys in \"%s\"", total, dirname));
-  return TRUE;
+  return total;
 }
 
 /* Callbacks */
@@ -233,11 +233,7 @@ SILC_CONFIG_CALLBACK(fetch_generic)
   SilcServerConfig config = (SilcServerConfig) context;
   int got_errno = 0;
 
-  if (!strcmp(name, "module_path")) {
-    CONFIG_IS_DOUBLE(config->module_path);
-    config->module_path = (*(char *)val ? strdup((char *) val) : NULL);
-  }
-  else if (!strcmp(name, "prefer_passphrase_auth")) {
+  if (!strcmp(name, "prefer_passphrase_auth")) {
     config->prefer_passphrase_auth = *(SilcBool *)val;
   }
   else if (!strcmp(name, "require_reverse_lookup")) {
@@ -380,10 +376,6 @@ SILC_CONFIG_CALLBACK(fetch_cipher)
     CONFIG_IS_DOUBLE(tmp->name);
     tmp->name = strdup((char *) val);
   }
-  else if (!strcmp(name, "module")) {
-    CONFIG_IS_DOUBLE(tmp->module);
-    tmp->module = (*(char *)val ? strdup((char *) val) : NULL);
-  }
   else if (!strcmp(name, "keylength")) {
     tmp->key_length = *(SilcUInt32 *)val;
   }
@@ -396,7 +388,6 @@ SILC_CONFIG_CALLBACK(fetch_cipher)
 
  got_err:
   silc_free(tmp->name);
-  silc_free(tmp->module);
   silc_free(tmp);
   config->tmp = NULL;
   return got_errno;
@@ -428,10 +419,6 @@ SILC_CONFIG_CALLBACK(fetch_hash)
     CONFIG_IS_DOUBLE(tmp->name);
     tmp->name = strdup((char *) val);
   }
-  else if (!strcmp(name, "module")) {
-    CONFIG_IS_DOUBLE(tmp->module);
-    tmp->module = (*(char *)val ? strdup((char *) val) : NULL);
-  }
   else if (!strcmp(name, "blocklength")) {
     tmp->block_length = *(int *)val;
   }
@@ -444,7 +431,6 @@ SILC_CONFIG_CALLBACK(fetch_hash)
 
  got_err:
   silc_free(tmp->name);
-  silc_free(tmp->module);
   silc_free(tmp);
   config->tmp = NULL;
   return got_errno;
@@ -654,10 +640,11 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
 
     /* Check the private key file permissions. */
     if ((stat(file_tmp, &st)) != -1) {
-      if ((st.st_mode & 0777) != 0600) {
+      if (((st.st_mode & 0777) != 0600) &&
+	  ((st.st_mode & 0777) != 0640)) {
 	SILC_SERVER_LOG_ERROR(("Wrong permissions in private key "
 			      "file \"%s\".  The permissions must be "
-			      "0600.", file_tmp));
+			      "0600 or 0640.", file_tmp));
         return SILC_CONFIG_ESILENT;
       }
     }
@@ -881,18 +868,22 @@ SILC_CONFIG_CALLBACK(fetch_client)
   else if (!strcmp(name, "publickey")) {
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
 			   (void *)&config->server->repository, NULL,
+			   SILC_SKR_USAGE_AUTH |
 			   SILC_SKR_USAGE_KEY_AGREEMENT, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
+    tmp->publickeys = TRUE;
   }
   else if (!strcmp(name, "publickeydir")) {
-    if (!my_parse_publickeydir((char *) val,
-			       (void *)&config->server->repository,
-			       SILC_SKR_USAGE_KEY_AGREEMENT)) {
+    if (my_parse_publickeydir((char *) val,
+			      (void *)&config->server->repository,
+			      SILC_SKR_USAGE_AUTH |
+			      SILC_SKR_USAGE_KEY_AGREEMENT) < 0) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
+    tmp->publickeys = TRUE;
   }
   else if (!strcmp(name, "params")) {
     CONFIG_IS_DOUBLE(tmp->param);
@@ -960,6 +951,7 @@ SILC_CONFIG_CALLBACK(fetch_admin)
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
+    tmp->publickeys = TRUE;
   }
   else
     return SILC_CONFIG_EINTERNAL;
@@ -1057,10 +1049,12 @@ SILC_CONFIG_CALLBACK(fetch_server)
     CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
 			   (void *)&config->server->repository, NULL,
+			   SILC_SKR_USAGE_AUTH |
 			   SILC_SKR_USAGE_KEY_AGREEMENT, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
+    tmp->publickeys = TRUE;
   }
   else if (!strcmp(name, "params")) {
     CONFIG_IS_DOUBLE(tmp->param);
@@ -1134,10 +1128,12 @@ SILC_CONFIG_CALLBACK(fetch_router)
     CONFIG_IS_DOUBLE(tmp->publickeys);
     if (!my_parse_authdata(SILC_AUTH_PUBLIC_KEY, (char *) val,
 			   (void *)&config->server->repository, NULL,
+			   SILC_SKR_USAGE_AUTH |
 			   SILC_SKR_USAGE_KEY_AGREEMENT, NULL)) {
       got_errno = SILC_CONFIG_EPRINTLINE;
       goto got_err;
     }
+    tmp->publickeys = TRUE;
   }
   else if (!strcmp(name, "params")) {
     CONFIG_IS_DOUBLE(tmp->param);
@@ -1188,7 +1184,6 @@ SILC_CONFIG_CALLBACK(fetch_router)
 
 /* known config options tables */
 static const SilcConfigTable table_general[] = {
-  { "module_path",		SILC_CONFIG_ARG_STRE,	fetch_generic,	NULL },
   { "prefer_passphrase_auth",	SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
   { "require_reverse_lookup",	SILC_CONFIG_ARG_TOGGLE,	fetch_generic,	NULL },
   { "connections_max",		SILC_CONFIG_ARG_INT,	fetch_generic,	NULL },
@@ -1225,7 +1220,6 @@ static const SilcConfigTable table_general[] = {
 
 static const SilcConfigTable table_cipher[] = {
   { "name",		SILC_CONFIG_ARG_STR,	fetch_cipher,	NULL },
-  { "module",		SILC_CONFIG_ARG_STRE,	fetch_cipher,	NULL },
   { "keylength",	SILC_CONFIG_ARG_INT,	fetch_cipher,	NULL },
   { "blocklength",	SILC_CONFIG_ARG_INT,	fetch_cipher,	NULL },
   { 0, 0, 0, 0 }
@@ -1233,7 +1227,6 @@ static const SilcConfigTable table_cipher[] = {
 
 static const SilcConfigTable table_hash[] = {
   { "name",		SILC_CONFIG_ARG_STR,	fetch_hash,	NULL },
-  { "module",		SILC_CONFIG_ARG_STRE,	fetch_hash,	NULL },
   { "blocklength",	SILC_CONFIG_ARG_INT,	fetch_hash,	NULL },
   { "digestlength",	SILC_CONFIG_ARG_INT,	fetch_hash,	NULL },
   { 0, 0, 0, 0 }
@@ -1612,7 +1605,6 @@ void silc_server_config_destroy(SilcServerConfig config)
   SILC_LOG_DEBUG(("Freeing config context"));
 
   /* Destroy general config stuff */
-  silc_free(config->module_path);
   silc_free(config->debug_string);
   silc_free(config->param.version_protocol);
   silc_free(config->param.version_software);
@@ -1666,12 +1658,10 @@ void silc_server_config_destroy(SilcServerConfig config)
   SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigCipher,
 				  config->cipher)
     silc_free(di->name);
-    silc_free(di->module);
     silc_free(di);
   }
   SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigHash, config->hash)
     silc_free(di->name);
-    silc_free(di->module);
     silc_free(di);
   }
   SILC_SERVER_CONFIG_LIST_DESTROY(SilcServerConfigHmac, config->hmac)

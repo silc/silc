@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -1051,7 +1051,8 @@ SILC_SERVER_CMD_FUNC(invite)
   SilcBuffer list, tmp2;
   SilcBufferStruct alist;
   unsigned char *tmp, *atype = NULL;
-  SilcUInt32 len, type, len2;
+  SilcUInt32 len, len2, ttype;
+  void *type;
   SilcUInt16 argc = 0, ident = silc_command_get_ident(cmd->payload);
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_INVITE, cmd, 1, 4);
@@ -1163,7 +1164,7 @@ SILC_SERVER_CMD_FUNC(invite)
     tmp = silc_argument_get_arg_type(cmd->args, 2, &len);
     silc_hash_table_list(channel->invite_list, &htl);
     while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2)) {
-      if (type == 3 && !memcmp(tmp2->data, tmp, len)) {
+      if (SILC_PTR_TO_32(type) == 3 && !memcmp(tmp2->data, tmp, len)) {
 	tmp = NULL;
 	break;
       }
@@ -1252,7 +1253,8 @@ SILC_SERVER_CMD_FUNC(invite)
     silc_hash_table_list(channel->invite_list, &htl);
     while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2))
       list = silc_argument_payload_encode_one(list, tmp2->data,
-					      silc_buffer_len(tmp2), type);
+					      silc_buffer_len(tmp2),
+					      SILC_PTR_TO_32(type));
     silc_hash_table_list_reset(&htl);
   }
 
@@ -1287,21 +1289,21 @@ SILC_SERVER_CMD_FUNC(invite)
 
   /* Send invite list back only if the list was modified, or no arguments
      was given. */
-  type = 0;
+  ttype = 0;
   argc = silc_argument_get_arg_num(cmd->args);
   if (argc == 1)
-    type = 1;
+    ttype = 1;
   if (silc_argument_get_arg_type(cmd->args, 3, &len))
-    type = 1;
+    ttype = 1;
 
   /* Send command reply */
   tmp = silc_argument_get_arg_type(cmd->args, 1, &len);
   silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_INVITE,
 				 SILC_STATUS_OK, 0, ident, 2,
 				 2, tmp, len,
-				 3, type && list ?
+				 3, ttype && list ?
 				 list->data : NULL,
-				 type && list ? silc_buffer_len(list) : 0);
+				 ttype && list ? silc_buffer_len(list) : 0);
   silc_buffer_free(list);
 
  out:
@@ -1470,13 +1472,19 @@ SILC_SERVER_CMD_FUNC(kill)
 
     /* Do normal signoff for the destination client */
     sock = remote_client->connection;
+
+    if (sock)
+      silc_packet_stream_ref(sock);
+
     silc_server_remove_from_channels(server, NULL, remote_client,
 				     TRUE, (char *)"Killed", TRUE, TRUE);
-    silc_server_free_client_data(server, NULL, remote_client, TRUE,
-				 comment ? comment :
-				 (unsigned char *)"Killed");
-    if (sock)
+    silc_server_free_sock_user_data(server, sock, comment ? comment :
+				    (unsigned char *)"Killed");
+    if (sock) {
+      silc_packet_set_context(sock, NULL);
       silc_server_close_connection(server, sock);
+      silc_packet_stream_unref(sock);
+    }
   } else {
     /* Router operator killing */
 
@@ -1556,12 +1564,13 @@ SILC_SERVER_CMD_FUNC(info)
     char info_string[256];
 
     memset(info_string, 0, sizeof(info_string));
-    snprintf(info_string, sizeof(info_string),
-	     "location: %s server: %s admin: %s <%s>",
-	     server->config->server_info->location,
-	     server->config->server_info->server_type,
-	     server->config->server_info->admin,
-	     server->config->server_info->email);
+    silc_snprintf(info_string, sizeof(info_string),
+		  "location: %s server: %s admin: %s <%s> version: %s",
+		  server->config->server_info->location,
+		  server->config->server_info->server_type,
+		  server->config->server_info->admin,
+		  server->config->server_info->email,
+		  silc_dist_version);
 
     server_info = info_string;
     entry = server->id_entry;
@@ -1828,6 +1837,7 @@ static void silc_server_command_join_channel(SilcServer server,
   SilcBuffer user_list, mode_list, invite_list, ban_list;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   char check[512], check2[512];
+  void *plen;
   SilcBool founder = FALSE;
   SilcBool resolve;
   SilcBuffer fkey = NULL, chpklist = NULL;
@@ -2144,10 +2154,11 @@ static void silc_server_command_join_channel(SilcServer server,
 		       SILC_STR_END);
 
     silc_hash_table_list(channel->invite_list, &htl);
-    while (silc_hash_table_get(&htl, (void *)&tmp_len, (void *)&reply))
+    while (silc_hash_table_get(&htl, (void *)&plen, (void *)&reply))
       invite_list = silc_argument_payload_encode_one(invite_list,
 						     reply->data,
-						     silc_buffer_len(reply), tmp_len);
+						     silc_buffer_len(reply),
+						     SILC_PTR_TO_32(plen));
     silc_hash_table_list_reset(&htl);
   }
 
@@ -2163,10 +2174,11 @@ static void silc_server_command_join_channel(SilcServer server,
 		       SILC_STR_END);
 
     silc_hash_table_list(channel->ban_list, &htl);
-    while (silc_hash_table_get(&htl, (void *)&tmp_len, (void *)&reply))
+    while (silc_hash_table_get(&htl, (void *)&plen, (void *)&reply))
       ban_list = silc_argument_payload_encode_one(ban_list,
 						  reply->data,
-						  silc_buffer_len(reply), tmp_len);
+						  silc_buffer_len(reply),
+						  SILC_PTR_TO_32(plen));
     silc_hash_table_list_reset(&htl);
   }
 
@@ -2819,7 +2831,7 @@ SILC_SERVER_CMD_FUNC(umode)
   SilcServer server = cmd->server;
   SilcClientEntry client = silc_packet_get_context(cmd->sock);
   unsigned char *tmp_mask, m[4];
-  SilcUInt32 mask = 0;
+  SilcUInt32 mask = 0, tmp_len;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
   SilcBool set_mask = FALSE;
 
@@ -2829,8 +2841,8 @@ SILC_SERVER_CMD_FUNC(umode)
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_UMODE, cmd, 1, 2);
 
   /* Get the client's mode mask */
-  tmp_mask = silc_argument_get_arg_type(cmd->args, 2, NULL);
-  if (tmp_mask) {
+  tmp_mask = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
+  if (tmp_mask && tmp_len == 4) {
     SILC_GET32_MSB(mask, tmp_mask);
     set_mask = TRUE;
   }
@@ -2943,7 +2955,7 @@ SILC_SERVER_CMD_FUNC(cmode)
 
   /* Get the channel mode mask */
   tmp_mask = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
-  if (tmp_mask) {
+  if (tmp_mask && tmp_len == 4) {
     SILC_GET32_MSB(mode_mask, tmp_mask);
     set_mask = TRUE;
   }
@@ -4370,8 +4382,10 @@ SILC_SERVER_CMD_FUNC(watch)
 
     pk = silc_argument_get_next_arg(pkargs, &type, &pk_len);
     while (pk) {
-      if (!silc_public_key_payload_decode(pk, pk_len, &public_key))
+      if (!silc_public_key_payload_decode(pk, pk_len, &public_key)) {
+        pk = silc_argument_get_next_arg(pkargs, &type, &pk_len);
 	continue;
+      }
       if (type == 0x03)
         type = 0x00;
 
@@ -4598,7 +4612,7 @@ SILC_SERVER_CMD_FUNC(ban)
   SilcUInt32 id_len, len, len2;
   SilcArgumentPayload args;
   SilcHashTableList htl;
-  SilcUInt32 type;
+  void *type;
   SilcUInt16 argc = 0, ident = silc_command_get_ident(cmd->payload);
   SilcBufferStruct blist;
 
@@ -4707,7 +4721,8 @@ SILC_SERVER_CMD_FUNC(ban)
     silc_hash_table_list(channel->ban_list, &htl);
     while (silc_hash_table_get(&htl, (void *)&type, (void *)&tmp2))
       list = silc_argument_payload_encode_one(list, tmp2->data,
-					      silc_buffer_len(tmp2), type);
+					      silc_buffer_len(tmp2),
+					      SILC_PTR_TO_32(type));
     silc_hash_table_list_reset(&htl);
   }
 

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2007 Pekka Riikonen
+  Copyright (C) 2000 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -1722,9 +1722,6 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
 					 silc_ske_verify_cb, ske));
     /* NOT REACHED */
   }
-
-  return SILC_FSM_CONTINUE;
-
  err:
   memset(hash, 'F', sizeof(hash));
   silc_ske_payload_ke_free(payload);
@@ -2127,15 +2124,9 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
   silc_packet_free(ske->packet);
   ske->packet = NULL;
 
-  /* Verify the received public key and verify the signature if we are
-     doing mutual authentication. */
-  if (ske->start_payload &&
-      ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
-
-    SILC_LOG_DEBUG(("We are doing mutual authentication"));
-
-    if (!recv_payload->pk_data && (ske->callbacks->verify_key ||
-				   ske->repository)) {
+  /* Verify public key, except in rekey, when it is not sent */
+  if (!ske->rekey) {
+    if (!recv_payload->pk_data) {
       /** Public key not provided */
       SILC_LOG_ERROR(("Remote end did not send its public key (or "
 		      "certificate), even though we require it"));
@@ -2145,8 +2136,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
     }
 
     /* Decode the remote's public key */
-    if (recv_payload->pk_data &&
-	!silc_pkcs_public_key_alloc(recv_payload->pk_type,
+    if (!silc_pkcs_public_key_alloc(recv_payload->pk_type,
 				    recv_payload->pk_data,
 				    recv_payload->pk_len,
 				    &ske->prop->public_key)) {
@@ -2157,39 +2147,36 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
       return SILC_FSM_CONTINUE;
     }
 
-    if (ske->prop->public_key && (ske->callbacks->verify_key ||
-				  ske->repository)) {
-      SILC_LOG_DEBUG(("Verifying public key"));
+    SILC_LOG_DEBUG(("Verifying public key"));
 
-      /** Waiting public key verification */
-      silc_fsm_next(fsm, silc_ske_st_responder_phase4);
+    /** Waiting public key verification */
+    silc_fsm_next(fsm, silc_ske_st_responder_phase4);
 
-      /* If repository is provided, verify the key from there. */
-      if (ske->repository) {
-	SilcSKRFind find;
+    /* If repository is provided, verify the key from there. */
+    if (ske->repository) {
+      SilcSKRFind find;
 
-	find = silc_skr_find_alloc();
-	if (!find) {
-	  ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
-	  silc_fsm_next(fsm, silc_ske_st_responder_error);
-	  return SILC_FSM_CONTINUE;
-	}
-	silc_skr_find_set_pkcs_type(find,
-				    silc_pkcs_get_type(ske->prop->public_key));
-	silc_skr_find_set_public_key(find, ske->prop->public_key);
-	silc_skr_find_set_usage(find, SILC_SKR_USAGE_KEY_AGREEMENT);
+      find = silc_skr_find_alloc();
+      if (!find) {
+	ske->status = SILC_SKE_STATUS_OUT_OF_MEMORY;
+	silc_fsm_next(fsm, silc_ske_st_responder_error);
+	return SILC_FSM_CONTINUE;
+      }
+      silc_skr_find_set_pkcs_type(find,
+				  silc_pkcs_get_type(ske->prop->public_key));
+      silc_skr_find_set_public_key(find, ske->prop->public_key);
+      silc_skr_find_set_usage(find, SILC_SKR_USAGE_KEY_AGREEMENT);
 
-	/* Find key from repository */
-	SILC_FSM_CALL(silc_skr_find(ske->repository,
-				    silc_fsm_get_schedule(fsm), find,
-				    silc_ske_skr_callback, ske));
-      } else {
-	/* Verify from application */
+      /* Find key from repository */
+      SILC_FSM_CALL(silc_skr_find(ske->repository,
+				  silc_fsm_get_schedule(fsm), find,
+				  silc_ske_skr_callback, ske));
+    } else {
+      /* Verify from application */
+      if (ske->callbacks->verify_key)
 	SILC_FSM_CALL(ske->callbacks->verify_key(ske, ske->prop->public_key,
 						 ske->callbacks->context,
 						 silc_ske_pk_verified, NULL));
-      }
-      /* NOT REACHED */
     }
   }
 
@@ -2232,7 +2219,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
     unsigned char hash[SILC_HASH_MAXLEN];
     SilcUInt32 hash_len;
 
-    SILC_LOG_DEBUG(("Public key is authentic"));
+    SILC_LOG_DEBUG(("We are doing mutual authentication"));
 
     /* Compute the hash value */
     status = silc_ske_make_hash(ske, hash, &hash_len, TRUE);
@@ -3533,7 +3520,7 @@ SilcBool silc_ske_set_keys(SilcSKE ske,
 	    memcpy(iv + 4, keymat->receive_iv, 8);
 	  else
 	    memset(iv + 4, 0, 12);
-	}
+ 	}
 
 	silc_cipher_set_iv(*ret_receive_key, iv);
       } else {
