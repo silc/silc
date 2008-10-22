@@ -182,15 +182,11 @@ static void silc_ske_skr_callback(SilcSKR repository,
 
 static SilcSKEStatus silc_ske_check_version(SilcSKE ske)
 {
-  SilcUInt32 r_software_version = 0;
-  char *r_software_string = NULL;
-
   if (!ske->remote_version || !ske->version)
     return SILC_SKE_STATUS_BAD_VERSION;
 
   if (!silc_parse_version_string(ske->remote_version, NULL, NULL,
-				 &r_software_version,
-				 &r_software_string, NULL))
+				 NULL, NULL, NULL))
     return SILC_SKE_STATUS_BAD_VERSION;
 
   return SILC_SKE_STATUS_OK;
@@ -2419,7 +2415,7 @@ SilcAsyncOperation silc_ske_responder(SilcSKE ske,
   ske->timeout = params->timeout_secs ? params->timeout_secs : 30;
   if (ske->flags & SILC_SKE_SP_FLAG_IV_INCLUDED)
     ske->session_port = params->session_port;
-  ske->version = strdup(params->version);
+  ske->version = params->version;
   if (!ske->version)
     return NULL;
   ske->running = TRUE;

@@ -55,7 +55,10 @@ void silc_idlist_del_data(void *entry)
 
   if (idata->hash)
     silc_hash_free(idata->hash);
+  if (idata->rekey)
+    silc_ske_free_rekey_material(idata->rekey);
 
+  idata->rekey = NULL;
   idata->hash = NULL;
   idata->public_key = NULL;
 }
@@ -395,6 +398,7 @@ void silc_idlist_client_destructor(SilcIDCache cache,
 			      client);
 
     assert(!silc_hash_table_count(client->channels));
+    silc_free(entry->name);
     silc_free(client->nickname);
     silc_free(client->servername);
     silc_free(client->username);

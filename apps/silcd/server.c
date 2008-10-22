@@ -704,6 +704,7 @@ void silc_server_free(SilcServer server)
   silc_free(server->local_list);
   silc_free(server->global_list);
   silc_free(server->server_name);
+  silc_free(server->id);
   silc_free(server);
 
   silc_hmac_unregister_all();
@@ -1608,7 +1609,6 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
   SilcConnAuth connauth;
   SilcCipher send_key, receive_key;
   SilcHmac hmac_send, hmac_receive;
-  SilcHash hash;
 
   server = entry->server;
   sconn = entry->data.sconn;
@@ -1644,7 +1644,7 @@ static void silc_server_ke_completed(SilcSKE ske, SilcSKEStatus status,
 
   /* Set the keys into use.  The data will be encrypted after this. */
   if (!silc_ske_set_keys(ske, keymat, prop, &send_key, &receive_key,
-			 &hmac_send, &hmac_receive, &hash)) {
+			 &hmac_send, &hmac_receive, NULL)) {
     silc_ske_free(ske);
 
     /* Try reconnecting if configuration wants it */
@@ -2686,9 +2686,11 @@ silc_server_accept_completed(SilcSKE ske, SilcSKEStatus status,
   idata->rekey = rekey;
   idata->public_key = silc_pkcs_public_key_copy(prop->public_key);
   pk = silc_pkcs_public_key_encode(idata->public_key, &pk_len);
-  silc_hash_make(server->sha1hash, pk, pk_len, idata->fingerprint);
-
-  silc_hash_alloc(silc_hash_get_name(prop->hash), &idata->hash);
+  if (pk) {
+    silc_hash_make(server->sha1hash, pk, pk_len, idata->fingerprint);
+    silc_free(pk);
+  }
+  idata->hash = hash;
 
   SILC_LOG_DEBUG(("Starting connection authentication"));
   server->stat.auth_attempts++;
@@ -2911,7 +2913,7 @@ SILC_TASK_CALLBACK(silc_server_do_rekey)
   SILC_LOG_DEBUG(("Perform rekey, sock %p", sock));
 
   /* Do not execute rekey with disabled connections */
-  if (idata->status & SILC_IDLIST_STATUS_DISABLED)
+  if (idata->status & SILC_IDLIST_STATUS_DISABLED || !idata->rekey)
     return;
 
   /* If another protocol is active do not start rekey */
@@ -2974,6 +2976,11 @@ static void silc_server_rekey(SilcServer server, SilcPacketStream sock,
 {
   SilcIDListData idata = silc_packet_get_context(sock);
   SilcSKE ske;
+
+  if (!idata->rekey) {
+    silc_packet_free(packet);
+    return;
+  }
 
   SILC_LOG_DEBUG(("Executing rekey protocol with %s:%d [%s], sock %p",
 		  idata->sconn->remote_host, idata->sconn->remote_port,
