@@ -1172,6 +1172,17 @@ SILC_FSM_STATE(silc_client_command_reply_join)
     silc_client_ref_channel(client, conn, channel);
   }
 
+  /* Get hmac */
+  hmac = silc_argument_get_arg_type(args, 11, NULL);
+  if (hmac && !silc_hmac_is_supported(hmac)) {
+    if (cmd->verbose)
+      SAY(client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
+	  "Cannot join channel: Unsupported HMAC `%s'", hmac);
+    ERROR_CALLBACK(SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
+    silc_rwlock_unlock(channel->internal.lock);
+    goto out;
+  }
+
   /* Get the list count */
   tmp = silc_argument_get_arg_type(args, 12, &len);
   if (!tmp) {
@@ -1240,19 +1251,6 @@ SILC_FSM_STATE(silc_client_command_reply_join)
       goto out;
     }
     if (!silc_buffer_pull(&client_mode_list, 4)) {
-      silc_rwlock_unlock(channel->internal.lock);
-      goto out;
-    }
-  }
-
-  /* Get hmac */
-  hmac = silc_argument_get_arg_type(args, 11, NULL);
-  if (hmac) {
-    if (!silc_hmac_alloc(hmac, NULL, &channel->internal.hmac)) {
-      if (cmd->verbose)
-	SAY(client, conn, SILC_CLIENT_MESSAGE_COMMAND_ERROR,
-	    "Cannot join channel: Unsupported HMAC `%s'", hmac);
-      ERROR_CALLBACK(SILC_STATUS_ERR_UNKNOWN_ALGORITHM);
       silc_rwlock_unlock(channel->internal.lock);
       goto out;
     }

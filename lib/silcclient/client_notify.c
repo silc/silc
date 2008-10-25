@@ -918,9 +918,7 @@ SILC_FSM_STATE(silc_client_notify_cmode_change)
     /* Get HMAC key from the old HMAC context, and update it to the new one */
     tmp = (unsigned char *)silc_hmac_get_key(channel->internal.hmac, &tmp_len);
     if (tmp) {
-      silc_hash_make(silc_hmac_get_hash(newhmac), tmp, tmp_len, hash);
-      silc_hmac_set_key(newhmac, hash,
-			silc_hash_len(silc_hmac_get_hash(newhmac)));
+      silc_hmac_set_key(newhmac, tmp, tmp_len);
       if (channel->internal.hmac)
 	silc_hmac_free(channel->internal.hmac);
       channel->internal.hmac = newhmac;
