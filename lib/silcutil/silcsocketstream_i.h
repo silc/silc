@@ -52,6 +52,7 @@ struct SilcSocketStreamStruct {
   SilcSocketQos qos;
   SilcStreamNotifier notifier;
   void *notifier_context;
+  void *user_context;
   unsigned int ipv6      : 1;       /* UDP IPv6 */
   unsigned int connected : 1;	    /* UDP connected state */
 };

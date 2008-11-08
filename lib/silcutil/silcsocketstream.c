@@ -392,6 +392,33 @@ SilcSchedule silc_socket_stream_get_schedule(SilcStream stream)
   return socket_stream->schedule;
 }
 
+/* Return associated context. */
+
+void *
+silc_socket_stream_get_context(SilcStream stream)
+{
+  SilcSocketStream socket_stream = stream;
+
+  if (!SILC_IS_SOCKET_STREAM(socket_stream))
+    return NULL;
+
+  return socket_stream->user_context;
+}
+
+/* Set associated context. */
+
+void
+silc_socket_stream_set_context(SilcStream stream,
+				    void *context)
+{
+  SilcSocketStream socket_stream = stream;
+
+  if (!SILC_IS_SOCKET_STREAM(socket_stream))
+    return;
+
+  socket_stream->user_context = context;
+}
+
 /* SILC Socket Stream ops.  Functions are implemented under the
    platform specific subdirectories. */
 const SilcStreamOps silc_socket_stream_ops =

@@ -26,6 +26,7 @@
 #include "modules.h"
 #include "commands.h"
 #include "misc.h"
+#include "clientutil.h"
 
 #include "fe-common/core/printtext.h"
 #include "fe-common/core/fe-channels.h"
@@ -33,7 +34,8 @@
 #include "fe-common/silc/module-formats.h"
 
 static void silc_query_attributes_print_final(bool success, void *context);
-static void silc_query_attributes_accept(const char *line, void *context);
+static void silc_query_attributes_accept(const char *line, void *context,
+		SilcKeyboardPromptStatus reason);
 
 QUERY_REC *silc_query_create(const char *server_tag,
 			     const char *nick, int automatic)
@@ -558,6 +560,7 @@ typedef struct {
   SilcMime message;
   SilcMime extension;
   bool nopk;
+  bool autoaccept;
 } *AttrVerify;
 
 void silc_query_attributes_print(SILC_SERVER_REC *server,
@@ -925,6 +928,7 @@ static void silc_query_attributes_print_final(bool success, void *context)
   unsigned char filename[256], *fingerprint = NULL, *tmp;
   struct stat st;
   int i;
+  size_t len;
 
   if (!verify->nopk) {
     if (success) {
@@ -945,7 +949,10 @@ static void silc_query_attributes_print_final(bool success, void *context)
   fingerprint = silc_hash_fingerprint(sha1hash,
 				      verify->userpk.data,
 				      verify->userpk.data_len);
-  for (i = 0; i < strlen(fingerprint); i++)
+
+  len = strlen(fingerprint);
+
+  for (i = 0; i < len; i++)
     if (fingerprint[i] == ' ')
       fingerprint[i] = '_';
 
@@ -959,17 +966,19 @@ static void silc_query_attributes_print_final(bool success, void *context)
     /* Ask to accept save requested attributes */
     format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			     SILCTXT_ATTR_SAVE);
-    keyboard_entry_redirect((SIGNAL_FUNC)silc_query_attributes_accept,
-			    format, 0, verify);
+    silc_keyboard_entry_redirect(silc_query_attributes_accept,
+			    format, 0, verify, &server->prompt_op);
   } else {
     /* Save new data to existing directory */
-    silc_query_attributes_accept("Y", verify);
+	 verify->autoaccept = TRUE; /* Ensure we don't twiddle the async context */
+    silc_query_attributes_accept("Y", verify, KeyboardCompletionSuccess);
   }
 
   g_free(format);
 }
 
-static void silc_query_attributes_accept(const char *line, void *context)
+static void silc_query_attributes_accept(const char *line, void *context,
+		SilcKeyboardPromptStatus reason)
 {
   AttrVerify verify = context;
   SILC_SERVER_REC *server = verify->server;
@@ -978,8 +987,9 @@ static void silc_query_attributes_accept(const char *line, void *context)
   unsigned char filename[256], filename2[256], *fingerprint = NULL, *tmp;
   SilcUInt32 len;
   int i;
+  bool success = (reason == KeyboardCompletionSuccess);
 
-  if (line[0] == 'Y' || line[0] == 'y') {
+  if (success && (line[0] == 'Y' || line[0] == 'y')) {
     /* Save the attributes */
     memset(filename, 0, sizeof(filename));
     memset(filename2, 0, sizeof(filename2));
@@ -1066,6 +1076,8 @@ static void silc_query_attributes_accept(const char *line, void *context)
   }
 
  out:
+  if((!verify->autoaccept) && (reason != KeyboardCompletionFailed))
+    verify->server->prompt_op = NULL;
   silc_free(fingerprint);
   silc_free(verify->name);
   silc_vcard_free(&verify->vcard);
