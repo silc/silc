@@ -1108,19 +1108,21 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
 
   silc_mutex_lock(stream->lock);
 
-  silc_dlist_start(stream->process);
-  while ((p = silc_dlist_get(stream->process)) != SILC_LIST_END)
-    if (p->callbacks == callbacks &&
-	p->callback_context == callback_context) {
-      silc_dlist_del(stream->process, p);
-      silc_free(p->types);
-      silc_free(p);
-      break;
-    }
+  if (stream->process) {
+    silc_dlist_start(stream->process);
+    while ((p = silc_dlist_get(stream->process)) != SILC_LIST_END)
+      if (p->callbacks == callbacks &&
+	  p->callback_context == callback_context) {
+        silc_dlist_del(stream->process, p);
+        silc_free(p->types);
+        silc_free(p);
+        break;
+      }
 
-  if (!silc_dlist_count(stream->process)) {
-    silc_dlist_uninit(stream->process);
-    stream->process = NULL;
+    if (!silc_dlist_count(stream->process)) {
+      silc_dlist_uninit(stream->process);
+      stream->process = NULL;
+    }
   }
 
   silc_mutex_unlock(stream->lock);
