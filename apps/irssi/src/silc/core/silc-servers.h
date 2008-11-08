@@ -46,6 +46,7 @@ typedef struct {
   SilcClientConnection conn;
   SilcAsyncOperation op;	/* Key exchange operation handle */
   SilcAsyncOperation tcp_op;	/* TCP stream creation operation handle */
+  SilcAsyncOperation prompt_op; /* Key verification operation handle */
   SilcUInt32 umode;
 } SILC_SERVER_REC;
 

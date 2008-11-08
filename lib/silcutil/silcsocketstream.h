@@ -275,6 +275,41 @@ SilcBool silc_socket_stream_set_qos(SilcStream stream,
 				    SilcUInt32 limit_sec,
 				    SilcUInt32 limit_usec);
 
+
+/****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_get_context
+ *
+ * SYNOPSIS
+ *
+ *    void *
+ *    silc_socket_stream_get_context(SilcSocketStream stream);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the context associated with a stream.  This context is
+ *    set via silc_socket_stream_set_context.
+ *
+ ***/
+void *
+silc_socket_stream_get_context(SilcStream stream);
+
+/****f* silcutil/SilcSocketStreamAPI/silc_socket_stream_set_context
+ *
+ * SYNOPSIS
+ *
+ *    void
+ *    silc_socket_stream_set_context(SilcSocketStream stream,
+ *                                        void *context);
+ *
+ * DESCRIPTION
+ *
+ *    Returns the context associated with a stream.  This context is
+ *    set via silc_socket_stream_set_context.
+ *
+ ***/
+void
+silc_socket_stream_set_context(SilcStream stream,
+				    void *context);
+
 #include "silcsocketstream_i.h"
 
 #endif /* SILCSOCKETSTREAM_H */

@@ -426,6 +426,22 @@ static void sig_connected_stream_created(SilcSocketStreamStatus status,
     			SILCTXT_REATTACH, server->tag);
   silc_free(file);
 
+  /*
+	* Store the SILC_SERVER_REC in the stream context so that we can fetch it
+	* from the verify key exchange prompt.  There should have been an initial
+	* user parameter value for the SilcClientConnection that could have been
+	* passed to SilcClientConnectionParams, but because there's no version
+	* number or size field in SilcClientConnectionParams, it is fixed for all
+	* time and not extendable.
+	*
+	* Instead, we must revert to pulling the SilcStream out of the
+	* SilcPacketStream associated with the SilcClientConnection object in the
+	* verify key exchange prompt callback in order to get our per-connection
+	* context.  Hence, the extra levels of indirection.
+	*/
+
+  silc_socket_stream_set_context(stream, server);
+
   /* Start key exchange */
   server->op = silc_client_key_exchange(silc_client, &params,
 					irssi_pubkey, irssi_privkey,
@@ -465,6 +481,12 @@ static void sig_disconnected(SILC_SERVER_REC *server)
 {
   if (!IS_SILC_SERVER(server))
     return;
+
+  /* If we have a prompt in progress, then abort it. */
+  if (server->prompt_op) {
+    silc_async_abort(server->prompt_op, NULL, NULL);
+	 server->prompt_op = NULL;
+  }
 
   if (server->conn) {
     /* Close connection */
