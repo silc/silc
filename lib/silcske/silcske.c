@@ -73,6 +73,7 @@ static SilcBool silc_ske_packet_send(SilcSKE ske,
 				     const unsigned char *data,
 				     SilcUInt32 data_len);
 
+static void silc_ske_notify_failure(SilcSKE ske);
 /* Packet callback */
 
 static SilcBool silc_ske_packet_receive(SilcPacketEngine engine,
@@ -108,10 +109,7 @@ static SilcBool silc_ske_packet_receive(SilcPacketEngine engine,
 
   /* See if received failure from remote */
   if (packet->type == SILC_PACKET_FAILURE) {
-    if (ske->responder)
-      silc_fsm_next(&ske->fsm, silc_ske_st_responder_failure);
-    else
-      silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
+    silc_ske_notify_failure(ske);
   }
 
   /* Handle rekey and SUCCESS packets synchronously.  After SUCCESS packets
@@ -895,10 +893,7 @@ SILC_TASK_CALLBACK(silc_ske_packet_send_retry)
     silc_free(ske->retrans.data);
     ske->retrans.data = NULL;
     ske->status = SILC_SKE_STATUS_TIMEOUT;
-    if (ske->responder)
-      silc_fsm_next(&ske->fsm, silc_ske_st_responder_failure);
-    else
-      silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
+	 silc_ske_notify_failure(ske);
     silc_fsm_continue_sync(&ske->fsm);
     return;
   }
@@ -986,10 +981,7 @@ SILC_TASK_CALLBACK(silc_ske_timeout)
 
   ske->packet = NULL;
   ske->status = SILC_SKE_STATUS_TIMEOUT;
-  if (ske->responder)
-    silc_fsm_next(&ske->fsm, silc_ske_st_responder_failure);
-  else
-    silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
+  silc_ske_notify_failure(ske);
 
   silc_fsm_continue_sync(&ske->fsm);
 }
@@ -1040,13 +1032,20 @@ void silc_ske_free(SilcSKE ske)
   SILC_LOG_DEBUG(("Freeing Key Exchange object %p: aborted=%u refcount=%hu", ske, ske->aborted, ske->refcnt));
 
     if (ske->aborted) {
-      /* If already aborted, destroy the session immediately */
-      ske->packet = NULL;
-      ske->status = SILC_SKE_STATUS_ERROR;
-      if (ske->responder)
-	silc_fsm_next(&ske->fsm, silc_ske_st_responder_failure);
-      else
-	silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
+      /*
+       * If already aborted, destroy the session immediately.  Only do the
+       * notification work if we have not already though, as doing so twice
+       * results in memory corruption.  We may have silc_ske_free called
+       * twice, once when the abort is requested, and then again when the
+       * FSM finish routine is called.  We have to be prepared to handle
+       * that case.
+       */
+
+      ske->packet         = NULL;
+      ske->status         = SILC_SKE_STATUS_ERROR;
+
+      silc_ske_notify_failure(ske);
+
       silc_fsm_continue_sync(&ske->fsm);
     }
 
@@ -3494,3 +3493,40 @@ SilcSKEKeyMaterial silc_ske_get_key_material(SilcSKE ske)
 {
   return ske->keymat;
 }
+
+/*
+ * Notify the owner of the ske that we failed.  Ensures that we don't make the
+ * same callout twice, as the notification callback routines are not designed
+ * to handle that case.
+ */
+static void silc_ske_notify_failure(SilcSKE ske)
+{
+  SILC_LOG_DEBUG(("Notifying SKE %p owner of failure (failure_notified = %lu)", ske, ske->failure_notified));
+
+	/*
+	 * First, check if we have already made a failure callout.  If so, then we
+	 * will stop here.
+	 */
+
+	if (ske->failure_notified)
+		return;
+
+	/*
+	 * Mark ourselves as having already sent the failure notification here and
+	 * now.
+	 */
+
+	ske->failure_notified = TRUE;
+
+	SILC_LOG_DEBUG(("Actually calling real failure notify callback for SKE %p (responder = %s)", ske, ske->responder ? "TRUE" : "FALSE"));
+
+	/*
+	 * Finally, make the call to the owner's registered failure callback.
+	 */
+
+    if (ske->responder)
+      silc_fsm_next(&ske->fsm, silc_ske_st_responder_failure);
+    else
+      silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
+}
+
