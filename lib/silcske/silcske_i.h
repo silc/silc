@@ -90,9 +90,10 @@ struct SilcSKEStruct {
   SilcUInt16 timeout;		      /* SKE timeout */
   SilcUInt16 refcnt;		      /* Reference counter */
 
-  unsigned int aborted    : 1;        /* Set when SKE aborted */
-  unsigned int responder  : 1;	      /* Set when we are responder side */
-  unsigned int rekeying   : 1;	      /* Set when rekeying */
+  unsigned int aborted          : 1;         /* Set when SKE aborted */
+  unsigned int responder        : 1;	      /* Set when we are responder side */
+  unsigned int rekeying         : 1;	      /* Set when rekeying */
+  unsigned int failure_notified : 1;	      /* Set to indicate that we already called the failure notify routine */
 };
 
 #endif /* SILCSKE_I_H */
