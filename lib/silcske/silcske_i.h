@@ -94,6 +94,7 @@ struct SilcSKEStruct {
   unsigned int responder        : 1;	      /* Set when we are responder side */
   unsigned int rekeying         : 1;	      /* Set when rekeying */
   unsigned int failure_notified : 1;	      /* Set to indicate that we already called the failure notify routine */
+  unsigned int fsm_finished     : 1;         /* Set when we're in FSM teardown */
 };
 
 #endif /* SILCSKE_I_H */
