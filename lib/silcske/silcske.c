@@ -968,6 +968,7 @@ static void silc_ske_finished(SilcFSM fsm, void *fsm_context,
 			      void *destructor_context)
 {
   SilcSKE ske = fsm_context;
+  ske->fsm_finished = TRUE;
     silc_ske_free(ske);
 }
 
@@ -1046,7 +1047,10 @@ void silc_ske_free(SilcSKE ske)
 
       silc_ske_notify_failure(ske);
 
-      silc_fsm_continue_sync(&ske->fsm);
+      if (!ske->fsm_finished)
+         silc_fsm_continue_sync(&ske->fsm);
+      else
+         SILC_LOG_DEBUG(("Not continuing FSM as it's finished for SKE %p", ske));
     }
 
   ske->refcnt--;
