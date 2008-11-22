@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -621,8 +621,10 @@ silc_client_add_connection(SilcClient client,
   }
 
   /* Set parameters */
-  if (params)
+  if (params) {
     conn->internal->params = *params;
+    conn->context = params->context;
+  }
   if (!conn->internal->params.rekey_secs)
     conn->internal->params.rekey_secs = 3600;
 #ifndef SILC_DIST_INPLACE

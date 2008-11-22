@@ -1798,6 +1798,8 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
   }
   entry->server = server;
   entry->data.sconn = sconn;
+  entry->data.conn_type = SILC_CONN_UNKNOWN;
+  entry->data.status |= SILC_IDLIST_STATUS_LOCAL;
   silc_packet_set_context(sconn->sock, entry);
 
   SILC_LOG_DEBUG(("Created unknown connection %p", entry));
@@ -3129,6 +3131,7 @@ void silc_server_free_client_data(SilcServer server,
 
   /* Update statistics */
   server->stat.my_clients--;
+  SILC_VERIFY(server->stat.clients > 0);
   server->stat.clients--;
   if (server->stat.cell_clients)
     server->stat.cell_clients--;

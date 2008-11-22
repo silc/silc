@@ -119,7 +119,7 @@ silc_server_remove_clients_channels(SilcServer server,
       silc_hash_table_add(channels, channel, channel);
   }
   silc_hash_table_list_reset(&htl);
-  assert(!silc_hash_table_count(client->channels));
+  SILC_VERIFY(!silc_hash_table_count(client->channels));
 }
 
 /* This function removes all client entries that are originated from
@@ -205,6 +205,7 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
       }
 
       /* Update statistics */
+      SILC_VERIFY(server->stat.clients > 0);
       server->stat.clients--;
       if (server->stat.cell_clients)
 	server->stat.cell_clients--;
@@ -268,6 +269,7 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
       }
 
       /* Update statistics */
+      SILC_VERIFY(server->stat.clients > 0);
       server->stat.clients--;
       if (server->stat.cell_clients)
 	server->stat.cell_clients--;
@@ -1560,6 +1562,7 @@ void silc_server_kill_client(SilcServer server,
     }
   } else {
     /* Update statistics */
+    SILC_VERIFY(server->stat.clients > 0);
     server->stat.clients--;
     if (server->stat.cell_clients)
       server->stat.cell_clients--;
@@ -2018,6 +2021,8 @@ void silc_server_inviteban_destruct(void *key, void *context,
 
 void silc_server_create_connections(SilcServer server)
 {
+  silc_schedule_task_del_by_callback(server->schedule,
+				     silc_server_connect_to_router_retry);
   silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_connect_to_router);
   silc_schedule_task_add_timeout(server->schedule,

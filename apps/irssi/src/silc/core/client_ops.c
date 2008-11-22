@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2007 Pekka Riikonen
+  Copyright (C) 2001 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include "silc-queries.h"
 #include "silc-nicklist.h"
 #include "silc-cmdqueue.h"
+#include "clientutil.h"
 
 #include "signals.h"
 #include "levels.h"
@@ -1438,6 +1439,21 @@ void silc_getkey_cb(bool success, void *context)
 		       entity, name);
   }
 
+  /*
+   * Drop our references as need be.
+   */
+  switch (getkey->id_type) {
+  case SILC_ID_CLIENT:
+    silc_client_unref_client(getkey->client, getkey->conn,
+			     (SilcClientEntry)getkey->entry);
+    break;
+
+  case SILC_ID_SERVER:
+    silc_client_unref_server(getkey->client, getkey->conn,
+			     (SilcServerEntry)getkey->entry);
+    break;
+  }
+
   silc_free(getkey);
 }
 
@@ -1807,8 +1823,8 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
       if (!ownnick)
 	break;
       nicklist_set_own(CHANNEL(chanrec), ownnick);
-      signal_emit("channel joined", 1, chanrec);
       chanrec->entry = channel_entry;
+      signal_emit("channel joined", 1, chanrec);
 
       if (chanrec->topic)
 	printformat_module("fe-common/silc", server,
@@ -2097,6 +2113,18 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 		((SilcClientEntry)entry)->nickname :
 		((SilcServerEntry)entry)->server_name);
 
+	switch (id_type) {
+	case SILC_ID_CLIENT:
+	  name = ((SilcClientEntry)entry)->nickname;
+	  silc_client_ref_client(client, conn, (SilcClientEntry)entry);
+	  break;
+
+	case SILC_ID_SERVER:
+	  name = ((SilcServerEntry)entry)->server_name;
+	  silc_client_ref_server(client, conn, (SilcServerEntry)entry);
+	  break;
+	}
+
 	silc_verify_public_key_internal(client, conn, name,
 					(id_type == SILC_ID_CLIENT ?
 					 SILC_CONN_CLIENT :
@@ -2366,11 +2394,13 @@ typedef struct {
   void *context;
 } *PublicKeyVerify;
 
-static void verify_public_key_completion(const char *line, void *context)
+static void verify_public_key_completion(const char *line, void *context,
+					 SilcKeyboardPromptStatus reason)
 {
   PublicKeyVerify verify = (PublicKeyVerify)context;
+  SilcBool success = (reason == KeyboardCompletionSuccess);
 
-  if (line[0] == 'Y' || line[0] == 'y') {
+  if (success && (line[0] == 'Y' || line[0] == 'y')) {
     /* Call the completion */
     if (verify->completion)
       verify->completion(TRUE, verify->context);
@@ -2387,6 +2417,26 @@ static void verify_public_key_completion(const char *line, void *context)
 		       MSGLEVEL_CRAP, SILCTXT_PUBKEY_DISCARD,
 		       verify->entity_name ? verify->entity_name :
 		       verify->entity);
+  }
+
+  /*
+   * If we were not called due to a failure to begin the callback, then we
+   * shall zero the async context block in the server record.  If we were
+   * called due to a failure to begin the callback, then it is possible that
+   * we failed due to an overlapping callback, in which case we shouldn't
+   * overwrite the async context block pointer.
+   */
+  if (reason != KeyboardCompletionFailed) {
+    /*
+     * Null out the completion context in the server record as this operation
+     * is done as far as we are concerned.  The underlying keyboard library
+     * routine will take care of freeing the async context memory when the
+     * actual callback is called by irssi in the abort case.  In the success
+     * case, it will free the async context memory after we return from this
+     * routine.
+     */
+    SILC_SERVER_REC *server = (SILC_SERVER_REC*)(verify->conn->context);
+    server->prompt_op = NULL;
   }
 
   silc_free(verify->filename);
@@ -2413,6 +2463,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   SilcPublicKey local_pubkey;
   SilcSILCPublicKey silc_pubkey;
   SilcUInt16 port;
+  SILC_SERVER_REC *server;
   const char *hostname, *ip;
   unsigned char *pk;
   SilcUInt32 pk_len;
@@ -2422,6 +2473,14 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 		   conn_type == SILC_CONN_ROUTER) ?
 		  "server" : "client");
   int i;
+
+  server = (SILC_SERVER_REC*)conn->context;
+  SILC_VERIFY(server);
+  if (!server) {
+    if (completion)
+      completion(FALSE, context);
+    return;
+  }
 
   if (silc_pkcs_get_type(public_key) != SILC_PKCS_SILC) {
     printformat_module("fe-common/silc", NULL, NULL,
@@ -2531,8 +2590,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 		       SILCTXT_PUBKEY_BABBLEPRINT, babbleprint);
     format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			     SILCTXT_PUBKEY_ACCEPT);
-    keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
-			    format, 0, verify);
+    silc_keyboard_entry_redirect(verify_public_key_completion,
+			    format, 0, verify, &server->prompt_op);
     g_free(format);
     silc_free(fingerprint);
     silc_free(babbleprint);
@@ -2564,8 +2623,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 			 SILCTXT_PUBKEY_COULD_NOT_LOAD, entity);
       format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			       SILCTXT_PUBKEY_ACCEPT_ANYWAY);
-      keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
-			      format, 0, verify);
+      silc_keyboard_entry_redirect(verify_public_key_completion,
+			      format, 0, verify, &server->prompt_op);
       g_free(format);
       silc_free(fingerprint);
       silc_free(babbleprint);
@@ -2594,8 +2653,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 			 SILCTXT_PUBKEY_MALFORMED, entity);
       format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			       SILCTXT_PUBKEY_ACCEPT_ANYWAY);
-      keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
-			      format, 0, verify);
+      silc_keyboard_entry_redirect(verify_public_key_completion,
+			      format, 0, verify, &server->prompt_op);
       g_free(format);
       silc_free(fingerprint);
       silc_free(babbleprint);
@@ -2630,8 +2689,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
       /* Ask user to verify the key and save it */
       format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			       SILCTXT_PUBKEY_ACCEPT_ANYWAY);
-      keyboard_entry_redirect((SIGNAL_FUNC)verify_public_key_completion,
-			      format, 0, verify);
+      silc_keyboard_entry_redirect(verify_public_key_completion,
+			      format, 0, verify, &server->prompt_op);
       g_free(format);
       silc_free(fingerprint);
       silc_free(babbleprint);
@@ -2673,28 +2732,47 @@ silc_verify_public_key(SilcClient client, SilcClientConnection conn,
 
 typedef struct {
   SilcAskPassphrase completion;
+  SilcClientConnection conn;
   void *context;
 } *AskPassphrase;
 
-void ask_passphrase_completion(const char *passphrase, void *context)
+void ask_passphrase_completion(const char *passphrase, void *context,
+			       SilcKeyboardPromptStatus reason)
 {
   AskPassphrase p = (AskPassphrase)context;
   if (passphrase && passphrase[0] == '\0')
     passphrase = NULL;
   p->completion((unsigned char *)passphrase,
 		passphrase ? strlen(passphrase) : 0, p->context);
+
+  if (reason != KeyboardCompletionFailed) {
+    SILC_SERVER_REC *server = (SILC_SERVER_REC *)(p->conn->context);
+    server->prompt_op = NULL;
+  }
+
   silc_free(p);
 }
 
 void silc_ask_passphrase(SilcClient client, SilcClientConnection conn,
 			 SilcAskPassphrase completion, void *context)
 {
-  AskPassphrase p = silc_calloc(1, sizeof(*p));
-  p->completion = completion;
-  p->context = context;
+  SILC_SERVER_REC *server = (SILC_SERVER_REC*)(conn->context);
+  AskPassphrase p;
 
-  keyboard_entry_redirect((SIGNAL_FUNC)ask_passphrase_completion,
-			  "Passphrase: ", ENTRY_REDIRECT_FLAG_HIDDEN, p);
+  p = silc_calloc(1, sizeof(*p));
+  if (!p) {
+    if (completion)
+      completion(NULL, 0, context);
+    return;
+  }
+
+  p->completion = completion;
+  p->conn       = conn;
+  p->context    = context;
+
+  silc_keyboard_entry_redirect(ask_passphrase_completion,
+			       "Passphrase: ", ENTRY_REDIRECT_FLAG_HIDDEN,
+			       p, &server->prompt_op);
 }
 
 typedef struct {

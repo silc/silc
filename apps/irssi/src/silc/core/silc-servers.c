@@ -1,7 +1,7 @@
 /*
   silc-server.c : irssi
 
-  Copyright (C) 2000 - 2007 Timo Sirainen
+  Copyright (C) 2000 - 2008 Timo Sirainen
                             Pekka Riikonen <priikone@silcnet.org>
 
   This program is free software; you can redistribute it and/or modify
@@ -415,6 +415,7 @@ static void sig_connected_stream_created(SilcSocketStreamStatus status,
   params.timeout_secs = settings_get_int("key_exchange_timeout_secs");
   params.rekey_secs = settings_get_int("key_exchange_rekey_secs");
   params.pfs = settings_get_bool("key_exchange_rekey_pfs");
+  params.context = server;
 
   /* Try to read detached session data and use it if found. */
   file = silc_get_session_filename(server);
@@ -465,6 +466,12 @@ static void sig_disconnected(SILC_SERVER_REC *server)
 {
   if (!IS_SILC_SERVER(server))
     return;
+
+  /* If we have a prompt in progress, then abort it. */
+  if (server->prompt_op) {
+    silc_async_abort(server->prompt_op, NULL, NULL);
+    server->prompt_op = NULL;
+  }
 
   if (server->conn) {
     /* Close connection */

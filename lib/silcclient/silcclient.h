@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2007 Pekka Riikonen
+  Copyright (C) 2000 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -943,6 +943,10 @@ typedef struct SilcClientConnectionParamsStruct {
      silc_client_attribute_add for more information on attributes. */
   SilcBool ignore_requested_attributes;
 
+  /* User context for SilcClientConnection.  If non-NULL this context is
+     set to the 'context' field in SilcClientConnection when the connection
+     context is created. */
+  void *context;
 } SilcClientConnectionParams;
 /***/
 

@@ -73,6 +73,41 @@ static SilcBool silc_ske_packet_send(SilcSKE ske,
 				     const unsigned char *data,
 				     SilcUInt32 data_len);
 
+/*
+ * Notify the owner of the ske that we failed.  Ensures that we don't make the
+ * same callout twice, as the notification callback routines are not designed
+ * to handle that case.
+ */
+static void silc_ske_notify_failure(SilcSKE ske)
+{
+  SILC_LOG_DEBUG(("Notifying SKE %p owner of failure (failure_notified = %lu)",
+		  ske, ske->failure_notified));
+
+  /*
+   * First, check if we have already made a failure callout.  If so, then we
+   * will stop here.
+   */
+  if (ske->failure_notified)
+    return;
+
+  /*
+   * Mark ourselves as having already sent the failure notification here and
+   * now.
+   */
+  ske->failure_notified = TRUE;
+
+  SILC_LOG_DEBUG(("Deliver failure notification for SKE %p (%s)",
+		  ske, ske->responder ? "responder" : "initiator"));
+
+  /*
+   * Finally, make the call to the owner's registered failure callback.
+   */
+  if (ske->responder)
+    silc_fsm_next(&ske->fsm, silc_ske_st_responder_failure);
+  else
+    silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
+}
+
 /* Packet callback */
 
 static SilcBool silc_ske_packet_receive(SilcPacketEngine engine,
@@ -107,12 +142,8 @@ static SilcBool silc_ske_packet_receive(SilcPacketEngine engine,
   }
 
   /* See if received failure from remote */
-  if (packet->type == SILC_PACKET_FAILURE) {
-    if (ske->responder)
-      silc_fsm_next(&ske->fsm, silc_ske_st_responder_failure);
-    else
-      silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
-  }
+  if (packet->type == SILC_PACKET_FAILURE)
+    silc_ske_notify_failure(ske);
 
   /* Handle rekey and SUCCESS packets synchronously.  After SUCCESS packets
      they keys are taken into use immediately, hence the synchronous
@@ -895,10 +926,7 @@ SILC_TASK_CALLBACK(silc_ske_packet_send_retry)
     silc_free(ske->retrans.data);
     ske->retrans.data = NULL;
     ske->status = SILC_SKE_STATUS_TIMEOUT;
-    if (ske->responder)
-      silc_fsm_next(&ske->fsm, silc_ske_st_responder_failure);
-    else
-      silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
+	 silc_ske_notify_failure(ske);
     silc_fsm_continue_sync(&ske->fsm);
     return;
   }
@@ -957,7 +985,7 @@ static SilcBool silc_ske_packet_send(SilcSKE ske,
 static void silc_ske_completion(SilcSKE ske)
 {
   /* Call the completion callback */
-  if (!ske->freed && !ske->aborted && ske->callbacks->completed) {
+  if (!ske->aborted && ske->callbacks->completed) {
     if (ske->status != SILC_SKE_STATUS_OK)
       ske->callbacks->completed(ske, ske->status, NULL, NULL, NULL,
 			        ske->callbacks->context);
@@ -973,9 +1001,7 @@ static void silc_ske_finished(SilcFSM fsm, void *fsm_context,
 			      void *destructor_context)
 {
   SilcSKE ske = fsm_context;
-  ske->running = FALSE;
-  if (ske->freed)
-    silc_ske_free(ske);
+  silc_ske_free(ske);
 }
 
 /* Key exchange timeout task callback */
@@ -988,10 +1014,7 @@ SILC_TASK_CALLBACK(silc_ske_timeout)
 
   ske->packet = NULL;
   ske->status = SILC_SKE_STATUS_TIMEOUT;
-  if (ske->responder)
-    silc_fsm_next(&ske->fsm, silc_ske_st_responder_failure);
-  else
-    silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
+  silc_ske_notify_failure(ske);
 
   silc_fsm_continue_sync(&ske->fsm);
 }
@@ -1036,25 +1059,30 @@ SilcSKE silc_ske_alloc(SilcRng rng, SilcSchedule schedule,
 
 void silc_ske_free(SilcSKE ske)
 {
-  SILC_LOG_DEBUG(("Freeing Key Exchange object"));
-
   if (!ske)
     return;
 
-  if (ske->running) {
-    ske->freed = TRUE;
+  SILC_LOG_DEBUG(("Freeing Key Exchange object %p: aborted=%u refcount=%hu",
+		  ske, ske->aborted, ske->refcnt));
 
-    if (ske->aborted) {
-      /* If already aborted, destroy the session immediately */
-      ske->packet = NULL;
-      ske->status = SILC_SKE_STATUS_ERROR;
-      if (ske->responder)
-	silc_fsm_next(&ske->fsm, silc_ske_st_responder_failure);
-      else
-	silc_fsm_next(&ske->fsm, silc_ske_st_initiator_failure);
+  if (ske->aborted) {
+    /*
+     * If already aborted, destroy the session immediately.  Only do the
+     * notification work if we have not already though, as doing so twice
+     * results in memory corruption.  We may have silc_ske_free called
+     * twice, once when the abort is requested, and then again when the
+     * FSM finish routine is called.  We have to be prepared to handle
+     * that case.
+     */
+    ske->packet         = NULL;
+    ske->status         = SILC_SKE_STATUS_ERROR;
+
+    silc_ske_notify_failure(ske);
+
+    if (silc_fsm_is_started(&ske->fsm))
       silc_fsm_continue_sync(&ske->fsm);
-    }
-    return;
+    else
+      SILC_LOG_DEBUG(("Not continuing FSM as it's finished for SKE %p", ske));
   }
 
   ske->refcnt--;
@@ -1102,7 +1130,7 @@ void silc_ske_free(SilcSKE ske)
   silc_free(ske->hash);
   silc_free(ske->callbacks);
 
-  memset(ske, 'F', sizeof(*ske));
+  memset(ske, 0xdd, sizeof(*ske));
   silc_free(ske);
 }
 
@@ -1805,7 +1833,8 @@ SilcAsyncOperation silc_ske_initiator(SilcSKE ske,
 				      SilcSKEParams params,
 				      SilcSKEStartPayload start_payload)
 {
-  SILC_LOG_DEBUG(("Start SKE as initiator"));
+  SILC_LOG_DEBUG(("Start SKE %p as initiator; stream=%p; params=%p; "
+		  "start_payload=%p", ske, stream, params, start_payload));
 
   if (!ske || !stream || !params || !params->version)
     return NULL;
@@ -1831,7 +1860,7 @@ SilcAsyncOperation silc_ske_initiator(SilcSKE ske,
   ske->timeout = params->timeout_secs ? params->timeout_secs : 30;
   ske->start_payload = start_payload;
   ske->version = params->version;
-  ske->running = TRUE;
+  ++ ske->refcnt;
 
   /* Link to packet stream to get key exchange packets */
   ske->stream = stream;
@@ -2418,7 +2447,7 @@ SilcAsyncOperation silc_ske_responder(SilcSKE ske,
   ske->version = params->version;
   if (!ske->version)
     return NULL;
-  ske->running = TRUE;
+  ++ ske->refcnt;
 
   /* Link to packet stream to get key exchange packets */
   ske->stream = stream;
@@ -2676,8 +2705,8 @@ silc_ske_rekey_initiator(SilcSKE ske,
 
   ske->rekey = rekey;
   ske->responder = FALSE;
-  ske->running = TRUE;
   ske->rekeying = TRUE;
+  ++ ske->refcnt;
 
   /* Link to packet stream to get key exchange packets */
   ske->stream = stream;
@@ -2953,9 +2982,9 @@ silc_ske_rekey_responder(SilcSKE ske,
 
   ske->rekey = rekey;
   ske->responder = TRUE;
-  ske->running = TRUE;
   ske->rekeying = TRUE;
   ske->packet = packet;
+  ++ ske->refcnt;
 
   /* Link to packet stream to get key exchange packets */
   ske->stream = stream;

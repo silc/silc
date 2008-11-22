@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2006, 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -341,7 +341,7 @@ int silc_client_load_keys(SilcClient client)
 {
   char pub[256], prv[256];
   struct passwd *pw;
-  bool ret;
+  SilcBool ret;
 
   SILC_LOG_DEBUG(("Loading public and private keys"));
 
@@ -368,6 +368,181 @@ int silc_client_load_keys(SilcClient client)
     SILC_LOG_ERROR(("Could not load key pair"));
 
   return ret;
+}
+
+static SilcBool silc_keyboard_prompt_pending;
+
+typedef struct {
+  SilcAsyncOperation async_context;
+  SILC_KEYBOARD_PROMPT_PROC user_prompt_proc;
+  void *user_context;
+  SilcBool aborted;
+  SilcBool *immediate_completion;
+} *SilcKeyboardEntryRedirectContext;
+
+static void silc_keyboard_entry_redirect_abort(SilcAsyncOperation op,
+					       void *context)
+{
+  SilcKeyboardEntryRedirectContext ctx = context;
+
+  /*
+   * Flag ourselves as aborted so the irssi callback doesn't do any real
+   * work here.
+   */
+  ctx->aborted = TRUE;
+
+  /*
+   * Call the user routine to notify it that we are aborting, so that it may
+   * clean up anything that needs cleaning up, e.g. references.  The user
+   * may not reference the SilcAsyncOperation beyond this abort call.  The
+   * recommended procedure is for the user prompt routine to null out its
+   * reference to the SilcAsyncOperation context.  The underlying context
+   * structure will be released when the actual wrappered callback fires,
+   * though the wrappered callback will not call into user code now that
+   * the operation has been aborted.
+   */
+  ctx->user_prompt_proc(NULL, ctx->user_context, KeyboardCompletionAborted);
+}
+
+static void silc_keyboard_entry_redirect_completion(const char *line,
+						    void *context)
+{
+  SilcKeyboardEntryRedirectContext ctx = context;
+
+  /*
+   * If we are aborted, then don't call the user routine.  Note that we
+   * already notified the user that they were aborted when the abort
+   * call was made in the first place, so the user should not have any
+   * dangling references at this point.
+   *
+   * Otherwise, call the user routine.
+   */
+  if (!ctx->aborted) {
+    ctx->user_prompt_proc(line, ctx->user_context,
+			  KeyboardCompletionSuccess);
+  }
+
+  /*
+   * If there's a flag to set on completion, such that we can detect when the
+   * operation finished immediately instead of being processed as a callback,
+   * then set that now.
+   */
+  if (ctx->immediate_completion)
+    *ctx->immediate_completion = TRUE;
+
+  /*
+   * Clean up our internal context structures.  Note that we are considered
+   * responsible for handling the SilcAsyncOperation release in this model,
+   * unless we were aborted, in which case the abort request has released it.
+   */
+  if (!ctx->aborted)
+    silc_async_free(ctx->async_context);
+
+  silc_free(ctx);
+
+  /*
+   * Mark us as not having a keyboard prompt pending.
+   */
+  silc_keyboard_prompt_pending = FALSE;
+}
+
+/* Prompt for user input. */
+SilcBool silc_keyboard_entry_redirect(SILC_KEYBOARD_PROMPT_PROC prompt_func,
+				      const char *entry,
+				      int flags,
+				      void *data,
+				      SilcAsyncOperation *async)
+{
+  SilcKeyboardEntryRedirectContext ctx;
+  SilcBool completed_now;
+
+  /*
+   * Check if we already have a keyboard prompt pending.  This sucks, but
+   * irssi stores the keyboard prompt data in a global, and if we request
+   * a prompt while there is already a prompt in progress, the old prompt
+   * data is leaked.  If irssi gets its act together, this can (and should)
+   * go away.
+   */
+  if (silc_keyboard_prompt_pending) {
+    prompt_func(NULL, data, KeyboardCompletionFailed);
+    return FALSE;
+  }
+
+  /*
+   * Allocate our context blocks.
+   */
+  ctx = (SilcKeyboardEntryRedirectContext)silc_calloc(1, sizeof(*ctx));
+  if (!ctx) {
+    prompt_func(NULL, data, KeyboardCompletionFailed);
+    return FALSE;
+  }
+
+  ctx->async_context = silc_async_alloc(silc_keyboard_entry_redirect_abort,
+					NULL, ctx);
+  if (!ctx->async_context) {
+    silc_free(ctx);
+    prompt_func(NULL, data, KeyboardCompletionFailed);
+    return FALSE;
+  }
+
+  /*
+   * Initially, we don't consider ourselves as having finished.
+   */
+  completed_now = FALSE;
+
+  /*
+   * Since irssi can't handle overlapping keyboard prompt requests, block
+   * future requests until we are finished.  N.B. This should really be
+   * handled inside of irssi, but this requires a breaking change to how
+   * keyboard callbacks are processed from an API perspective.  A problem
+   * exists where another user could call a keyboard redirect request
+   * external to silc while we have one pending, and cause ours to get
+   * lost, in which case we will get stuck denying future prompt requests.
+   *
+   * Fortunately, nobody else seems to use keyboard prompt requests, at least
+   * not that I can tell.
+   */
+  silc_keyboard_prompt_pending = TRUE;
+
+  /*
+   * Set up the call to the irssi keyboard entry redirection facility.
+   */
+
+  ctx->user_prompt_proc     = prompt_func;
+  ctx->user_context         = data;
+  ctx->aborted              = FALSE;
+  ctx->immediate_completion = &completed_now;
+
+  keyboard_entry_redirect((SIGNAL_FUNC)silc_keyboard_entry_redirect_completion,
+			  entry, 0, ctx);
+
+  ctx->immediate_completion = NULL;
+
+  /*
+   * If we completed immediately, then there is nothing to return as the async
+   * context has already been released.  In this case we have completed with a
+   * success status, but there is no SilcAsyncOperation context to return.
+   */
+  if (completed_now) {
+    *async = NULL;
+    return TRUE;
+  }
+
+  /*
+   * Otherwise, we must return an async operation context to the caller, and
+   * we must unset the immediate_completion flag as we don't want to be
+   * notified anymore since we're returning out.  Note that this is not safe
+   * if keyboard_entry_redirect can call from a different thread, but we are
+   * assuming that it doesn't as there's already many other things that seem
+   * to make this assumption.
+   */
+  *async = ctx->async_context;
+
+  /*
+   * All done.  Irssi will invoke the callback on this thread at a later point
+   * in time.
+   */
+  return TRUE;
 }
 
 #ifdef SILC_PLUGIN
