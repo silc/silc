@@ -2023,6 +2023,8 @@ void silc_server_inviteban_destruct(void *key, void *context,
 void silc_server_create_connections(SilcServer server)
 {
   silc_schedule_task_del_by_callback(server->schedule,
+				     silc_server_connect_to_router_retry);
+  silc_schedule_task_del_by_callback(server->schedule,
 				     silc_server_connect_to_router);
   silc_schedule_task_add_timeout(server->schedule,
 				 silc_server_connect_to_router, server, 1, 0);

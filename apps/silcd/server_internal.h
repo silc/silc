@@ -236,6 +236,7 @@ do {						\
 SILC_TASK_CALLBACK(silc_server_rekey_final);
 SILC_TASK_CALLBACK(silc_server_rekey_callback);
 SILC_TASK_CALLBACK(silc_server_connect_to_router);
+SILC_TASK_CALLBACK(silc_server_connect_to_router_retry);
 void silc_server_watcher_list_destroy(void *key, void *context,
 				      void *user_context);
 
