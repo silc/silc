@@ -1803,6 +1803,8 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
   }
   entry->server = server;
   entry->data.sconn = sconn;
+  entry->data.conn_type = SILC_CONN_UNKNOWN;
+  entry->data.status |= SILC_IDLIST_STATUS_LOCAL;
   silc_packet_set_context(sconn->sock, entry);
 
   SILC_LOG_DEBUG(("Created unknown connection %p", entry));
