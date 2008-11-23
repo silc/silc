@@ -2197,17 +2197,6 @@ static void silc_packet_read_process(SilcPacketStream stream)
     /* Get packet length and full packet length with padding */
     SILC_PACKET_LENGTH(header, packetlen, paddedlen);
 
-    /* Sanity checks */
-    if (silc_unlikely(packetlen < SILC_PACKET_MIN_LEN)) {
-      if (!stream->udp && !silc_socket_stream_is_udp(stream->stream, NULL))
-	SILC_LOG_ERROR(("Received too short packet"));
-      silc_mutex_unlock(stream->lock);
-      SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MALFORMED);
-      silc_mutex_lock(stream->lock);
-      memset(tmp, 0, sizeof(tmp));
-      goto out;
-    }
-
     if (silc_buffer_len(inbuf) < paddedlen + ivlen + mac_len) {
       SILC_LOG_DEBUG(("Received partial packet, waiting for the rest "
 		      "(%d bytes)",
@@ -2226,6 +2215,17 @@ static void silc_packet_read_process(SilcPacketStream stream)
 					     stream->receive_psn))) {
       silc_mutex_unlock(stream->lock);
       SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MAC_FAILED);
+      silc_mutex_lock(stream->lock);
+      memset(tmp, 0, sizeof(tmp));
+      goto out;
+    }
+
+    /* Sanity checks */
+    if (silc_unlikely(packetlen < SILC_PACKET_MIN_LEN)) {
+      if (!stream->udp && !silc_socket_stream_is_udp(stream->stream, NULL))
+	SILC_LOG_ERROR(("Received too short packet"));
+      silc_mutex_unlock(stream->lock);
+      SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MALFORMED);
       silc_mutex_lock(stream->lock);
       memset(tmp, 0, sizeof(tmp));
       goto out;
