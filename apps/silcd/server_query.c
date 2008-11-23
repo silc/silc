@@ -2182,7 +2182,8 @@ SilcClientEntry silc_server_query_client(SilcServer server,
 					    server->cmd_ident, 1,
 					    4, idp->data,
 					    silc_buffer_len(idp));
-    silc_server_packet_send(server, client ? client->router->connection :
+    silc_server_packet_send(server,
+			    client && client->router ? client->router->connection :
 			    SILC_PRIMARY_ROUTE(server),
 			    SILC_PACKET_COMMAND, 0,
 			    buffer->data, silc_buffer_len(buffer));
