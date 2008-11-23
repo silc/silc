@@ -281,8 +281,8 @@ static void silc_server_packet_error(SilcPacketEngine engine,
     return;
 
   silc_schedule_task_add_timeout(server->schedule,
-				 silc_server_packet_error_timeout,
-				 stream, 0, 0);
+				 silc_server_packet_error_timeout, stream,
+				 silc_rng_get_byte(server->rng) % 5, 0);
 }
 
 /* Packet stream callbacks */
