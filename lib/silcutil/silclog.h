@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006 Pekka Riikonen
+  Copyright (C) 1997 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -303,7 +303,7 @@ typedef SilcBool (*SilcLogHexdumpCb)(char *file, char *function, int line,
  * SOURCE
  */
 #if defined(SILC_DEBUG)
-#define SILC_ASSERT(expr) assert((expr));
+#define SILC_ASSERT(expr) assert((expr))
 #else
 #define SILC_ASSERT(expr) do { } while(0)
 #endif /* SILC_DEBUG */
@@ -317,7 +317,7 @@ typedef SilcBool (*SilcLogHexdumpCb)(char *file, char *function, int line,
  *
  * DESCRIPTION
  *
- *    Verification macro that prints error message to stderr and calls 
+ *    Verification macro that prints error message to stderr and calls
  *    abort() if the `expression' is false (ie. compares equal to zero)
  *    on debug builds (SILC_DEBUG defined), and prints error message to
  *    stderr on release builds (SILC_DEBUG undefined) but does not abort().
@@ -327,11 +327,11 @@ typedef SilcBool (*SilcLogHexdumpCb)(char *file, char *function, int line,
  * SOURCE
  */
 #if defined(SILC_DEBUG)
-#define SILC_VERIFY(expr) assert((expr));
+#define SILC_VERIFY(expr) assert((expr))
 #else
 #define SILC_VERIFY(expr)						\
   if (!(expr))								\
-    SILC_LOG_ERROR(("SILC_VERIFY %s:%d", __FUNCTION__, __LINE__));
+    SILC_LOG_ERROR(("SILC_VERIFY %s:%d", __FUNCTION__, __LINE__))
 #endif /* SILC_DEBUG */
 /***/
 
