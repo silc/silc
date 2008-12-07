@@ -186,7 +186,7 @@ static void silc_schedule_select_timeout(SilcSchedule schedule)
   if (task) {
     schedule->timeout = curtime;
     schedule->has_timeout = TRUE;
-    SILC_LOG_DEBUG(("timeout: sec=%d, usec=%d", schedule->timeout.tv_sec,
+    SILC_LOG_DEBUG(("timeout: sec=%ld, usec=%ld", schedule->timeout.tv_sec,
 		    schedule->timeout.tv_usec));
   }
 }
@@ -600,7 +600,7 @@ SilcTask silc_schedule_task_add(SilcSchedule schedule, SilcUInt32 fd,
       }
     }
 
-    SILC_LOG_DEBUG(("New timeout task %p: sec=%d, usec=%d", ttask,
+    SILC_LOG_DEBUG(("New timeout task %p: sec=%ld, usec=%ld", ttask,
 		    seconds, useconds));
 
     /* Add task to correct spot so that the first task in the list has
