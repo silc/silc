@@ -748,7 +748,7 @@ void silc_skr_ref_public_key(SilcSKR skr, SilcSKRKey key)
   SilcSKRKeyInternal k = (SilcSKRKeyInternal)key;
 
   silc_mutex_lock(skr->lock);
-  SILC_LOG_DEBUG(("SKR key %p ref %d -> %d", k->refcnt, k->refcnt + 1));
+  SILC_LOG_DEBUG(("SKR key %p ref %d -> %d", k, k->refcnt, k->refcnt + 1));
   k->refcnt++;
   silc_mutex_unlock(skr->lock);
 }
@@ -761,7 +761,7 @@ void silc_skr_unref_public_key(SilcSKR skr, SilcSKRKey key)
 
   silc_mutex_lock(skr->lock);
 
-  SILC_LOG_DEBUG(("SKR key %p ref %d -> %d", k->refcnt, k->refcnt - 1));
+  SILC_LOG_DEBUG(("SKR key %p ref %d -> %d", k, k->refcnt, k->refcnt - 1));
   k->refcnt--;
 
   if (k->refcnt == 0) {
