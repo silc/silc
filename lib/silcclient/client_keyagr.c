@@ -368,7 +368,8 @@ void silc_client_abort_key_agreement(SilcClient client,
 
   ke = client_entry->internal.ke;
 
-  SILC_LOG_DEBUG(("Abort key agreement %p"));
+  SILC_LOG_DEBUG(("Abort key agreement ke %p for client %p on connection %p",
+                  ke, client, conn));
 
   ke->completion(client, conn, client_entry,
 		 SILC_KEY_AGREEMENT_ABORTED, NULL, ke->context);
