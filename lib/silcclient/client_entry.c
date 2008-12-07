@@ -1019,10 +1019,10 @@ SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
   if (!client_entry)
     return FALSE;
 
-  SILC_LOG_DEBUG(("Marking client entry %p deleted"));
+  SILC_LOG_DEBUG(("Marking client entry %p deleted", client_entry));
 
   if (silc_atomic_sub_int32(&client_entry->internal.deleted, 1) != 0) {
-    SILC_LOG_DEBUG(("Client entry %p already marked deleted"));
+    SILC_LOG_DEBUG(("Client entry %p already marked deleted", client_entry));
     return FALSE;
   }
 
@@ -1722,10 +1722,10 @@ SilcBool silc_client_del_channel(SilcClient client, SilcClientConnection conn,
   if (!channel)
     return FALSE;
 
-  SILC_LOG_DEBUG(("Marking channel entry %p deleted"));
+  SILC_LOG_DEBUG(("Marking channel entry %p deleted", channel));
 
   if (silc_atomic_sub_int32(&channel->internal.deleted, 1) != 0) {
-    SILC_LOG_DEBUG(("Channel entry %p already marked deleted"));
+    SILC_LOG_DEBUG(("Channel entry %p already marked deleted", channel));
     return FALSE;
   }
 
