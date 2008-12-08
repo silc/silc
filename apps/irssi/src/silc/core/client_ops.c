@@ -1677,7 +1677,7 @@ void silc_command_reply(SilcClient client, SilcClientConnection conn,
 
       if (idle && nickname) {
 	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf) - 1, "%lu %s",
+	snprintf(buf, sizeof(buf) - 1, "%u %s",
 		 idle > 60 ? (idle / 60) : idle,
 		 idle > 60 ? "minutes" : "seconds");
 

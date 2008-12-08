@@ -290,7 +290,7 @@ void silc_schedule_stats(SilcSchedule schedule)
 {
   SilcTaskFd ftask;
   fprintf(stdout, "Schedule %p statistics:\n\n", schedule);
-  fprintf(stdout, "Num FD tasks         : %lu (%lu bytes allocated)\n",
+  fprintf(stdout, "Num FD tasks         : %u (%u bytes allocated)\n",
 	  silc_hash_table_count(schedule->fd_queue),
 	  sizeof(*ftask) * silc_hash_table_count(schedule->fd_queue));
   fprintf(stdout, "Num Timeout tasks    : %d (%d bytes allocated)\n",

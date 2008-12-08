@@ -1542,7 +1542,7 @@ SilcServerConfig silc_server_config_alloc(const char *filename,
 			       silc_config_strerror(ret)));
       linebuf = silc_config_read_line(file, line);
       if (linebuf) {
-	SILC_SERVER_LOG_ERROR(("  file %s line %lu:  %s\n", filename,
+	SILC_SERVER_LOG_ERROR(("  file %s line %u:  %s\n", filename,
 			       line, linebuf));
 	silc_free(linebuf);
       }
