@@ -5018,7 +5018,7 @@ void silc_server_save_users_on_channel(SilcServer server,
     }
 
     if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
-      SILC_LOG_ERROR(("Attempting to add unregistered client to channel ",
+      SILC_LOG_ERROR(("Attempting to add unregistered client to channel "
 		      "%s", channel->channel_name));
       continue;
     }
