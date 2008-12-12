@@ -4078,6 +4078,13 @@ SILC_TASK_CALLBACK(silc_server_command_detach_cb)
     client->router = NULL;
     client->connection = NULL;
     silc_server_close_connection(server, sock);
+
+    /*
+     * Decrement the user count; we'll increment it if the user resumes on our
+     * server.
+     */
+    SILC_VERIFY(&server->stat.my_clients > 0);
+    server->stat.my_clients--;
   }
 
   silc_free(client_id);
