@@ -310,6 +310,13 @@ typedef struct SilcChannelClientEntryStruct {
        this command identifier and handle the process after the resolving
        is over.
 
+   SilcClientEntry resuming_client
+
+   unsigned locally_detached : 1
+
+       Set to indicate that the client is locally owned but detached for
+       purposes of tracking user counts.
+
 */
 struct SilcClientEntryStruct {
   /* Generic data structure. DO NOT add anything before this! */
@@ -348,6 +355,10 @@ struct SilcClientEntryStruct {
   /* we need this so nobody can resume more than once at the same time -
    * server crashes, really odd behaviour, ... */
   SilcClientEntry resuming_client;
+
+  /* Client is locally owned but detached and not counted in the user
+   * count for local clients (server->stat.my_clients). */
+  unsigned local_detached : 1;
 };
 
 /*
