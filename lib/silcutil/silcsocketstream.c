@@ -166,7 +166,7 @@ silc_socket_tcp_stream_create(SilcSocket sock, SilcBool lookup,
     return NULL;
   }
 
-  SILC_LOG_DEBUG(("Creating TCP socket stream %p, sock %lu", stream, sock));
+  SILC_LOG_DEBUG(("Creating TCP socket stream %p, sock %lu", stream, (long unsigned) sock));
 
   stream->ops = &silc_socket_stream_ops;
   stream->sock = sock;

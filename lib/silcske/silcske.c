@@ -80,7 +80,7 @@ static SilcBool silc_ske_packet_send(SilcSKE ske,
  */
 static void silc_ske_notify_failure(SilcSKE ske)
 {
-  SILC_LOG_DEBUG(("Notifying SKE %p owner of failure (failure_notified = %lu)",
+  SILC_LOG_DEBUG(("Notifying SKE %p owner of failure (failure_notified = %d)",
 		  ske, ske->failure_notified));
 
   /*
