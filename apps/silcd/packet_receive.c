@@ -3951,6 +3951,23 @@ void silc_server_resume_client(SilcServer server,
 			      FALSE, TRUE);
     }
 
+    /* If the client has a locally-connected previous owner, then we
+       will need to notify them that the resume has completed.  Note
+       that if the previous owner was a router, this case is already
+       handled above by the broadcast, so we shouldn't attempt to
+       send another notification in that case.   Additionally, if
+       the previous owner was the server that sent the packet, then
+       we'll not send the notification as it will have already done
+       the necessary work locally. */
+    if (server->server_type == SILC_ROUTER &&
+	idata->conn_type == SILC_CONN_SERVER &&
+	detached_client->router &&
+	SILC_IS_LOCAL(detached_client->router) &&
+	detached_client->router->server_type != SILC_ROUTER)
+      silc_server_packet_send(server, detached_client->router->connection,
+			      SILC_PACKET_RESUME_CLIENT, 0,
+			      buffer->data, silc_buffer_len(buffer));
+
     /* Client is detached, and now it is resumed.  Remove the detached
        mode and mark that it is resumed. */
 
