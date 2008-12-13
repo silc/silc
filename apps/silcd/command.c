@@ -4074,6 +4074,9 @@ SILC_TASK_CALLBACK(silc_server_command_detach_cb)
   if (client && client->connection) {
     sock = client->connection;
 
+    /* Stop rekey for the client. */
+    silc_server_stop_rekey(server, client);
+
     /* Close the connection on our side */
     client->router = NULL;
     client->connection = NULL;

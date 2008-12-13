@@ -2911,6 +2911,18 @@ static void silc_server_rekey_completion(SilcSKE ske,
 				 sock, idata->sconn->rekey_timeout, 0);
 }
 
+/* Helper to stop future rekeys on a link. */
+void silc_server_stop_rekey(SilcServer server, SilcClientEntry client)
+{
+  if (!client->connection)
+    return;
+
+  SILC_LOG_DEBUG(("Stopping rekey for client %p", client));
+
+  silc_schedule_task_del_by_all(server->schedule, 0, silc_server_do_rekey,
+				client->connection);
+}
+
 /* Rekey callback.  Start rekey as initiator */
 
 SILC_TASK_CALLBACK(silc_server_do_rekey)

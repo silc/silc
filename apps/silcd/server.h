@@ -139,6 +139,7 @@ SilcBool silc_server_rehash(SilcServer server);
 void silc_server_run(SilcServer server);
 void silc_server_stop(SilcServer server);
 void silc_server_start_key_exchange(SilcServerConnection sconn);
+void silc_server_stop_rekey(SilcServer server, SilcClientEntry client);
 void silc_server_create_connection(SilcServer server,
 				   SilcBool reconnect,
 				   SilcBool dynamic,
