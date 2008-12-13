@@ -1403,7 +1403,7 @@ RB_HTML_Extra (FILE * dest_doc, int item_type, char *cur_char)
 
   if (strncmp ("http://", cur_char, strlen ("http://")) == 0)
     {
-      sscanf (cur_char, "%s", link);
+      sscanf (cur_char, "%1023s", link);
       RB_Say ("found link %s\n", link);
       res = (strlen (link) - 1);
       fprintf (dest_doc, "<A HREF=\"%s\">%s</A>", link, link);
@@ -1411,14 +1411,14 @@ RB_HTML_Extra (FILE * dest_doc, int item_type, char *cur_char)
   else if (strncmp ("href:", cur_char, strlen ("href:")) == 0)
     {
       /* handy in relative hyperlink paths, e.g. href:../../modulex/ */
-      sscanf ((cur_char + strlen ("href:")), "%s", link);
+      sscanf ((cur_char + strlen ("href:")), "%1023s", link);
       RB_Say ("found link %s\n", link);
       res = (strlen (link) + strlen ("href:") - 1);
       fprintf (dest_doc, "<A HREF=\"%s\">%s</A>", link, link);
     }
   else if (strncmp ("mailto:", cur_char, strlen ("mailto:")) == 0)
     {
-      sscanf ((cur_char + strlen ("mailto:")), "%s", link);
+      sscanf ((cur_char + strlen ("mailto:")), "%1023s", link);
       RB_Say ("found mail to %s\n", link);
       res = (strlen (link) + strlen ("mailto:") - 1);
       fprintf (dest_doc, "<A HREF=\"mailto:%s\">%s</A>", link, link);

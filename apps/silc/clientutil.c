@@ -113,7 +113,7 @@ int silc_get_number_of_emails()
   if (!tl) {
     fprintf(stderr, "Couldn't open mail file (%s).\n", filename);
   } else {
-    while((fscanf(tl, "%s", data)) != EOF) { 
+    while((fscanf(tl, "%1023s", data)) != EOF) {
       if(!strcmp(data, "From:"))
 	num++;
     }

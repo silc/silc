@@ -52,7 +52,7 @@ bool silc_map_load_ppm(SilcMap map, const char *filename)
   }
 
   /* Read width and height */
-  ret = sscanf(header, "%s %ld %ld %ld\n", type,
+  ret = sscanf(header, "%2s %ld %ld %ld\n", type,
 	       (unsigned long *)&map->width,
 	       (unsigned long *)&map->height,
 	       (unsigned long *)&map->maxcolor);
