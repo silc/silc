@@ -3734,8 +3734,12 @@ void silc_server_resume_client(SilcServer server,
       silc_server_check_watcher_list(server, detached_client, NULL,
 				     SILC_NOTIFY_TYPE_UMODE_CHANGE);
 
-    /* Delete this current client entry since we're resuming to old one. */
-    server->stat.my_clients--;
+    /* Delete this current client entry since we're resuming to old one.
+       We decrement clients/cell_clients as we are getting rid of the
+       current client and replacing it with the detached one.  We keep the
+       server user count as-is (incremented by the current client entry) as
+       we decremented the count already during detach, thus we'd be undoing
+       that operation. */
     SILC_VERIFY(server->stat.clients > 0);
     server->stat.clients--;
     if (server->stat.cell_clients)
