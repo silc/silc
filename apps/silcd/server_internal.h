@@ -166,29 +166,6 @@ typedef struct {
 #define SILC_IS_LOCAL(entry) \
   (((SilcIDListData)entry)->status & SILC_IDLIST_STATUS_LOCAL)
 
-/* Registers generic task for file descriptor for reading from network and
-   writing to network. As being generic task the actual task is allocated
-   only once and after that the same task applies to all registered fd's. */
-#define SILC_REGISTER_CONNECTION_FOR_IO(fd)		\
-do {							\
-  silc_schedule_task_add(server->schedule, (fd),	\
-		         silc_server_packet_process,	\
-		         context, 0, 0,			\
-		         SILC_TASK_GENERIC,		\
-			 SILC_TASK_PRI_NORMAL);		\
-} while(0)
-
-#define SILC_SET_CONNECTION_FOR_INPUT(s, fd)				\
-do {									\
-  silc_schedule_set_listen_fd((s), (fd), SILC_TASK_READ, FALSE);	\
-} while(0)
-
-#define SILC_SET_CONNECTION_FOR_OUTPUT(s, fd)				     \
-do {									     \
-  silc_schedule_set_listen_fd((s), (fd), (SILC_TASK_READ | SILC_TASK_WRITE), \
-			      FALSE);					     \
-} while(0)
-
 #define SILC_OPER_STATS_UPDATE(c, type, mod)	\
 do {						\
   if ((c)->mode & (mod)) {			\

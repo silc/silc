@@ -233,7 +233,10 @@ SILC_TASK_CALLBACK(silc_server_packet_error_timeout)
 
   if (server->router_conn && server->router_conn->sock == stream &&
       !server->router && server->standalone) {
+    if (idata->sconn && idata->sconn->callback)
+      (*idata->sconn->callback)(server, NULL, idata->sconn->callback_context);
     silc_server_create_connections(server);
+    silc_server_free_sock_user_data(server, stream, NULL);
   } else {
     /* If backup disconnected then mark that resuming will not be allowed */
      if (server->server_type == SILC_ROUTER && !server->backup_router &&
@@ -280,9 +283,14 @@ static void silc_server_packet_error(SilcPacketEngine engine,
   if (!silc_packet_stream_is_valid(stream))
     return;
 
+  /* In case we get here many times, register only one timeout */
+  silc_schedule_task_del_by_all(server->schedule, 0,
+				silc_server_packet_error_timeout, stream);
+
+  /* Close connection with random timeout */
   silc_schedule_task_add_timeout(server->schedule,
 				 silc_server_packet_error_timeout, stream,
-				 silc_rng_get_byte(server->rng) % 5, 0);
+				 silc_rng_get_byte(server->rng) % 10, 0);
 }
 
 /* Packet stream callbacks */

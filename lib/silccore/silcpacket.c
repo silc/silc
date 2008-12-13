@@ -2197,6 +2197,17 @@ static void silc_packet_read_process(SilcPacketStream stream)
     /* Get packet length and full packet length with padding */
     SILC_PACKET_LENGTH(header, packetlen, paddedlen);
 
+    /* Padding sanity checks */
+    if (cipher && (paddedlen % block_len) != 0) {
+      SILC_LOG_DEBUG(("Packet length %d not multiple by cipher block length",
+		      paddedlen));
+      silc_mutex_unlock(stream->lock);
+      SILC_PACKET_CALLBACK_ERROR(stream, SILC_PACKET_ERR_MALFORMED);
+      silc_mutex_lock(stream->lock);
+      memset(tmp, 0, sizeof(tmp));
+      goto out;
+    }
+
     if (silc_buffer_len(inbuf) < paddedlen + ivlen + mac_len) {
       SILC_LOG_DEBUG(("Received partial packet, waiting for the rest "
 		      "(%d bytes)",
