@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2007 Pekka Riikonen
+  Copyright (C) 2000 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ static void silc_idcache_destructor(SilcIDCache cache,
 				    void *app_context)
 {
   if (cache->destructor)
-    cache->destructor(cache, entry, cache->destructor, app_context);
+    cache->destructor(cache, entry, cache->context, app_context);
 
   memset(entry, 'F', sizeof(*entry));
   silc_free(entry);

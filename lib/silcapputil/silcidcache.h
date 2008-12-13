@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2007 Pekka Riikonen
+  Copyright (C) 2000 - 2008 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -185,7 +185,8 @@ SilcBool silc_idcache_del_by_id(SilcIDCache cache, void *id,
  *
  * SYNOPSIS
  *
- *    SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context);
+ *    SilcBool silc_idcache_del_by_context(SilcIDCache cache, void *context,
+ *                                         void *app_context);
  *
  * DESCRIPTION
  *
