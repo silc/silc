@@ -194,7 +194,7 @@ static SilcBool silc_http_server_parse(SilcHttpServer httpd,
 
     /* Check we have received all data */
     cl = silc_mime_get_field(conn->curheaders, "Content-Length");
-    if (cl && sscanf(cl, "%lu", (unsigned long *)&cll) == 1) {
+    if (cl && sscanf(cl, "%u", &cll) == 1) {
       if (data_len < cll) {
 	/* More data to come */
 	silc_mime_free(conn->curheaders);
