@@ -1869,6 +1869,14 @@ static inline void silc_packet_receive_ctr_increment(SilcPacketStream stream,
   SILC_LOG_HEXDUMP(("Counter Block"), iv, 16);
 }
 
+/* Return special packet's encrypted length */
+
+static inline int silc_packet_special_len(unsigned char *data)
+{
+  return (((SilcUInt8)data[4] + (SilcUInt8)data[6] +
+	   (SilcUInt8)data[7] + SILC_PACKET_HEADER_LEN));
+}
+
 /* Decrypts SILC packet.  Handles both normal and special packet decryption.
    Return 0 when packet is normal and 1 when it it special, -1 on error. */
 
@@ -1898,9 +1906,7 @@ static inline int silc_packet_decrypt(SilcCipher cipher, SilcHmac hmac,
       /* Padding length + src id len + dst id len + header length - 16
 	 bytes already decrypted, gives the rest of the encrypted packet */
       silc_buffer_push(buffer, block_len);
-      len = (((SilcUInt8)buffer->data[4] + (SilcUInt8)buffer->data[6] +
-	      (SilcUInt8)buffer->data[7] + SILC_PACKET_HEADER_LEN) -
-	     block_len);
+      len = silc_packet_special_len(buffer->data) - block_len;
       silc_buffer_pull(buffer, block_len);
 
       if (silc_unlikely(len > silc_buffer_len(buffer))) {
@@ -2095,7 +2101,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
   SilcCipher cipher;
   SilcHmac hmac;
   SilcPacket packet;
-  SilcUInt8 sid;
+  SilcUInt8 sid, flags, type;
   SilcUInt16 packetlen;
   SilcUInt32 paddedlen, mac_len, block_len, ivlen, psnlen;
   unsigned char tmp[SILC_PACKET_MIN_HEADER_LEN], *header;
@@ -2197,9 +2203,30 @@ static void silc_packet_read_process(SilcPacketStream stream)
     /* Get packet length and full packet length with padding */
     SILC_PACKET_LENGTH(header, packetlen, paddedlen);
 
+    /* Parse packet header */
+    flags = (SilcPacketFlags)header[2];
+    type = (SilcPacketType)header[3];
+
+    if (stream->sc->engine->local_is_router) {
+      if (type == SILC_PACKET_PRIVATE_MESSAGE &&
+	  (flags & SILC_PACKET_FLAG_PRIVMSG_KEY))
+	normal = FALSE;
+      else if (type != SILC_PACKET_CHANNEL_MESSAGE ||
+	       (type == SILC_PACKET_CHANNEL_MESSAGE &&
+		stream->is_router == TRUE))
+	normal = TRUE;
+    } else {
+      if (type == SILC_PACKET_PRIVATE_MESSAGE &&
+	  (flags & SILC_PACKET_FLAG_PRIVMSG_KEY))
+	normal = FALSE;
+      else if (type != SILC_PACKET_CHANNEL_MESSAGE)
+	normal = TRUE;
+    }
+
     /* Padding sanity checks */
     if (cipher && silc_cipher_get_mode(cipher) != SILC_CIPHER_MODE_CTR &&
-	(paddedlen % block_len) != 0) {
+	((normal && paddedlen % block_len != 0) ||
+	 (!normal && silc_packet_special_len(header) % block_len != 0))) {
       SILC_LOG_DEBUG(("Packet length %d not multiple by cipher block length",
 		      paddedlen));
       silc_mutex_unlock(stream->lock);
@@ -2253,6 +2280,8 @@ static void silc_packet_read_process(SilcPacketStream stream)
       goto out;
     }
     packet->stream = stream;
+    packet->flags = flags;
+    packet->type = type;
 
     /* Allocate more space to packet buffer, if needed */
     if (silc_unlikely(silc_buffer_truelen(&packet->buffer) < paddedlen)) {
@@ -2267,26 +2296,6 @@ static void silc_packet_read_process(SilcPacketStream stream)
 	memset(tmp, 0, sizeof(tmp));
 	goto out;
       }
-    }
-
-    /* Parse packet header */
-    packet->flags = (SilcPacketFlags)header[2];
-    packet->type = (SilcPacketType)header[3];
-
-    if (stream->sc->engine->local_is_router) {
-      if (packet->type == SILC_PACKET_PRIVATE_MESSAGE &&
-	  (packet->flags & SILC_PACKET_FLAG_PRIVMSG_KEY))
-	normal = FALSE;
-      else if (packet->type != SILC_PACKET_CHANNEL_MESSAGE ||
-	       (packet->type == SILC_PACKET_CHANNEL_MESSAGE &&
-		stream->is_router == TRUE))
-	normal = TRUE;
-    } else {
-      if (packet->type == SILC_PACKET_PRIVATE_MESSAGE &&
-	  (packet->flags & SILC_PACKET_FLAG_PRIVMSG_KEY))
-	normal = FALSE;
-      else if (packet->type != SILC_PACKET_CHANNEL_MESSAGE)
-	normal = TRUE;
     }
 
     SILC_LOG_HEXDUMP(("Incoming packet (%d) len %d",
