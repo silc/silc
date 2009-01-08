@@ -103,12 +103,12 @@ all:
 #ifdef SILC_DIST_TOOLKIT
 install-exec-hook:
 	-mkdir -p $(DESTDIR)$(libdir)
-	-$(LIBTOOL) $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
+	-$(LIBTOOL) --mode=install $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
 #ifdef SILC_DIST_CLIENTLIB
-	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(DESTDIR)$(libdir)/
+	-$(LIBTOOL) --mode=install $(INSTALL) libsilcclient.la $(DESTDIR)$(libdir)/
 #endif SILC_DIST_CLIENTLIB
 #ifdef SILC_DIST_SERVERLIB
-	-$(LIBTOOL) $(INSTALL) libsilcserver.la $(DESTDIR)$(libdir)/
+	-$(LIBTOOL) --mode=install $(INSTALL) libsilcserver.la $(DESTDIR)$(libdir)/
 #endif SILC_DIST_SERVERLIB
 #else !SILC_DIST_TOOLKIT
 
@@ -116,8 +116,8 @@ install-exec-hook:
 install-exec-hook:
 if SILC_ENABLE_SHARED
 	-mkdir -p $(libdir)
-	-$(LIBTOOL) $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
-	-$(LIBTOOL) $(INSTALL) libsilcserver.la $(DESTDIR)$(libdir)/
+	-$(LIBTOOL) --mode=install $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
+	-$(LIBTOOL) --mode=install $(INSTALL) libsilcserver.la $(DESTDIR)$(libdir)/
 	-rm -rf $(DESTDIR)$(libdir)/libsilc.a
 	-rm -rf $(DESTDIR)$(libdir)/libsilcserver.a
 endif
@@ -127,8 +127,8 @@ endif
 install-exec-hook:
 if SILC_ENABLE_SHARED
 	-mkdir -p $(libdir)
-	-$(LIBTOOL) $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
-	-$(LIBTOOL) $(INSTALL) libsilcclient.la $(DESTDIR)$(libdir)/
+	-$(LIBTOOL) --mode=install $(INSTALL) libsilc.la $(DESTDIR)$(libdir)/
+	-$(LIBTOOL) --mode=install $(INSTALL) libsilcclient.la $(DESTDIR)$(libdir)/
 	-rm -rf $(DESTDIR)$(libdir)/libsilc.a
 	-rm -rf $(DESTDIR)$(libdir)/libsilcclient.a
 endif

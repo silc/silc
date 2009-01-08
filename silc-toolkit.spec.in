@@ -63,11 +63,11 @@ rm -rf $RPM_BUILD_ROOT
 %dir %_libdir/silc/modules
 %{_libdir}/silc/modules/*.so
 %defattr(0644, root, root, 0755)
-%doc CHANGES COPYING GPL BSD
+%doc ChangeLog COPYING GPL BSD
 
 %files devel
 %defattr(0644, root, root, 0755)
-%doc CHANGES COPYING GPL BSD doc/toolkit
+%doc ChangeLog COPYING GPL BSD doc/toolkit
 %{_libdir}/libsilc.so
 %{_libdir}/libsilc.*a
 %{_libdir}/libsilcclient.so
