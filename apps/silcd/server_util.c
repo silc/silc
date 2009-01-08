@@ -1577,7 +1577,8 @@ void silc_server_kill_client(SilcServer server,
     }
 
     if (SILC_IS_LOCAL(remote_client)) {
-      server->stat.my_clients--;
+      if (!remote_client->local_detached)
+        server->stat.my_clients--;
       silc_schedule_task_del_by_context(server->schedule, remote_client);
     }
 

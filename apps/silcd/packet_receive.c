@@ -1500,7 +1500,8 @@ static void silc_server_notify_process(SilcServer server,
       SILC_OPER_STATS_UPDATE(client, router, SILC_UMODE_ROUTER_OPERATOR);
 
       if (SILC_IS_LOCAL(client)) {
- 	server->stat.my_clients--;
+	if (!client->local_detached)
+ 	  server->stat.my_clients--;
 	silc_schedule_task_del_by_context(server->schedule, client);
 	silc_idlist_del_data(client);
 	client->mode = 0;
@@ -3740,6 +3741,7 @@ void silc_server_resume_client(SilcServer server,
        server user count as-is (incremented by the current client entry) as
        we decremented the count already during detach, thus we'd be undoing
        that operation. */
+    detached_client->local_detached = FALSE;
     SILC_VERIFY(server->stat.clients > 0);
     server->stat.clients--;
     if (server->stat.cell_clients)
@@ -4025,8 +4027,12 @@ void silc_server_resume_client(SilcServer server,
 				       detached_client, &id_cache))
 	silc_idcache_move(server->local_list->clients,
 			  server->global_list->clients, id_cache);
-    }
+      }
 
+    /* We don't own this client anymore, if we ever did, as we were just
+     * told that someone else resumed it.  Thus, it is most definitely no
+     * a detached client.*/
+    detached_client->local_detached = FALSE;
     /* Change the owner of the client */
     detached_client->router = server_entry;
 

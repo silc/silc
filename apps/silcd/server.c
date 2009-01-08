@@ -3150,7 +3150,10 @@ void silc_server_free_client_data(SilcServer server,
   }
 
   /* Update statistics */
-  server->stat.my_clients--;
+
+  /* Local detached clients aren't counted. */
+  if (!client->local_detached)
+    server->stat.my_clients--;
   SILC_VERIFY(server->stat.clients > 0);
   server->stat.clients--;
   if (server->stat.cell_clients)

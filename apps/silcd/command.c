@@ -4082,6 +4082,9 @@ SILC_TASK_CALLBACK(silc_server_command_detach_cb)
     client->connection = NULL;
     silc_server_close_connection(server, sock);
 
+    /* Mark the client as locally detached. */
+    client->local_detached = TRUE;
+
     /*
      * Decrement the user count; we'll increment it if the user resumes on our
      * server.
