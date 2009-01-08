@@ -187,6 +187,12 @@ quote(Specifies the address silcd is listening on.)
 bf(port)
 quote(Specifies the port silcd is listening on.)
 
+bf(public_ip)
+quote(Optional field.  If your server is behind NAT this IP would be 
+the public IP address.  The 'ip' field would include the internal IP 
+address.  With this option it is possible to run silcd behind NAT 
+device.)
+
 nsubsect(SUBSECTION: Secondary)
 
 This is a secondary listener info. A server may have any amount of
