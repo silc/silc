@@ -2345,6 +2345,8 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
       entry->data.conn_type = SILC_CONN_CLIENT;
 
       /* Statistics */
+      SILC_LOG_DEBUG(("stat.clients %d->%d", server->stat.clients,
+		      server->stat.clients + 1));
       server->stat.my_clients++;
       server->stat.clients++;
       server->stat.cell_clients++;
@@ -3154,6 +3156,8 @@ void silc_server_free_client_data(SilcServer server,
   /* Local detached clients aren't counted. */
   if (!client->local_detached)
     server->stat.my_clients--;
+  SILC_LOG_DEBUG(("stat.clients %d->%d", server->stat.clients,
+		  server->stat.clients - 1));
   SILC_VERIFY(server->stat.clients > 0);
   server->stat.clients--;
   if (server->stat.cell_clients)
@@ -3215,11 +3219,13 @@ void silc_server_free_sock_user_data(SilcServer server,
     if (idata->sconn && idata->sconn->op) {
       SILC_LOG_DEBUG(("Abort active protocol"));
       silc_async_abort(idata->sconn->op, NULL, NULL);
+      idata->sconn->op = NULL;
     }
     if (idata->conn_type == SILC_CONN_UNKNOWN &&
         ((SilcUnknownEntry)idata)->op) {
       SILC_LOG_DEBUG(("Abort active protocol"));
       silc_async_abort(((SilcUnknownEntry)idata)->op, NULL, NULL);
+      idata->sconn->op = NULL;
     }
   }
 

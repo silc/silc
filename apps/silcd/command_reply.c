@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2009 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -1241,6 +1241,8 @@ SILC_SERVER_CMD_REPLY_FUNC(stats)
 			 SILC_STR_UI_INT(&server->stat.router_ops),
 			 SILC_STR_END);
   }
+
+  SILC_LOG_DEBUG(("stat.clients = %d\n", server->stat.clients));
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_STATS);

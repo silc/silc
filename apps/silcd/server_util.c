@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2008 Pekka Riikonen
+  Copyright (C) 1997 - 2009 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -205,6 +205,8 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
       }
 
       /* Update statistics */
+      SILC_LOG_DEBUG(("stat.clients %d->%d", server->stat.clients,
+		      server->stat.clients - 1));
       SILC_VERIFY(server->stat.clients > 0);
       server->stat.clients--;
       if (server->stat.cell_clients)
@@ -269,6 +271,8 @@ SilcBool silc_server_remove_clients_by_server(SilcServer server,
       }
 
       /* Update statistics */
+      SILC_LOG_DEBUG(("stat.clients %d->%d", server->stat.clients,
+		      server->stat.clients - 1));
       SILC_VERIFY(server->stat.clients > 0);
       server->stat.clients--;
       if (server->stat.cell_clients)
@@ -1562,6 +1566,8 @@ void silc_server_kill_client(SilcServer server,
     }
   } else {
     /* Update statistics */
+    SILC_LOG_DEBUG(("stat.clients %d->%d", server->stat.clients,
+		    server->stat.clients - 1));
     SILC_VERIFY(server->stat.clients > 0);
     server->stat.clients--;
     if (server->stat.cell_clients)
