@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # fix.pl  17-Nov-93  Craig Milo Rogers at USC/ISI
-#  
+#
 #       The style guide for RFCs calls for pages to be delimited by the
 # sequence <last-non-blank-line><formfeed-line><first-non-blank-line>.
 # Unfortunately, NROFF is reluctant to produce output that conforms to
@@ -24,17 +24,17 @@
 #
 #       When porting this script, please observe the following points:
 #
-# 1)    ISI keeps perl in "/local/bin/perl";  your system may keep it  
+# 1)    ISI keeps perl in "/local/bin/perl";  your system may keep it
 #       elsewhere.
 # 2)    On systems with a CRLF end-of-line convention, the "0s below
 #       may have to be replaced with "^[70s.
 
-$* = 1;                                 # Enable multiline patterns.
+#$* = 1;                                 # Enable multiline patterns.
 undef $/;                               # Read whole files in a single
                                         # gulp.
- 
+
 while (<>) {                            # Read the entire input file.
     s/FORMFEED(\[Page\s+\d+\])\s+/        \1\n\f\n/g;
     s/\f\n$/\f/;                       # Want bare formfeed at end?
     print;                              # Print the resultant file.
-}  
+}
