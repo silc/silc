@@ -1314,18 +1314,6 @@ without_irssi=false
 without_silcd=false
 #endif SILC_DIST_INPLACE
 
-libtoolfix=true
-AC_MSG_CHECKING(whether to do libtoolfix)
-AC_ARG_WITH(libtoolfix,
-  [  --without-libtoolfix    Do not fix libtool, for package builders],
-  [
-    AC_MSG_RESULT(no)
-    libtoolfix=false
-  ],
-  [
-    AC_MSG_RESULT(yes)
-  ])
-
 AC_SUBST(ETCDIR)
 AC_DEFINE_UNQUOTED([SILC_ETCDIR], "$ETCDIR", [SILC_ETCDIR])
 #endif SILC_DIST_COMPILER
@@ -1355,16 +1343,6 @@ AC_SUBST(__SILC_HAVE_PTHREAD)
 AC_SUBST(__SILC_HAVE_SIM)
 AC_SUBST(__SILC_ENABLE_DEBUG)
 AC_SUBST(__SILC_PACKAGE_VERSION)
-
-#
-# Fix the libtool to support run-time configuration.  This allows us
-# to in run-time specify when to compile shared/static libraries without
-# need to reconfigure the entire libtool.
-#
-if test x$libtoolfix = xtrue; then
-  ./libtoolfix $SILC_TOP_SRCDIR/ltmain.sh
-fi
-AM_CONDITIONAL(SILC_LIBTOOLFIX, test x$libtoolfix = xtrue)
 
 INCLUDE_DEFINES_INT="include \$(top_srcdir)/Makefile.defines_int"
 AC_SUBST(INCLUDE_DEFINES_INT)
@@ -1405,6 +1383,7 @@ tutorial/Makefile.defines_int
 AC_OUTPUT
 
 #ifdef SILC_DIST_COMPILER
+
 s_bindir=`eval echo $bindir`;s_bindir=`eval echo $s_bindir`
 s_sbindir=`eval echo $sbindir`;s_sbindir=`eval echo $s_sbindir`
 s_mandir=`eval echo $mandir`;s_mandir=`eval echo $s_mandir`
