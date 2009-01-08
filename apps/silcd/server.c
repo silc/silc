@@ -27,6 +27,7 @@ SILC_TASK_CALLBACK(silc_server_connect_router);
 SILC_TASK_CALLBACK(silc_server_connect_to_router_retry);
 SILC_TASK_CALLBACK(silc_server_do_rekey);
 SILC_TASK_CALLBACK(silc_server_purge_expired_clients);
+SILC_TASK_CALLBACK(silc_server_packet_error_timeout);
 static void silc_server_accept_new_connection(SilcNetStatus status,
 					      SilcStream stream,
 					      void *context);
@@ -198,6 +199,10 @@ static void silc_server_packet_eos(SilcPacketEngine engine,
 
   if (!idata)
     return;
+
+  /* Remove any possible pending packet error timeout */
+  silc_schedule_task_del_by_all(server->schedule, 0,
+				silc_server_packet_error_timeout, stream);
 
   if (server->router_conn && server->router_conn->sock == stream &&
       !server->router && server->standalone) {
@@ -3211,8 +3216,11 @@ void silc_server_free_sock_user_data(SilcServer server,
   if (!idata)
     return;
 
+  /* Remove any possible pending timeout */
   silc_schedule_task_del_by_all(server->schedule, 0, silc_server_do_rekey,
 				sock);
+  silc_schedule_task_del_by_all(server->schedule, 0,
+				silc_server_packet_error_timeout, sock);
 
   /* Cancel active protocols */
   if (idata) {
