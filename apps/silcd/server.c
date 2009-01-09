@@ -3234,7 +3234,7 @@ void silc_server_free_sock_user_data(SilcServer server,
         ((SilcUnknownEntry)idata)->op) {
       SILC_LOG_DEBUG(("Abort active protocol"));
       silc_async_abort(((SilcUnknownEntry)idata)->op, NULL, NULL);
-      idata->sconn->op = NULL;
+      ((SilcUnknownEntry)idata)->op = NULL;
     }
   }
 
