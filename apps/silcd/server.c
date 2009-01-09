@@ -27,7 +27,6 @@ SILC_TASK_CALLBACK(silc_server_connect_router);
 SILC_TASK_CALLBACK(silc_server_connect_to_router_retry);
 SILC_TASK_CALLBACK(silc_server_do_rekey);
 SILC_TASK_CALLBACK(silc_server_purge_expired_clients);
-SILC_TASK_CALLBACK(silc_server_packet_error_timeout);
 static void silc_server_accept_new_connection(SilcNetStatus status,
 					      SilcStream stream,
 					      void *context);
@@ -200,10 +199,6 @@ static void silc_server_packet_eos(SilcPacketEngine engine,
   if (!idata)
     return;
 
-  /* Remove any possible pending packet error timeout */
-  silc_schedule_task_del_by_all(server->schedule, 0,
-				silc_server_packet_error_timeout, stream);
-
   if (server->router_conn && server->router_conn->sock == stream &&
       !server->router && server->standalone) {
     if (idata->sconn && idata->sconn->callback)
@@ -233,8 +228,10 @@ SILC_TASK_CALLBACK(silc_server_packet_error_timeout)
   SilcPacketStream stream = context;
   SilcIDListData idata = silc_packet_get_context(stream);
 
-  if (!idata)
+  if (!idata || !silc_packet_stream_is_valid(stream)) {
+    silc_packet_stream_unref(stream);
     return;
+  }
 
   if (server->router_conn && server->router_conn->sock == stream &&
       !server->router && server->standalone) {
@@ -257,6 +254,9 @@ SILC_TASK_CALLBACK(silc_server_packet_error_timeout)
   }
 
   silc_server_close_connection(server, stream);
+
+  /* Release our stream reference */
+  silc_packet_stream_unref(stream);
 }
 
 /* Packet engine callback to indicate error */
@@ -273,7 +273,7 @@ static void silc_server_packet_error(SilcPacketEngine engine,
   const char *ip;
   SilcUInt16 port;
 
-  SILC_LOG_DEBUG(("Packet error, sock %p", stream));
+  SILC_LOG_DEBUG(("Packet error %d, sock %p", error, stream));
 
   if (!idata || !sock)
     return;
@@ -287,6 +287,9 @@ static void silc_server_packet_error(SilcPacketEngine engine,
 
   if (!silc_packet_stream_is_valid(stream))
     return;
+
+  /* We must take reference of the stream */
+  silc_packet_stream_ref(stream);
 
   /* In case we get here many times, register only one timeout */
   silc_schedule_task_del_by_all(server->schedule, 0,
@@ -3097,7 +3100,8 @@ void silc_server_disconnect_remote(SilcServer server,
   if (!sock)
     return;
 
-  SILC_LOG_DEBUG(("Disconnecting remote host, sock %p", sock));
+  SILC_LOG_DEBUG(("Disconnecting remote host, sock %p, status %d", sock,
+		  status));
 
   va_start(ap, status);
   cp = va_arg(ap, char *);
@@ -3216,11 +3220,8 @@ void silc_server_free_sock_user_data(SilcServer server,
   if (!idata)
     return;
 
-  /* Remove any possible pending timeout */
   silc_schedule_task_del_by_all(server->schedule, 0, silc_server_do_rekey,
 				sock);
-  silc_schedule_task_del_by_all(server->schedule, 0,
-				silc_server_packet_error_timeout, sock);
 
   /* Cancel active protocols */
   if (idata) {
