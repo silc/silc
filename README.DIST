@@ -38,6 +38,39 @@ where the "0.fc7" will become the RPM release version.  If you omit the
 release version the default currently is "0.fc7".
 
 
+Creating ChangeLog and Tagging
+==============================
+
+Before packaging the distribution the ChangeLog must be created and the 
+release must be tagged.  A ready made script for this purpose is the 
+scripts/release.  It has the following syntax:
+
+	sh scripts/release <previous_tag> <new_tag>
+
+The tag format is as follows:
+
+	silc.name.version
+
+Where <name> is the distribution name and <version> is the version of the
+distribution in following format: major.minor.build, for example 1.1.16.
+Example:
+
+	silc.server.1.1.6
+
+When you run the script it also generates the ChangeLog file 
+automatically.  All the changes between the <previous_tag> and the 
+<new_tag> from the Git are included in the ChangeLog.  Since the same 
+repo is used to make packages (client, server and toolkit) the ChangeLog 
+will usually include changes that are not part of the release you are 
+making.  You will need to manually remove the commits that are not part 
+of the distribution you are releasing.
+
+Later, after the release has been made the tag needs to be pushed to the 
+public repository.
+
+	git push --tags
+
+
 Configuring and compiling the distribution
 ==========================================
 
@@ -67,11 +100,10 @@ Packaging the distribution
 After the distribution is prepared, configured and compiled it can be
 packaged with the following commands:
 
-	make -C doc dist-hook
 	makedist --bzip2
 
 The 'makedist --bzip2' creates the default 'tar.gz' and 'tar.bz2'
-distribution.
+distribution.  It also creates the sha256 checksum files automatically.
 
 NOTE:  Before giving this command, make sure that you do not have any of
 the tests in the SILC source tree compiled.  If they are the binaries
@@ -80,34 +112,5 @@ always located in the tests/ directory, for example lib/silccore/tests/.
 The tests are not compiled by default, but if you compiled them by
 yourself make sure you make clean them before creating the distribution.
 
-NOTE:  Same thing must be assured for silcer/ and tutorial/ sub
-directories.  Make sure they are not compiled and does not include any
-extra files.  If you haven't compiled them after the CVS checkout, they do
-not include any extra files.
-
-NOTE for 'toolkit' distribution:  Running ./configure for toolkit
-distribution is not necessary.  Toolkit is packaged simply by giving
-command:
-
-	makedist
-
-
-Before releasing the distribution
-=================================
-
-Before releasing the distribution the created distribution must be tagged
-in the CVS so that it can be checkout at a later time, if needed.  The tag
-format is as follows:
-
-	silc_<name>_<version>
-
-Where <name> is the distribution name and <version> is the version of the
-distribution in following format: major_minor_build, for example 0_9_10.
-Example:
-
-	silc_client_0_9_15
-
-To tag the distribution go to the root of the SILC CVS source tree and
-give, for example, command:
-
-	cvs tag silc_client_0_9_15
+NOTE: Same thing must be assured for tutorial/ sub directory.  Make sure 
+it is not compiled and does not include any extra files.
