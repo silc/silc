@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2007 Pekka Riikonen
+#  Copyright (C) 2000 - 2007, 2009 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -121,6 +121,7 @@ done
 __SILC_PACKAGE_VERSION="#define __SILC_TOOLKIT_VERSION SILC_VERSION($maj,$min,$bld)"
 #endif SILC_DIST_TOOLKIT
 
+LT_INIT
 AC_PROG_RANLIB
 #ifndef SILC_DIST_TOOLKIT
 AC_DISABLE_SHARED
@@ -128,7 +129,6 @@ AC_DISABLE_SHARED
 #ifdef SILC_DIST_INPLACE
 AC_DISABLE_SHARED
 #endif SILC_DIST_INPLACE
-AC_PROG_LIBTOOL
 
 # Header checking
 #
@@ -207,9 +207,9 @@ AC_CHECK_FUNC(socket, [],
 AC_CHECK_FUNCS(gethostname gethostbyaddr getservbyname getservbyport)
 AC_CHECK_FUNCS(poll select listen bind shutdown close connect setsockopt)
 AC_CHECK_FUNCS(setrlimit time ctime utime gettimeofday getrusage)
-AC_CHECK_FUNCS(chmod fcntl stat fstat getenv putenv strerror)
+AC_CHECK_FUNCS(chmod fcntl stat fstat getenv putenv strerror posix_memalign)
 AC_CHECK_FUNCS(getpid getgid getsid getpgid getpgrp getuid sched_yield)
-AC_CHECK_FUNCS(setgroups initgroups nl_langinfo nanosleep)
+AC_CHECK_FUNCS(setgroups initgroups nl_langinfo nanosleep backtrace)
 AC_CHECK_FUNCS(strchr snprintf strstr strcpy strncpy memcpy memset memmove)
 
 # lib/contrib conditionals
