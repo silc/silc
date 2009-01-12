@@ -1,0 +1,8 @@
+#!/bin/sh
+
+last="$1"
+new="$2"
+git tag -a -m "Release $new" $new
+git log --no-merges $new ^$last > ChangeLog
+echo "" >> ChangeLog
+git diff --stat --summary -M $last $new >> ChangeLog
