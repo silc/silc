@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2009 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -186,6 +186,12 @@ static void silc_server_notify_process(SilcServer server,
 	}
 
 	client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
+
+	if (idata->conn_type == SILC_CONN_SERVER)
+	  server->stat.cell_clients++;
+	SILC_LOG_DEBUG(("stat.clients %d->%d", server->stat.clients,
+			server->stat.clients + 1));
+	server->stat.clients++;
       }
     }
 

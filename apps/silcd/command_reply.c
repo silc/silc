@@ -236,6 +236,10 @@ silc_server_command_reply_whois_save(SilcServerCommandReplyContext cmd)
     client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
     client->mode = mode;
     client->servername = servername[0] ? strdup(servername) : NULL;
+
+    SILC_LOG_DEBUG(("stat.clients %d->%d", server->stat.clients,
+		    server->stat.clients + 1));
+    server->stat.clients++;
   } else {
     /* We have the client already, update the data */
 
@@ -660,6 +664,10 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
       client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
       client->data.status |= SILC_IDLIST_STATUS_RESOLVED;
       client->data.status &= ~SILC_IDLIST_STATUS_RESOLVING;
+
+      SILC_LOG_DEBUG(("stat.clients %d->%d", server->stat.clients,
+		      server->stat.clients + 1));
+      server->stat.clients++;
     } else {
       /* We have the client already, update the data */
 
@@ -1242,7 +1250,7 @@ SILC_SERVER_CMD_REPLY_FUNC(stats)
 			 SILC_STR_END);
   }
 
-  SILC_LOG_DEBUG(("stat.clients = %d\n", server->stat.clients));
+  SILC_LOG_DEBUG(("stat.clients = %d", server->stat.clients));
 
  out:
   SILC_SERVER_PENDING_EXEC(cmd, SILC_COMMAND_STATS);

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2008 Pekka Riikonen
+  Copyright (C) 1997 - 2009 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -318,9 +318,16 @@ static void silc_server_packet_parse_type(SilcServer server,
 {
   SilcPacketType type = packet->type;
   SilcIDListData idata = silc_packet_get_context(sock);
+#ifdef SILC_DEBUG
+  const char *ip;
+  SilcUInt16 port;
 
-  SILC_LOG_DEBUG(("Received %s packet [flags %d]",
-		  silc_get_packet_name(type), packet->flags));
+  silc_socket_stream_get_info(silc_packet_stream_get_stream(sock),
+			      NULL, NULL, &ip, &port);
+#endif /* SILC_DEBUG */
+
+  SILC_LOG_DEBUG(("Received %s packet [flags %d] from %s:%d",
+		  silc_get_packet_name(type), packet->flags, ip, port));
 
   /* Parse the packet type */
   switch (type) {
@@ -5045,6 +5052,10 @@ void silc_server_save_users_on_channel(SilcServer server,
       }
 
       client->data.status |= SILC_IDLIST_STATUS_REGISTERED;
+
+      SILC_LOG_DEBUG(("stat.clients %d->%d", server->stat.clients,
+		      server->stat.clients + 1));
+      server->stat.clients++;
     }
 
     if (!(client->data.status & SILC_IDLIST_STATUS_REGISTERED)) {
