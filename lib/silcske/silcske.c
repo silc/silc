@@ -1809,10 +1809,10 @@ SILC_FSM_STATE(silc_ske_st_initiator_failure)
 
   if (ske->packet && silc_buffer_len(&ske->packet->buffer) == 4) {
     SILC_GET32_MSB(error, ske->packet->buffer.data);
-    ske->status = error;
     silc_packet_free(ske->packet);
     ske->packet = NULL;
   }
+  ske->status = error;
 
   SILC_LOG_DEBUG(("Error %s (%d) received during key exchange",
 		  silc_ske_map_status(ske->status), ske->status));
@@ -2383,10 +2383,10 @@ SILC_FSM_STATE(silc_ske_st_responder_failure)
 
   if (ske->packet && silc_buffer_len(&ske->packet->buffer) == 4) {
     SILC_GET32_MSB(error, ske->packet->buffer.data);
-    ske->status = error;
     silc_packet_free(ske->packet);
     ske->packet = NULL;
   }
+  ske->status = error;
 
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
