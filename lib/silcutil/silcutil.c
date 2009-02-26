@@ -45,7 +45,7 @@ int silc_gets(char *dest, int destlen, const char *src, int srclen, int begin)
 
     dest[i] = src[start];
 
-    if (dest[i] == EOF)
+    if ((unsigned char)dest[i] == (unsigned char)EOF)
       return EOF;
 
     if (dest[i] == '\n')

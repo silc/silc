@@ -45,8 +45,8 @@ struct SilcConfigFileObject {
   char *filename;	/* the original filename opened */
   int level;		/* parsing level, how many nested
 			   silc_config_main we have */
-  char *base;		/* this is a fixed pointer to the base location */
-  char *p;		/* the Parser poitner */
+  unsigned char *base;	/* this is a fixed pointer to the base location */
+  unsigned char *p;	/* the Parser poitner */
   SilcUInt32 len;	/* fixed length of the whole file */
   SilcUInt32 line;	/* current parsing line, strictly linked to p */
   SilcBool included;	/* wether this file is main or included */
@@ -95,8 +95,8 @@ char *silc_config_strerror(int errnum)
 /* Points the first non-space character */
 static void my_trim_spaces(SilcConfigFile *file)
 {
-  register char *r = file->p;
-  while ((*r != '\0' && *r != EOF) && isspace((int)*r))
+  unsigned char *r = file->p;
+  while ((*r != '\0' && *r != (unsigned char)EOF) && isspace((int)*r))
     if (*r++ == '\n') file->line++;
   file->p = r;
 }
@@ -104,21 +104,24 @@ static void my_trim_spaces(SilcConfigFile *file)
 /* Skips the current line until newline (lf or cr) */
 static void my_skip_line(SilcConfigFile *file)
 {
-  register char *r = file->p;
-  while ((*r != '\0' && *r != EOF) && (*r != '\n') && (*r != '\r')) r++;
-  file->p = ((*r != '\0' && *r != EOF) ? r + 1 : r);
+  unsigned char *r = file->p;
+  while ((*r != '\0' && *r != (unsigned char)EOF) &&
+	 (*r != '\n') && (*r != '\r')) r++;
+  file->p = ((*r != '\0' && *r != (unsigned char)EOF) ? r + 1 : r);
   file->line++;
 }
 
 /* Obtains a text token from the current position until first separator.
  * a separator is any non alphanumeric character nor "_" or "-" */
-static char *my_next_token(SilcConfigFile *file, char *to)
+static unsigned char *my_next_token(SilcConfigFile *file, char *to)
 {
   unsigned int count = 0;
-  register char *o;
+  unsigned char *o;
+
   my_trim_spaces(file);
   o = file->p;
-  while ((isalnum((int)*o) || (*o == '_') || (*o == '-')) && count < BUF_SIZE) {
+  while ((isalnum((int)*o) || (*o == '_') || (*o == '-')) &&
+	 count < BUF_SIZE) {
     count++;
     *to++ = *o++;
   }
@@ -131,12 +134,13 @@ static char *my_next_token(SilcConfigFile *file, char *to)
  * next_token() is that quoted-strings are also accepted */
 static char *my_get_string(SilcConfigFile *file, char *to)
 {
-  char *o;
+  unsigned char *o;
+
   my_trim_spaces(file);
   o = file->p;
   if (*o == '"') {
     unsigned int count = 0;
-    char *d = to;
+    unsigned char *d = to;
     while (count < BUF_SIZE) {
       o++;
       if (*o == '"') {
@@ -279,7 +283,7 @@ SilcConfigFile *silc_config_open(const char *configfile)
 
   ret = silc_calloc(1, sizeof(*ret));
   ret->filename = strdup(configfile);
-  ret->base = ret->p = buffer;
+  ret->base = ret->p = (unsigned char *)buffer;
   ret->len = filelen;
   ret->line = 1; /* line count, start from first line */
   return ret;
@@ -336,13 +340,12 @@ SilcUInt32 silc_config_get_line(SilcConfigFile *file)
 
 char *silc_config_read_line(SilcConfigFile *file, SilcUInt32 line)
 {
-  register char *p;
+  unsigned char *p, *ret = NULL, *endbuf;
   int len;
-  char *ret = NULL, *endbuf;
 
   if (!file || (line <= 0))
     return NULL;
-  for (p = file->base; *p && (*p != EOF); p++) {
+  for (p = file->base; *p && (*p != (unsigned char)EOF); p++) {
     if (line <= 1)
       goto found;
     if (*p == '\n')
@@ -358,7 +361,7 @@ char *silc_config_read_line(SilcConfigFile *file, SilcUInt32 line)
   } else {
     ret = silc_memdup(p, strlen(p));
   }
-  return ret;
+  return (char *)ret;
 }
 
 /* Convenience function to read the current parsed line */
@@ -397,8 +400,8 @@ static void silc_config_destroy(SilcConfigEntity ent, SilcBool destroy_opts)
  * Returns TRUE on success, FALSE if already registered. */
 
 SilcBool silc_config_register(SilcConfigEntity ent, const char *name,
-			  SilcConfigType type, SilcConfigCallback cb,
-			  const SilcConfigTable *subtable, void *context)
+			      SilcConfigType type, SilcConfigCallback cb,
+			      const SilcConfigTable *subtable, void *context)
 {
   SilcConfigOption *newopt;
   SILC_CONFIG_DEBUG(("Register new option=\"%s\" "
@@ -461,7 +464,7 @@ SilcBool silc_config_register_table(SilcConfigEntity ent,
 static int silc_config_main_internal(SilcConfigEntity ent)
 {
   SilcConfigFile *file = ent->file;
-  char **p = &file->p;
+  unsigned char **p = &file->p;
 
   /* loop throught statements */
   while (1) {
@@ -471,7 +474,7 @@ static int silc_config_main_internal(SilcConfigEntity ent)
     /* makes it pointing to the next interesting char */
     my_skip_comments(file);
     /* got eof? */
-    if (**p == '\0' || **p == EOF) {
+    if (**p == '\0' || **p == (unsigned char)EOF) {
       if (file->level > 1) /* cannot get eof in a sub-level! */
 	return SILC_CONFIG_EEXPECTED;
       goto finish;
