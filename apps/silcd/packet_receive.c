@@ -361,6 +361,20 @@ static void silc_server_notify_process(SilcServer server,
     /* Remove this client from watcher list if it is */
     silc_server_del_from_watcher_list(server, client);
 
+    /* It's possible router doesn't accept our local client in the network
+       and sends SIGNOFF to our local client */
+    if (SILC_IS_LOCAL(client)) {
+      SILC_LOG_DEBUG(("SIGNOFF from router to local client, disconnect"));
+      if (client->data.sconn) {
+	silc_server_connection_free(client->data.sconn);
+	client->data.sconn = NULL;
+      }
+      silc_packet_set_context(client->connection, NULL);
+      silc_server_disconnect_remote(server, client->connection,
+				    SILC_STATUS_ERR_RESOURCE_LIMIT,
+				    "Router prevented registration");
+    }
+
     client->data.status &= ~SILC_IDLIST_STATUS_REGISTERED;
     client->mode = 0;
     client->router = NULL;

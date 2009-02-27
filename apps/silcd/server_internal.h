@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2009 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -216,5 +216,6 @@ SILC_TASK_CALLBACK(silc_server_connect_to_router);
 SILC_TASK_CALLBACK(silc_server_connect_to_router_retry);
 void silc_server_watcher_list_destroy(void *key, void *context,
 				      void *user_context);
+void silc_server_connection_free(SilcServerConnection sconn);
 
 #endif

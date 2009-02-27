@@ -2627,6 +2627,8 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
   /* Add connection to server->conns so that we know we have connection
      to this peer. */
   sconn = silc_calloc(1, sizeof(*sconn));
+  if (!sconn)
+    goto out;
   sconn->server = server;
   sconn->sock = sock;
   sconn->remote_host = strdup(hostname);
@@ -3017,6 +3019,10 @@ static void silc_server_rekey(SilcServer server, SilcPacketStream sock,
   SilcSKE ske;
 
   if (!idata->rekey) {
+    silc_packet_free(packet);
+    return;
+  }
+  if (idata->conn_type == SILC_CONN_UNKNOWN) {
     silc_packet_free(packet);
     return;
   }
