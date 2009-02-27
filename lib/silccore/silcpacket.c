@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2008 Pekka Riikonen
+  Copyright (C) 1997 - 2009 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -710,6 +710,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
   /* Initialize packet procesors list */
   ps->process = silc_dlist_init();
   if (!ps->process) {
+    ps->stream = NULL;
     silc_packet_stream_destroy(ps);
     return NULL;
   }
@@ -722,6 +723,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
     ps->sc = silc_calloc(1, sizeof(*ps->sc));
     if (!ps->sc) {
       silc_mutex_unlock(engine->lock);
+      ps->stream = NULL;
       silc_packet_stream_destroy(ps);
       return NULL;
     }
@@ -734,6 +736,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
       silc_free(ps->sc);
       ps->sc = NULL;
       silc_mutex_unlock(engine->lock);
+      ps->stream = NULL;
       silc_packet_stream_destroy(ps);
       return NULL;
     }
@@ -745,6 +748,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
       silc_free(ps->sc);
       ps->sc = NULL;
       silc_mutex_unlock(engine->lock);
+      ps->stream = NULL;
       silc_packet_stream_destroy(ps);
       return NULL;
     }
@@ -757,6 +761,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
       silc_free(ps->sc);
       ps->sc = NULL;
       silc_mutex_unlock(engine->lock);
+      ps->stream = NULL;
       silc_packet_stream_destroy(ps);
       return NULL;
     }
@@ -779,6 +784,7 @@ SilcPacketStream silc_packet_stream_create(SilcPacketEngine engine,
   if (!silc_stream_set_notifier(ps->stream, schedule,
 				silc_packet_stream_io, ps)) {
     SILC_LOG_DEBUG(("Cannot set stream notifier for packet stream"));
+    ps->stream = NULL;
     silc_packet_stream_destroy(ps);
     return NULL;
   }
