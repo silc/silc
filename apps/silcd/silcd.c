@@ -462,7 +462,7 @@ static DebugLevel debug_levels[] = {
   { 7, "silcd\\.c,server\\.c,command\\.c,server_backup\\.c,packet_send\\.c" },
 
   /* All basic stuff from silcd/ */
-  { 10, "silc_server_*,*silc_id_create_*" },
+  { 10, "silc_server_*,*silc_id_create_*,*idlist*" },
 
   /* All from silcd/ */
   { 15, "*silcd*,*serverid*,silc_server_*,*idlist*" },

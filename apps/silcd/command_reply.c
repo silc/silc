@@ -652,7 +652,8 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 	 to global list since server didn't have it in the lists so it must be
 	 global. */
       client = silc_idlist_add_client(server->global_list,
-				      nick[0] ? nick : NULL, info, NULL,
+				      nick[0] ? strdup(nick) : NULL, 
+				      info, NULL,
 				      silc_id_dup(&client_id, SILC_ID_CLIENT),
 				      silc_packet_get_context(cmd->sock),
 				      NULL);
