@@ -653,7 +653,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 	 global. */
       client = silc_idlist_add_client(server->global_list,
 				      nick[0] ? strdup(nick) : NULL, 
-				      info, NULL,
+				      info ? strdup(info) : NULL, NULL,
 				      silc_id_dup(&client_id, SILC_ID_CLIENT),
 				      silc_packet_get_context(cmd->sock),
 				      NULL);
