@@ -1870,7 +1870,7 @@ silc_server_config_find_client(SilcServer server, char *host)
     return NULL;
 
   for (client = config->clients; client; client = client->next) {
-    if (client->host && !silc_string_compare(client->host, host))
+    if (client->host && !silc_string_match(client->host, host))
       continue;
     break;
   }
@@ -1898,11 +1898,11 @@ silc_server_config_find_admin(SilcServer server, char *host, char *user,
     nick = "*";
 
   for (admin = config->admins; admin; admin = admin->next) {
-    if (admin->host && !silc_string_compare(admin->host, host))
+    if (admin->host && !silc_string_match(admin->host, host))
       continue;
-    if (admin->user && !silc_string_compare(admin->user, user))
+    if (admin->user && !silc_string_match(admin->user, user))
       continue;
-    if (admin->nick && !silc_string_compare(admin->nick, nick))
+    if (admin->nick && !silc_string_match(admin->nick, nick))
       continue;
     /* no checks failed -> this entry matches */
     break;
@@ -1925,7 +1925,7 @@ silc_server_config_find_denied(SilcServer server, char *host)
     return NULL;
 
   for (deny = config->denied; deny; deny = deny->next) {
-    if (deny->host && !silc_string_compare(deny->host, host))
+    if (deny->host && !silc_string_match(deny->host, host))
       continue;
     break;
   }
@@ -1950,7 +1950,7 @@ silc_server_config_find_server_conn(SilcServer server, char *host)
     return NULL;
 
   for (serv = config->servers; serv; serv = serv->next) {
-    if (!silc_string_compare(serv->host, host))
+    if (!silc_string_match(serv->host, host))
       continue;
     break;
   }
@@ -1974,7 +1974,7 @@ silc_server_config_find_router_conn(SilcServer server, char *host, int port)
     return NULL;
 
   for (serv = config->routers; serv; serv = serv->next) {
-    if (!silc_string_compare(serv->host, host))
+    if (!silc_string_match(serv->host, host))
       continue;
     if (port && serv->port && serv->port != port)
       continue;
@@ -2001,7 +2001,7 @@ silc_server_config_find_backup_conn(SilcServer server, char *host)
   for (serv = config->routers; serv; serv = serv->next) {
     if (!serv->backup_router)
       continue;
-    if (!silc_string_compare(serv->host, host))
+    if (!silc_string_match(serv->host, host))
       continue;
     break;
   }
