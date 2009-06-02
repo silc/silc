@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2008 Pekka Riikonen
+  Copyright (C) 1997 - 2009 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -339,7 +339,7 @@ SILC_TASK_CALLBACK(silc_server_command_pending_timeout)
   SilcBuffer tmpreply;
   int i;
 
-  SILC_LOG_DEBUG(("Timeout pending command"));
+  SILC_LOG_DEBUG(("Timeout pending command %p", reply));
 
   /* Allocate temporary and bogus command reply context */
   cmdr = silc_calloc(1, sizeof(*cmdr));

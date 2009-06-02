@@ -557,6 +557,28 @@ void silc_server_stderr(SilcLogType type, char *message)
   }
 }
 
+#ifdef SILC_DEBUG
+#define NUM_DEBUGS 3000
+static char debugs[NUM_DEBUGS][128];
+static int cur_debug = 0;
+
+SilcBool silc_server_debug_callback(char *file, char *function, int line,
+				    char *message, void *context)
+{
+  SilcTimeStruct curtime;
+
+  /* Save the message to ring buffer */
+  silc_time_value(0, &curtime);
+  silc_snprintf(debugs[cur_debug % NUM_DEBUGS], sizeof(debugs[0]),
+		"%02d:%02d:%02d %s:%d: %s", curtime.hour,
+		curtime.minute, curtime.second, function, line,
+		message);
+  cur_debug++;
+
+  return FALSE;
+}
+#endif /* SILC_DEBUG */
+
 int main(int argc, char **argv)
 {
   int ret, opt, option_index;
@@ -564,6 +586,10 @@ int main(int argc, char **argv)
   SilcBool opt_create_keypair = FALSE;
   char *silcd_config_file = NULL;
   struct sigaction sa;
+
+#ifdef SILC_DEBUG
+  silc_log_set_debug_callbacks(silc_server_debug_callback, NULL, NULL, NULL);
+#endif /* SILC_DEBUG */
 
   /* Parse command line arguments */
   if (argc > 1) {
