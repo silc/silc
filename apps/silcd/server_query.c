@@ -797,6 +797,7 @@ static void silc_server_query_skr_callback(SilcSKR skr,
   SilcSKRKey key;
 
   if (keys) {
+    SILC_LOG_DEBUG(("Found %d keys", silc_dlist_count(keys)));
     (*uc->clients) = silc_realloc((*uc->clients),
 				  sizeof((**uc->clients)) *
 				  ((*uc->clients_count) +

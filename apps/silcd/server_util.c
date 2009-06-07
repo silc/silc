@@ -1093,6 +1093,7 @@ static void find_callback(SilcSKR skr, SilcSKRFind find,
   SilcSKRKey key;
 
   if (keys) {
+    SILC_LOG_DEBUG(("Found %d keys", silc_dlist_count(keys)));
     silc_dlist_start(keys);
     key = silc_dlist_get(keys);
     *public_key = key->key;
