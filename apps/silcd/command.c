@@ -4068,14 +4068,27 @@ SILC_TASK_CALLBACK(silc_server_command_detach_cb)
   SilcClientID *client_id = (SilcClientID *)q->sock;
   SilcClientEntry client;
   SilcPacketStream sock;
+  SilcIDListData idata;
+
 
   client = silc_idlist_find_client_by_id(server->local_list, client_id,
 					 TRUE, NULL);
   if (client && client->connection) {
     sock = client->connection;
 
+    SILC_LOG_DEBUG(("Detaching client %s",
+		    silc_id_render(client->id, SILC_ID_CLIENT)));
+
     /* Stop rekey for the client. */
     silc_server_stop_rekey(server, client);
+
+    /* Abort any active protocol */
+    idata = silc_packet_get_context(sock);
+    if (idata && idata->sconn && idata->sconn->op) {
+      SILC_LOG_DEBUG(("Abort active protocol"));
+      silc_async_abort(idata->sconn->op, NULL, NULL);
+      idata->sconn->op = NULL;
+    }
 
     /* Close the connection on our side */
     client->router = NULL;
