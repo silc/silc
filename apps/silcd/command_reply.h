@@ -49,6 +49,7 @@ typedef struct {
   SilcServerCommandPendingCallbacks callbacks;
   SilcUInt32 callbacks_count;
   SilcUInt16 ident;
+  unsigned int pending : 1;
 } *SilcServerCommandReplyContext;
 
 /* Macros */

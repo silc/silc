@@ -603,7 +603,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
   char *name, *info;
   SilcClientID client_id;
   SilcServerID server_id;
-  SilcChannelID*channel_id;
+  SilcChannelID channel_id;
   SilcClientEntry client;
   SilcServerEntry server_entry;
   SilcChannelEntry channel;
@@ -652,7 +652,7 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
 	 to global list since server didn't have it in the lists so it must be
 	 global. */
       client = silc_idlist_add_client(server->global_list,
-				      nick[0] ? strdup(nick) : NULL, 
+				      nick[0] ? strdup(nick) : NULL,
 				      info ? strdup(info) : NULL, NULL,
 				      silc_id_dup(&client_id, SILC_ID_CLIENT),
 				      silc_packet_get_context(cmd->sock),
@@ -1287,7 +1287,7 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
     if (!channel) {
       SilcBuffer idp;
 
-      if (server->server_type != SILC_SERVER)
+      if (cmd->pending || server->server_type != SILC_SERVER)
 	goto out;
 
       idp = silc_id_payload_encode(SILC_ID_GET_ID(id), SILC_ID_CHANNEL);
@@ -1302,6 +1302,8 @@ SILC_SERVER_CMD_REPLY_FUNC(users)
       silc_server_command_pending(server, SILC_COMMAND_IDENTIFY,
 				  server->cmd_ident,
 				  silc_server_command_reply_users, cmd);
+
+      cmd->pending = TRUE;
       return;
     }
   }
