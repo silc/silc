@@ -43,6 +43,9 @@ case "$target" in
   *-*-netbsd*)
     check_threads=true
     ;;
+  *-*-openbsd*)
+    check_threads=true
+    ;;
   *-*-*bsd*)
     check_threads=false
     ;;
