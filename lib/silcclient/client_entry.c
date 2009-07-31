@@ -801,10 +801,10 @@ SilcClientEntry silc_client_add_client(SilcClient client,
 		      client_entry->server, sizeof(client_entry->server));
   if (nickname && client->internal->params->full_nicknames)
     silc_snprintf(client_entry->nickname, sizeof(client_entry->nickname),
-		  nickname);
+		  "%s", nickname);
   else if (nickname)
     silc_snprintf(client_entry->nickname, sizeof(client_entry->nickname),
-		  parsed);
+		  "%s", parsed);
 
   silc_parse_userfqdn(username, client_entry->username,
 		      sizeof(client_entry->username),
@@ -900,10 +900,10 @@ void silc_client_update_client(SilcClient client,
 			client_entry->server, sizeof(client_entry->server));
     if (client->internal->params->full_nicknames)
       silc_snprintf(client_entry->nickname, sizeof(client_entry->nickname),
-		    nickname);
+		    "%s", nickname);
     else
       silc_snprintf(client_entry->nickname, sizeof(client_entry->nickname),
-		    parsed);
+		    "%s", parsed);
 
     /* Normalize nickname */
     nick = silc_identifier_check(parsed, strlen(parsed),
@@ -1206,7 +1206,7 @@ SilcClientEntry silc_client_nickname_format(SilcClient client,
         return NULL;
 
       silc_snprintf(client_entry->nickname, sizeof(client_entry->nickname),
-		    cp);
+		    "%s", cp);
       silc_free(cp);
     }
 
