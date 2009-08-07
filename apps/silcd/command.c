@@ -2379,7 +2379,7 @@ SILC_SERVER_CMD_FUNC(join)
        channel will be global, based on our router name. */
     if (!serv[0] && !server->config->local_channels) {
       if (!server->standalone) {
-	silc_snprintf(serv, sizeof(serv), server->router->server_name);
+	silc_snprintf(serv, sizeof(serv), "%s", server->router->server_name);
       } else {
 	SilcServerConfigRouter *router;
 	router = silc_server_config_get_primary_router(server);
