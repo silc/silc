@@ -4065,48 +4065,44 @@ SILC_TASK_CALLBACK(silc_server_command_detach_cb)
 {
   SilcServer server = app_context;
   QuitInternal q = (QuitInternal)context;
-  SilcClientID *client_id = (SilcClientID *)q->sock;
-  SilcClientEntry client;
-  SilcPacketStream sock;
-  SilcIDListData idata;
+  SilcPacketStream sock = q->sock;
+  SilcClientEntry client = silc_packet_get_context(sock);
+  SilcIDListData idata = (SilcIDListData)client;
 
-
-  client = silc_idlist_find_client_by_id(server->local_list, client_id,
-					 TRUE, NULL);
-  if (client && client->connection) {
-    sock = client->connection;
-
-    SILC_LOG_DEBUG(("Detaching client %s",
-		    silc_id_render(client->id, SILC_ID_CLIENT)));
-
-    /* Stop rekey for the client. */
-    silc_server_stop_rekey(server, client);
-
-    /* Abort any active protocol */
-    idata = silc_packet_get_context(sock);
-    if (idata && idata->sconn && idata->sconn->op) {
-      SILC_LOG_DEBUG(("Abort active protocol"));
-      silc_async_abort(idata->sconn->op, NULL, NULL);
-      idata->sconn->op = NULL;
-    }
-
-    /* Close the connection on our side */
-    client->router = NULL;
-    client->connection = NULL;
-    silc_server_close_connection(server, sock);
-
-    /* Mark the client as locally detached. */
-    client->local_detached = TRUE;
-
-    /*
-     * Decrement the user count; we'll increment it if the user resumes on our
-     * server.
-     */
-    SILC_VERIFY(&server->stat.my_clients > 0);
-    server->stat.my_clients--;
+  if (!client) {
+    silc_packet_stream_unref(sock);
+    silc_free(q);
+    return;
   }
 
-  silc_free(client_id);
+  SILC_LOG_DEBUG(("Detaching client %s",
+		  silc_id_render(client->id, SILC_ID_CLIENT)));
+
+  /* Stop rekey for the client. */
+  silc_server_stop_rekey(server, client);
+
+  /* Abort any active protocol */
+  idata = silc_packet_get_context(sock);
+  if (idata && idata->sconn && idata->sconn->op) {
+    SILC_LOG_DEBUG(("Abort active protocol"));
+    silc_async_abort(idata->sconn->op, NULL, NULL);
+    idata->sconn->op = NULL;
+  }
+
+  /* Close the connection on our side */
+  client->router = NULL;
+  client->connection = NULL;
+  silc_server_close_connection(server, sock);
+
+  /* Mark the client as locally detached. */
+  client->local_detached = TRUE;
+
+  /* Decrement the user count; we'll increment it if the user resumes on our
+     server. */
+  SILC_VERIFY(&server->stat.my_clients > 0);
+  server->stat.my_clients--;
+
+  silc_packet_stream_unref(sock);
   silc_free(q);
 }
 
@@ -4173,14 +4169,15 @@ SILC_SERVER_CMD_FUNC(detach)
 				   SILC_NOTIFY_TYPE_UMODE_CHANGE);
 
   q = silc_calloc(1, sizeof(*q));
-  q->sock = silc_id_dup(client->id, SILC_ID_CLIENT);
+  q->sock = cmd->sock;
+  silc_packet_stream_ref(q->sock);
   silc_schedule_task_add_timeout(server->schedule,
 				 silc_server_command_detach_cb,
 				 q, 0, 200000);
 
   if (server->config->detach_timeout) {
     q = silc_calloc(1, sizeof(*q));
-    q->sock = silc_id_dup(client->id, SILC_ID_CLIENT);
+    q->sock = (void *)silc_id_dup(client->id, SILC_ID_CLIENT);
     silc_schedule_task_add_timeout(server->schedule,
 				   silc_server_command_detach_timeout,
 				   q, server->config->detach_timeout * 60, 0);

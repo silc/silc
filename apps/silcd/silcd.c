@@ -309,7 +309,6 @@ SILC_TASK_CALLBACK(dump_stats)
 
 #undef STAT_OUTPUT
 
-#ifdef SILC_DEBUG
   /* Dump internal flags */
   fprintf(fdd, "\nDumping internal flags\n");
   fprintf(fdd, "  server_type            : %d\n", silcd->server_type);
@@ -340,9 +339,9 @@ SILC_TASK_CALLBACK(dump_stats)
       if (!silc_socket_stream_get_info(silc_packet_stream_get_stream(s),
 				       &sock, &hostname, &ip, &port))
 	continue;
-      fprintf(fdd, "  %d: host %s ip %s port %d type %d\n",
+      fprintf(fdd, "  %d: host %s ip %s port %d type %d idata %p\n",
 	      sock, hostname ? hostname : "N/A",
-	      ip ? ip : "N/A", port, idata ? idata->conn_type : 0);
+	      ip ? ip : "N/A", port, idata ? idata->conn_type : 0, idata);
     }
     silc_dlist_uninit(conns);
   }
@@ -361,64 +360,69 @@ SILC_TASK_CALLBACK(dump_stats)
     if (silc_idcache_get_all(silcd->local_list->servers, &list)) {
       c = 1;
       fprintf(fdd, "\nServers in local-list:\n");
+      silc_list_start(list);
       while ((id_cache = silc_list_get(list))) {
 	  server_entry = (SilcServerEntry)id_cache->context;
-	  fprintf(fdd, "  %d: name %s id %s status 0x%x\n", c,
+	  fprintf(fdd, "  %d: name %s id %s status 0x%x idata %p\n", c,
 		  server_entry->server_name ? server_entry->server_name :
 		  "N/A", server_entry->id ?
 		  silc_id_render(server_entry->id, SILC_ID_SERVER) : "N/A",
-		  server_entry->data.status);
+		  server_entry->data.status, server_entry);
 	  c++;
       }
     }
     if (silc_idcache_get_all(silcd->global_list->servers, &list)) {
 	fprintf(fdd, "\nServers in global-list:\n");
 	c = 1;
+        silc_list_start(list);
         while ((id_cache = silc_list_get(list))) {
 	  server_entry = (SilcServerEntry)id_cache->context;
-	  fprintf(fdd, "  %d: name %s id %s status 0x%x\n", c,
+	  fprintf(fdd, "  %d: name %s id %s status 0x%x idata %p\n", c,
 		  server_entry->server_name ? server_entry->server_name :
 		  "N/A", server_entry->id ?
 		  silc_id_render(server_entry->id, SILC_ID_SERVER) : "N/A",
-		  server_entry->data.status);
+		  server_entry->data.status, server_entry);
 	  c++;
         }
     }
     if (silc_idcache_get_all(silcd->local_list->clients, &list)) {
 	fprintf(fdd, "\nClients in local-list:\n");
 	c = 1;
+        silc_list_start(list);
         while ((id_cache = silc_list_get(list))) {
 	  client_entry = (SilcClientEntry)id_cache->context;
 	  server_entry = client_entry->router;
-	  fprintf(fdd, "  %d: name %s id %s status 0x%x from %s\n", c,
+	  fprintf(fdd, "  %d: name %s id %s status 0x%x from %s idata %p\n", c,
 		  client_entry->nickname ? client_entry->nickname :
 		  (unsigned char *)"N/A", client_entry->id ?
 		  silc_id_render(client_entry->id, SILC_ID_CLIENT) : "N/A",
 		  client_entry->data.status, server_entry ?
 		  server_entry->server_name ? server_entry->server_name :
-		  "N/A" : "local");
+		  "N/A" : "local", client_entry);
 	  c++;
 	}
     }
     if (silc_idcache_get_all(silcd->global_list->clients, &list)) {
 	fprintf(fdd, "\nClients in global-list:\n");
 	c = 1;
+        silc_list_start(list);
         while ((id_cache = silc_list_get(list))) {
 	  client_entry = (SilcClientEntry)id_cache->context;
 	  server_entry = client_entry->router;
-	  fprintf(fdd, "  %d: name %s id %s status 0x%x from %s\n", c,
+	  fprintf(fdd, "  %d: name %s id %s status 0x%x from %s idata %p\n", c,
 		  client_entry->nickname ? client_entry->nickname :
 		  (unsigned char *)"N/A", client_entry->id ?
 		  silc_id_render(client_entry->id, SILC_ID_CLIENT) : "N/A",
 		  client_entry->data.status, server_entry ?
 		  server_entry->server_name ? server_entry->server_name :
-		  "N/A" : "local");
+		  "N/A" : "local", client_entry);
 	  c++;
 	}
     }
     if (silc_idcache_get_all(silcd->local_list->channels, &list)) {
 	fprintf(fdd, "\nChannels in local-list:\n");
 	c = 1;
+        silc_list_start(list);
         while ((id_cache = silc_list_get(list))) {
 	  channel_entry = (SilcChannelEntry)id_cache->context;
 	  fprintf(fdd, "  %d: name %s id %s\n", c,
@@ -431,6 +435,7 @@ SILC_TASK_CALLBACK(dump_stats)
     if (silc_idcache_get_all(silcd->global_list->channels, &list)) {
 	fprintf(fdd, "\nChannels in global-list:\n");
 	c = 1;
+        silc_list_start(list);
         while ((id_cache = silc_list_get(list))) {
 	  channel_entry = (SilcChannelEntry)id_cache->context;
 	  fprintf(fdd, "  %d: name %s id %s\n", c,
@@ -441,7 +446,6 @@ SILC_TASK_CALLBACK(dump_stats)
 	}
     }
   }
-#endif
 
   fflush(fdd);
   fclose(fdd);

@@ -196,25 +196,23 @@ static void silc_server_packet_eos(SilcPacketEngine engine,
 
   SILC_LOG_DEBUG(("End of stream received, sock %p", stream));
 
-  if (!idata)
-    return;
-
   if (server->router_conn && server->router_conn->sock == stream &&
       !server->router && server->standalone) {
-    if (idata->sconn && idata->sconn->callback)
+    if (idata && idata->sconn && idata->sconn->callback)
       (*idata->sconn->callback)(server, NULL, idata->sconn->callback_context);
     silc_server_create_connections(server);
     silc_server_free_sock_user_data(server, stream, NULL);
   } else {
     /* If backup disconnected then mark that resuming will not be allowed */
-     if (server->server_type == SILC_ROUTER && !server->backup_router &&
+     if (idata &&
+	 server->server_type == SILC_ROUTER && !server->backup_router &&
          idata->conn_type == SILC_CONN_SERVER) {
       SilcServerEntry server_entry = (SilcServerEntry)idata;
       if (server_entry->server_type == SILC_BACKUP_ROUTER)
         server->backup_closed = TRUE;
     }
 
-    if (idata->sconn && idata->sconn->callback)
+    if (idata && idata->sconn && idata->sconn->callback)
       (*idata->sconn->callback)(server, NULL, idata->sconn->callback_context);
     silc_server_free_sock_user_data(server, stream, NULL);
   }
@@ -241,8 +239,8 @@ SILC_TASK_CALLBACK(silc_server_packet_error_timeout)
     silc_server_free_sock_user_data(server, stream, NULL);
   } else {
     /* If backup disconnected then mark that resuming will not be allowed */
-     if (server->server_type == SILC_ROUTER && !server->backup_router &&
-         idata->conn_type == SILC_CONN_SERVER) {
+    if (server->server_type == SILC_ROUTER && !server->backup_router &&
+        idata->conn_type == SILC_CONN_SERVER) {
       SilcServerEntry server_entry = (SilcServerEntry)idata;
       if (server_entry->server_type == SILC_BACKUP_ROUTER)
         server->backup_closed = TRUE;
