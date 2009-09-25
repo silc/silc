@@ -115,6 +115,7 @@ SILC_TASK_CALLBACK(silc_net_accept)
 
   /* Set socket options */
   silc_net_set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
+  silc_net_set_socket_opt(sock, SOL_SOCKET, SO_KEEPALIVE, 1);
 
   /* Create socket stream */
   silc_socket_tcp_stream_create(sock, listener->lookup,
