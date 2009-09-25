@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2009 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -438,6 +438,10 @@ void silc_packet_engine_free_streams_list(SilcDList streams);
  *    Usually the `stream' would be a socket stream, but it can be any
  *    stream.  After this function returns, packets can immediately be
  *    sent to and received from the stream.
+ *
+ *    The `stream' will be owned by the packet stream and will be closed
+ *    and destroyed when the packet stream is destroyed.  If the packet
+ *    stream creation fails the `stream' is left intact.
  *
  * NOTES
  *

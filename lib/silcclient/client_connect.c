@@ -262,6 +262,9 @@ static void silc_client_rekey_completion(SilcSKE ske,
     silc_ske_free(conn->internal->ske);
     conn->internal->ske = NULL;
     silc_fsm_finish(fsm);
+
+    /* Close connection */
+    silc_client_close_connection(client, conn);
     return;
   }
 
