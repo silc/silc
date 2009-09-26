@@ -210,6 +210,7 @@ do {						\
    ctype == SILC_CONN_ROUTER ? "Router" : "Unknown")
 
 /* Prototypes */
+SILC_TASK_CALLBACK(silc_server_do_heartbeat);
 SILC_TASK_CALLBACK(silc_server_rekey_final);
 SILC_TASK_CALLBACK(silc_server_rekey_callback);
 SILC_TASK_CALLBACK(silc_server_connect_to_router);

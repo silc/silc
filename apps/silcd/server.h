@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2009 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -189,8 +189,6 @@ SilcBool silc_server_create_channel_key(SilcServer server,
 SilcChannelEntry silc_server_save_channel_key(SilcServer server,
 					      SilcBuffer key_payload,
 					      SilcChannelEntry channel);
-void silc_server_perform_heartbeat(SilcPacketStream sock,
-				   void *hb_context);
 void silc_server_announce_get_channel_topic(SilcServer server,
 					    SilcChannelEntry channel,
 					    SilcBuffer *topic);

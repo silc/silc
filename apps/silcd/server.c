@@ -531,7 +531,7 @@ static void silc_server_packet_parse_type(SilcServer server,
 
   case SILC_PACKET_KEY_AGREEMENT:
     /*
-     * Received heartbeat.
+     * Received key agreement.
      */
     if (packet->flags & SILC_PACKET_FLAG_LIST)
       break;
@@ -2649,6 +2649,14 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 			       param->qos_rate_limit, param->qos_bytes_limit,
 			       param->qos_limit_sec, param->qos_limit_usec);
 
+  /* Perform heartbeat */
+  if (param->keepalive_secs) {
+    SILC_LOG_DEBUG(("Perform heartbeat every %d seconds",
+		    param->keepalive_secs));
+    silc_schedule_task_add_timeout(server->schedule, silc_server_do_heartbeat,
+				   sock, param->keepalive_secs, 0);
+  }
+
   silc_server_config_unref(&entry->cconfig);
   silc_server_config_unref(&entry->sconfig);
   silc_server_config_unref(&entry->rconfig);
@@ -2891,6 +2899,15 @@ static void silc_server_accept_new_connection(SilcNetStatus status,
   params.version = silc_version_string;
   params.timeout_secs = server->config->key_exchange_timeout;
   entry->op = silc_ske_responder(ske, packet_stream, &params);
+}
+
+/* Perform heartbeat */
+
+SILC_TASK_CALLBACK(silc_server_do_heartbeat)
+{
+  SilcServer server = app_context;
+  SilcPacketStream sock = context;
+  silc_server_send_heartbeat(server, sock);
 }
 
 
@@ -3232,6 +3249,8 @@ void silc_server_free_sock_user_data(SilcServer server,
     return;
 
   silc_schedule_task_del_by_all(server->schedule, 0, silc_server_do_rekey,
+				sock);
+  silc_schedule_task_del_by_all(server->schedule, 0, silc_server_do_heartbeat,
 				sock);
 
   /* Cancel active protocols */

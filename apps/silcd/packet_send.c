@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2009 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -1570,6 +1570,15 @@ void silc_server_send_dest_command_reply(SilcServer server,
 				 silc_buffer_len(packet));
   silc_buffer_free(packet);
   va_end(ap);
+}
+
+/* Send the heartbeat packet. */
+
+void silc_server_send_heartbeat(SilcServer server,
+				SilcPacketStream sock)
+{
+  silc_server_packet_send(server, sock, SILC_PACKET_HEARTBEAT, 0,
+			  NULL, 0);
 }
 
 /* Routine used to send the connection authentication packet. */

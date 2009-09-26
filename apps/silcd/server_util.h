@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2005, 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2009 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -142,6 +142,10 @@ SilcBool silc_server_check_umode_rights(SilcServer server,
 				    SilcClientEntry client,
 				    SilcUInt32 mode);
 
+/* Send the heartbeat packet. */
+void silc_server_send_heartbeat(SilcServer server,
+				SilcPacketStream sock);
+
 /* This function is used to send the notify packets and motd to the
    incoming client connection. */
 void silc_server_send_connect_notifys(SilcServer server,
@@ -224,9 +228,9 @@ SilcStatus silc_server_set_channel_pk_list(SilcServer server,
 /* Verifies the Authentication Payload `auth' with one of the public keys
    on the `channel' public key list. */
 SilcBool silc_server_verify_channel_auth(SilcServer server,
-				     SilcChannelEntry channel,
-				     SilcClientID *client_id,
-				     const unsigned char *auth,
-				     SilcUInt32 auth_len);
+					 SilcChannelEntry channel,
+					 SilcClientID *client_id,
+					 const unsigned char *auth,
+					 SilcUInt32 auth_len);
 
 #endif /* SERVER_UTIL_H */

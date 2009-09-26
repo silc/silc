@@ -16,7 +16,6 @@
   GNU General Public License for more details.
 
 */
-/* $Id$ */
 
 #include "serverincludes.h"
 #include "server_internal.h"
@@ -4088,6 +4087,9 @@ SILC_TASK_CALLBACK(silc_server_command_detach_cb)
     silc_async_abort(idata->sconn->op, NULL, NULL);
     idata->sconn->op = NULL;
   }
+
+  silc_schedule_task_del_by_all(server->schedule, 0, silc_server_do_heartbeat,
+				sock);
 
   /* Close the connection on our side */
   client->router = NULL;
