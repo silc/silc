@@ -3128,6 +3128,11 @@ void silc_server_disconnect_remote(SilcServer server,
   if (!sock)
     return;
 
+  silc_schedule_task_del_by_all(server->schedule, 0, silc_server_do_rekey,
+				sock);
+  silc_schedule_task_del_by_all(server->schedule, 0, silc_server_do_heartbeat,
+				sock);
+
   SILC_LOG_DEBUG(("Disconnecting remote host, sock %p, status %d", sock,
 		  status));
 
