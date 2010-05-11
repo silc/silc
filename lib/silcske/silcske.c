@@ -2387,6 +2387,8 @@ SILC_FSM_STATE(silc_ske_st_responder_failure)
     ske->packet = NULL;
   }
   ske->status = error;
+  if (ske->status == SILC_SKE_STATUS_OK)
+    ske->status = SILC_SKE_STATUS_ERROR;
 
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
