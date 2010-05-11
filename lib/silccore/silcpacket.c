@@ -2231,8 +2231,9 @@ static void silc_packet_read_process(SilcPacketStream stream)
 
     /* Padding sanity checks */
     if (cipher && silc_cipher_get_mode(cipher) != SILC_CIPHER_MODE_CTR &&
-	((normal && paddedlen % block_len != 0) ||
-	 (!normal && silc_packet_special_len(header) % block_len != 0))) {
+	((normal && block_len && paddedlen % block_len != 0) ||
+	 (!normal && block_len &&
+          silc_packet_special_len(header) % block_len != 0))) {
       SILC_LOG_DEBUG(("Packet length %d not multiple by cipher block length",
 		      paddedlen));
       silc_mutex_unlock(stream->lock);
