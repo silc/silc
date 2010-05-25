@@ -262,10 +262,11 @@ int verify_message_signature(SilcClientEntry sender,
 				      sizeof(sender->fingerprint));
       if (strcmp(fingerprint, fingerprint2)) {
         /* since the public key differs from the senders public key, the
-           verification _failed_ */
+           verification won't be done */
         silc_pkcs_public_key_free(pk);
         silc_free(fingerprint);
-        ret = SILC_MSG_SIGNED_UNKNOWN;
+        silc_free(fingerprint2);
+	return SILC_MSG_SIGNED_UNKNOWN;
       }
       silc_free(fingerprint2);
     }
