@@ -39,6 +39,9 @@ included within this package.
 you may want to use libiconv instead.  The DIR is the upper path in your
 system which contains lib/ and include/ for libiconv (e.g. /usr/local).
 
+  You may need to use this also if your system has many versions of iconv
+library in different locations.
+
 `--without-pthreads'
 
    If you do not want to compile the programs with POSIX multi-threads

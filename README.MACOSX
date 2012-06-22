@@ -1,29 +1,10 @@
-Compiling SILC Toolkit on MAC OS X
-==================================
+Compiling SILC on Mac OS X
+==========================
 
-SILC Toolkit works on MAC OS X as well, as that is Unix based operating 
-system.  Some compilation issues however must be taken into consideration.
+SILC works on Mac OS X, as that is Unix based operating system.  The following
+tools and utilities must be installed before compiling:
 
-To compile the Toolkit on MAC OS X give the following commands:
+	- Apple Xcode with command line tools
+	- NASM >= 2.x
 
-	setenv CFLAGS -no-cpp-precomp
-	./configure powerpc
-
-If you want to compile debug version give also the --enable-debug option
-to the ./configure.  After configuration the source tree is ready for
-compilation which you can simply start by giving the command:
-
-	make
-
-This will compile the libraries and applications.  If you do not want to 
-compile the applications, before giving make command go to the lib/ 
-directory, and give make there:
-
-	cd lib
-	make
-
-This will compile only the libraries, and nothing else.
-
-To install the compiled Toolkit into your system give the command:
-
-	make install
+Read INSTALL file for installation instructions.

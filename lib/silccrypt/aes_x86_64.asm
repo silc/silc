@@ -673,6 +673,7 @@
 %ifdef ENCRYPTION
 
     global  aes_encrypt
+    global  _aes_encrypt
 %ifdef DLL_EXPORT
     export  aes_encrypt
 %endif
@@ -688,6 +689,7 @@ enc_tab:
     section .text align=16
     align   16
 aes_encrypt:
+_aes_encrypt:
 
 %ifndef WIN32
     sub     rsp, 4*8        ; gnu/linux binary interface
@@ -705,7 +707,7 @@ aes_encrypt:
     mov     [rsp+3*8], r12  ; context in r8
 
     movzx   esi, byte [kptr+4*KS_LENGTH]
-    lea     tptr,[enc_tab wrt rip]
+    lea     tptr,[rel enc_tab]
     sub     kptr, fofs
 
     mov     eax, [rdi+0*4]
@@ -767,6 +769,7 @@ aes_encrypt:
 %ifdef DECRYPTION
 
     global  aes_decrypt
+    global  _aes_decrypt
 %ifdef DLL_EXPORT
     export  aes_decrypt
 %endif
@@ -782,6 +785,7 @@ dec_tab:
     section .text align=16
     align   16
 aes_decrypt:
+_aes_decrypt:
 
 %ifndef WIN32
     sub     rsp, 4*8        ; gnu/linux binary interface
@@ -799,7 +803,7 @@ aes_decrypt:
     mov     [rsp+3*8], r12  ; context in r8
 
     movzx   esi,byte[kptr+4*KS_LENGTH]
-    lea     tptr,[dec_tab wrt rip]
+    lea     tptr,[rel dec_tab]
     sub     kptr, rofs
 
     mov     eax, [rdi+0*4]

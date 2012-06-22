@@ -115,7 +115,7 @@ AC_C_BIGENDIAN
 # Check for epoll_wait and verify that epoll_create works
 AC_CHECK_FUNC(epoll_wait,
   [
-    AC_RUN_IFELSE(
+    AC_RUN_IFELSE([AC_LANG_SOURCE(
       [
         #include <sys/epoll.h>
         int main()
@@ -126,7 +126,7 @@ AC_CHECK_FUNC(epoll_wait,
           close(ret);
           return 0;
         }
-      ],
+      ])],
       [
         AC_DEFINE([HAVE_EPOLL_WAIT], [1], [HAVE_EPOLL_WAIT])
       ],
@@ -152,7 +152,6 @@ AC_DEFINE_UNQUOTED([SILC_MODULESDIR], "$MODULESDIR", [SILC_MODULESDIR])
 #endif SILC_DIST_SIM
 AC_SUBST(MODULESDIR)
 
-#ifdef SILC_DIST_TOOLKIT
 # Stack trace checking
 #
 AC_MSG_CHECKING(whether to enable stack tracing)
@@ -173,7 +172,6 @@ AC_ARG_ENABLE(stack-trace,
   ],
     AC_MSG_RESULT(no)
   )
-#endif SILC_DIST_TOOLKIT
 
 #ifdef SILC_DIST_INPLACE
 #

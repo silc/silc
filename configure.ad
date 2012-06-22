@@ -49,6 +49,9 @@ case "$target" in
   *-*-*bsd*)
     check_threads=false
     ;;
+  *-*-*darwin*)
+    check_threads=true
+    ;;
   *)
     check_threads=true
     ;;
@@ -364,11 +367,22 @@ have_assembler=false
 if test x$want_asm = xtrue; then
   AC_PATH_PROG([NASM], [nasm], [no])
   if test "x$NASM" != "xno"; then
-    if test x$cpu_x86_64 = xtrue; then
-      SILC_ASSEMBLER="$NASM -O2 -felf64"
-    else
-      SILC_ASSEMBLER="$NASM -O2 -felf"
-    fi
+    case "$target" in
+      *-*-*darwin*)
+        if test x$cpu_x86_64 = xtrue; then
+          SILC_ASSEMBLER="$NASM -O2 -fmacho64"
+        else
+          SILC_ASSEMBLER="$NASM -O2 -fmacho"
+        fi
+        ;;
+      *)
+        if test x$cpu_x86_64 = xtrue; then
+          SILC_ASSEMBLER="$NASM -O2 -felf64"
+        else
+          SILC_ASSEMBLER="$NASM -O2 -felf"
+        fi
+        ;;
+    esac
     have_assembler=true
   fi
 
@@ -459,7 +473,7 @@ if test x$va_copy = xfalse; then
 fi
 
 if test x$va_copy = xfalse; then
-  AC_RUN_IFELSE(
+  AC_RUN_IFELSE([AC_LANG_SOURCE(
     [
       #include <stdarg.h>
       #include <stdlib.h>
@@ -478,7 +492,7 @@ if test x$va_copy = xfalse; then
       {
         return t(0, 0xff11);
       }
-    ],
+    ])],
     [va_copy=false],
     [
       AC_DEFINE([SILC_VA_COPY_ARRAY], [], [SILC_VA_COPY_ARRAY])
@@ -909,7 +923,8 @@ AC_ARG_WITH(iconv,
     AC_MSG_RESULT(no)
     AC_CHECK_HEADERS(iconv.h,
       [
-        AC_CHECK_FUNCS(iconv,
+	# Default check for iconv in C-library
+        AC_CHECK_FUNCS(iconv iconv_open iconv_close,
           [
             has_iconv=true
             check_iconv=false
@@ -918,6 +933,7 @@ AC_ARG_WITH(iconv,
   ])
 
 if test x$check_iconv = xtrue; then
+  # Check for iconv in libiconv installed under /usr
   AC_MSG_RESULT(Searching for iconv...)
 
   # XXX
@@ -926,6 +942,10 @@ if test x$check_iconv = xtrue; then
   AC_CHECK_HEADERS(iconv.h,
     [
       LIBS="$LIBS -liconv"
+      LDFLAGS="$LDFLAGS -L/usr/lib"
+      CFLAGS="$CFLAGS -I/usr/include"
+      CPPLAGS="$CPPFLAGS -I/usr/include"
+
       AC_MSG_CHECKING(for iconv in -liconv)
       AC_TRY_LINK(
         [
@@ -954,13 +974,13 @@ if test x$check_iconv = xtrue; then
 fi
 
 if test x$check_iconv = xtrue; then
-  # search for iconv library..
+  # Search for iconv library somewhere else...
   SAVE_LIBS="$LIBS"
   SAVE_CFLAGS="$CFLAGS"
   SAVE_LDFLAGS="$LDFLAGS"
   SAVE_CPPFLAGS="$CPPFLAGS"
 
-  for dir in `echo "/usr/local /usr/pkg /usr/contrib"`; do
+  for dir in `echo "/usr/local /usr/pkg /usr/contrib /opt/local"`; do
     if test x$has_iconv = xfalse; then
       AC_MSG_RESULT(searching in $dir...)
 
@@ -1178,7 +1198,7 @@ if test x$has_threads = xtrue; then
   # Check for read/write locks
   AC_CHECK_FUNC(pthread_rwlock_init,
   [
-    AC_RUN_IFELSE(
+    AC_RUN_IFELSE([AC_LANG_SOURCE(
       [
         #include <pthread.h>
         int main()
@@ -1188,7 +1208,7 @@ if test x$has_threads = xtrue; then
           pthread_rwlock_destroy(&rwlock);
           return 0;
         }
-      ],
+      ])],
       [],
       [
 	# Rwlock not defined
@@ -1210,7 +1230,7 @@ fi
 # Check for timezone and tm_gmtoff for timezone information
 #
 AC_MSG_CHECKING(whether system has timezone)
-AC_RUN_IFELSE(
+AC_RUN_IFELSE([AC_LANG_SOURCE(
   [
     #include <stdio.h>
     #include <time.h>
@@ -1219,14 +1239,14 @@ AC_RUN_IFELSE(
       timezone = 0;
       return 0;
     }
-  ],
+  ])],
   [ AC_MSG_RESULT(yes)
     AC_DEFINE([HAVE_TIMEZONE], [], [HAVE_TIMEZONE]) ],
   [ AC_MSG_RESULT(no) ],
   [ AC_MSG_RESULT(no) ]
 )
 AC_MSG_CHECKING(whether system has tm_gmtoff)
-AC_RUN_IFELSE(
+AC_RUN_IFELSE([AC_LANG_SOURCE(
   [
     #include <stdio.h>
     #include <time.h>
@@ -1236,14 +1256,14 @@ AC_RUN_IFELSE(
       tm.tm_gmtoff = 0;
       return 0;
     }
-  ],
+  ])],
   [ AC_MSG_RESULT(yes)
     AC_DEFINE([HAVE_TM_GMTOFF], [], [HAVE_TM_GMTOFF]) ],
   [ AC_MSG_RESULT(no) ],
   [ AC_MSG_RESULT(no) ]
 )
 AC_MSG_CHECKING(whether system has __tm_gmtoff)
-AC_RUN_IFELSE(
+AC_RUN_IFELSE([AC_LANG_SOURCE(
   [
     #include <stdio.h>
     #include <time.h>
@@ -1253,14 +1273,14 @@ AC_RUN_IFELSE(
       tm.__tm_gmtoff = 0;
       return 0;
     }
-  ],
+  ])],
   [ AC_MSG_RESULT(yes)
     AC_DEFINE([HAVE___TM_GMTOFF], [], [HAVE___TM_GMTOFF]) ],
   [ AC_MSG_RESULT(no) ],
   [ AC_MSG_RESULT(no) ]
 )
 AC_MSG_CHECKING(whether system has __tm_gmtoff__)
-AC_RUN_IFELSE(
+AC_RUN_IFELSE([AC_LANG_SOURCE(
   [
     #include <stdio.h>
     #include <time.h>
@@ -1270,7 +1290,7 @@ AC_RUN_IFELSE(
       tm.__tm_gmtoff__ = 0;
       return 0;
     }
-  ],
+  ])],
   [ AC_MSG_RESULT(yes)
     AC_DEFINE([HAVE___TM_GMTOFF__], [], [HAVE___TM_GMTOFF__]) ],
   [ AC_MSG_RESULT(no) ],
