@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2006 - 2007 Pekka Riikonen
+  Copyright (C) 2006 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -509,12 +509,6 @@ SILC_FSM_STATE(silc_client_st_connect_key_exchange)
   else
     /** Run key exchange (TCP) */
     silc_fsm_next(fsm, silc_client_st_connect_auth_resolve);
-
-  /* Old server version requires empty Client ID in packets.  Remove this
-     backwards support somepoint after 1.1 server is released. */
-  memset(&cid, 0, sizeof(cid));
-  cid.ip.data_len = 4;
-  silc_packet_set_ids(conn->stream, SILC_ID_CLIENT, &cid, 0, NULL);
 
   SILC_FSM_CALL(conn->internal->op = silc_ske_initiator(conn->internal->ske,
 							conn->stream,
