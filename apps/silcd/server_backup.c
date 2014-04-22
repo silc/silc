@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2007 Pekka Riikonen
+  Copyright (C) 2001 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -219,13 +219,19 @@ void silc_server_backup_replaced_add(SilcServer server,
   int i;
   SilcServerBackupReplaced *r = silc_calloc(1, sizeof(*r));;
 
+  if (!r)
+    return;
   if (!server->backup)
     server->backup = silc_calloc(1, sizeof(*server->backup));
+  if (!server->backup)
+    return;
   if (!server->backup->replaced) {
     server->backup->replaced =
       silc_calloc(1, sizeof(*server->backup->replaced));
     server->backup->replaced_count = 1;
   }
+  if (!server->backup->replaced)
+    return;
 
   SILC_LOG_DEBUG(("Replacing router %s with %s",
 		  silc_id_render(server_id, SILC_ID_SERVER),
@@ -354,7 +360,6 @@ void silc_server_backup_send(SilcServer server,
 			     SilcBool local)
 {
   SilcServerEntry backup;
-  SilcPacketStream sock;
   int i;
 
   if (!server->backup || server->server_type != SILC_ROUTER)
@@ -368,8 +373,6 @@ void silc_server_backup_send(SilcServer server,
       continue;
     if (server->backup->servers[i].server == server->id_entry)
       continue;
-
-    sock = backup->connection;
 
     silc_server_packet_send(server, backup->connection, type, flags,
 			    data, data_len);
@@ -393,7 +396,6 @@ void silc_server_backup_send_dest(SilcServer server,
 				  SilcBool local)
 {
   SilcServerEntry backup;
-  SilcPacketStream sock;
   int i;
 
   if (!server->backup || server->server_type != SILC_ROUTER)
@@ -407,8 +409,6 @@ void silc_server_backup_send_dest(SilcServer server,
       continue;
     if (server->backup->servers[i].server == server->id_entry)
       continue;
-
-    sock = backup->connection;
 
     silc_server_packet_send_dest(server, backup->connection, type, flags,
 				 dst_id, dst_id_type, data, data_len);
@@ -637,6 +637,11 @@ void silc_server_backup_resume_router(SilcServer server,
 
     /* Reprocess this packet after received reply from router */
     pc = silc_calloc(1, sizeof(*pc));
+    if (!pc) {
+      silc_server_backup_send_start_use(server, sock, FALSE);
+      silc_packet_free(packet);
+      return;
+    }
     pc->server = server;
     pc->sock = sock;
     pc->packet = packet;
@@ -652,12 +657,12 @@ void silc_server_backup_resume_router(SilcServer server,
     /* We have received a start for resuming protocol.  We are either
        primary router that came back online or normal server. */
     SilcServerBackupProtocolContext proto_ctx;
+    unsigned char data[4];
 
     /* If backup had closed the connection earlier we won't allow resuming
        since we (primary router) have never gone away. */
     if (server->server_type == SILC_ROUTER && !server->backup_router &&
 	server->backup_closed) {
-      unsigned char data[4];
       SILC_LOG_DEBUG(("Backup resuming not allowed since we are still "
 		      "primary router"));
       SILC_LOG_INFO(("Backup resuming not allowed since we are still "
@@ -671,6 +676,14 @@ void silc_server_backup_resume_router(SilcServer server,
     }
 
     proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
+    if (!proto_ctx) {
+      SILC_PUT32_MSB(SILC_SERVER_BACKUP_START, data);
+      silc_server_packet_send(server, sock, SILC_PACKET_FAILURE, 0,
+			      data, 4);
+      server->backup_closed = FALSE;
+      silc_packet_free(packet);
+      return;
+    }
     proto_ctx->server = server;
     proto_ctx->sock = sock;
     proto_ctx->responder = TRUE;
@@ -824,6 +837,8 @@ void silc_server_backup_connected(SilcServer server,
 
   sock = server_entry->connection;
   proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
+  if (!proto_ctx)
+    return;
   proto_ctx->server = server;
   proto_ctx->sock = sock;
   proto_ctx->responder = FALSE;
@@ -1367,6 +1382,8 @@ SILC_TASK_CALLBACK(silc_server_protocol_backup_done)
 
 	    /* Restart the protocol. */
 	    proto_ctx = silc_calloc(1, sizeof(*proto_ctx));
+	    if (!proto_ctx)
+	      continue;
 	    proto_ctx->server = server;
 	    proto_ctx->sock = sock;
 	    proto_ctx->responder = FALSE;

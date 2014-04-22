@@ -386,9 +386,12 @@ silc_server_command_reply_whois_save_client(SilcServerCommandReplyContext cmd)
   SilcUInt32 len;
   SilcClientEntry client = silc_packet_get_context(cmd->sock);
 
+  if (!client)
+    return FALSE;
+
   /* Take Requested Attributes if set. */
   tmp = silc_argument_get_arg_type(cmd->args, 11, &len);
-  if (tmp && client) {
+  if (tmp) {
     silc_free(client->attrs);
     client->attrs = silc_memdup(tmp, len);
     client->attrs_len = len;
@@ -618,6 +621,8 @@ silc_server_command_reply_identify_save(SilcServerCommandReplyContext cmd)
   idp = silc_id_payload_parse(id_data, id_len);
   if (!idp)
     return FALSE;
+
+  memset(nick, 0, sizeof(nick));
 
   name = silc_argument_get_arg_type(cmd->args, 3, &len);
   info = silc_argument_get_arg_type(cmd->args, 4, &len);
@@ -1443,7 +1448,6 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
   SilcIDCacheEntry cache;
   unsigned char *tmp, *name, *namec = NULL, *topic;
   SilcUInt32 usercount = 0;
-  SilcBool global_list = FALSE;
 
   COMMAND_CHECK_STATUS;
 
@@ -1464,11 +1468,9 @@ SILC_SERVER_CMD_REPLY_FUNC(list)
   /* Add the channel entry if we do not have it already */
   channel = silc_idlist_find_channel_by_name(server->local_list,
 					     namec, &cache);
-  if (!channel) {
+  if (!channel)
     channel = silc_idlist_find_channel_by_name(server->global_list,
 					       namec, &cache);
-    global_list = TRUE;
-  }
   if (!channel) {
     /* If router did not find such channel in its lists then this must
        be bogus channel or some router in the net is buggy. */

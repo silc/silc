@@ -301,7 +301,8 @@ char *silc_cipher_get_supported(void)
   }
 #endif /* SILC_SYMBIAN */
 
-  list[len - 1] = 0;
+  if (list)
+    list[len - 1] = 0;
 
   return list;
 }

@@ -475,7 +475,7 @@ u4byte *twofish_set_key(TwofishContext *ctx,
     }
 #endif
 
-    ctx->k_len = ctx->k_len = key_len / 64;   /* 2, 3 or 4 */
+    ctx->k_len = key_len / 64;   /* 2, 3 or 4 */
 
     for(i = 0; i < ctx->k_len; ++i)
     {

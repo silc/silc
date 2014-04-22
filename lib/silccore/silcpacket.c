@@ -1803,7 +1803,7 @@ SilcBool silc_packet_send_va_ext(SilcPacketStream stream,
   silc_buffer_purge(&buf);
   va_end(va);
 
-  return TRUE;
+  return ret;
 }
 
 /***************************** Packet Receiving *****************************/

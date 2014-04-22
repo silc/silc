@@ -170,6 +170,8 @@ static void sig_silc_channel_joined(SILC_CHANNEL_REC *channel)
     return;
   if (channel->server && channel->server->disconnected)
     return;
+  if (!channel->server)
+    return;
   if (channel->session_rejoin)
     return;
   

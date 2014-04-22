@@ -1491,7 +1491,7 @@ SILC_FSM_STATE(silc_client_notify_error)
 
   /* Get error */
   tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
-  if (!tmp && tmp_len != 1)
+  if (!tmp || tmp_len != 1)
     goto out;
   error = (SilcStatus)tmp[0];
 

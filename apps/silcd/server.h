@@ -161,7 +161,7 @@ void silc_server_remove_from_channels(SilcServer server,
 				      SilcClientEntry client,
 				      SilcBool notify,
 				      const char *signoff_message,
-				      SilcBool keygen, bool killed);
+				      SilcBool keygen, SilcBool killed);
 SilcBool silc_server_remove_from_one_channel(SilcServer server,
 					 SilcPacketStream sock,
 					 SilcChannelEntry channel,

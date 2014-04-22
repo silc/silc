@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2002 - 2007 Pekka Riikonen
+  Copyright (C) 2002 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,9 +48,12 @@ silc_attribute_payload_encode_int(SilcAttribute attribute,
   unsigned char tmp[4], *str = NULL, *ret;
   SilcUInt32 len;
 
+  if (ret_len)
+    *ret_len = 0;
+
   /* Encode according to attribute type */
   if (flags & SILC_ATTRIBUTE_FLAG_VALID) {
-    if (!object && !object_size)
+    if (!object || !object_size)
       return NULL;
 
     switch (attribute) {
@@ -289,11 +292,11 @@ SilcAttributePayload silc_attribute_payload_alloc(SilcAttribute attribute,
   attr->data =
     silc_attribute_payload_encode_int(attribute, flags, object,
 				      object_size, &tmp_len);
-  attr->data_len = (SilcUInt16)tmp_len;
   if (!attr->data) {
     silc_free(attr);
     return NULL;
   }
+  attr->data_len = (SilcUInt16)tmp_len;
 
   return attr;
 }

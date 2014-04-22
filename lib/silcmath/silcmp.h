@@ -85,7 +85,7 @@ SilcBool silc_mp_sinit(SilcStack stack, SilcMPInt *mp);
  *
  * DESCRIPTION
  *
- *    Uninitializes the MP Integer.
+ *    Uninitializes the MP Integer.  The pointer may be NULL.
  *
  ***/
 void silc_mp_uninit(SilcMPInt *mp);

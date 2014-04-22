@@ -946,7 +946,7 @@ void silc_notify(SilcClient client, SilcClientConnection conn,
 	tmp = cp;
       }
 
-      chanrec->topic = *tmp == '\0' ? NULL : g_strdup(tmp);
+      chanrec->topic = (tmp && *tmp == '\0' ? NULL : g_strdup(tmp));
       signal_emit("channel topic changed", 1, chanrec);
 
       silc_free(dm);

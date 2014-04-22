@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2008 Pekka Riikonen
+  Copyright (C) 1997 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -771,7 +771,7 @@ silc_client_connect_to_server(SilcClient client,
 
   SILC_LOG_DEBUG(("Connecting to server"));
 
-  if (!client || !remote_host)
+  if (!client || !remote_host || !callback)
     return NULL;
 
   if (client->internal->run_callback) {
@@ -814,7 +814,7 @@ silc_client_connect_to_client(SilcClient client,
 
   SILC_LOG_DEBUG(("Connecting to client"));
 
-  if (!client || !remote_host)
+  if (!client || !remote_host || !callback)
     return NULL;
 
   if (client->internal->run_callback) {
@@ -859,7 +859,7 @@ silc_client_key_exchange(SilcClient client,
 
   SILC_LOG_DEBUG(("Performing key exchange"));
 
-  if (!client || !stream)
+  if (!client || !stream || !callback)
     return NULL;
 
   if (client->internal->run_callback) {

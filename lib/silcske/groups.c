@@ -169,7 +169,8 @@ char *silc_ske_get_supported_groups()
     len++;
   }
 
-  list[len - 1] = 0;
+  if (list)
+    list[len - 1] = 0;
 
   return list;
 }

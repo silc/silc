@@ -446,7 +446,7 @@ SILC_FSM_STATE(silc_client_st_resume_resolve_channels)
 				res_argc, res_argv, res_argv_lens,
 				res_argv_types);
 
-  for (i = 0; i < resume->channel_count; i++)
+  for (i = 0; res_argv && i < resume->channel_count; i++)
     silc_free(res_argv[i]);
   silc_free(res_argv);
   silc_free(res_argv_lens);

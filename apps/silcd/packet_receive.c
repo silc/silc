@@ -1677,7 +1677,7 @@ static void silc_server_notify_process(SilcServer server,
       SilcStatus error;
 
       tmp = silc_argument_get_arg_type(args, 1, &tmp_len);
-      if (!tmp && tmp_len != 1)
+      if (!tmp || tmp_len != 1)
 	goto out;
       error = (SilcStatus)tmp[0];
 
@@ -2263,6 +2263,16 @@ SilcClientEntry silc_server_new_client(SilcServer server,
     char *newusername;
     newusername = silc_calloc(strlen(username) + strlen(hostname) + 2,
 			      sizeof(*newusername));
+    if (!newusername) {
+      silc_free(username);
+      silc_free(realname);
+      silc_free(nickname);
+      silc_server_disconnect_remote(server, sock,
+				    SILC_STATUS_ERR_OPERATION_ALLOWED, NULL);
+      silc_server_free_sock_user_data(server, sock, NULL);
+      silc_packet_free(packet);
+      return NULL;
+    }
     strncat(newusername, username, strlen(username));
     strncat(newusername, "@", 1);
     strncat(newusername, hostname, strlen(hostname));
@@ -2276,6 +2286,9 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   if (!silc_id_create_client_id(server, server->id, server->rng,
 				server->md5hash, nicknamec,
 				strlen(nicknamec), &client_id)) {
+    silc_free(username);
+    silc_free(realname);
+    silc_free(nickname);
     silc_server_disconnect_remote(server, sock,
 				  SILC_STATUS_ERR_BAD_NICKNAME, NULL);
     silc_server_free_sock_user_data(server, sock, NULL);
@@ -2915,7 +2928,7 @@ static void silc_server_new_channel_process(SilcServer server,
   SilcChannelID channel_id;
   char *channel_name, *channel_namec = NULL;
   SilcUInt32 name_len;
-  unsigned char *id, cid[32];
+  unsigned char cid[32];
   SilcUInt32 id_len, cipher_len;
   SilcServerEntry server_entry;
   SilcChannelEntry channel;
@@ -2948,8 +2961,6 @@ static void silc_server_new_channel_process(SilcServer server,
 					  SILC_STRING_UTF8, 256, NULL);
   if (!channel_namec)
     return;
-
-  id = silc_channel_get_id(payload, &id_len);
 
   server_entry = (SilcServerEntry)idata;
 

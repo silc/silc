@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2003 Pekka Riikonen
+  Copyright (C) 1997 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -149,6 +149,10 @@ SilcRng silc_rng_alloc(void)
   }
 
   new->devrandom = strdup("/dev/random");
+  if (!new->devrandom) {
+    silc_rng_free(new);
+    return NULL;
+  }
 
   return new;
 }
@@ -194,12 +198,20 @@ void silc_rng_init(SilcRng rng)
 
   /* Initialize the states for the RNG. */
   rng->state = silc_calloc(1, sizeof(*rng->state));
+  if (!rng->state) {
+    SILC_LOG_ERROR(("Error allocating memory for RNG"));
+    return;
+  }
   rng->state->low = 0;
   rng->state->pos = 8;
   rng->state->next = NULL;
   first = rng->state;
   for (i = SILC_RNG_STATE_NUM - 1; i >= 1; i--) {
     next = silc_calloc(1, sizeof(*rng->state));
+    if (!next) {
+      SILC_LOG_ERROR(("Error allocating memory for RNG"));
+      return;
+    }
     next->low =
       (i * (sizeof(rng->pool) / SILC_RNG_STATE_NUM));
     next->pos =
@@ -614,6 +626,8 @@ unsigned char *silc_rng_get_rn_string(SilcRng rng, SilcUInt32 len)
   unsigned char *string;
 
   string = silc_calloc((len * 2 + 1), sizeof(unsigned char));
+  if (!string)
+    return NULL;
 
   for (i = 0; i < len; i++)
     sprintf(string + 2 * i, "%02x", silc_rng_get_byte(rng));
@@ -629,6 +643,8 @@ unsigned char *silc_rng_get_rn_data(SilcRng rng, SilcUInt32 len)
   unsigned char *data;
 
   data = silc_calloc(len + 1, sizeof(*data));
+  if (!data)
+    return NULL;
 
   for (i = 0; i < len; i++)
     data[i] = silc_rng_get_byte(rng);

@@ -181,6 +181,9 @@ static SilcBool silc_http_server_parse(SilcHttpServer httpd,
   if (value && !strcasecmp(value, "close"))
     conn->keepalive = FALSE;
 
+  if (!conn->method)
+    return FALSE;
+
   /* Deliver request to caller */
   if (!strcasecmp(conn->method, "GET") || !strcasecmp(conn->method, "HEAD")) {
     httpd->callback(httpd, conn, conn->uri, conn->method,

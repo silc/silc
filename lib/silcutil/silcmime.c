@@ -535,6 +535,9 @@ SilcMime silc_mime_assemble(SilcMimeAssembler assembler, SilcMime partial)
     }
   }
 
+  if (!compbuf)
+    goto err;
+
   /* Now parse the complete MIME message and deliver it */
   complete = silc_mime_decode(NULL, (const unsigned char *)compbuf->head,
 			      silc_buffer_truelen(compbuf));

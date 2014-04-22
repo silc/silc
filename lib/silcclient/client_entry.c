@@ -128,6 +128,8 @@ SilcDList silc_client_get_clients_local_ext(SilcClient client,
     /* Take all without any further checking */
     while ((id_cache = silc_list_get(list))) {
       entry = id_cache->context;
+      if (!entry)
+	continue;
       if (!get_valid || entry->internal.valid) {
 	silc_client_ref_client(client, conn, id_cache->context);
 	silc_dlist_add(clients, id_cache->context);
@@ -137,6 +139,8 @@ SilcDList silc_client_get_clients_local_ext(SilcClient client,
     /* Check multiple cache entries for exact match */
     while ((id_cache = silc_list_get(list))) {
       entry = id_cache->context;
+      if (!entry)
+	continue;
 
       /* If server was provided, find entries that either have no server
 	 set or have the same server.  Ignore those that have different
@@ -2228,7 +2232,6 @@ SilcServerEntry silc_client_ref_server(SilcClient client,
 void silc_client_unref_server(SilcClient client, SilcClientConnection conn,
 			      SilcServerEntry server_entry)
 {
-  SilcBool ret;
   SilcIDCacheEntry id_cache;
   char *namec;
 
@@ -2244,8 +2247,8 @@ void silc_client_unref_server(SilcClient client, SilcClientConnection conn,
   if (silc_idcache_find_by_context(conn->internal->server_cache, server_entry,
 				   &id_cache)) {
     namec = id_cache->name;
-    ret = silc_idcache_del_by_context(conn->internal->server_cache,
-				      server_entry, NULL);
+    silc_idcache_del_by_context(conn->internal->server_cache,
+				server_entry, NULL);
     silc_free(namec);
   }
   silc_mutex_unlock(conn->internal->lock);

@@ -426,6 +426,8 @@ int fast_s_tma_mp_mul_digs (tma_mp_int * a, tma_mp_int * b, tma_mp_int * c, int 
 
   /* number of output digits to produce */
   pa = MIN(digs, a->used + b->used);
+  if (!pa)
+    return MP_VAL;
 
   /* clear the carry */
   _W = 0;
@@ -531,6 +533,9 @@ int fast_s_tma_mp_mul_high_digs (tma_mp_int * a, tma_mp_int * b, tma_mp_int * c,
 
   /* number of output digits to produce */
   pa = a->used + b->used;
+  if (!pa)
+    return MP_VAL;
+
   _W = 0;
   for (ix = digs; ix < pa; ix++) {
       int      tx, ty, iy;

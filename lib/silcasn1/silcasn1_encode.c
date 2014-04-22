@@ -163,7 +163,7 @@ silc_asn1_encoder(SilcAsn1 asn1, SilcStack stack1, SilcStack stack2,
     }
 
     /* Encode by the type */
-    switch (type) {
+    switch ((long)type) {
 
     case SILC_ASN1_TAG_ANY:
       {

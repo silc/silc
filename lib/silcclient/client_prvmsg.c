@@ -329,7 +329,8 @@ static void silc_client_private_message_key_cb(SilcClient client,
 
   /* Mark that we are responder */
   client_entry = silc_dlist_get(clients);
-  client_entry->internal.prv_resp = TRUE;
+  if (client_entry)
+    client_entry->internal.prv_resp = TRUE;
 
   /* XXX we should notify application that remote wants to set up the
      static key.  And we should tell if we already have key with remote.

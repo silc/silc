@@ -645,7 +645,7 @@ static void command_smsg(const char *data, SILC_SERVER_REC *server,
 {
   GHashTable *optlist;
   char *target, *origtarget, *msg;
-  void *free_arg;
+  void *free_arg = NULL;
   int free_ret, target_type;
 
   g_return_if_fail(data != NULL);
@@ -714,8 +714,10 @@ static void command_smsg(const char *data, SILC_SERVER_REC *server,
 	      "message signed_own_public" : "message signed_own_private", 4,
 	      server, msg, target, origtarget);
 out:
-  if (free_ret && target != NULL) g_free(target);
-  cmd_params_free(free_arg);
+  if (free_ret && target != NULL)
+    g_free(target);
+  if (free_arg)
+    cmd_params_free(free_arg);
 }
 
 /* FILE command */
@@ -749,7 +751,8 @@ static void silc_client_file_monitor(SilcClient client,
   if (status == SILC_CLIENT_FILE_MONITOR_CLOSED)
     return;
 
-  snprintf(fsize, sizeof(fsize) - 1, "%llu", ((filesize + 1023) / 1024));
+  snprintf(fsize, sizeof(fsize) - 1, "%llu",
+	   (unsigned long long)((filesize + 1023) / 1024));
 
   silc_dlist_start(server->ftp_sessions);
   while ((ftp = silc_dlist_get(server->ftp_sessions)) != SILC_LIST_END) {

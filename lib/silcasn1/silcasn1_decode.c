@@ -408,7 +408,7 @@ silc_asn1_decoder(SilcAsn1 asn1, SilcStack stack1, SilcAsn1Tag type,
       }
 
       /* Decode by the type user expects the data to be. */
-      switch (type) {
+      switch ((long)type) {
 
       case SILC_ASN1_TAG_ANY:
 	{

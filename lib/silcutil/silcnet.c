@@ -392,7 +392,8 @@ SilcBool silc_net_check_host_by_sock(SilcSocket sock, char **hostname,
 
   if (hostname)
     *hostname = NULL;
-  *ip = NULL;
+  if (ip)
+    *ip = NULL;
 
   SILC_LOG_DEBUG(("Resolving remote hostname and IP address"));
 
@@ -407,16 +408,19 @@ SilcBool silc_net_check_host_by_sock(SilcSocket sock, char **hostname,
 		  NI_NUMERICHOST))
     return FALSE;
 
-  *ip = silc_memdup(s, strlen(s));
-  if (*ip == NULL)
-    return FALSE;
+  if (ip) {
+    *ip = silc_memdup(s, strlen(s));
+    if (*ip == NULL)
+      return FALSE;
+  }
 #else
   struct sockaddr_in remote;
   char *host_ip;
 
   if (hostname)
     *hostname = NULL;
-  *ip = NULL;
+  if (ip)
+    *ip = NULL;
 
   SILC_LOG_DEBUG(("Resolving remote hostname and IP address"));
 
@@ -430,15 +434,17 @@ SilcBool silc_net_check_host_by_sock(SilcSocket sock, char **hostname,
   if (!host_ip)
     return FALSE;
 
-  *ip = silc_memdup(host_ip, strlen(host_ip));
-  if (*ip == NULL)
-    return FALSE;
+  if (ip) {
+    *ip = silc_memdup(host_ip, strlen(host_ip));
+    if (*ip == NULL)
+      return FALSE;
+  }
 #endif
 
   /* Do reverse lookup if we want hostname too. */
   if (hostname) {
     /* Get host by address */
-    if (!silc_net_gethostbyaddr(*ip, host, sizeof(host)))
+    if (!ip || !silc_net_gethostbyaddr(*ip, host, sizeof(host)))
       return FALSE;
 
     *hostname = silc_memdup(host, strlen(host));
@@ -452,7 +458,8 @@ SilcBool silc_net_check_host_by_sock(SilcSocket sock, char **hostname,
       return FALSE;
   }
 
-  SILC_LOG_DEBUG(("Resolved IP address `%s'", *ip));
+  if (ip)
+    SILC_LOG_DEBUG(("Resolved IP address `%s'", *ip));
   return TRUE;
 }
 
@@ -471,7 +478,8 @@ SilcBool silc_net_check_local_by_sock(SilcSocket sock, char **hostname,
 
   if (hostname)
     *hostname = NULL;
-  *ip = NULL;
+  if (ip)
+    *ip = NULL;
 
   SILC_LOG_DEBUG(("Resolving local hostname and IP address"));
 
@@ -486,16 +494,19 @@ SilcBool silc_net_check_local_by_sock(SilcSocket sock, char **hostname,
 		  NI_NUMERICHOST))
     return FALSE;
 
-  *ip = silc_memdup(s, strlen(s));
-  if (*ip == NULL)
-    return FALSE;
+  if (ip) {
+    *ip = silc_memdup(s, strlen(s));
+    if (*ip == NULL)
+      return FALSE;
+  }
 #else
   struct sockaddr_in local;
   char *host_ip;
 
   if (hostname)
     *hostname = NULL;
-  *ip = NULL;
+  if (ip)
+    *ip = NULL;
 
   SILC_LOG_DEBUG(("Resolving local hostname and IP address"));
 
@@ -509,15 +520,17 @@ SilcBool silc_net_check_local_by_sock(SilcSocket sock, char **hostname,
   if (!host_ip)
     return FALSE;
 
-  *ip = silc_memdup(host_ip, strlen(host_ip));
-  if (*ip == NULL)
-    return FALSE;
+  if (ip) {
+    *ip = silc_memdup(host_ip, strlen(host_ip));
+    if (*ip == NULL)
+      return FALSE;
+  }
 #endif
 
   /* Do reverse lookup if we want hostname too. */
   if (hostname) {
     /* Get host by address */
-    if (!silc_net_gethostbyaddr(*ip, host, sizeof(host)))
+    if (!ip || !silc_net_gethostbyaddr(*ip, host, sizeof(host)))
       return FALSE;
 
     *hostname = silc_memdup(host, strlen(host));
@@ -531,7 +544,8 @@ SilcBool silc_net_check_local_by_sock(SilcSocket sock, char **hostname,
       return FALSE;
   }
 
-  SILC_LOG_DEBUG(("Resolved IP address `%s'", *ip));
+  if (ip)
+    SILC_LOG_DEBUG(("Resolved IP address `%s'", *ip));
   return TRUE;
 }
 

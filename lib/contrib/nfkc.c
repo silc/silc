@@ -745,6 +745,9 @@ _g_utf8_normalize_wc (const gchar * str, gssize max_len, GNormalizeMode mode)
   gboolean do_compat = (mode == G_NORMALIZE_NFKC || mode == G_NORMALIZE_NFKD);
   gboolean do_compose = (mode == G_NORMALIZE_NFC || mode == G_NORMALIZE_NFKC);
 
+  if (!str)
+    return NULL;
+
   n_wc = 0;
   p = str;
   while ((max_len < 0 || p < str + max_len) && *p)

@@ -366,7 +366,8 @@ void silc_query_attributes_default(SilcClient client,
 	mask |= SILC_ATTRIBUTE_MOOD_ANXIOUS;
     }
     silc_client_attribute_add(silc_client, conn,
-			      SILC_ATTRIBUTE_STATUS_MOOD, (void *)mask,
+			      SILC_ATTRIBUTE_STATUS_MOOD,
+			      SILC_32_TO_PTR(mask),
 			      sizeof(SilcUInt32));
     g_strfreev(list);
   }
@@ -437,7 +438,8 @@ void silc_query_attributes_default(SilcClient client,
 	mask |= SILC_ATTRIBUTE_CONTACT_VIDEO;
     }
     silc_client_attribute_add(silc_client, conn,
-			      SILC_ATTRIBUTE_PREFERRED_CONTACT, (void *)mask,
+			      SILC_ATTRIBUTE_PREFERRED_CONTACT,
+			      SILC_32_TO_PTR(mask),
 			      sizeof(SilcUInt32));
     g_strfreev(list);
   }

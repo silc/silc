@@ -75,7 +75,7 @@ void silc_asn1_uninit(SilcAsn1 asn1)
 
 const char *silc_asn1_tag_name(SilcAsn1Tag tag)
 {
-  switch (tag) {
+  switch ((long)tag) {
   case SILC_ASN1_END:
     return "END";
   case SILC_ASN1_TAG_OPTS:

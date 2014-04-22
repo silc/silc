@@ -94,6 +94,10 @@ silc_idlist_add_server(SilcIDList id_list,
   }
 
   server = silc_calloc(1, sizeof(*server));
+  if (!server) {
+    silc_free(server_namec);
+    return NULL;
+  }
   server->server_name = server_name;
   server->server_type = server_type;
   server->id = id;
@@ -615,6 +619,10 @@ silc_idlist_add_channel(SilcIDList id_list, char *channel_name, int mode,
   }
 
   channel = silc_calloc(1, sizeof(*channel));
+  if (!channel) {
+    silc_free(channel_namec);
+    return NULL;
+  }
   channel->channel_name = channel_name;
   channel->mode = mode;
   channel->id = id;
@@ -840,6 +848,8 @@ silc_idlist_get_channels(SilcIDList id_list, SilcChannelID *channel_id,
       return NULL;
 
     channels = silc_calloc(silc_list_count(list), sizeof(*channels));
+    if (!channels)
+      return NULL;
 
     i = 0;
     silc_list_start(list);
@@ -851,6 +861,8 @@ silc_idlist_get_channels(SilcIDList id_list, SilcChannelID *channel_id,
 
     i = 1;
     channels = silc_calloc(1, sizeof(*channels));
+    if (!channels)
+      return NULL;
     channels[0] = (SilcChannelEntry)id_cache->context;
   }
 

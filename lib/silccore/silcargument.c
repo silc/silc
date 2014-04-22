@@ -41,7 +41,6 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
   SilcBufferStruct buffer;
   SilcArgumentPayload newp;
   SilcUInt16 p_len = 0;
-  unsigned char arg_num = 0;
   unsigned char arg_type = 0;
   SilcUInt32 pull_len = 0;
   int i = 0, ret;
@@ -61,7 +60,6 @@ SilcArgumentPayload silc_argument_payload_parse(const unsigned char *payload,
     goto err;
 
   /* Get arguments */
-  arg_num = 1;
   for (i = 0; i < argc; i++) {
     ret = silc_buffer_unformat(&buffer,
 			       SILC_STR_UI_SHORT(&p_len),

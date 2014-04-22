@@ -53,7 +53,7 @@ silc_server_verify_key(SilcSKE ske,
 
   SILC_LOG_DEBUG(("Verifying public key"));
 
-  if (silc_pkcs_get_type(public_key) != SILC_SKE_PK_TYPE_SILC) {
+  if (silc_pkcs_get_type(public_key) != SILC_PKCS_SILC) {
     SILC_LOG_WARNING(("We don't support %s (%s) port %d public key type %d",
 		      entry->hostname, entry->ip, entry->port,
 		      silc_pkcs_get_type(public_key)));
@@ -2403,8 +2403,6 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
       SilcBool initiator = FALSE;
       SilcBool backup_local = FALSE;
       SilcBool backup_router = FALSE;
-      char *backup_replace_ip = NULL;
-      SilcUInt16 backup_replace_port = 0;
       SilcServerConfigServer *srvconn = entry->sconfig.ref_ptr;
       SilcServerConfigRouter *rconn = entry->rconfig.ref_ptr;
 
@@ -2461,8 +2459,6 @@ silc_server_accept_auth_compl(SilcConnAuth connauth, SilcBool success,
 	  initiator = rconn->initiator;
 	  backup_local = rconn->backup_local;
 	  backup_router = rconn->backup_router;
-	  backup_replace_ip = rconn->backup_replace_ip;
-	  backup_replace_port = rconn->backup_replace_port;
 	}
       }
 
@@ -4016,6 +4012,14 @@ SilcBool silc_server_create_channel_key(SilcServer server,
   if (server->server_type == SILC_ROUTER) {
     if (!channel->rekey)
       channel->rekey = silc_calloc(1, sizeof(*channel->rekey));
+    if (!channel->rekey) {
+      memset(channel->key, 0, channel->key_len / 8);
+      silc_free(channel->key);
+      silc_cipher_free(channel->send_key);
+      silc_cipher_free(channel->receive_key);
+      channel->send_key = channel->receive_key = NULL;
+      return FALSE;
+    }
     channel->rekey->channel = channel;
     channel->rekey->key_len = key_len;
     if (channel->rekey->task)
@@ -4129,7 +4133,7 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
       silc_cipher_free(channel->send_key);
       silc_cipher_free(channel->receive_key);
       channel->send_key = channel->receive_key = NULL;
-      return FALSE;
+      return NULL;
     }
   silc_hash_make(silc_hmac_get_hash(channel->hmac), tmp, tmp_len, hash);
   silc_hmac_set_key(channel->hmac, hash,
@@ -4141,6 +4145,14 @@ SilcChannelEntry silc_server_save_channel_key(SilcServer server,
   if (server->server_type == SILC_ROUTER) {
     if (!channel->rekey)
       channel->rekey = silc_calloc(1, sizeof(*channel->rekey));
+    if (!channel->rekey) {
+      memset(channel->key, 0, channel->key_len / 8);
+      silc_free(channel->key);
+      silc_cipher_free(channel->send_key);
+      silc_cipher_free(channel->receive_key);
+      channel->send_key = channel->receive_key = NULL;
+      return NULL;
+    }
     channel->rekey->channel = channel;
     if (channel->rekey->task)
       silc_schedule_task_del(server->schedule, channel->rekey->task);
@@ -5095,6 +5107,8 @@ void silc_server_save_users_on_channel(SilcServer server,
     if (!silc_server_client_on_channel(client, channel, &chl)) {
       /* Client was not on the channel, add it. */
       chl = silc_calloc(1, sizeof(*chl));
+      if (!chl)
+        continue;
       chl->client = client;
       chl->mode = mode;
       chl->channel = channel;
@@ -5173,6 +5187,8 @@ void silc_server_save_user_channels(SilcServer server,
       /* Add the client on the channel */
       if (!silc_server_client_on_channel(client, channel, &chl)) {
 	chl = silc_calloc(1, sizeof(*chl));
+	if (!chl)
+	  continue;
 	chl->client = client;
 	chl->mode = chumodes[i++];
 	chl->channel = channel;
@@ -5338,6 +5354,8 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
     buffer = silc_buffer_realloc(buffer,
 				 (buffer ?
 				  silc_buffer_truelen(buffer) + len : len));
+    if (!buffer)
+      return NULL;
     silc_buffer_pull_tail(buffer, (buffer->end - buffer->data));
     silc_buffer_format(buffer,
 		       SILC_STR_UI_SHORT(name_len),
@@ -5353,6 +5371,8 @@ SilcBuffer silc_server_get_client_channel_list(SilcServer server,
 	silc_buffer_realloc(*user_mode_list,
 			    (*user_mode_list ?
 			     silc_buffer_truelen((*user_mode_list)) + 4 : 4));
+      if (!(*user_mode_list))
+        return NULL;
       silc_buffer_pull_tail(*user_mode_list, ((*user_mode_list)->end -
 					      (*user_mode_list)->data));
       SILC_PUT32_MSB(chl->mode, (*user_mode_list)->data);

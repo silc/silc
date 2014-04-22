@@ -66,6 +66,8 @@ SilcBool silc_id_create_client_id(SilcServer server,
   SILC_LOG_DEBUG(("Creating new Client ID"));
 
   *new_id = silc_calloc(1, sizeof(**new_id));
+  if (!(*new_id))
+    return FALSE;
 
   /* Create hash of the nickname (it's already checked as valid identifier
      string). */
@@ -116,6 +118,8 @@ SilcBool silc_id_create_channel_id(SilcServer server,
   SILC_LOG_DEBUG(("Creating new Channel ID"));
 
   *new_id = silc_calloc(1, sizeof(**new_id));
+  if (!(*new_id))
+    return FALSE;
 
   /* Create the ID */
   memcpy((*new_id)->ip.data, router_id->ip.data, router_id->ip.data_len);

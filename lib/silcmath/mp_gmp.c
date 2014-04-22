@@ -28,7 +28,8 @@ void silc_mp_init(SilcMPInt *mp)
 
 void silc_mp_uninit(SilcMPInt *mp)
 {
-  mpz_clear(mp);
+  if (mp)
+    mpz_clear(mp);
 }
 
 size_t silc_mp_size(SilcMPInt *mp)

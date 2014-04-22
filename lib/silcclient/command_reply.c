@@ -2016,7 +2016,7 @@ SILC_FSM_STATE(silc_client_command_reply_getkey)
   SilcServerEntry server_entry;
   unsigned char *tmp;
   SilcUInt32 len;
-  SilcPublicKey public_key;
+  SilcPublicKey public_key = NULL;
   SilcID id;
 
   /* Sanity checks */

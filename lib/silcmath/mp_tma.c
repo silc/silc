@@ -35,7 +35,8 @@ SilcBool silc_mp_sinit(SilcStack stack, SilcMPInt *mp)
 
 void silc_mp_uninit(SilcMPInt *mp)
 {
-  tma_mp_clear(mp);
+  if (mp)
+    tma_mp_clear(mp);
 }
 
 size_t silc_mp_size(SilcMPInt *mp)

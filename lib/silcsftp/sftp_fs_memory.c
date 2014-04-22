@@ -179,6 +179,8 @@ static MemFSEntry memfs_find_entry_path(MemFSEntry dir, const char *p)
   char *path, *cp;
 
   cp = path = memfs_expand_path(dir, p);
+  if (!cp)
+    return NULL;
 
   if (strlen(cp) == 1 && cp[0] == '/')
     return dir;

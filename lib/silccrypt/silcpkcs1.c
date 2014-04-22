@@ -551,6 +551,11 @@ SilcBool silc_pkcs1_decrypt(void *private_key,
 
   /* MP to data */
   padded = silc_mp_mp2bin(&mp_dst, (key->bits + 7) / 8, &padded_len);
+  if (!padded) {
+    silc_mp_uninit(&mp_tmp);
+    silc_mp_uninit(&mp_dst);
+    return FALSE;
+  }
 
   /* Unpad data */
   if (!silc_pkcs1_decode(SILC_PKCS1_BT_PUB, padded, padded_len,
@@ -675,7 +680,7 @@ SilcBool silc_pkcs1_verify(void *public_key,
   SilcBool ret = FALSE;
   SilcMPInt mp_tmp2;
   SilcMPInt mp_dst;
-  unsigned char *verify, unpadded[2048 + 1], hashr[SILC_HASH_MAXLEN];
+  unsigned char *verify = NULL, unpadded[65536 + 1], hashr[SILC_HASH_MAXLEN];
   SilcUInt32 verify_len, len = (key->bits + 7) / 8;
   SilcBufferStruct di, ldi;
   SilcHash ihash = NULL;
@@ -699,6 +704,8 @@ SilcBool silc_pkcs1_verify(void *public_key,
 
   /* MP to data */
   verify = silc_mp_mp2bin(&mp_dst, len, &verify_len);
+  if (!verify)
+    goto err;
 
   /* Unpad data */
   if (!silc_pkcs1_decode(SILC_PKCS1_BT_PRV1, verify, verify_len,
@@ -769,8 +776,10 @@ SilcBool silc_pkcs1_verify(void *public_key,
   return ret;
 
  err:
-  memset(verify, 0, verify_len);
-  silc_free(verify);
+  if (verify) {
+    memset(verify, 0, verify_len);
+    silc_free(verify);
+  }
   silc_mp_uninit(&mp_tmp2);
   silc_mp_uninit(&mp_dst);
   if (ihash)
@@ -866,6 +875,11 @@ SilcBool silc_pkcs1_verify_no_oid(void *public_key,
 
   /* MP to data */
   verify = silc_mp_mp2bin(&mp_dst, len, &verify_len);
+  if (!verify) {
+    silc_mp_uninit(&mp_tmp2);
+    silc_mp_uninit(&mp_dst);
+    return FALSE;
+  }
 
   /* Unpad data */
   if (!silc_pkcs1_decode(SILC_PKCS1_BT_PRV1, verify, verify_len,

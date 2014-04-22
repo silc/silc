@@ -292,14 +292,15 @@ void silc_schedule_stats(SilcSchedule schedule)
   fprintf(stdout, "Schedule %p statistics:\n\n", schedule);
   fprintf(stdout, "Num FD tasks         : %u (%u bytes allocated)\n",
 	  silc_hash_table_count(schedule->fd_queue),
-	  sizeof(*ftask) * silc_hash_table_count(schedule->fd_queue));
+	  (unsigned int)sizeof(*ftask) *
+	  silc_hash_table_count(schedule->fd_queue));
   fprintf(stdout, "Num Timeout tasks    : %d (%d bytes allocated)\n",
 	  silc_list_count(schedule->timeout_queue),
-	  sizeof(struct SilcTaskTimeoutStruct) *
+	  (unsigned int)sizeof(struct SilcTaskTimeoutStruct) *
 	  silc_list_count(schedule->timeout_queue));
   fprintf(stdout, "Num Timeout freelist : %d (%d bytes allocated)\n",
 	  silc_list_count(schedule->free_tasks),
-	  sizeof(struct SilcTaskTimeoutStruct) *
+	  (unsigned int)sizeof(struct SilcTaskTimeoutStruct) *
 	  silc_list_count(schedule->free_tasks));
 }
 #endif /* SILC_DIST_INPLACE */
@@ -928,7 +929,7 @@ SilcBool silc_schedule_task_del_by_all(SilcSchedule schedule, int fd,
 
   SILC_SCHEDULE_UNLOCK(schedule);
 
-  return TRUE;
+  return ret;
 }
 
 /* Sets a file descriptor to be listened by scheduler. One can call this

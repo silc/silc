@@ -238,6 +238,8 @@ SilcBool silc_server_query_command(SilcServer server,
 
   if (!old_query) {
     query = silc_calloc(1, sizeof(*query));
+    if (!query)
+      return FALSE;
     query->querycmd = querycmd;
     query->cmd = silc_server_command_dup(cmd);
     query->router = SILC_PRIMARY_ROUTE(server);
@@ -508,6 +510,8 @@ SilcBool silc_server_query_parse(SilcServer server, SilcServerQuery query,
     } else {
       /* Parse the IDs included in the query */
       query->ids = silc_calloc(argc, sizeof(*query->ids));
+      if (!query->ids)
+	return FALSE;
 
       for (i = 0; i < argc; i++) {
 	tmp = silc_argument_get_arg_type(cmd->args, i + 4, &tmp_len);
@@ -663,6 +667,8 @@ SilcBool silc_server_query_parse(SilcServer server, SilcServerQuery query,
     } else {
       /* Parse the IDs included in the query */
       query->ids = silc_calloc(argc, sizeof(*query->ids));
+      if (!query->ids)
+	return FALSE;
 
       for (i = 0; i < argc; i++) {
 	tmp = silc_argument_get_arg_type(cmd->args, i + 5, &tmp_len);

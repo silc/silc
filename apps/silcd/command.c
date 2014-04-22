@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2009 Pekka Riikonen
+  Copyright (C) 1997 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -209,6 +209,8 @@ void silc_server_command_process(SilcServer server,
   /* Allocate command context. This must be free'd by the
      command routine receiving it. */
   ctx = silc_server_command_alloc();
+  if (!ctx)
+    return;
   ctx->server = server;
   ctx->sock = sock;
   ctx->packet = packet; /* Save original packet */
@@ -252,6 +254,15 @@ void silc_server_command_process(SilcServer server,
     int fast;
 
     timeout = silc_calloc(1, sizeof(*timeout));
+    if (!timeout) {
+      silc_server_command_send_status_reply(
+					ctx, command,
+					SILC_STATUS_ERR_OPERATION_ALLOWED, 0);
+      silc_packet_free(packet);
+      silc_packet_stream_unref(ctx->sock);
+      silc_free(ctx);
+      return;
+    }
     timeout->ctx = ctx;
     timeout->cmd = cmd;
 
@@ -300,7 +311,8 @@ void silc_server_command_process(SilcServer server,
 SilcServerCommandContext silc_server_command_alloc()
 {
   SilcServerCommandContext ctx = silc_calloc(1, sizeof(*ctx));
-  ctx->users++;
+  if (ctx)
+    ctx->users++;
   return ctx;
 }
 
@@ -349,6 +361,8 @@ SILC_TASK_CALLBACK(silc_server_command_pending_timeout)
 
   /* Allocate temporary and bogus command reply context */
   cmdr = silc_calloc(1, sizeof(*cmdr));
+  if (!cmdr)
+    return;
   cmdr->server = server;
   cmdr->ident = reply->ident;
 
@@ -356,6 +370,10 @@ SILC_TASK_CALLBACK(silc_server_command_pending_timeout)
   cmdr->callbacks =
     silc_server_command_pending_check(server, reply->reply_cmd,
 				      reply->ident, &cmdr->callbacks_count);
+  if (!cmdr->callbacks) {
+    silc_free(cmdr);
+    return;
+  }
 
   /* Create bogus command reply with an error inside */
   tmpreply =
@@ -399,11 +417,11 @@ SilcBool silc_server_command_pending(SilcServer server,
    commands.  If the `timeout' is zero default timeout is used. */
 
 SilcBool silc_server_command_pending_timed(SilcServer server,
-				       SilcCommand reply_cmd,
-				       SilcUInt16 ident,
-				       SilcCommandCb callback,
-				       void *context,
-				       SilcUInt16 timeout)
+					   SilcCommand reply_cmd,
+					   SilcUInt16 ident,
+					   SilcCommandCb callback,
+					   void *context,
+					   SilcUInt16 timeout)
 {
   SilcServerCommandPending *reply;
 
@@ -418,6 +436,8 @@ SilcBool silc_server_command_pending_timed(SilcServer server,
   }
 
   reply = silc_calloc(1, sizeof(*reply));
+  if (!reply)
+    return FALSE;
   reply->reply_cmd = reply_cmd;
   reply->ident = ident;
   reply->context = context;
@@ -453,7 +473,8 @@ void silc_server_command_pending_del(SilcServer server,
 }
 
 /* Checks for pending commands and marks callbacks to be called from
-   the command reply function. Returns TRUE if there were pending command. */
+   the command reply function. Returns the pending callbacks if there were
+   any or NULL if there weren't. */
 
 SilcServerCommandPendingCallbacks
 silc_server_command_pending_check(SilcServer server,
@@ -470,6 +491,8 @@ silc_server_command_pending_check(SilcServer server,
     if ((r->reply_cmd == command || r->reply_cmd == SILC_COMMAND_NONE)
 	&& r->ident == ident) {
       callbacks = silc_realloc(callbacks, sizeof(*callbacks) * (i + 1));
+      if (!callbacks)
+	return NULL;
       callbacks[i].context = r->context;
       callbacks[i].callback = r->callback;
       r->reply_check = TRUE;
@@ -1365,6 +1388,8 @@ SILC_SERVER_CMD_FUNC(quit)
     tmp = NULL;
 
   q = silc_calloc(1, sizeof(*q));
+  if (!q)
+    goto out;
   q->sock = sock;
   q->signoff = tmp ? strdup(tmp) : NULL;
   silc_packet_stream_ref(q->sock);
@@ -2112,6 +2137,8 @@ static void silc_server_command_join_channel(SilcServer server,
      Add also the channel to client entry's channels list for fast cross-
      referencing. */
   chl = silc_calloc(1, sizeof(*chl));
+  if (!chl)
+    goto out;
   chl->mode = umode;
   chl->client = client;
   chl->channel = channel;
@@ -2439,7 +2466,6 @@ SILC_SERVER_CMD_FUNC(join)
 					  0);
     goto out;
   }
-  tmp = silc_argument_get_arg_type(cmd->args, 2, &tmp_len);
 
   /* Get cipher, hmac name and auth payload */
   cipher = silc_argument_get_arg_type(cmd->args, 4, NULL);
@@ -3239,7 +3265,8 @@ SILC_SERVER_CMD_FUNC(cmode)
 	silc_server_command_send_status_data(
 					cmd, SILC_COMMAND_CMODE,
 					SILC_STATUS_ERR_UNKNOWN_ALGORITHM, 0,
-					2, hmac, strlen(hmac));
+					2, hmac ? hmac : SILC_DEFAULT_HMAC,
+				        strlen(hmac ? hmac : SILC_DEFAULT_HMAC));
 	goto out;
       }
 
@@ -4073,7 +4100,7 @@ SILC_TASK_CALLBACK(silc_server_command_detach_cb)
   QuitInternal q = (QuitInternal)context;
   SilcPacketStream sock = q->sock;
   SilcClientEntry client = silc_packet_get_context(sock);
-  SilcIDListData idata = (SilcIDListData)client;
+  SilcIDListData idata;
 
   if (!client) {
     silc_packet_stream_unref(sock);
@@ -4178,6 +4205,8 @@ SILC_SERVER_CMD_FUNC(detach)
 				   SILC_NOTIFY_TYPE_UMODE_CHANGE);
 
   q = silc_calloc(1, sizeof(*q));
+  if (!q)
+    goto out;
   q->sock = cmd->sock;
   silc_packet_stream_ref(q->sock);
   silc_schedule_task_add_timeout(server->schedule,
@@ -4186,6 +4215,8 @@ SILC_SERVER_CMD_FUNC(detach)
 
   if (server->config->detach_timeout) {
     q = silc_calloc(1, sizeof(*q));
+    if (!q)
+      goto out;
     q->sock = (void *)silc_id_dup(client->id, SILC_ID_CLIENT);
     silc_schedule_task_add_timeout(server->schedule,
 				   silc_server_command_detach_timeout,
@@ -5214,7 +5245,6 @@ SILC_SERVER_CMD_FUNC(service)
   SilcServer server = cmd->server;
   SilcUInt32 tmp_len, auth_len;
   unsigned char *service_name, *auth;
-  SilcBool send_list = FALSE;
   SilcUInt16 ident = silc_command_get_ident(cmd->payload);
 
   SILC_SERVER_COMMAND_CHECK(SILC_COMMAND_SERVICE, cmd, 0, 256);
@@ -5238,8 +5268,6 @@ SILC_SERVER_CMD_FUNC(service)
     /* XXX */
   }
 
-
-  send_list = TRUE;
 
   /* Send our service list back */
   silc_server_send_command_reply(server, cmd->sock, SILC_COMMAND_SERVICE,

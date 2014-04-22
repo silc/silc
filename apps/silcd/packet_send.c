@@ -319,6 +319,8 @@ void silc_server_packet_send_to_channel(SilcServer server,
 
   routed = silc_calloc(silc_hash_table_count(channel->user_list),
 		       sizeof(*routed));
+  if (!routed)
+    goto out;
 
   /* Send the message to clients on the channel's client list. */
   silc_hash_table_list(channel->user_list, &htl);
@@ -528,8 +530,15 @@ void silc_server_packet_relay_to_channel(SilcServer server,
     }
   }
 
+  if (!silc_hash_table_count(channel->user_list)) {
+    SILC_LOG_DEBUG(("Channel %s is empty", channel->channel_name));
+    return;
+  }
+
   routed = silc_calloc(silc_hash_table_count(channel->user_list),
 		       sizeof(*routed));
+  if (!routed)
+    return;
 
   /* Assure we won't route the message back to the sender's way. */
   if (sender_entry->router)
