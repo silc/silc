@@ -300,19 +300,18 @@ SilcBool silc_message_payload_decrypt(unsigned char *data,
     silc_hmac_update(hmac, receiver_id, receiver_id_len);
     silc_hmac_final(hmac, mac, &mac_len);
     if (silc_unlikely(memcmp(data + (data_len - mac_len), mac, mac_len))) {
-#if 0
-      SILC_LOG_DEBUG(("Message MAC does not match"));
-      return FALSE;
-#else
-      /* Check for old style message MAC.  Remove this check at some point. */
+#if 1 /* Check for old style message MAC.  Remove this check at some point. */
       silc_hmac_init(hmac);
       silc_hmac_update(hmac, data, data_len - mac_len);
       silc_hmac_final(hmac, mac, &mac_len);
       if (silc_unlikely(memcmp(data + (data_len - mac_len), mac, mac_len))) {
 	SILC_LOG_DEBUG(("Message MAC does not match"));
-#endif
 	return FALSE;
       }
+#else
+      SILC_LOG_DEBUG(("Message MAC does not match"));
+      return FALSE;
+#endif /* 0 */
     }
     SILC_LOG_DEBUG(("MAC is Ok"));
   }
@@ -477,16 +476,13 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
 				      SilcCipher cipher,
 				      SilcHmac hmac)
 {
-#if 0
   unsigned char sid[32], rid[32];
   SilcUInt32 sid_len = 0, rid_len = 0;
-#endif /* 0 */
 
   /* Encrypt payload of the packet */
   if (silc_unlikely(!silc_cipher_encrypt(cipher, data, data, data_len, iv)))
     return FALSE;
 
-#if 0 /* For now this is disabled.  Enable at 1.1.x or 1.2 at the latest. */
   /* Encode IDs */
   silc_id_id2str(&sender_id->u.client_id, SILC_ID_CLIENT, sid, sizeof(sid),
 		 &sid_len);
@@ -496,15 +492,12 @@ SilcBool silc_message_payload_encrypt(unsigned char *data,
   else if (receiver_id->type == SILC_ID_CHANNEL)
     silc_id_id2str(&receiver_id->u.channel_id, SILC_ID_CHANNEL, rid,
 		   sizeof(rid), &rid_len);
-#endif /* 0 */
 
   /* Compute the MAC of the encrypted message data */
   silc_hmac_init(hmac);
   silc_hmac_update(hmac, data, true_len);
-#if 0
   silc_hmac_update(hmac, sid, sid_len);
   silc_hmac_update(hmac, rid, rid_len);
-#endif /* 0 */
   silc_hmac_final(hmac, data + true_len, NULL);
 
   return TRUE;
