@@ -52,7 +52,7 @@ int main(int argc, char **argv)
   if (!silc_load_key_pair("test.pub", "test.prv", "",
 			  &info->public_key,
 			  &info->private_key)) {
-    if (!silc_create_key_pair("rsa", 2048, "test.pub", "test.prv", NULL, "",
+    if (!silc_create_key_pair("rsa", 4096, "test.pub", "test.prv", NULL, "",
 			      &info->public_key,
 			      &info->private_key, FALSE)) {
       goto err;

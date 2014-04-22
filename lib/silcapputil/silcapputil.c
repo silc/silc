@@ -108,13 +108,13 @@ New pair of keys will be created.  Please, answer to following questions.\n\
   if (!key_len_bits) {
     if (interactive) {
       char *length = NULL;
-      length = silc_get_input("Key length in key_len_bits [2048]: ", FALSE);
+      length = silc_get_input("Key length in key_len_bits [4096]: ", FALSE);
       if (length)
 	key_len_bits = atoi(length);
       silc_free(length);
     }
     if (!key_len_bits)
-      key_len_bits = 2048;
+      key_len_bits = 4096;
   }
 
   if (!identifier) {

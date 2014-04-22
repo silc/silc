@@ -16,7 +16,7 @@ int main(int argc, char **argv)
   SilcMessagePayload message;
   SilcBuffer buf;
   const char *msg = "FOOBAR MESSAGE";
-  unsigned char *data, tmp[1023], *tmp2;
+  unsigned char *data, tmp[8192], *tmp2;
   SilcUInt32 data_len;
   SilcUInt16 flags;
   int i, n;
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
   if (!silc_load_key_pair("pubkey.pub", "privkey.prv", "",
 			  &public_key, &private_key)) {
     SILC_LOG_DEBUG(("Create keypair"));
-    if (!silc_create_key_pair("rsa", 2048, "pubkey.pub", "privkey.prv",
+    if (!silc_create_key_pair("rsa", 4096, "pubkey.pub", "privkey.prv",
 			      NULL, "", &public_key, &private_key, FALSE))
       goto err;
   }

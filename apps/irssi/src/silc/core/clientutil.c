@@ -367,6 +367,15 @@ int silc_client_load_keys(SilcClient client)
   if (!ret)
     SILC_LOG_ERROR(("Could not load key pair"));
 
+  if (silc_pkcs_private_key_get_len(irssi_privkey) < 4096) {
+    fprintf(stdout,
+            "warning: Your private key %s length is under 4096 bits. It is "
+	    "recommended to use at least 4096 bits. Consider generating a "
+	    "new key pair.\n", prv);
+    printf("Press <Enter> to continue...\n");
+    getchar();
+  }
+
   return ret;
 }
 

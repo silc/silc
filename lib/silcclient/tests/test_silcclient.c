@@ -111,9 +111,9 @@ int mybot_start(void)
 			  &mybot->public_key,
 			  &mybot->private_key)) {
     /* The keys don't exist.  Let's generate us a key pair then!  There's
-       nice ready routine for that too.  Let's do 2048 bit RSA key pair. */
+       nice ready routine for that too.  Let's do 4096 bit RSA key pair. */
     fprintf(stdout, "MyBot: Key pair does not exist, generating it.\n");
-    if (!silc_create_key_pair("rsa", 2048, "mybot.pub", "mybot.prv", NULL, "",
+    if (!silc_create_key_pair("rsa", 4096, "mybot.pub", "mybot.prv", NULL, "",
 			      &mybot->public_key,
 			      &mybot->private_key, FALSE)) {
       perror("Could not generated key pair");

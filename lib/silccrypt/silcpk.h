@@ -114,8 +114,8 @@ typedef struct SilcSILCPrivateKeyStruct {
  *
  * EXAMPLE
  *
- *    // Generate RSA key pair with 2048 bit key length
- *    silc_pkcs_silc_generate_key("rsa", 2048, ident_string, rng,
+ *    // Generate RSA key pair with 4096 bit key length
+ *    silc_pkcs_silc_generate_key("rsa", 4096, ident_string, rng,
  *                                &public_key, &private_key);
  *
  ***/

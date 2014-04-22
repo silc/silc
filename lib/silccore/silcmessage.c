@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -180,7 +180,7 @@ silc_message_signed_payload_encode(const unsigned char *message_payload,
 				   SilcHash hash)
 {
   SilcBuffer buffer, sign;
-  unsigned char auth_data[2048 + 1];
+  unsigned char auth_data[65536 + 1];
   SilcUInt32 auth_len;
   unsigned char *pk = NULL;
   SilcUInt32 pk_len = 0;

@@ -2,9 +2,10 @@
 
   serverconfig.c
 
-  Author: Giovanni Giacobbi <giovanni@giacobbi.net>
+  Authors: Giovanni Giacobbi <giovanni@giacobbi.net>
+           Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -654,6 +655,14 @@ SILC_CONFIG_CALLBACK(fetch_serverinfo)
 				    &server_info->private_key)) {
       SILC_SERVER_LOG_ERROR(("Error: Could not load private key file."));
       return SILC_CONFIG_EPRINTLINE;
+    }
+
+    /* Warn if key length is < 4096 (some versions created 4095 bit keys). */
+    if (silc_pkcs_private_key_get_len(server_info->private_key) < 4095) {
+      fprintf(stderr,
+              "warning: Your server private key %s length is under 4096 bits. "
+	      "It is recommended to use at least 4096 bits. Consider "
+	      "generating a new server key pair.\n", file_tmp);
     }
   }
   else

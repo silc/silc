@@ -2005,7 +2005,7 @@ SilcBuffer silc_server_query_reply_attrs(SilcServer server,
   SilcAttributeObjPk pk;
   SilcAttributeObjService service;
   unsigned char *tmp;
-  unsigned char sign[2048 + 1];
+  unsigned char sign[65536 + 1];
   SilcUInt32 sign_len;
 
   SILC_LOG_DEBUG(("Constructing Requested Attributes"));

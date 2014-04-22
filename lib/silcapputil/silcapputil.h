@@ -54,7 +54,7 @@
  *    This routine can be used to generate new public key and private key
  *    pair.  The `pkcs_name' is the name of public key algorithm, or if
  *    NULL it defaults to "rsa".  The `key_len_bits' is the key length
- *    in bits and if zero (0) it defaults to 2048 bits.  The `pub_filename'
+ *    in bits and if zero (0) it defaults to 4096 bits.  The `pub_filename'
  *    and `prv_filename' is the public key and private key filenames.
  *    The `pub_identifier' is the public key identifier (for example:
  *    "UN=foobar, HN=hostname"), or if NULL the routine generates it

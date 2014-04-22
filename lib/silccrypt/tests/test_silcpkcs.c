@@ -1,7 +1,7 @@
 /* Tests API in silcpkcs.h */
 #include "silc.h"
 
-int key_len = 2048;
+int key_len = 4096;
 const unsigned char p[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f";
 int p_len = 32;
 
@@ -16,7 +16,7 @@ int test()
   SilcPublicKeyIdentifier ident;
   SilcPrivateKey privkey;
   SilcBuffer buf;
-  unsigned char d[4096], d2[4096];
+  unsigned char d[8192], d2[8192];
   SilcUInt32 dlen, d2len;
   SilcHash sha1;
 

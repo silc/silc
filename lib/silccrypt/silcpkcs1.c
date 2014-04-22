@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2003 - 2007 Pekka Riikonen
+  Copyright (C) 2003 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -491,7 +491,7 @@ SilcBool silc_pkcs1_encrypt(void *public_key,
   RsaPublicKey *key = public_key;
   SilcMPInt mp_tmp;
   SilcMPInt mp_dst;
-  unsigned char padded[2048 + 1];
+  unsigned char padded[65536 + 1];
   SilcUInt32 len = (key->bits + 7) / 8;
 
   if (sizeof(padded) < len)
@@ -534,7 +534,7 @@ SilcBool silc_pkcs1_decrypt(void *private_key,
   RsaPrivateKey *key = private_key;
   SilcMPInt mp_tmp;
   SilcMPInt mp_dst;
-  unsigned char *padded, unpadded[2048 + 1];
+  unsigned char *padded, unpadded[65536 + 1];
   SilcUInt32 padded_len;
 
   if (dst_size < (key->bits + 7) / 8)
@@ -591,7 +591,7 @@ SilcBool silc_pkcs1_sign(void *private_key,
 			 SilcHash hash)
 {
   RsaPrivateKey *key = private_key;
-  unsigned char padded[2048 + 1], hashr[SILC_HASH_MAXLEN];
+  unsigned char padded[65536 + 1], hashr[SILC_HASH_MAXLEN];
   SilcMPInt mp_tmp;
   SilcMPInt mp_dst;
   SilcBufferStruct di;
@@ -802,7 +802,7 @@ SilcBool silc_pkcs1_sign_no_oid(void *private_key,
   RsaPrivateKey *key = private_key;
   SilcMPInt mp_tmp;
   SilcMPInt mp_dst;
-  unsigned char padded[2048 + 1], hashr[SILC_HASH_MAXLEN];
+  unsigned char padded[65536 + 1], hashr[SILC_HASH_MAXLEN];
   SilcUInt32 len = (key->bits + 7) / 8;
 
   SILC_LOG_DEBUG(("Sign"));
@@ -859,7 +859,7 @@ SilcBool silc_pkcs1_verify_no_oid(void *public_key,
   SilcBool ret = FALSE;
   SilcMPInt mp_tmp2;
   SilcMPInt mp_dst;
-  unsigned char *verify, unpadded[2048 + 1], hashr[SILC_HASH_MAXLEN];
+  unsigned char *verify, unpadded[65536 + 1], hashr[SILC_HASH_MAXLEN];
   SilcUInt32 verify_len, len = (key->bits + 7) / 8;
 
   SILC_LOG_DEBUG(("Verify signature"));

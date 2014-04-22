@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ static struct option long_opts[] =
 static char *opt_keypath = NULL;
 static char *opt_pkcs = "rsa";
 static char *opt_identifier = NULL;
-static int opt_bits = 2048;
+static int opt_bits = 4096;
 
 /* Prints out the usage of silc client */
 
@@ -702,6 +702,12 @@ int main(int argc, char **argv)
     silc_pkcs_register_default();
     silc_hash_register_default();
     silc_hmac_register_default();
+
+    if (opt_bits < 4096)
+      fprintf(stderr,
+              "warning: You have specified key length under 4096 bits. It is "
+	      "recommended to use at least 4096 bits.\n");
+
     if (!silc_create_key_pair(opt_pkcs, opt_bits, pubfile, prvfile,
 			      opt_identifier, "", NULL, NULL, FALSE))
       exit(1);

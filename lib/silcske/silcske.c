@@ -1457,7 +1457,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase2)
 
   /* Compute signature data if we are doing mutual authentication */
   if (ske->private_key && ske->prop->flags & SILC_SKE_SP_FLAG_MUTUAL) {
-    unsigned char hash[SILC_HASH_MAXLEN], sign[2048 + 1];
+    unsigned char hash[SILC_HASH_MAXLEN], sign[65536 + 1];
     SilcUInt32 hash_len, sign_len;
 
     SILC_LOG_DEBUG(("We are doing mutual authentication"));
@@ -2294,7 +2294,7 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
   SilcSKE ske = fsm_context;
   SilcSKEStatus status;
   SilcBuffer payload_buf;
-  unsigned char hash[SILC_HASH_MAXLEN], sign[2048 + 1], *pk;
+  unsigned char hash[SILC_HASH_MAXLEN], sign[65536 + 1], *pk;
   SilcUInt32 hash_len, sign_len, pk_len;
 
   SILC_LOG_DEBUG(("Start"));
