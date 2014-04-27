@@ -182,8 +182,6 @@ SilcBool silc_asn1_dump(SilcAsn1 asn1, SilcBuffer src)
 
     if (renc == SILC_BER_ENC_PRIMITIVE)
       len = len + rdata_len;
-    else
-      len = len;
 
     if (len)
       silc_buffer_pull(src, len);

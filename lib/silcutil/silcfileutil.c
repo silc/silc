@@ -157,7 +157,7 @@ char *silc_file_readfile(const char *filename, SilcUInt32 *return_len)
   buffer = silc_calloc(filelen + 1, sizeof(char));
 
   if ((silc_file_read(fd, buffer, filelen)) == -1) {
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, filelen + 1);
     silc_file_close(fd);
     SILC_LOG_ERROR(("Cannot read from file %s: %s", filename,
                     strerror(errno)));

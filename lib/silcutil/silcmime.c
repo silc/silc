@@ -241,7 +241,7 @@ SilcMime silc_mime_decode(SilcMime mime, const unsigned char *data,
       }
       silc_free(line);
 
-      for (i = i; i < data_len; i++) {
+      for ( ; i < data_len; i++) {
 	/* Get boundary data */
 	if (data_len - i >= strlen(b) &&
 	    tmp[i] == '-' && tmp[i + 1] == '-') {
