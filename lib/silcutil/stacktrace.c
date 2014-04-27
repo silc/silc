@@ -70,9 +70,15 @@
 #include "silc.h"
 
 #ifdef SILC_STACKTRACE
+#if defined(HAVE_BACKTRACE)
 #include <execinfo.h>
+#endif /* HAVE_BACKTRACE */
 #include <signal.h>
+#if !defined(__APPLE__)
 #include <malloc.h>
+#else
+#include <sys/malloc.h>
+#endif
 #include <sys/mman.h>
 
 static void *st_blocks = NULL;
@@ -128,6 +134,46 @@ typedef struct SilcStBlockStruct {
 #define silc_hexdump(ptr, size, file) \
   silc_log_output_hexdump("", "", 0, ptr, size, "")
 
+int silc_st_backtrace(void **stack)
+{
+#if defined(HAVE_BACKTRACE)
+  return backtrace(stack, SILC_ST_DEPTH);
+#else
+  void *fp;
+  int depth;
+  asm volatile ("movl %%ebp, %0" : "=r" (fp));
+  for (depth = 0; fp; depth++) {
+    if (depth == SILC_ST_DEPTH)
+      break;
+
+    /* Get program pointer and frame pointer from this frame */
+    stack[depth] = *((void **)(((unsigned char *)fp) + 4));
+    fp = *((void **)fp);
+  }
+  return depth;
+#endif /* HAVE_BACKTRACE */
+}
+
+char **silc_st_backtrace_symbols(void **stack, int depth)
+{
+#if defined(HAVE_BACKTRACE)
+  return backtrace_symbols(stack, depth);
+#else
+  return NULL;
+#endif /* HAVE_BACKTRACE */
+}
+
+void silc_st_backtrace_symbols_stderr(void **stack, int depth)
+{
+#if defined(HAVE_BACKTRACE)
+  backtrace_symbols_fd(stack, depth, 2);
+#else
+  int i;
+  for (i = 0; i < depth; i++)
+    fprintf(stderr, "? [%p]\n", stack[i]);
+#endif /* HAVE_BACKTRACE */
+}
+
 void silc_st_abort(SilcStBlock stack, const char *file, int line,
 		   char *fmt, ...)
 {
@@ -141,8 +187,8 @@ void silc_st_abort(SilcStBlock stack, const char *file, int line,
   va_end(va);
 
   fprintf(stderr, "----- BACKTRACE -----\n%s:%d:\n", file, line);
-  btc = backtrace(bt, SILC_ST_DEPTH);
-  backtrace_symbols_fd(bt, btc, 2);
+  btc = silc_st_backtrace(bt);
+  silc_st_backtrace_symbols_stderr(bt, btc);
 
   if (stack) {
     fprintf(stderr, "----- MEMORY TRACE -----\n");
@@ -151,7 +197,7 @@ void silc_st_abort(SilcStBlock stack, const char *file, int line,
 	      stack->free_line);
     fprintf(stderr, "Originally allocated at:\n");
     fprintf(stderr, "%s:%d:\n", stack->file, stack->line);
-    backtrace_symbols_fd(stack->stack, stack->depth, 2);
+    silc_st_backtrace_symbols(stack->stack, stack->depth);
     fflush(stderr);
 
     if (dump_mem) {
@@ -259,8 +305,10 @@ void *silc_st_malloc(size_t size, const char *file, int line)
   if (pg) {
     unsigned char *ptr;
 
+#if defined(HAVE_POSIX_MEMALIGN)
     if (posix_memalign((void *)&ptr, pg,
 		       SILC_ST_GET_SIZE_ALIGN(size, pg) + pg))
+#endif /* HAVE_POSIX_MEMALIGN */
       return NULL;
 
     /* The inaccessible page too will include the allocation information
@@ -290,7 +338,7 @@ void *silc_st_malloc(size_t size, const char *file, int line)
   stack->line = line;
   stack->size = size;
   stack->bound = SILC_ST_TOP_BOUND;
-  stack->depth = backtrace(stack->stack, SILC_ST_DEPTH);
+  stack->depth = silc_st_backtrace(stack->stack);
 
   silc_mutex_lock(lock);
 
@@ -459,7 +507,7 @@ void silc_st_dump(void)
     }
 
     /* Get symbol names */
-    syms = backtrace_symbols(stack->stack, stack->depth);
+    syms = silc_st_backtrace_symbols(stack->stack, stack->depth);
 
     /* Find number of leaks and bytes leaked for this leak */
     for (s = stack; s; s = s->next) {

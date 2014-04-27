@@ -39,10 +39,8 @@ DIST_SUBDIRS=unix
 #endif SILC_DIST_CLIENT
 #endif SILC_DIST_TOOLKIT
 
-#ifdef SILC_DIST_TOOLKIT
 SILC_DIST_SOURCE = stacktrace.c
 SILC_DIST_HEADER = stacktrace.h
-#endif SILC_DIST_TOOLKIT
 
 noinst_LTLIBRARIES = libsilcutil.la
 
