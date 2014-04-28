@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2008 Pekka Riikonen
+  Copyright (C) 2001 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -1007,6 +1007,9 @@ void silc_client_del_client_entry(SilcClient client,
   if (client_entry->internal.hmac_receive)
     silc_hmac_free(client_entry->internal.hmac_receive);
   silc_client_ftp_session_free_client(client, client_entry);
+  if (client_entry->internal.op)
+    silc_async_abort(client_entry->internal.op, NULL, NULL);
+  client_entry->internal.op = NULL;
   if (client_entry->internal.ke)
     silc_client_abort_key_agreement(client, conn, client_entry);
   silc_atomic_uninit32(&client_entry->internal.deleted);
@@ -1028,6 +1031,14 @@ SilcBool silc_client_del_client(SilcClient client, SilcClientConnection conn,
   if (silc_atomic_sub_int32(&client_entry->internal.deleted, 1) != 0) {
     SILC_LOG_DEBUG(("Client entry %p already marked deleted", client_entry));
     return FALSE;
+  }
+
+  /* Abort ongoing operation */
+  if (client_entry->internal.op) {
+    SILC_LOG_DEBUG(("Aborting ongoing operation %p",
+		    client_entry->internal.op));
+    silc_async_abort(client_entry->internal.op, NULL, NULL);
+    client_entry->internal.op = NULL;
   }
 
   silc_client_unref_client(client, conn, client_entry);

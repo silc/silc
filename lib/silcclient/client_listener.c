@@ -151,7 +151,7 @@ silc_client_listener_new_connection(SilcClientListener listener,
 {
   SilcClient client = listener->client;
   SilcClientConnection conn;
-  SilcSKEParamsStruct params;
+  SilcSKEParamsStruct params = {};
   const char *hostname = NULL, *ip = NULL;
   SilcUInt16 port;
 

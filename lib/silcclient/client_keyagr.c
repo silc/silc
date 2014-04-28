@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2007 Pekka Riikonen
+  Copyright (C) 2001 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ struct SilcClientKeyAgreementStruct {
   SilcClientListener listener;	          /* Listener */
   SilcKeyAgreementCallback completion;	  /* Key agreement completion */
   void *context;			  /* User context */
-  SilcAsyncOperation op;		  /* Async operation, initiator */
 };
 
 /************************ Static utility functions **************************/
@@ -45,8 +44,9 @@ static void silc_client_keyagr_free(SilcClient client,
 
   silc_client_listener_free(ke->listener);
   silc_schedule_task_del_by_context(conn->internal->schedule, client_entry);
-  if (ke->op)
-    silc_async_abort(ke->op, NULL, NULL);
+  if (client_entry->internal.op)
+    silc_async_abort(client_entry->internal.op, NULL, NULL);
+  client_entry->internal.op = NULL;
   client_entry->internal.ke = NULL;
   client_entry->internal.prv_resp = FALSE;
   silc_client_unref_client(client, conn, client_entry);
@@ -103,7 +103,7 @@ static void silc_client_keyagr_completion(SilcClient client,
   SilcClientKeyAgreement ke = client_entry->internal.ke;
   SilcSKEKeyMaterial keymat;
 
-  ke->op = NULL;
+  client_entry->internal.op = NULL;
 
   switch (status) {
   case SILC_CLIENT_CONN_SUCCESS:
@@ -280,11 +280,12 @@ void silc_client_perform_key_agreement(SilcClient client,
     params->no_authentication = TRUE;
 
   /* Connect to the remote client.  Performs key exchange automatically. */
-  ke->op = silc_client_connect_to_client(client, params, public_key,
-					 private_key, hostname, port,
-					 silc_client_keyagr_completion,
-					 client_entry);
-  if (!ke->op) {
+  client_entry->internal.op =
+    silc_client_connect_to_client(client, params, public_key,
+				  private_key, hostname, port,
+				  silc_client_keyagr_completion,
+				  client_entry);
+  if (!client_entry->internal.op) {
     completion(client, conn, client_entry, SILC_KEY_AGREEMENT_ERROR,
 	       NULL, context);
     silc_client_keyagr_free(client, conn, client_entry);
@@ -338,11 +339,12 @@ silc_client_perform_key_agreement_stream(SilcClient client,
     params->no_authentication = TRUE;
 
   /* Perform key exchange protocol */
-  ke->op = silc_client_key_exchange(client, params, public_key,
-				    private_key, stream, SILC_CONN_CLIENT,
-				    silc_client_keyagr_completion,
-				    client_entry);
-  if (!ke->op) {
+  client_entry->internal.op =
+    silc_client_key_exchange(client, params, public_key,
+			     private_key, stream, SILC_CONN_CLIENT,
+			     silc_client_keyagr_completion,
+			     client_entry);
+  if (!client_entry->internal.op) {
     completion(client, conn, client_entry, SILC_KEY_AGREEMENT_ERROR,
 	       NULL, context);
     silc_client_keyagr_free(client, conn, client_entry);

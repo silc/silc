@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@ typedef struct SilcClientEntryInternalStruct {
   unsigned char *key;		/* Valid if application provided the key */
   SilcUInt32 key_len;		/* Key data length */
   SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
+  SilcAsyncOperation op;	/* Asynchronous operation with this client */
 
   SilcAtomic32 refcnt;		/* Reference counter */
   SilcAtomic32 deleted;	        /* Flag indicating whether the client object is

@@ -391,6 +391,9 @@ SILC_FSM_STATE(silc_client_connection_st_close)
 {
   SilcClientConnection conn = fsm_context;
   SilcClientCommandContext cmd;
+  SilcList list;
+  SilcIDCacheEntry entry;
+  SilcClientEntry client_entry;
 
   /* Finish running command threads.  This will also finish waiting packet
      thread, as they are always waiting for some command.  If any thread is
@@ -414,6 +417,20 @@ SILC_FSM_STATE(silc_client_connection_st_close)
     SILC_LOG_DEBUG(("Abort event"));
     silc_async_abort(conn->internal->op, NULL, NULL);
     conn->internal->op = NULL;
+  }
+
+  /* Abort ongoing client entry operations */
+  if (conn->internal->client_cache) {
+    if (silc_idcache_get_all(conn->internal->client_cache, &list)) {
+      silc_list_start(list);
+      while ((entry = silc_list_get(list))) {
+	client_entry = entry->context;
+	if (client_entry->internal.op) {
+	  silc_async_abort(client_entry->internal.op, NULL, NULL);
+	  client_entry->internal.op = NULL;
+	}
+      }
+    }
   }
 
   /* If event thread is running, finish it. */
