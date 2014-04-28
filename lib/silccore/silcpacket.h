@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2009 Pekka Riikonen
+  Copyright (C) 1997 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -511,6 +511,24 @@ SilcPacketStream silc_packet_stream_add_remote(SilcPacketStream stream,
 					       SilcUInt16 remote_port,
 					       SilcPacket packet);
 
+/****f* silccore/SilcPacketAPI/silc_packet_stream_inject
+ *
+ * SYNOPSIS
+ *
+ * SilcBool silc_packet_stream_inject(SilcPacketStream stream,
+ *                                    SilcPacket packet);
+ *
+ * DESCRIPTION
+ *
+ *    This function can be used to inject the `packet' to the given
+ *    packet `stream'.  The packet will appear in the packet stream's
+ *    packet handler(s).  If this returns FALSE the packet was not
+ *    injected.
+ *
+ ***/
+SilcBool silc_packet_stream_inject(SilcPacketStream stream,
+				   SilcPacket packet);
+
 /****f* silccore/SilcPacketAPI/silc_packet_stream_destroy
  *
  * SYNOPSIS
@@ -689,18 +707,26 @@ void silc_packet_stream_unlink(SilcPacketStream stream,
  *
  * DESCRIPTION
  *
- *    The encoder/decoder callback for silc_packet_stream_wrap.  If the
- *    `status' is SILC_STREAM_CAN_WRITE then additional data can be added
- *    to `buffer'.  It is added before the data that is written with
- *    silc_stream_write.  The silc_buffer_enlarge should be called to verify
- *    there is enough room in `buffer' before adding data to it.  The `buffer'
- *    must not be freed.
+ *    The encoder/decoder callback for silc_packet_stream_wrap.
+ *
+ *    If the `status' is SILC_STREAM_CAN_WRITE then additional data can
+ *    be added to `buffer' which contains the data that is being written
+ *    to the stream.  There is at least 16 bytes of free space in head
+ *    space of the buffer in case new headers need to be added. 
+ *    The silc_buffer_enlarge should be called to verify that there is
+ *    enough room before adding data to it.  The `buffer' must not be freed.
+ *    If the return value is FALSE the encoding failed and the packet is
+ *    not sent at all and the stream will receive error.  Return TRUE if
+ *    the encoding succeeded.
  *
  *    If the `status' is SILC_STREAM_CAN_READ then data from the `buffer'
- *    may be read before it is passed to readed when silc_stream_read is
- *    called.  The `buffer' may be advanced also to hide data in it.
- *
- *    This function returns FALSE in case of error.
+ *    may be read before it is passed to reader when silc_stream_read is
+ *    called.  The `buffer' may be advanced also to hide data in it.  If
+ *    return value is FALSE the decoding failed (or the packet is ignored)
+ *    and the packet will not be processed by the wrapped packet stream.
+ *    If there are other packet streams wanting the same packet, they will
+ *    get it, and if not the packet will drop.  Return TRUE if decoding
+ *    succeeded.
  *
  ***/
 typedef SilcBool (*SilcPacketWrapCoder)(SilcStream stream,
@@ -716,6 +742,8 @@ typedef SilcBool (*SilcPacketWrapCoder)(SilcStream stream,
  *                                       SilcPacketType type,
  *                                       SilcPacketFlags flags,
  *                                       SilcBool blocking_mode,
+ *                                       SilcIdType src_id_type, void *src_id,
+ *                                       SilcIdType dst_id_type, void *dst_id,
  *                                       SilcPacketWrapCoder coder,
  *                                       void *context);
  *
@@ -742,6 +770,10 @@ typedef SilcBool (*SilcPacketWrapCoder)(SilcStream stream,
  *    once returns one complete SILC packet data payload (which is of type of
  *    `type').
  *
+ *    If src_id and/or dst_id are set they will be used as the ids in the
+ *    sent SILC packets.  If the dst_id is set then the stream will receive
+ *    packets only originating from that id.
+ *
  *    The `coder' is optional encoder/decoder callback which the packet engine
  *    will call if it is non-NULL.  It can be used to encode additional data
  *    into each packet when silc_stream_write is called or decode data before
@@ -757,6 +789,8 @@ SilcStream silc_packet_stream_wrap(SilcPacketStream stream,
 				   SilcPacketType type,
 				   SilcPacketFlags flags,
 				   SilcBool blocking_mode,
+				   SilcIdType src_id_type, void *src_id,
+				   SilcIdType dst_id_type, void *dst_id,
 				   SilcPacketWrapCoder coder,
 				   void *context);
 

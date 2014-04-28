@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2009 Pekka Riikonen
+  Copyright (C) 1997 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -162,7 +162,8 @@ do {									\
 				    (s)->stream_context);		\
 } while(0)
 
-static SilcBool silc_packet_dispatch(SilcPacket packet);
+static SilcBool silc_packet_dispatch(SilcPacket packet,
+				     SilcPacketReceiveCb ignore_handler);
 static void silc_packet_read_process(SilcPacketStream stream);
 static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
 					    SilcPacketType type,
@@ -191,7 +192,7 @@ SILC_TASK_CALLBACK(silc_packet_stream_inject_packet)
 
   silc_mutex_lock(stream->lock);
   if (!stream->destroyed)
-    silc_packet_dispatch(packet);
+    silc_packet_dispatch(packet, NULL);
   silc_mutex_unlock(stream->lock);
   silc_packet_stream_unref(stream);
 }
@@ -871,14 +872,23 @@ SilcPacketStream silc_packet_stream_add_remote(SilcPacketStream stream,
 
   if (packet) {
     /* Inject packet to the new stream */
-    packet->stream = ps;
-    silc_packet_stream_ref(ps);
-    silc_schedule_task_add_timeout(silc_stream_get_schedule(stream->stream),
-				   silc_packet_stream_inject_packet, packet,
-				   0, 0);
+    silc_packet_stream_inject(ps, packet);
   }
 
   return ps;
+}
+
+/* Inject packet to packet stream */
+
+SilcBool silc_packet_stream_inject(SilcPacketStream stream,
+				   SilcPacket packet)
+{
+  packet->stream = stream;
+  silc_packet_stream_ref(stream);
+  return !!silc_schedule_task_add_timeout(
+				silc_stream_get_schedule(stream->stream),
+				silc_packet_stream_inject_packet, packet,
+				0, 0);
 }
 
 /* Destroy packet stream */
@@ -1627,6 +1637,7 @@ static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
   /* Get packet pointer from the outgoing buffer */
   if (silc_unlikely(!silc_packet_send_prepare(stream, truelen + padlen + ivlen
 					      + psnlen, hmac, &packet))) {
+    SILC_LOG_ERROR(("Error preparing for packet sending"));
     silc_mutex_unlock(stream->lock);
     return FALSE;
   }
@@ -1653,6 +1664,7 @@ static inline SilcBool silc_packet_send_raw(SilcPacketStream stream,
 			 SILC_STR_DATA(data, data_len),
 			 SILC_STR_END);
   if (silc_unlikely(i < 0)) {
+    SILC_LOG_ERROR(("Error encoding outgoing packet"));
     silc_mutex_unlock(stream->lock);
     return FALSE;
   }
@@ -2007,7 +2019,8 @@ static inline SilcBool silc_packet_parse(SilcPacket packet)
 /* Dispatch packet to application.  Called with stream->lock locked.
    Returns FALSE if the stream was destroyed while dispatching a packet. */
 
-static SilcBool silc_packet_dispatch(SilcPacket packet)
+static SilcBool silc_packet_dispatch(SilcPacket packet,
+				     SilcPacketReceiveCb ignore_handler)
 {
   SilcPacketStream stream = packet->stream;
   SilcPacketProcess p;
@@ -2063,7 +2076,8 @@ static SilcBool silc_packet_dispatch(SilcPacket packet)
     } else {
       /* Send specific types */
       for (pt = p->types; *pt; pt++) {
-	if (*pt != packet->type)
+	if (*pt != packet->type || 
+	    ignore_handler == p->callbacks->packet_receive)
 	  continue;
 	SILC_LOG_DEBUG(("Dispatching packet to %p callbacks", p->callbacks));
 	silc_mutex_unlock(stream->lock);
@@ -2244,8 +2258,10 @@ static void silc_packet_read_process(SilcPacketStream stream)
     }
 
     if (silc_buffer_len(inbuf) < paddedlen + ivlen + mac_len) {
-      SILC_LOG_DEBUG(("Received partial packet, waiting for the rest "
-		      "(%d bytes)",
+      SILC_LOG_DEBUG(("Received partial packet (%d %s flags:%x normal:%d "
+		      "len:%u paddedlen:%u), waiting for the rest (%d bytes)",
+		      type, silc_get_packet_name(type), flags,
+		      normal, packetlen, paddedlen,
 		      paddedlen + mac_len - silc_buffer_len(inbuf)));
       memset(tmp, 0, sizeof(tmp));
       silc_dlist_del(stream->sc->inbufs, inbuf);
@@ -2347,7 +2363,7 @@ static void silc_packet_read_process(SilcPacketStream stream)
     }
 
     /* Dispatch the packet to application */
-    if (!silc_packet_dispatch(packet))
+    if (!silc_packet_dispatch(packet, NULL))
       break;
   }
 
@@ -2555,6 +2571,10 @@ typedef struct {
   SilcList in_queue;
   SilcPacketType type;
   SilcPacketFlags flags;
+  void *src_id;
+  void *dst_id;
+  SilcIdType src_id_type;
+  SilcIdType dst_id_type;
   unsigned int closed        : 1;
   unsigned int blocking      : 1;
   unsigned int read_more     : 1;
@@ -2576,9 +2596,23 @@ silc_packet_wrap_packet_receive(SilcPacketEngine engine,
 				void *stream_context)
 {
   SilcPacketWrapperStream pws = callback_context;
+  SilcID id;
 
   if (pws->closed || !pws->callback)
     return FALSE;
+
+  /* If dst_id was set, the incoming packet must use that id as its
+     source id.  This will not work if the id is channel id because
+     the source is never the channel id, but will work with other ids. */
+  if ((pws->dst_id && pws->dst_id_type != SILC_ID_CHANNEL)) {
+    silc_id_str2id2(packet->src_id, packet->src_id_len,
+		    packet->src_id_type, &id);
+    if (!SILC_ID_COMPARE_TYPE(pws->dst_id, SILC_ID_GET_ID(id),
+			      packet->src_id_len)) {
+      SILC_LOG_DEBUG(("Packet is not from wanted sender"));
+      return FALSE;
+    }
+  }
 
   silc_mutex_lock(pws->lock);
   silc_list_add(pws->in_queue, packet);
@@ -2610,7 +2644,7 @@ int silc_packet_wrap_read(SilcStream stream, unsigned char *buf,
 {
   SilcPacketWrapperStream pws = stream;
   SilcPacket packet;
-  SilcBool read_more = FALSE;
+  SilcBool read_more = FALSE, ret = TRUE;
   int len;
 
   if (pws->closed)
@@ -2638,8 +2672,17 @@ int silc_packet_wrap_read(SilcStream stream, unsigned char *buf,
 
   /* Call decoder if set */
   if (pws->coder && !pws->read_more)
-    pws->coder(stream, SILC_STREAM_CAN_READ, &packet->buffer,
-	       pws->coder_context);
+    ret = pws->coder(stream, SILC_STREAM_CAN_READ, &packet->buffer,
+		     pws->coder_context);
+
+  if (!ret) {
+    /* If error occurred during decoding (or handler doesn't want this
+       packet), we'll reprocess this packet and try to give it to some
+       other handler that may want it.  For this stream nothing was
+       received. */
+    silc_packet_dispatch(packet, silc_packet_wrap_packet_receive);
+    return -1;
+  }
 
   len = silc_buffer_len(&packet->buffer);
   if (len > buf_len) {
@@ -2671,29 +2714,39 @@ int silc_packet_wrap_write(SilcStream stream, const unsigned char *data,
 			   SilcUInt32 data_len)
 {
   SilcPacketWrapperStream pws = stream;
-  SilcBool ret = FALSE;
+  SilcBool ret = TRUE;
 
-  /* Call encoder if set */
-  if (pws->coder) {
-    silc_buffer_reset(pws->encbuf);
-    ret = pws->coder(stream, SILC_STREAM_CAN_WRITE, pws->encbuf,
-		     pws->coder_context);
+  if (!pws->coder) {
+    if (!silc_packet_send_ext(pws->stream, pws->type, pws->flags,
+			      pws->src_id_type, pws->src_id,
+			      pws->dst_id_type, pws->dst_id,
+			      data, data_len, NULL, NULL))
+      return -2;
+    return data_len;
   }
+
+  silc_buffer_reset(pws->encbuf);
+  if (!silc_buffer_enlarge(pws->encbuf, data_len + 16))
+    return -2;
+  silc_buffer_pull(pws->encbuf, 16);    /* Room for adding headers */
+  silc_buffer_put(pws->encbuf, data, data_len);
+
+  ret = pws->coder(stream, SILC_STREAM_CAN_WRITE, pws->encbuf,
+		   pws->coder_context);
 
   /* Send the SILC packet */
   if (ret) {
-    if (!silc_packet_send_va(pws->stream, pws->type, pws->flags,
-			     SILC_STR_DATA(silc_buffer_data(pws->encbuf),
-					   silc_buffer_len(pws->encbuf)),
-			     SILC_STR_DATA(data, data_len),
-			     SILC_STR_END))
+    if (!silc_packet_send_ext(pws->stream, pws->type, pws->flags,
+			      pws->src_id_type, pws->src_id,
+			      pws->dst_id_type, pws->dst_id,
+			      silc_buffer_datalen(pws->encbuf),
+			      NULL, NULL))
       return -2;
-  } else {
-    if (!silc_packet_send(pws->stream, pws->type, pws->flags, data, data_len))
-      return -2;
+    return data_len;
   }
 
-  return data_len;
+  /* Error */
+  return -2;
 }
 
 /* Close stream */
@@ -2770,7 +2823,8 @@ SilcBool silc_packet_wrap_notifier(SilcStream stream,
 
 SilcSchedule silc_packet_wrap_get_schedule(SilcStream stream)
 {
-  return NULL;
+  SilcPacketWrapperStream pws = stream;
+  return silc_stream_get_schedule(pws->stream->stream);
 }
 
 /* Wraps packet stream into SilcStream. */
@@ -2779,6 +2833,8 @@ SilcStream silc_packet_stream_wrap(SilcPacketStream stream,
                                    SilcPacketType type,
                                    SilcPacketFlags flags,
 				   SilcBool blocking_mode,
+				   SilcIdType src_id_type, void *src_id,
+				   SilcIdType dst_id_type, void *dst_id,
 				   SilcPacketWrapCoder coder,
 				   void *context)
 {
@@ -2797,6 +2853,24 @@ SilcStream silc_packet_stream_wrap(SilcPacketStream stream,
   pws->blocking = blocking_mode;
   pws->coder = coder;
   pws->coder_context = context;
+
+  if (src_id) {
+    pws->src_id = silc_id_dup(src_id, src_id_type);
+    if (!pws->src_id) {
+      silc_free(pws);
+      return NULL;
+    }
+    pws->src_id_type = src_id_type;
+  }
+
+  if (dst_id) {
+    pws->dst_id = silc_id_dup(dst_id, dst_id_type);
+    if (!pws->dst_id) {
+      silc_free(pws);
+      return NULL;
+    }
+    pws->dst_id_type = dst_id_type;
+  }
 
   /* Allocate small amount for encoder buffer. */
   if (pws->coder)
