@@ -2599,6 +2599,14 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 			 silc_pubkey->identifier.realname,
 			 silc_pubkey->identifier.email ?
 			 silc_pubkey->identifier.email : "");
+    else if (conn_type == SILC_CONN_CLIENT &&
+	     (silc_pubkey->identifier.realname ||
+	      silc_pubkey->identifier.email))
+      printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+			 SILCTXT_PUBKEY_RECEIVED_CLIENT, "",
+			 silc_pubkey->identifier.realname,
+			 silc_pubkey->identifier.email ?
+			 silc_pubkey->identifier.email : "");
     printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 		       SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
     printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
@@ -2606,7 +2614,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
     format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			     SILCTXT_PUBKEY_ACCEPT);
     silc_keyboard_entry_redirect(verify_public_key_completion,
-			    format, 0, verify, &server->prompt_op);
+				 format, 0, verify,
+				 server ? &server->prompt_op : NULL);
     g_free(format);
     silc_free(fingerprint);
     silc_free(babbleprint);
@@ -2630,6 +2639,14 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 			   silc_pubkey->identifier.realname,
 			   silc_pubkey->identifier.email ?
 			   silc_pubkey->identifier.email : "");
+      else if (conn_type == SILC_CONN_CLIENT &&
+	       (silc_pubkey->identifier.realname ||
+	        silc_pubkey->identifier.email))
+	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+			   SILCTXT_PUBKEY_RECEIVED_CLIENT, "",
+			   silc_pubkey->identifier.realname,
+			   silc_pubkey->identifier.email ?
+			   silc_pubkey->identifier.email : "");
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
@@ -2639,7 +2656,9 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
       format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			       SILCTXT_PUBKEY_ACCEPT_ANYWAY);
       silc_keyboard_entry_redirect(verify_public_key_completion,
-			      format, 0, verify, &server->prompt_op);
+				   format, 0, verify,
+				   server ? &server->prompt_op : NULL);
+
       g_free(format);
       silc_free(fingerprint);
       silc_free(babbleprint);
@@ -2660,6 +2679,14 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 			   silc_pubkey->identifier.realname,
 			   silc_pubkey->identifier.email ?
 			   silc_pubkey->identifier.email : "");
+      else if (conn_type == SILC_CONN_CLIENT &&
+	       (silc_pubkey->identifier.realname ||
+	        silc_pubkey->identifier.email))
+	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+			   SILCTXT_PUBKEY_RECEIVED_CLIENT, "",
+			   silc_pubkey->identifier.realname,
+			   silc_pubkey->identifier.email ?
+			   silc_pubkey->identifier.email : "");
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
@@ -2669,7 +2696,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
       format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			       SILCTXT_PUBKEY_ACCEPT_ANYWAY);
       silc_keyboard_entry_redirect(verify_public_key_completion,
-			      format, 0, verify, &server->prompt_op);
+				   format, 0, verify,
+				   server ? &server->prompt_op : NULL);
       g_free(format);
       silc_free(fingerprint);
       silc_free(babbleprint);
@@ -2690,6 +2718,14 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 			   silc_pubkey->identifier.realname,
 			   silc_pubkey->identifier.email ?
 			   silc_pubkey->identifier.email : "");
+      else if (conn_type == SILC_CONN_CLIENT &&
+	       (silc_pubkey->identifier.realname ||
+	        silc_pubkey->identifier.email))
+	printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
+			   SILCTXT_PUBKEY_RECEIVED_CLIENT, "",
+			   silc_pubkey->identifier.realname,
+			   silc_pubkey->identifier.email ?
+			   silc_pubkey->identifier.email : "");
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
 			 SILCTXT_PUBKEY_FINGERPRINT, entity, fingerprint);
       printformat_module("fe-common/silc", NULL, NULL, MSGLEVEL_CRAP,
@@ -2705,7 +2741,8 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
       format = format_get_text("fe-common/silc", NULL, NULL, NULL,
 			       SILCTXT_PUBKEY_ACCEPT_ANYWAY);
       silc_keyboard_entry_redirect(verify_public_key_completion,
-			      format, 0, verify, &server->prompt_op);
+				   format, 0, verify,
+				   server ? &server->prompt_op : NULL);
       g_free(format);
       silc_free(fingerprint);
       silc_free(babbleprint);

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2006, 2008 Pekka Riikonen
+  Copyright (C) 1997 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -545,7 +545,8 @@ SilcBool silc_keyboard_entry_redirect(SILC_KEYBOARD_PROMPT_PROC prompt_func,
    * assuming that it doesn't as there's already many other things that seem
    * to make this assumption.
    */
-  *async = ctx->async_context;
+  if (async)
+    *async = ctx->async_context;
 
   /*
    * All done.  Irssi will invoke the callback on this thread at a later point
