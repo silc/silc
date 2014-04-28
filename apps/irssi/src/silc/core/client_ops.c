@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2008 Pekka Riikonen
+  Copyright (C) 2001 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -2402,13 +2402,13 @@ static void verify_public_key_completion(const char *line, void *context,
   SilcBool success = (reason == KeyboardCompletionSuccess);
 
   if (success && (line[0] == 'Y' || line[0] == 'y')) {
-    /* Call the completion */
-    if (verify->completion)
-      verify->completion(TRUE, verify->context);
-
     /* Save the key for future checking */
     silc_pkcs_save_public_key(verify->filename, verify->public_key,
 			      SILC_PKCS_FILE_BASE64);
+
+    /* Call the completion */
+    if (verify->completion)
+      verify->completion(TRUE, verify->context);
   } else {
     /* Call the completion */
     if (verify->completion)
@@ -2475,12 +2475,14 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 		  "server" : "client");
   int i;
 
-  server = (SILC_SERVER_REC*)conn->context;
-  SILC_VERIFY(server);
-  if (!server) {
-    if (completion)
-      completion(FALSE, context);
-    return;
+  if (conn_type != SILC_CONN_CLIENT) {
+    server = (SILC_SERVER_REC*)conn->context;
+    SILC_VERIFY(server);
+    if (!server) {
+      if (completion)
+	completion(FALSE, context);
+      return;
+    }
   }
 
   if (silc_pkcs_get_type(public_key) != SILC_PKCS_SILC) {
