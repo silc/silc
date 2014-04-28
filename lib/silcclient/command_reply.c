@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -737,6 +737,12 @@ SILC_FSM_STATE(silc_client_command_reply_nick)
     silc_rwlock_unlock(conn->local_entry->internal.lock);
     goto out;
   }
+
+  /* All auto-generated private message keys must be rekeyed because
+     we changed nick and others may not know about it. */
+  conn->internal->ake_generation++;
+  SILC_LOG_DEBUG(("AKE keys will be rekeyed, generation %u",
+		  conn->internal->ake_generation));
 
   silc_rwlock_unlock(conn->local_entry->internal.lock);
 

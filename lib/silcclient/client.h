@@ -32,6 +32,7 @@ typedef struct SilcChannelEntryStruct *SilcChannelEntry;
 typedef struct SilcServerEntryStruct *SilcServerEntry;
 
 typedef struct SilcClientKeyAgreementStruct *SilcClientKeyAgreement;
+typedef struct SilcClientAutonegMessageKeyStruct *SilcClientAutonegMessageKey;
 typedef struct SilcClientFtpSessionStruct *SilcClientFtpSession;
 typedef struct SilcClientCommandReplyContextStruct
                                            *SilcClientCommandReplyContext;
@@ -54,6 +55,10 @@ typedef struct SilcClientEntryInternalStruct {
   SilcClientKeyAgreement ke;	/* Current key agreement context or NULL */
   SilcAsyncOperation op;	/* Asynchronous operation with this client */
 
+  SilcClientAutonegMessageKey ake; /* Current auto-negotiation context */
+  SilcInt64 ake_rekey;		/* Next private message key auto-negotation */
+  SilcUInt32 ake_generation;	/* current AKE rekey generation */
+
   SilcAtomic32 refcnt;		/* Reference counter */
   SilcAtomic32 deleted;	        /* Flag indicating whether the client object is
 				   already scheduled for deletion */
@@ -65,6 +70,9 @@ typedef struct SilcClientEntryInternalStruct {
   unsigned int generated   : 1; /* TRUE if library generated `key' */
   unsigned int prv_resp    : 1; /* TRUE if we are responder when using
 				   private message keys. */
+  unsigned int no_ake      : 1;	/* TRUE if client doesn't support
+				   auto-negotiation of private message key,
+				   or it doesn't work. */
 } SilcClientEntryInternal;
 
 /* Internal channel entry context */

@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -48,7 +48,10 @@
 typedef struct {
   SilcSKE ske;
   SilcSKEVerifyCbCompletion completion;
+  SilcPublicKey public_key;
   void *completion_context;
+  void *context;
+  SilcBool aborted;
 } *SilcVerifyKeyContext;
 
 /* Command and command reply context used to hold registered commands
@@ -150,6 +153,7 @@ struct SilcClientConnectionInternalStruct {
   SilcUInt8 retry_timer;		 /* Packet retry timer */
   SilcClientConnectionStatus status;	 /* Connection callback status */
   SilcStatus error;			 /* Connection callback error */
+  SilcUInt32 ake_generation;		 /* next AKE rekey generation */
 
   /* Events */
   unsigned int connect            : 1;	 /* Connect remote host */

@@ -720,6 +720,10 @@ typedef struct SilcClientParamsStruct {
      itself will need to handle that. */
   SilcBool dont_register_crypto_library;
 
+  /* If this is set to TRUE, the silcclient library will not automatically
+     negotiate private message keys using SKE over the SILC network but will
+     use normal session keys to protect private messages. */
+  SilcBool dont_autoneg_prvmsg_keys;
 } SilcClientParams;
 /***/
 
@@ -1177,7 +1181,7 @@ void silc_client_close_connection(SilcClient client,
  *
  *    Returns TRUE if the message was sent, and FALSE if error occurred or
  *    the sending is not allowed due to channel modes (like sending is
- *    blocked).  This function is thread safe and private messages can be
+ *    blocked).  This function is thread safe and channel messages can be
  *    sent from multiple threads.
  *
  ***/

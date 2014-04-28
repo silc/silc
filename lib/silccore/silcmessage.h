@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 1997 - 2007 Pekka Riikonen
+  Copyright (C) 1997 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -79,7 +79,8 @@ typedef SilcUInt16 SilcMessageFlags;
 #define SILC_MESSAGE_FLAG_UTF8        0x0100	  /* UTF-8 string */
 #define SILC_MESSAGE_FLAG_ACK         0x0200	  /* ACK messages */
 #define SILC_MESSAGE_FLAG_STOP        0x0400      /* Stop indication */
-#define SILC_MESSAGE_FLAG_RESERVED    0x0800      /* to 0x1000 */
+#define SILC_MESSAGE_FLAG_PACKET      0x0800      /* Contains SILC packet */
+#define SILC_MESSAGE_FLAG_RESERVED    0x1000      /* to 0x1000 */
 #define SILC_MESSAGE_FLAG_PRIVATE     0x2000	  /* to 0x8000 */
 /***/
 
