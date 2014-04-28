@@ -498,6 +498,7 @@ silc_client_ftp_coder(SilcStream stream, SilcStreamStatus status,
 
   /* Add FTP type before SFTP data */
   if (status == SILC_STREAM_CAN_WRITE) {
+    silc_buffer_push(buffer, 1);
     if (silc_buffer_format(buffer,
 			   SILC_STR_UI_CHAR(1),
 			   SILC_STR_END) < 0)
@@ -531,7 +532,7 @@ silc_client_ftp_connect_completion(SilcClient client,
 
     /* Wrap the connection packet stream */
     session->stream = silc_packet_stream_wrap(conn->stream, SILC_PACKET_FTP,
-					      0, FALSE,
+					      0, FALSE, 0, NULL, 0, NULL,
 					      silc_client_ftp_coder, session);
     if (!session->stream) {
       /* Call monitor callback */
