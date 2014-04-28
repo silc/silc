@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2008 Pekka Riikonen
+  Copyright (C) 2000 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -231,6 +231,18 @@ struct SilcClientConnectionStruct {
   SilcClientConnectCallback callback;  /* Connection callback */
   void *callback_context;	       /* Connection context */
   SilcClient client;		       /* Pointer back to SilcClient */
+
+  /* Current say() operation associated context, identifies the client,
+     channel or server the message is related to.  Application can use
+     this information to target the message better. */
+  union {
+    SilcClientEntry client_entry;
+    SilcChannelEntry channel_entry;
+    SilcServerEntry server_entry;
+  };
+  SilcIdType context_type;		/* Defines which pointer is set
+					   in the union.  If SILC_ID_NONE
+					   pointer is NULL. */
 
   /* Application specific data.  Application may set here whatever it wants. */
   void *context;
@@ -506,7 +518,9 @@ typedef struct SilcClientOperationsStruct {
      The `type' indicates the type of the message sent by the library.
      The application can for example filter the message according the
      type.  The variable argument list is arguments to the formatted
-     message that `msg' may be. */
+     message `msg'.  A SilcClientEntry, SilcChannelEntry or SilcServerEntry
+     can be associated with the message inside the `conn' by the library,
+     and application may use it to better target the message. */
   void (*say)(SilcClient client, SilcClientConnection conn,
 	      SilcClientMessageType type, char *msg, ...);
 

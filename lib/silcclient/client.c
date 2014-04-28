@@ -452,7 +452,7 @@ SILC_FSM_STATE(silc_client_error)
   msg = silc_memdup(silc_buffer_data(&packet->buffer),
 		    silc_buffer_len(&packet->buffer));
   if (msg)
-    client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_AUDIT, msg);
+    client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR, msg);
 
   silc_free(msg);
   silc_packet_free(packet);

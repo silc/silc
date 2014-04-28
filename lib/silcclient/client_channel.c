@@ -53,9 +53,12 @@ SilcBool silc_client_send_channel_message(SilcClient client,
 
   chu = silc_client_on_channel(channel, conn->local_entry);
   if (silc_unlikely(!chu)) {
+    conn->context_type = SILC_ID_CHANNEL;
+    conn->channel_entry = channel;
     client->internal->ops->say(conn->client, conn,
-			       SILC_CLIENT_MESSAGE_AUDIT,
+			       SILC_CLIENT_MESSAGE_ERROR,
 			       "Cannot talk to channel: not joined");
+    conn->context_type = SILC_ID_NONE;
     return FALSE;
   }
 
@@ -423,21 +426,27 @@ SilcBool silc_client_save_channel_key(SilcClient client,
   /* Get channel cipher */
   cipher = silc_channel_key_get_cipher(payload, NULL);
   if (!silc_cipher_alloc(cipher, &channel->internal.send_key)) {
+    conn->context_type = SILC_ID_CHANNEL;
+    conn->channel_entry = channel;
     client->internal->ops->say(
 			   conn->client, conn,
-			   SILC_CLIENT_MESSAGE_AUDIT,
+			   SILC_CLIENT_MESSAGE_ERROR,
 			   "Cannot talk to channel: unsupported cipher %s",
 			   cipher);
+    conn->context_type = SILC_ID_NONE;
     silc_client_unref_channel(client, conn, channel);
     silc_channel_key_payload_free(payload);
     return FALSE;
   }
   if (!silc_cipher_alloc(cipher, &channel->internal.receive_key)) {
+    conn->context_type = SILC_ID_CHANNEL;
+    conn->channel_entry = channel;
     client->internal->ops->say(
 			   conn->client, conn,
-			   SILC_CLIENT_MESSAGE_AUDIT,
+			   SILC_CLIENT_MESSAGE_ERROR,
 			   "Cannot talk to channel: unsupported cipher %s",
 			   cipher);
+    conn->context_type = SILC_ID_NONE;
     silc_client_unref_channel(client, conn, channel);
     silc_channel_key_payload_free(payload);
     return FALSE;
@@ -453,11 +462,14 @@ SilcBool silc_client_save_channel_key(SilcClient client,
 	  (char *)silc_hmac_get_name(channel->internal.hmac) :
 	  SILC_DEFAULT_HMAC);
   if (!silc_hmac_alloc(hmac, NULL, &channel->internal.hmac)) {
+    conn->context_type = SILC_ID_CHANNEL;
+    conn->channel_entry = channel;
     client->internal->ops->say(
 			   conn->client, conn,
-			   SILC_CLIENT_MESSAGE_AUDIT,
+			   SILC_CLIENT_MESSAGE_ERROR,
 			   "Cannot talk to channel: unsupported HMAC %s",
 			   hmac);
+    conn->context_type = SILC_ID_NONE;
     silc_client_unref_channel(client, conn, channel);
     silc_channel_key_payload_free(payload);
     return FALSE;

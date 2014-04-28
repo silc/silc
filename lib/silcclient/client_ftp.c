@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2007 Pekka Riikonen
+  Copyright (C) 2001 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -189,11 +189,14 @@ static void silc_client_ftp_open_handle(SilcSFTP sftp,
   session->fd = silc_file_open(path, O_RDWR | O_CREAT | O_EXCL);
   if (session->fd < 0) {
     /* Call monitor callback */
+    session->conn->context_type = SILC_ID_CLIENT;
+    session->conn->client_entry = session->client_entry;
     session->client->internal->ops->say(session->client, session->conn,
 					SILC_CLIENT_MESSAGE_ERROR,
 					"File `%s' open failed: %s",
 					session->filepath,
 					strerror(errno));
+    session->conn->context_type = SILC_ID_NONE;
 
     if (session->monitor)
       (*session->monitor)(session->client, session->conn,
@@ -736,9 +739,12 @@ silc_client_file_send(SilcClient client,
 			       silc_client_ftp_connect_completion,
 			       session);
     if (!session->listener) {
+      conn->context_type = SILC_ID_CLIENT;
+      conn->client_entry = session->client_entry;
       client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 				 "Cannot create listener for file transfer: "
 				 "%s", strerror(errno));
+      conn->context_type = SILC_ID_NONE;
       silc_free(session);
       return SILC_CLIENT_FILE_NO_MEMORY;
     }
@@ -855,11 +861,14 @@ silc_client_file_receive(SilcClient client,
     /* Add the listener for the key agreement */
     SILC_LOG_DEBUG(("Creating listener for file transfer"));
     if (!params || (!params->local_ip && !params->bind_ip)) {
+      session->conn->context_type = SILC_ID_CLIENT;
+      session->conn->client_entry = session->client_entry;
       session->client->internal->ops->say(session->client, session->conn,
 					  SILC_CLIENT_MESSAGE_ERROR,
 					  "Cannot create listener for file "
 					  "transfer; IP address and/or port "
 					  "not provided");
+      session->conn->context_type = SILC_ID_NONE;
       silc_free(session);
       return SILC_CLIENT_FILE_ERROR;
     }
@@ -869,9 +878,12 @@ silc_client_file_receive(SilcClient client,
 			       silc_client_ftp_connect_completion,
 			       session);
     if (!session->listener) {
+      session->conn->context_type = SILC_ID_CLIENT;
+      session->conn->client_entry = session->client_entry;
       client->internal->ops->say(client, conn, SILC_CLIENT_MESSAGE_ERROR,
 				 "Cannot create listener for file transfer: "
 				 "%s", strerror(errno));
+      session->conn->context_type = SILC_ID_NONE;
       silc_free(session);
       return SILC_CLIENT_FILE_NO_MEMORY;
     }
