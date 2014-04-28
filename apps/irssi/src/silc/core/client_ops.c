@@ -212,14 +212,26 @@ void silc_say(SilcClient client, SilcClientConnection conn,
 	      SilcClientMessageType type, char *msg, ...)
 {
   SILC_SERVER_REC *server;
+  char *target = NULL;
   va_list va;
   char *str;
 
   server = conn == NULL ? NULL : conn->context;
 
+  switch (conn->context_type) {
+    case SILC_ID_CLIENT:
+      target = (conn->client_entry->nickname[0] ?
+		conn->client_entry->nickname : NULL);
+    break;
+
+    case SILC_ID_CHANNEL:
+      target = conn->channel_entry->channel_name;
+    break;
+  }
+
   va_start(va, msg);
   str = g_strdup_vprintf(msg, va);
-  printtext(server, NULL, MSGLEVEL_CRAP, "%s", str);
+  printtext(server, target, MSGLEVEL_CRAP, "%s", str);
   g_free(str);
   va_end(va);
 }
@@ -1407,7 +1419,7 @@ typedef struct {
   SilcIdType id_type;
 } *GetkeyContext;
 
-void silc_getkey_cb(bool success, void *context)
+void silc_getkey_cb(SilcBool success, void *context)
 {
   GetkeyContext getkey = (GetkeyContext)context;
   char *entity = (getkey->id_type == SILC_ID_CLIENT ? "user" : "server");
