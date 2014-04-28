@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2005 Pekka Riikonen
+  Copyright (C) 2000 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -152,6 +152,15 @@ silc_ske_payload_start_decode(SilcSKE ske,
       !payload->enc_alg_len || !payload->hash_alg_len ||
       !payload->hmac_alg_len) {
     SILC_LOG_ERROR(("KE Start Payload is missing mandatory fields"));
+    status = SILC_SKE_STATUS_BAD_PAYLOAD;
+    goto err;
+  }
+
+  if (payload->len != 4 + payload->cookie_len + payload->version_len +
+      payload->ke_grp_len + payload->pkcs_alg_len + payload->enc_alg_len +
+      payload->hash_alg_len + payload->hmac_alg_len + payload->comp_alg_len +
+      (2 * 7)) {
+    SILC_LOG_ERROR(("Invalid fields in KE Start Payload"));
     status = SILC_SKE_STATUS_BAD_PAYLOAD;
     goto err;
   }

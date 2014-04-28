@@ -102,16 +102,17 @@ void silc_ske_group_free(SilcSKEDiffieHellmanGroup group);
  *
  * SYNOPSIS
  *
- *    char *silc_ske_get_supported_groups();
+ *    char *silc_ske_get_supported_groups(SilcUInt32 limit);
  *
  * DESCRIPTION
  *
  *    Returns a comma separated list of support Diffie Hellman groups.
  *    This can be used to get the list of supported groups for SKE
- *    packets.
+ *    packets.  The `limit' specifies the maximum number of groups
+ *    to return.
  *
  ***/
-char *silc_ske_get_supported_groups();
+char *silc_ske_get_supported_groups(SilcUInt32 limit);
 
 /****f* silcske/SilcSKEGroups/silc_ske_group_get_number
  *

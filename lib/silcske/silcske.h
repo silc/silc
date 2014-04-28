@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2000 - 2007 Pekka Riikonen
+  Copyright (C) 2000 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -75,6 +75,7 @@ typedef enum {
   SILC_SKE_STATUS_SIGNATURE_ERROR,	       /* Error computing signature */
   SILC_SKE_STATUS_OUT_OF_MEMORY,	       /* System out of memory */
   SILC_SKE_STATUS_TIMEOUT,	               /* Timeout */
+  SILC_SKE_STATUS_PROBE_TIMEOUT,	       /* Probe timeout */
 } SilcSKEStatus;
 /***/
 
@@ -212,6 +213,24 @@ typedef struct SilcSKEParamsObject {
      this time it will timeout.  If not specified (zero), default value
      (30 seconds) will be used. */
   SilcUInt16 timeout_secs;
+
+  /* Same as timeout_secs but affects only the first packet sent as
+     initiator.  If the responder does not reply to the first packet in this
+     time frame the key exchange will timeout.  If not specified (zero),
+     default value (30 seconds) will be used. */
+  SilcUInt16 probe_timeout_secs;
+
+  /* If TRUE small proposal is sent with only one security property
+     proposed instead of list of all currently registered. */
+  SilcBool small_proposal;
+
+  /* If TRUE protocol does not end in SUCCESS acknowledgements. */
+  SilcBool no_acks;
+
+  /* Pre-allocated security properties to use in negotiation.  If provided
+     the library will perform only key exchange and proposals aren't
+     exchanged at all. */
+  SilcSKESecurityProperties prop;
 } *SilcSKEParams, SilcSKEParamsStruct;
 /***/
 
@@ -413,7 +432,7 @@ void *silc_ske_get_context(SilcSKE ske);
  *    or certificate.  The verification process is most likely asynchronous.
  *    That is why the application must call the completion callback when the
  *    verification process has been completed.  If this SKE session context
- *    is used to perform  rekey, this callback usually is not provided as
+ *    is used to perform rekey, this callback usually is not provided as
  *    argument since sending public key in rekey is not mandatory.  Setting
  *    this callback implies that remote end MUST send its public key.
  *

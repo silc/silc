@@ -153,13 +153,16 @@ void silc_ske_group_free(SilcSKEDiffieHellmanGroup group)
 
 /* Returns comma separated list of supported groups */
 
-char *silc_ske_get_supported_groups()
+char *silc_ske_get_supported_groups(SilcUInt32 limit)
 {
   char *list = NULL;
   int i, len;
 
+  if (!limit)
+    limit = ~0;
+
   len = 0;
-  for (i = 0; silc_ske_groups[i].name; i++) {
+  for (i = 0; silc_ske_groups[i].name && i < limit; i++) {
     len += strlen(silc_ske_groups[i].name);
     list = silc_realloc(list, len + 1);
 

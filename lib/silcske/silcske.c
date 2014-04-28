@@ -864,7 +864,8 @@ silc_ske_make_rekey_material(SilcSKE ske, SilcSKEKeyMaterial keymat)
 static SilcSKEStartPayload
 silc_ske_assemble_security_properties(SilcSKE ske,
 				      SilcSKESecurityPropertyFlag flags,
-				      const char *version)
+				      const char *version,
+				      SilcBool small_proposal)
 {
   SilcSKEStartPayload rp;
   int i;
@@ -899,34 +900,48 @@ silc_ske_assemble_security_properties(SilcSKE ske,
     rp->version_len = strlen(version);
 
   /* Get supported Key Exhange groups */
-  rp->ke_grp_list = silc_ske_get_supported_groups();
+  rp->ke_grp_list = silc_ske_get_supported_groups(small_proposal);
   if (rp->ke_grp_list)
     rp->ke_grp_len = strlen(rp->ke_grp_list);
 
   /* Get supported PKCS algorithms */
-  rp->pkcs_alg_list = silc_pkcs_get_supported();
+  if (small_proposal)
+    rp->pkcs_alg_list = strdup(silc_default_pkcs_alg[0].name);
+  else
+    rp->pkcs_alg_list = silc_pkcs_get_supported();
   if (rp->pkcs_alg_list)
     rp->pkcs_alg_len = strlen(rp->pkcs_alg_list);
 
   /* Get supported encryption algorithms */
-  rp->enc_alg_list = silc_cipher_get_supported();
+  if (small_proposal)
+    rp->enc_alg_list = strdup(silc_default_ciphers[0].name);
+  else
+    rp->enc_alg_list = silc_cipher_get_supported();
   if (rp->enc_alg_list)
     rp->enc_alg_len = strlen(rp->enc_alg_list);
 
   /* Get supported hash algorithms */
-  rp->hash_alg_list = silc_hash_get_supported();
+  if (small_proposal)
+    rp->hash_alg_list = strdup(silc_default_hash[0].name);
+  else
+    rp->hash_alg_list = silc_hash_get_supported();
   if (rp->hash_alg_list)
     rp->hash_alg_len = strlen(rp->hash_alg_list);
 
   /* Get supported HMACs */
-  rp->hmac_alg_list = silc_hmac_get_supported();
+  if (small_proposal)
+    rp->hmac_alg_list = strdup(silc_default_hmacs[0].name);
+  else
+    rp->hmac_alg_list = silc_hmac_get_supported();
   if (rp->hmac_alg_list)
     rp->hmac_alg_len = strlen(rp->hmac_alg_list);
 
-  /* XXX */
-  /* Get supported compression algorithms */
-  rp->comp_alg_list = strdup("none");
-  rp->comp_alg_len = strlen("none");
+  if (!small_proposal) {
+    /* XXX */
+    /* Get supported compression algorithms */
+    rp->comp_alg_list = strdup("none");
+    rp->comp_alg_len = strlen("none");
+  }
 
   rp->len = 1 + 1 + 2 + SILC_SKE_COOKIE_LEN +
     2 + rp->version_len +
@@ -951,7 +966,7 @@ SILC_TASK_CALLBACK(silc_ske_packet_send_retry)
     silc_free(ske->retrans.data);
     ske->retrans.data = NULL;
     ske->status = SILC_SKE_STATUS_TIMEOUT;
-	 silc_ske_notify_failure(ske);
+    silc_ske_notify_failure(ske);
     silc_fsm_continue_sync(&ske->fsm);
     return;
   }
@@ -1041,6 +1056,21 @@ SILC_TASK_CALLBACK(silc_ske_timeout)
 
   ske->packet = NULL;
   ske->status = SILC_SKE_STATUS_TIMEOUT;
+  silc_ske_notify_failure(ske);
+
+  silc_fsm_continue_sync(&ske->fsm);
+}
+
+/* Key exchange timeout task callback */
+
+SILC_TASK_CALLBACK(silc_ske_probe_timeout)
+{
+  SilcSKE ske = context;
+
+  SILC_LOG_DEBUG(("Probe timeout"));
+
+  ske->packet = NULL;
+  ske->status = SILC_SKE_STATUS_PROBE_TIMEOUT;
   silc_ske_notify_failure(ske);
 
   silc_fsm_continue_sync(&ske->fsm);
@@ -1229,10 +1259,6 @@ SILC_FSM_STATE(silc_ske_st_initiator_start)
     return SILC_FSM_CONTINUE;
   }
 
-  /* Add key exchange timeout */
-  silc_schedule_task_add_timeout(ske->schedule, silc_ske_timeout,
-				 ske, ske->timeout, 0);
-
   /** Wait for responder proposal */
   SILC_LOG_DEBUG(("Waiting for responder proposal"));
   silc_fsm_next(fsm, silc_ske_st_initiator_phase1);
@@ -1263,6 +1289,8 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
     return SILC_FSM_WAIT;
   }
 
+  silc_schedule_task_del_by_all(ske->schedule, 0, silc_ske_probe_timeout, ske);
+
   /* Decode the payload */
   status = silc_ske_payload_start_decode(ske, packet_buf, &payload);
   if (status != SILC_SKE_STATUS_OK) {
@@ -1275,7 +1303,9 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
   }
 
   /* Get remote ID and set it to stream */
-  if (ske->packet->src_id_len) {
+  if (ske->packet->src_id_len &&
+      (ske->packet->src_id_type == SILC_ID_SERVER ||
+       ske->packet->src_id_type == SILC_ID_CLIENT)) {
     silc_id_str2id(ske->packet->src_id, ske->packet->src_id_len,
 		   ske->packet->src_id_type,
 		   (ske->packet->src_id_type == SILC_ID_SERVER ?
@@ -1732,19 +1762,25 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
     goto err;
   }
 
-  /* Send SUCCESS packet */
-  SILC_PUT32_MSB((SilcUInt32)SILC_SKE_STATUS_OK, hash);
-  if (!silc_ske_packet_send(ske, SILC_PACKET_SUCCESS, 0, hash, 4)) {
-    /** Error sending packet */
-    SILC_LOG_DEBUG(("Error sending packet"));
-    ske->status = SILC_SKE_STATUS_ERROR;
-    silc_fsm_next(fsm, silc_ske_st_initiator_error);
+  if (!ske->no_acks) {
+    /* Send SUCCESS packet */
+    SILC_PUT32_MSB((SilcUInt32)SILC_SKE_STATUS_OK, hash);
+    if (!silc_ske_packet_send(ske, SILC_PACKET_SUCCESS, 0, hash, 4)) {
+      /** Error sending packet */
+      SILC_LOG_DEBUG(("Error sending packet"));
+      ske->status = SILC_SKE_STATUS_ERROR;
+      silc_fsm_next(fsm, silc_ske_st_initiator_error);
+      return SILC_FSM_CONTINUE;
+    }
+
+    /** Waiting completion */
+    silc_fsm_next(fsm, silc_ske_st_initiator_end);
+    return SILC_FSM_WAIT;
+  } else {
+    /** Complete protocol */
+    silc_fsm_next(fsm, silc_ske_st_initiator_end);
     return SILC_FSM_CONTINUE;
   }
-
-  /** Waiting completion */
-  silc_fsm_next(fsm, silc_ske_st_initiator_end);
-  return SILC_FSM_WAIT;
 
  err:
   memset(hash, 'F', sizeof(hash));
@@ -1778,7 +1814,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_end)
 
   SILC_LOG_DEBUG(("Start"));
 
-  if (ske->packet->type != SILC_PACKET_SUCCESS) {
+  if (!ske->no_acks && ske->packet->type != SILC_PACKET_SUCCESS) {
     SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
     silc_ske_install_retransmission(ske);
     silc_packet_free(ske->packet);
@@ -1788,7 +1824,8 @@ SILC_FSM_STATE(silc_ske_st_initiator_end)
 
   SILC_LOG_DEBUG(("Key exchange completed successfully"));
 
-  silc_packet_free(ske->packet);
+  if (ske->packet)
+    silc_packet_free(ske->packet);
   ske->packet = NULL;
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
@@ -1826,7 +1863,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_aborted)
 SILC_FSM_STATE(silc_ske_st_initiator_error)
 {
   SilcSKE ske = fsm_context;
-  SilcSKEStatus status;
+  SilcUInt32 status;
   unsigned char data[4];
 
   SILC_LOG_DEBUG(("Error %s (%d) occurred during key exchange",
@@ -1837,7 +1874,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_error)
     status = SILC_SKE_STATUS_ERROR;
 
   /* Send FAILURE packet */
-  SILC_PUT32_MSB((SilcUInt32)status, data);
+  SILC_PUT32_MSB(status, data);
   silc_ske_packet_send(ske, SILC_PACKET_FAILURE, 0, data, 4);
 
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
@@ -1854,13 +1891,15 @@ SILC_FSM_STATE(silc_ske_st_initiator_error)
 SILC_FSM_STATE(silc_ske_st_initiator_failure)
 {
   SilcSKE ske = fsm_context;
-  SilcUInt32 error = SILC_SKE_STATUS_ERROR;
+  SilcUInt32 error = ske->status;
 
   if (ske->packet && silc_buffer_len(&ske->packet->buffer) == 4) {
     SILC_GET32_MSB(error, ske->packet->buffer.data);
     silc_packet_free(ske->packet);
     ske->packet = NULL;
   }
+  if (error == SILC_SKE_STATUS_OK)
+    error = SILC_SKE_STATUS_ERROR;
   ske->status = error;
 
   SILC_LOG_DEBUG(("Error %s (%d) received during key exchange",
@@ -1898,17 +1937,22 @@ SilcAsyncOperation silc_ske_initiator(SilcSKE ske,
     ske->session_port = params->session_port;
 
   /* Generate security properties if not provided */
-  if (!start_payload) {
-    start_payload = silc_ske_assemble_security_properties(ske,
-							  params->flags,
-							  params->version);
+  if (!start_payload && !params->prop) {
+    start_payload =
+      silc_ske_assemble_security_properties(ske, params->flags,
+					    params->version,
+					    params->small_proposal);
     if (!start_payload)
       return NULL;
   }
 
   ske->timeout = params->timeout_secs ? params->timeout_secs : 30;
+  ske->probe_timeout = (params->probe_timeout_secs ?
+			params->probe_timeout_secs : 30);
   ske->start_payload = start_payload;
+  ske->prop = params->prop;
   ske->version = params->version;
+  ske->no_acks = params->no_acks;
   ++ske->refcnt;
 
   /* Link to packet stream to get key exchange packets */
@@ -1919,8 +1963,18 @@ SilcAsyncOperation silc_ske_initiator(SilcSKE ske,
 			  SILC_PACKET_SUCCESS,
 			  SILC_PACKET_FAILURE, -1);
 
+  /* Add key exchange timeout */
+  silc_schedule_task_add_timeout(ske->schedule, silc_ske_timeout,
+				 ske, ske->timeout, 0);
+  if (ske->timeout != ske->probe_timeout)
+    silc_schedule_task_add_timeout(ske->schedule, silc_ske_probe_timeout,
+				   ske, ske->probe_timeout, 0);
+
   /* Start SKE as initiator */
-  silc_fsm_start(&ske->fsm, silc_ske_st_initiator_start);
+  if (!ske->prop)
+    silc_fsm_start(&ske->fsm, silc_ske_st_initiator_start);
+  else
+    silc_fsm_start(&ske->fsm, silc_ske_st_initiator_phase2);
 
   return &ske->op;
 }
@@ -1941,12 +1995,11 @@ SILC_FSM_STATE(silc_ske_st_responder_start)
     return SILC_FSM_CONTINUE;
   }
 
-  /* Add key exchange timeout */
-  silc_schedule_task_add_timeout(ske->schedule, silc_ske_timeout,
-				 ske, ske->timeout, 0);
-
   /** Wait for initiator */
-  silc_fsm_next(fsm, silc_ske_st_responder_phase1);
+  if (!ske->prop)
+    silc_fsm_next(fsm, silc_ske_st_responder_phase1);
+  else
+    silc_fsm_next(fsm, silc_ske_st_responder_phase2);
   return SILC_FSM_WAIT;
 }
 
@@ -1975,7 +2028,9 @@ SILC_FSM_STATE(silc_ske_st_responder_phase1)
   }
 
   /* Get remote ID and set it to stream */
-  if (ske->packet->src_id_len) {
+  if (ske->packet->src_id_len &&
+      (ske->packet->src_id_type == SILC_ID_SERVER ||
+       ske->packet->src_id_type == SILC_ID_CLIENT)) {
     silc_id_str2id(ske->packet->src_id, ske->packet->src_id_len,
 		   ske->packet->src_id_type,
 		   (ske->packet->src_id_type == SILC_ID_SERVER ?
@@ -2194,8 +2249,9 @@ SILC_FSM_STATE(silc_ske_st_responder_phase4)
 
   /* The public key verification was performed only if the Mutual
      Authentication flag is set. */
-  if (ske->start_payload &&
-      ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) {
+  if ((ske->start_payload &&
+       ske->start_payload->flags & SILC_SKE_SP_FLAG_MUTUAL) ||
+      ske->prop->flags & SILC_SKE_SP_FLAG_MUTUAL) {
     unsigned char hash[SILC_HASH_MAXLEN];
     SilcUInt32 hash_len;
 
@@ -2385,9 +2441,15 @@ SILC_FSM_STATE(silc_ske_st_responder_phase5)
     return SILC_FSM_CONTINUE;
   }
 
-  /** Waiting completion */
-  silc_fsm_next(fsm, silc_ske_st_responder_end);
-  return SILC_FSM_WAIT;
+  if (!ske->no_acks) {
+    /** Waiting completion */
+    silc_fsm_next(fsm, silc_ske_st_responder_end);
+    return SILC_FSM_WAIT;
+  } else {
+    /** Complete protocol */
+    silc_fsm_next(fsm, silc_ske_st_responder_end);
+    return SILC_FSM_CONTINUE;
+  }
 }
 
 /* Protocol completed */
@@ -2398,14 +2460,15 @@ SILC_FSM_STATE(silc_ske_st_responder_end)
   unsigned char tmp[4];
   SilcUInt32 hash_len, key_len, block_len;
 
-  if (ske->packet->type != SILC_PACKET_SUCCESS) {
+  if (!ske->no_acks && ske->packet->type != SILC_PACKET_SUCCESS) {
     SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
     silc_ske_install_retransmission(ske);
     silc_packet_free(ske->packet);
     ske->packet = NULL;
     return SILC_FSM_WAIT;
   }
-  silc_packet_free(ske->packet);
+  if (ske->packet)
+    silc_packet_free(ske->packet);
   ske->packet = NULL;
 
   /* Process key material */
@@ -2422,9 +2485,11 @@ SILC_FSM_STATE(silc_ske_st_responder_end)
     return SILC_FSM_CONTINUE;
   }
 
-  /* Send SUCCESS packet */
-  SILC_PUT32_MSB(SILC_SKE_STATUS_OK, tmp);
-  silc_ske_packet_send(ske, SILC_PACKET_SUCCESS, 0, tmp, 4);
+  if (!ske->no_acks) {
+    /* Send SUCCESS packet */
+    SILC_PUT32_MSB(SILC_SKE_STATUS_OK, tmp);
+    silc_ske_packet_send(ske, SILC_PACKET_SUCCESS, 0, tmp, 4);
+  }
 
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
@@ -2462,7 +2527,7 @@ SILC_FSM_STATE(silc_ske_st_responder_aborted)
 SILC_FSM_STATE(silc_ske_st_responder_failure)
 {
   SilcSKE ske = fsm_context;
-  SilcUInt32 error = SILC_SKE_STATUS_ERROR;
+  SilcUInt32 error = ske->status;
 
   SILC_LOG_DEBUG(("Key exchange protocol failed"));
 
@@ -2471,9 +2536,9 @@ SILC_FSM_STATE(silc_ske_st_responder_failure)
     silc_packet_free(ske->packet);
     ske->packet = NULL;
   }
+  if (error == SILC_SKE_STATUS_OK)
+    error = SILC_SKE_STATUS_ERROR;
   ske->status = error;
-  if (ske->status == SILC_SKE_STATUS_OK)
-    ske->status = SILC_SKE_STATUS_ERROR;
 
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
   silc_schedule_task_del_by_context(ske->schedule, ske);
@@ -2490,16 +2555,16 @@ SILC_FSM_STATE(silc_ske_st_responder_error)
 {
   SilcSKE ske = fsm_context;
   unsigned char tmp[4];
+  SilcUInt32 status;
 
   SILC_LOG_DEBUG(("Error %d (%s) during key exchange protocol",
 		  ske->status, silc_ske_map_status(ske->status)));
 
   /* Send FAILURE packet */
-  if (ske->status == SILC_SKE_STATUS_OUT_OF_MEMORY)
-    ske->status = SILC_SKE_STATUS_ERROR;
-  else if (ske->status > SILC_SKE_STATUS_INVALID_COOKIE)
-    ske->status = SILC_SKE_STATUS_BAD_PAYLOAD;
-  SILC_PUT32_MSB(ske->status, tmp);
+  status = ske->status;
+  if (status > SILC_SKE_STATUS_INVALID_COOKIE)
+    status = SILC_SKE_STATUS_ERROR;
+  SILC_PUT32_MSB(status, tmp);
   silc_ske_packet_send(ske, SILC_PACKET_FAILURE, 0, tmp, 4);
 
   silc_packet_stream_unlink(ske->stream, &silc_ske_stream_cbs, ske);
@@ -2534,6 +2599,8 @@ SilcAsyncOperation silc_ske_responder(SilcSKE ske,
   if (ske->flags & SILC_SKE_SP_FLAG_IV_INCLUDED)
     ske->session_port = params->session_port;
   ske->version = params->version;
+  ske->no_acks = params->no_acks;
+  ske->prop = params->prop;
   if (!ske->version)
     return NULL;
   ++ske->refcnt;
@@ -2545,6 +2612,10 @@ SilcAsyncOperation silc_ske_responder(SilcSKE ske,
 			  SILC_PACKET_KEY_EXCHANGE_1,
 			  SILC_PACKET_SUCCESS,
 			  SILC_PACKET_FAILURE, -1);
+
+  /* Add key exchange timeout */
+  silc_schedule_task_add_timeout(ske->schedule, silc_ske_timeout,
+				 ske, ske->timeout, 0);
 
   /* Start SKE as responder */
   silc_fsm_start(&ske->fsm, silc_ske_st_responder_start);
@@ -3627,7 +3698,7 @@ const char *silc_ske_status_string[] =
   "Unsupported PKCS",
   "Unsupported hash function",
   "Unsupported HMAC",
-  "Unsupported public key (or certificate)",
+  "Public key not accepted",
   "Incorrect signature",
   "Bad or unsupported version",
   "Invalid cookie",
@@ -3638,6 +3709,7 @@ const char *silc_ske_status_string[] =
   "Bad payload length in packet",
   "Error computing signature",
   "System out of memory",
+  "Key exchange timeout",
   "Key exchange timeout",
 
   NULL

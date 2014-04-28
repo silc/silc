@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2005 - 2008 Pekka Riikonen
+  Copyright (C) 2005 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -88,6 +88,7 @@ struct SilcSKEStruct {
   } retrans;
 
   SilcUInt16 timeout;		      /* SKE timeout */
+  SilcUInt16 probe_timeout;	      /* First packet timeout */
   SilcUInt16 refcnt;		      /* Reference counter */
 
   unsigned int aborted          : 1;  /* Set when SKE aborted */
@@ -95,6 +96,7 @@ struct SilcSKEStruct {
   unsigned int rekeying         : 1;  /* Set when rekeying */
   unsigned int failure_notified : 1;  /* Set to indicate that we already called
 					 the failure notify routine */
+  unsigned int no_acks          : 1;  /* No SUCCESS acks */
 };
 
 #endif /* SILCSKE_I_H */
