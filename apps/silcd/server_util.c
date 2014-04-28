@@ -1426,6 +1426,7 @@ void silc_server_send_connect_notifys(SilcServer server,
 				      SilcClientEntry client)
 {
   SilcCipher key;
+  SilcHmac hmac;
 
   SILC_LOG_DEBUG(("Send welcome notifys"));
 
@@ -1486,12 +1487,12 @@ void silc_server_send_connect_notifys(SilcServer server,
 			     server->stat.my_router_ops +
 			     server->stat.my_server_ops));
 
-  silc_packet_get_keys(sock, &key, NULL, NULL, NULL);
+  silc_packet_get_keys(sock, &key, NULL, &hmac, NULL);
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
-			  ("Your connection is secured with %s cipher, "
-			   "key length %d bits",
+			  ("Your connection is secured with %s cipher "
+			   "and %s MAC",
 			   silc_cipher_get_name(key),
-			   silc_cipher_get_key_len(key)));
+			   silc_hmac_get_name(hmac)));
   SILC_SERVER_SEND_NOTIFY(server, sock, SILC_NOTIFY_TYPE_NONE,
 			  ("Your current nickname is %s",
 			   client->nickname));

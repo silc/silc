@@ -1749,7 +1749,7 @@ void silc_server_start_key_exchange(SilcServerConnection sconn)
   SilcServer server = sconn->server;
   SilcServerConfigRouter *conn = sconn->conn.ref_ptr;
   SilcUnknownEntry entry;
-  SilcSKEParamsStruct params;
+  SilcSKEParamsStruct params = {};
   SilcSKE ske;
 
   /* Cancel any possible retry timeouts */
