@@ -83,13 +83,13 @@ SILC_LIB_INCLUDES="$SILC_LIB_INCLUDES -I$SILC_TOP_SRCDIR/lib/silcvcard"
 LIB_BASE_VERSION=1.1
 
 # libsilc versions
-LIBSILC_CURRENT=3		# prev = 2
-LIBSILC_REVISION=0		# prev = 1
-LIBSILC_AGE=1			# prev = 1
+LIBSILC_CURRENT=4		# prev = 3
+LIBSILC_REVISION=0		# prev = 0
+LIBSILC_AGE=0			# prev = 1
 
 # libsilcclient versions
-LIBSILCCLIENT_CURRENT=3		# prev = 2
-LIBSILCCLIENT_REVISION=0	# prev = 1
+LIBSILCCLIENT_CURRENT=4		# prev = 3
+LIBSILCCLIENT_REVISION=0	# prev = 0
 LIBSILCCLIENT_AGE=0		# prev = 0
 
 # libsilcserver versions

@@ -15,7 +15,7 @@ ln -fs ../../Makefile.defines_int.in Makefile.defines_int.in
 sh autogen.sh 2>/dev/null 1>/dev/null
 sed '/#undef PACKAGE_/d' config.h.in > config.h.in.tmp
 sed '/#undef PACKAGE/d' config.h.in.tmp > config.h.in
-cd $cur
+cd "$cur"
 version_date=`date +%Y%m%d`
 echo "/* automatically created by autogen.sh */" > $file
 echo "#define IRSSI_VERSION \"$dist_version (Irssi base: @VERSION@ - SILC base: SILC $dist_version)\"" >>$file
