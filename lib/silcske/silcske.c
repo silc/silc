@@ -978,10 +978,10 @@ SILC_TASK_CALLBACK(silc_ske_packet_send_retry)
 
 /* Install retransmission timer */
 
-static void silc_ske_install_retransmission(SilcSKE ske)
+static SilcBool silc_ske_install_retransmission(SilcSKE ske)
 {
   if (!silc_packet_stream_is_udp(ske->stream))
-    return;
+    return FALSE;
 
   if (ske->retrans.data) {
     SILC_LOG_DEBUG(("Installing retransmission timer %d secs",
@@ -991,6 +991,7 @@ static void silc_ske_install_retransmission(SilcSKE ske)
   }
   ske->retry_timer = ((ske->retry_timer * SILC_SKE_RETRY_MUL) +
 		      (silc_rng_get_rn16(ske->rng) % SILC_SKE_RETRY_RAND));
+  return TRUE;
 }
 
 /* Sends SILC packet.  Handles retransmissions with UDP streams. */
@@ -1283,10 +1284,17 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase1)
 
   if (ske->packet->type != SILC_PACKET_KEY_EXCHANGE) {
     SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
-    silc_ske_install_retransmission(ske);
-    silc_packet_free(ske->packet);
-    ske->packet = NULL;
-    return SILC_FSM_WAIT;
+    if (silc_ske_install_retransmission(ske)) {
+      silc_packet_free(ske->packet);
+      ske->packet = NULL;
+      return SILC_FSM_WAIT;
+    } else {
+      silc_packet_free(ske->packet);
+      ske->packet = NULL;
+      ske->status = SILC_SKE_STATUS_ERROR;
+      silc_fsm_next(fsm, silc_ske_st_initiator_error);
+      return SILC_FSM_CONTINUE;
+    }
   }
 
   silc_schedule_task_del_by_all(ske->schedule, 0, silc_ske_probe_timeout, ske);
@@ -1582,10 +1590,17 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase3)
 
   if (ske->packet->type != SILC_PACKET_KEY_EXCHANGE_2) {
     SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
-    silc_ske_install_retransmission(ske);
-    silc_packet_free(ske->packet);
-    ske->packet = NULL;
-    return SILC_FSM_WAIT;
+    if (silc_ske_install_retransmission(ske)) {
+      silc_packet_free(ske->packet);
+      ske->packet = NULL;
+      return SILC_FSM_WAIT;
+    } else {
+      silc_packet_free(ske->packet);
+      ske->packet = NULL;
+      ske->status = SILC_SKE_STATUS_ERROR;
+      silc_fsm_next(fsm, silc_ske_st_initiator_error);
+      return SILC_FSM_CONTINUE;
+    }
   }
 
   /* Decode the payload */
@@ -1816,10 +1831,17 @@ SILC_FSM_STATE(silc_ske_st_initiator_end)
 
   if (!ske->no_acks && ske->packet->type != SILC_PACKET_SUCCESS) {
     SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
-    silc_ske_install_retransmission(ske);
-    silc_packet_free(ske->packet);
-    ske->packet = NULL;
-    return SILC_FSM_WAIT;
+    if (silc_ske_install_retransmission(ske)) {
+      silc_packet_free(ske->packet);
+      ske->packet = NULL;
+      return SILC_FSM_WAIT;
+    } else {
+      silc_packet_free(ske->packet);
+      ske->packet = NULL;
+      ske->status = SILC_SKE_STATUS_ERROR;
+      silc_fsm_next(fsm, silc_ske_st_initiator_error);
+      return SILC_FSM_CONTINUE;
+    }
   }
 
   SILC_LOG_DEBUG(("Key exchange completed successfully"));
@@ -2140,10 +2162,17 @@ SILC_FSM_STATE(silc_ske_st_responder_phase2)
 
   if (ske->packet->type != SILC_PACKET_KEY_EXCHANGE_1) {
     SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
-    silc_ske_install_retransmission(ske);
-    silc_packet_free(ske->packet);
-    ske->packet = NULL;
-    return SILC_FSM_WAIT;
+    if (silc_ske_install_retransmission(ske)) {
+      silc_packet_free(ske->packet);
+      ske->packet = NULL;
+      return SILC_FSM_WAIT;
+    } else {
+      silc_packet_free(ske->packet);
+      ske->packet = NULL;
+      ske->status = SILC_SKE_STATUS_ERROR;
+      silc_fsm_next(fsm, silc_ske_st_responder_error);
+      return SILC_FSM_CONTINUE;
+    }
   }
 
   /* Decode Key Exchange Payload */
@@ -2462,10 +2491,17 @@ SILC_FSM_STATE(silc_ske_st_responder_end)
 
   if (!ske->no_acks && ske->packet->type != SILC_PACKET_SUCCESS) {
     SILC_LOG_DEBUG(("Remote retransmitted an old packet"));
-    silc_ske_install_retransmission(ske);
-    silc_packet_free(ske->packet);
-    ske->packet = NULL;
-    return SILC_FSM_WAIT;
+    if (silc_ske_install_retransmission(ske)) {
+      silc_packet_free(ske->packet);
+      ske->packet = NULL;
+      return SILC_FSM_WAIT;
+    } else {
+      silc_packet_free(ske->packet);
+      ske->packet = NULL;
+      ske->status = SILC_SKE_STATUS_ERROR;
+      silc_fsm_next(fsm, silc_ske_st_responder_error);
+      return SILC_FSM_CONTINUE;
+    }
   }
   if (ske->packet)
     silc_packet_free(ske->packet);
