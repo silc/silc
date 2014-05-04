@@ -1,0 +1,64 @@
+Source: silc-client
+Section: net
+Priority: optional
+Maintainer: Debian SILC Team <pkg-silc-devel@lists.alioth.debian.org>
+Uploaders: Jérémy Bobbio <lunar@debian.org>, Micah Anderson <micah@debian.org>
+Standards-Version: 3.8.0
+Build-Depends: debhelper (>> 5), libglib2.0-dev, ncurses-dev, autotools-dev, libsilc-dev, libperl-dev
+Homepage: http://www.silcnet.org/software/users/client/
+Vcs-Git: git://git.debian.org/pkg-silc/silc-client.git
+Vcs-Browser: http://git.debian.org/?p=pkg-silc/silc-client.git
+
+Package: silc
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: terminal based SILC client
+ SILC (Secure Internet Live Conferencing) is a network protocol designed
+ to provide end-to-end security for conferencing services. SILC has a
+ command set and a user interface similar to IRC, but the network
+ protocol is completely different as it supports public key strong
+ cryptography and a different network model.
+ .
+ This package provides a terminal based client, much similar to irssi, a well
+ recognized IRC client.
+
+Package: silc-dbg
+Architecture: any
+Priority: extra
+Depends: ${shlibs:Depends}, silc (= ${binary:Version})
+Description: debug symbols for the terminal based SILC client
+ SILC (Secure Internet Live Conferencing) is a network protocol designed
+ to provide end-to-end security for conferencing services. SILC has a
+ command set and a user interface similar to IRC, but the network
+ protocol is completely different as it supports public key strong
+ cryptography and a different network model.
+ .
+ This package provides the debug symbols for the terminal based
+ client, much similar to irssi, a well recognized IRC client.
+
+Package: irssi-plugin-silc
+Architecture: any
+Depends: irssi, ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}
+Suggests: libmime-tools-perl, libfile-mmagic-perl, libio-stringy-perl, libfile-temp-perl
+Description: SILC plugin for irssi
+ SILC (Secure Internet Live Conferencing) is a network protocol designed
+ to provide end-to-end security for conferencing services. SILC has a
+ command set and a user interface similar to IRC, but the network
+ protocol is completely different as it supports public key strong
+ cryptography and a different network model.
+ .
+ This package provides a plugin to connect to SILC networks using irssi.
+
+Package: irssi-plugin-silc-dbg
+Architecture: any
+Priority: extra
+Depends: irssi, ${shlibs:Depends}, ${perl:Depends}, ${misc:Depends}, irssi-plugin-silc (= ${binary:Version})
+Suggests: libmime-tools-perl, libfile-mmagic-perl, libio-stringy-perl, libfile-temp-perl
+Description: debug symbols for the SILC plugin for irssi
+ SILC (Secure Internet Live Conferencing) is a network protocol designed
+ to provide end-to-end security for conferencing services. SILC has a
+ command set and a user interface similar to IRC, but the network
+ protocol is completely different as it supports public key strong
+ cryptography and a different network model.
+ .
+ This package provides the debugging symbols for the irssi SILC plugin.

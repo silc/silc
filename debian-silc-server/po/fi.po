@@ -1,0 +1,153 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: silc-server\n"
+"Report-Msgid-Bugs-To: pkg-silc-devel@lists.alioth.debian.org\n"
+"POT-Creation-Date: 2007-10-24 07:35+0200\n"
+"PO-Revision-Date: 2007-10-28 00:08+0200\n"
+"Last-Translator: Esko Arajärvi <edu@iki.fi>\n"
+"Language-Team: Finnish <debian-l10n-finnish@lists.debian.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Finnish\n"
+"X-Poedit-Country: FINLAND\n"
+
+#. Type: string
+#. Description
+#: ../templates:2001
+msgid "SILC server name:"
+msgstr "SILC-palvelimen nimi:"
+
+#. Type: string
+#. Description
+#: ../templates:2001
+msgid "Please enter the name of the SILC server (e.g. \"Our SILC server\")."
+msgstr "Anna SILC-palvelimen nimi (esim. ”Meidän SILC-palvelimemme”)."
+
+#. Type: string
+#. Description
+#: ../templates:3001
+msgid "SILC server hostname:"
+msgstr "SILC-palvelimen verkkonimi:"
+
+#. Type: string
+#. Description
+#: ../templates:3001
+msgid ""
+"Please enter the hostname (or the IP address) of the SILC server (e.g. silc."
+"example.org)."
+msgstr ""
+"Anna SILC-palvelimen verkkonimi tai IP-osoite (esim. silc.esimerkki.fi)."
+
+#. Type: string
+#. Description
+#: ../templates:4001
+msgid "SILC server administrator real name:"
+msgstr "SILC-palvelimen ylläpitäjän oikea nimi:"
+
+#. Type: string
+#. Description
+#: ../templates:4001
+msgid ""
+"Please enter the real name of the operator running the SILC server (e.g. "
+"\"J. Random Operator\")."
+msgstr "Anna SILC-palvelimen ylläpitäjän oikea nimi (esim. ”Aapo Ylläpitäjä”)."
+
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#: ../templates:4001 ../templates:5001 ../templates:6001 ../templates:7001
+msgid "This field may be left empty."
+msgstr "Tämä kenttä voidaan jättää tyhjäksi."
+
+#. Type: string
+#. Description
+#: ../templates:5001
+msgid "SILC server administrator email address:"
+msgstr "SILC-palvelimen ylläpitäjän sähköpostiosoite:"
+
+#. Type: string
+#. Description
+#: ../templates:5001
+msgid ""
+"Please enter the email address of the operator running the SILC server (e.g. "
+"silc@example.org)."
+msgstr ""
+"Anna SILC-palvelimen ylläpitäjän sähköpostiosoite (esim. silc@esimerkki.fi)."
+
+#. Type: string
+#. Description
+#: ../templates:6001
+msgid "SILC server organization name:"
+msgstr "SILC-palvelimen organisaationimi:"
+
+#. Type: string
+#. Description
+#: ../templates:6001
+msgid ""
+"Please enter the name of the organization running the SILC server (e.g. "
+"\"Our Organization\")."
+msgstr ""
+"Anna SILC-palvelinta pyörittävän organisaation nimi (esim. ”Meidän "
+"Organisaatiomme”)."
+
+#. Type: string
+#. Description
+#: ../templates:7001
+msgid "SILC server location:"
+msgstr "SILC-palvelimen sijainti:"
+
+#. Type: string
+#. Description
+#: ../templates:7001
+msgid "Please enter the name of the country where the SILC server is located."
+msgstr "Anna maan nimi, jossa SILC-palvelin sijaitsee."
+
+#. Type: string
+#. Description
+#: ../templates:8001
+msgid "SILC server administrator nickname:"
+msgstr "SILC-palvelimen ylläpitäjän lempinimi:"
+
+#. Type: string
+#. Description
+#: ../templates:8001
+msgid "Please enter the nickname of the administrator of the SILC server."
+msgstr "Anna SILC-palvelimen ylläpitäjän lempinimi."
+
+#. Type: string
+#. Description
+#: ../templates:8001
+msgid "The administrator will use it for identification on the server."
+msgstr "Ylläpitäjä käyttää tätä tunnistautuakseen palvelimella."
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid "SILC administrator passphrase:"
+msgstr "SILC-ylläpitäjän salalauseke:"
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid "Please enter the passphrase for the SILC server administrator."
+msgstr "Anna SILC-palvelimen ylläpitäjän salalauseke."
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid ""
+"The administrator will need to use this passphrase in order to authenticate."
+msgstr "Ylläpitäjä tarvitsee tämän salalausekkeen tunnistautuessaan."
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid ""
+"Please note that it will be stored in clear text in a configuration file."
+msgstr "Huomaa, että se tallennetaan selväkielisenä asetustiedostoon."

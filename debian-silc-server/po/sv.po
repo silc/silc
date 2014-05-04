@@ -1,0 +1,160 @@
+# translation of silc-server_1.1.6-1_templates.po to swedish
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# 
+# Martin Bagge <martin.bagge@bthstudent.se>, 2008.
+msgid ""
+msgstr ""
+"Project-Id-Version: silc-server_1.1.6-1_templates\n"
+"Report-Msgid-Bugs-To: pkg-silc-devel@lists.alioth.debian.org\n"
+"POT-Creation-Date: 2007-10-24 07:35+0200\n"
+"PO-Revision-Date: 2008-06-23 22:29+0200\n"
+"Last-Translator: Martin Bagge <martin.bagge@bthstudent.se>\n"
+"Language-Team: swedish <debian-l10n-swedish@lists.debian.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#. Type: string
+#. Description
+#: ../templates:2001
+msgid "SILC server name:"
+msgstr "Namn på SILC-server:"
+
+#. Type: string
+#. Description
+#: ../templates:2001
+msgid "Please enter the name of the SILC server (e.g. \"Our SILC server\")."
+msgstr "Ange namnet på din SILC-server (ex. \"Min SILC-server\")."
+
+#. Type: string
+#. Description
+#: ../templates:3001
+msgid "SILC server hostname:"
+msgstr "Värdnamn för SILC-server:"
+
+#. Type: string
+#. Description
+#: ../templates:3001
+msgid ""
+"Please enter the hostname (or the IP address) of the SILC server (e.g. silc."
+"example.org)."
+msgstr ""
+"Ange värdnamnet (eller IP-adressen) för SILC-servern (ex. silc.exempel.se)."
+
+#. Type: string
+#. Description
+#: ../templates:4001
+msgid "SILC server administrator real name:"
+msgstr "Fullständigt namn på administratören av SILC-servern:"
+
+#. Type: string
+#. Description
+#: ../templates:4001
+msgid ""
+"Please enter the real name of the operator running the SILC server (e.g. "
+"\"J. Random Operator\")."
+msgstr ""
+"Ange det fullständiga namnet på operatören som administrerar SILC-servern "
+"(ex \"SILC Operatör\")."
+
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#: ../templates:4001 ../templates:5001 ../templates:6001 ../templates:7001
+msgid "This field may be left empty."
+msgstr "Detta fält kan lämnas tomt."
+
+#. Type: string
+#. Description
+#: ../templates:5001
+msgid "SILC server administrator email address:"
+msgstr "E-post-adress till administratören för SILC-servern:"
+
+#. Type: string
+#. Description
+#: ../templates:5001
+msgid ""
+"Please enter the email address of the operator running the SILC server (e.g. "
+"silc@example.org)."
+msgstr ""
+"Ange e-post-adressen för operatören som ansvarar för SILC-serven (ex. "
+"silc@exempel.se)."
+
+#. Type: string
+#. Description
+#: ../templates:6001
+msgid "SILC server organization name:"
+msgstr "Organisation bakom SILC-servern:"
+
+#. Type: string
+#. Description
+#: ../templates:6001
+msgid ""
+"Please enter the name of the organization running the SILC server (e.g. "
+"\"Our Organization\")."
+msgstr ""
+"Ange namnet på organisationen som administrerar SILC-servern (ex. \"Hemmet AB"
+"\")."
+
+#. Type: string
+#. Description
+#: ../templates:7001
+msgid "SILC server location:"
+msgstr "Plats för SILC-servern:"
+
+#. Type: string
+#. Description
+#: ../templates:7001
+msgid "Please enter the name of the country where the SILC server is located."
+msgstr "Ange namnet på landet som SILC-servern är belägen i."
+
+#. Type: string
+#. Description
+#: ../templates:8001
+msgid "SILC server administrator nickname:"
+msgstr "Användarnamn på SILC-serverns administratör."
+
+#. Type: string
+#. Description
+#: ../templates:8001
+msgid "Please enter the nickname of the administrator of the SILC server."
+msgstr "Ange smeknamnet på SILC-serverns administratör."
+
+#. Type: string
+#. Description
+#: ../templates:8001
+msgid "The administrator will use it for identification on the server."
+msgstr "Administratören använder detta för att identifiera sig mot servern."
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid "SILC administrator passphrase:"
+msgstr "Lösenord för SILC-administratören."
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid "Please enter the passphrase for the SILC server administrator."
+msgstr "Ange lösenordet som SILC-servern."
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid ""
+"The administrator will need to use this passphrase in order to authenticate."
+msgstr "Administratören använder detta för att identifiera sig mot servern."
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid ""
+"Please note that it will be stored in clear text in a configuration file."
+msgstr "Oberserva att detta sparas i klartext i en konfigurationsfil!"

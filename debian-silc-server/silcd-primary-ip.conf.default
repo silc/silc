@@ -1,0 +1,9 @@
+#
+# silcd-primary-ip.conf
+#
+# Debian configuration file for the primary IP of the SILC server.  Some
+# options in this file is managed using debconf.  You can invoke
+# `dpkg-reconfigure silcd` if you want to change such options.
+
+ip = "";
+port = 706;

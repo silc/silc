@@ -1,0 +1,33 @@
+Source: silc-server
+Section: net
+Priority: extra
+Maintainer: Debian SILC Team <pkg-silc-devel@lists.alioth.debian.org>
+Uploaders: Jérémy Bobbio <lunar@debian.org>, Micah Anderson <micah@debian.org>
+Build-Depends: debhelper (>= 5), autotools-dev, libsilc-dev, po-debconf
+Standards-Version: 3.8.3
+Homepage: http://silcnet.org/software/users/server/
+Vcs-Git: git://git.debian.org/pkg-silc/silc-server.git
+Vcs-Browser: http://git.debian.org/?p=pkg-silc/silc-server.git
+
+Package: silcd
+Architecture: any
+Depends: libsilc-1.1-2 (>= 1.1.7-2), ${shlibs:Depends}, ${misc:Depends}, ucf
+Provides: silc-server
+Description: server for the SILC protocol
+ SILC (Secure Internet Live Conferencing) is a network protocol designed
+ to provide end-to-end security for conferencing services. SILC has a
+ command set and a user interface similar to IRC, but the network
+ protocol is completely different as it supports public key strong
+ cryptography and a different network model.
+ .
+ This package provides a system daemon that can act as a SILC router or
+ server.
+
+Package: silcd-dbg
+Section: debug
+Architecture: any
+Priority: extra
+Depends: silcd (= ${binary:Version}), ${misc:Depends}
+Description: debugging symbols for the SILC server
+ This package provides the debugging symbols for the system daemon
+ that can act as a SILC router or server.

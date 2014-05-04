@@ -1,0 +1,15 @@
+/var/log/silcd/*.log {
+	weekly
+	missingok
+	rotate 52
+	compress
+	delaycompress
+	notifempty
+	create 640 root adm
+	sharedscripts
+	postrotate
+		if [ -f /var/run/silcd.pid ]; then
+			/usr/sbin/invoke-rc.d silcd reload > /dev/null
+		fi
+	endscript
+}

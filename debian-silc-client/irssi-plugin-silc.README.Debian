@@ -1,0 +1,40 @@
+irssi-plugin-silc for Debian
+============================
+
+The package currently use neither irssi-dev nor libsilc-dev.  We are trying to
+solve the issue with upstream.
+
+ -- Debian SILC Team <pkg-silc-devel@lists.alioth.debian.org>
+
+Short usage notice
+------------------
+
+(taken from http://penguin-breeder.org/silc/)
+      
+You can load the plugin in Irssi using:
+
+    /LOAD silc
+      
+You cannot pass options to the SILC Plugin, but you configure it at run-time
+with the /SILC command, see 
+
+    /HELP silc/silc
+      
+To get help about SILC commands, you can use (replace "command" with the
+actual command you want help with)
+      
+    /HELP silc/command
+      
+You should also load the silc script:
+
+    /SCRIPT LOAD silc
+
+For a more detailed help on SILC commands or some FAQs, please refer to the
+SILCNet homepage. Once you have successfully load the SILC plugin, you can
+connect to the SILCNet like this
+
+    /CONNECT -silcnet SILCNet silc.silcnet.org
+      
+You might want to join the channel "silc" then...
+
+    /JOIN -silcnet silc

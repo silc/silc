@@ -1,0 +1,3 @@
+version=3
+http://silcnet.org/download/server/sources/silc-server-([\d\.]+)\.tar\.gz \
+        debian git-import-orig

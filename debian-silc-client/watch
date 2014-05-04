@@ -1,0 +1,3 @@
+version=3
+http://silcnet.org/download/client/sources/silc-client-([\d\.]+)\.tar\.gz \
+        debian git-import-orig

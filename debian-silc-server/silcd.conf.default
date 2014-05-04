@@ -1,0 +1,547 @@
+#
+# silcd.conf
+#
+# Main Debian configuration file for the SILC server.  Some option in this file
+# are managed using debconf.  You can invoke `dpkg-reconfigure silcd` if
+# you want to change such options.
+#
+# The syntax and options of this file are documented in silcd.conf(5).
+#
+# Most of the settings in this file are optional.  If some setting is
+# mandatory it is mentioned separately.  If some setting is omitted it means
+# that its builtin default value will be used.  Boolean values, that is
+# setting something on or off, is done by setting either "true" or "false"
+# value, respectively.
+#
+# The ServerInfo section is mandatory section.  Other sections are optional.
+# However, if General section is defined it must be defined before the
+# ConnectionParams sections.  On the other hand, the ConnectionParams section
+# must be defined before Client, ServerConnection or RouterConnection
+# sections.  Other sections can be in free order.
+#
+
+#
+# Include global algorithms from the "silcalgs.conf" file.  This file defines
+# ciphers, hash functions, HMACs and PKCS algorithms that can be used.
+#
+Include "/etc/silcd/silcalgs.conf";
+
+#
+# General configuration options
+#
+# These defines the default behaviour of the server.  Most of these values
+# can be overridden with ConnectionParams, which can be defined independently
+# for different connections.
+#
+General {
+	# If both passphrase and public key authentication is set for a
+	# connection the public key authentication is the preferred one
+	# to use.  Set this to `true' to prefer passphrase authentication
+	# over public key authentication in these cases.
+	#prefer_passphrase_auth = true;
+
+	# Set this to true if the server should require fully qualified
+	# domain names (FQDN) for incoming connections.  If true, a host
+	# without FQDN cannot connect to the server.
+	#require_reverse_lookup = true;
+
+	# Maximum number of connections server can handle.  If you want
+	# to limit the number of incoming connections, define the
+	# connections_max in the ConnectionParams.
+	connections_max = 1000;
+
+	# Maximum number of incoming connections allowed per single host.
+	# For example, if this is one (1) it means a host can link only
+	# once to the server.  Attempting to connect more than once would
+	# be refused.  This can be overridden with ConnectionParams.
+	#connections_max_per_host = 10;
+
+	# Required version of the remote side.  If these are specified then
+	# the remote must be of at least this version, or newer.  If older
+	# then the connection will not be allowed.
+	#
+	# version_protocol         - SILC protocol version ("major.minor")
+	# version_software         - software version ("major.minor")
+	# version_software_vendor  - vendor specific version extension
+	#
+	# The version_software_vendor may be for example a string or a build
+	# number of the software.  The string can be a regex string to match
+	# more widely.  Usually the vendor version checking is not necessary
+	# and can be omitted.  These can be overridden with ConnectionParams.
+	#version_protocol = "1.3";
+	#version_software = "2.0";
+	#version_software_vendor = "SomeVendor";
+
+	# Default keepalive frequency (seconds).  This can be overridden with
+	# with ConnectionParams.
+	keepalive_secs = 300;
+
+	# Dynamic router connections.  If this is set for normal SILC server
+	# the connection to primary router is not created untill it is actually
+	# needed.  Giving for example /WHOIS foobar@silcnet.org would then
+	# create connection to the primary router to resolve user foobar.
+	# On the other hand giving /WHOIS foobar would try to search the
+	# user foobar locally, without creating the connection.  Note that
+	# giving /JOIN foobar will also created the connection as current
+	# SILC Server version supports only global channels (all JOINs require
+	# connection to router, if one is configured).
+	#dynamic_server = true;
+
+	# Default reconnection parameters defines how the server reconnect
+	# to the remote if the connection was lost.  The reconnection phase
+	# use so called exponential backoff algorithm;  The reconnect
+	# interval grows when reconnect count grows.  Next example will
+	# attempt to reconnect after 10 seconds of disconnect, and the
+	# interval grows up to 600 seconds or until 7 times was attempted
+	# to reconnect.  These settings has effect only when connecting
+	# as initiator.
+	#
+	# reconnect_count        - how many times reconnect is attempted
+	# reconnect_interval	 - how often reconnect it performed (seconds)
+	# reconnect_interval_max - maximum interval for reconnect, the
+	#                          server never waits longer than this to
+	#                          reconnect (seconds).
+	# reconnect_keep_trying  - whether to keep trying even after
+	#                          reconnect_count is reached (the interval
+	#                          will be reconnect_interval_max).
+	#
+	# These can be overridden with ConnectionParams.
+	reconnect_count = 7;
+	reconnect_interval = 10;
+	reconnect_interval_max = 600;
+	reconnect_keep_trying = true;
+
+	# Key exchange protocol rekey interval (seconds).  How often to
+	# regenerate the session key with the remote.  Initiator will perform
+	# the rekey and this setting affects only when connecting as initiator.
+	# This can be overridden with ConnectionParams.
+	#key_exchange_rekey = 3600;
+
+	# Key exchange with Perfect Forward Secrecy (PFS).  This will perform
+	# the rekey process with PFS, making the new key more secure since it
+	# is not dependent in any way of the old key.  This will make the rekey
+	# process somewhat slower, than without PFS.  This can be overridden
+	# with ConnectionParams.
+	#key_exchange_pfs = true;
+
+	# Key exchange timeout (seconds).  If the key exchange protocol is not
+	# finished in this time period the remote connection will be closed.
+	#key_exchange_timeout = 60;
+
+	# Connection authentication timeout (seconds).  If the connection
+	# authentication protocol is not finished in this time period the
+	# remote connection will be closed.
+	#conn_auth_timeout = 60;
+
+	# Channel key rekey interval (seconds).  How often channel key is
+	# regenerated.  Note that channel key is regenerated also always when
+	# someone joins or leaves the channel.
+	#channel_rekey_secs = 3600;
+
+	# SILC session detachment disabling and limiting.  By default clients
+	# can detach their sessions from server.  If you set detach_disabled
+	# to true the DETACH command cannot be used by clients.  If you want
+	# to limit for how long the server keeps detached sessions you can
+	# set the time (minutes) in detach_timeout.  After that timeout the
+	# detached session is closed if it is not resumed.  By default
+	# sessions are persistent as long as server is running.
+	#detach_disabled = true;
+	#detach_timeout = 1440;
+
+	# Quality of Service (QoS) settings.  The QoS can be used to handle
+	# the incoming data and limit its handling rate to avoid flooding.
+	# By default QoS is disabled and can be enabled by setting "qos" to
+	# true value.  The "qos_rate_limit" is the data reads per second,
+	# and if more frequently is read due to for example data flooding,
+	# QoS is applied to the data.  The "qos_bytes_limit" is maximum bytes
+	# allowed for incoming data.  If more is received at once the QoS
+	# is applied to the data.  The "qos_limit_sec" and "qos_limit_usec"
+	# is the timeout used to delay the data handling, seconds and
+	# microseconds, respectively.  NOTE: If you enable QoS in General
+	# section it applies to server connections as well.  Server
+	# connections SHOULD NOT use QoS.  This can be overridden with
+	# ConnectionParams.
+	#qos = true;
+	#qos_rate_limit = 10;
+	#qos_bytes_limit = 2048;
+	#qos_limit_sec = 0;
+	#qos_limit_usec = 500000;
+
+	# Limit on how many channels one client can join.  Default is 50.
+	#channel_join_limit = 100;
+
+	# HTTP server access to the server for retrieving server statistics
+	# with a web browser.  This is disabled by default.
+	#http_server = true;
+	#http_server_ip = "127.0.0.1";
+	#http_server_port = 5000;
+
+	# Debug string.  Debug string can be set to print debugging from
+	# the running server.  The debug is redirected to stderr.
+	#debug_string = "";
+};
+
+#
+# Server information
+#
+ServerInfo {
+	#
+	# Server name (FQDN)
+	#
+	hostname = "";
+
+	#
+	# Primary listener.  Specify the IP address and the port to bind
+	# the server.  The public_ip can be used to specify the public IP
+	# if the server is behind NAT.
+	#
+	Primary {
+		# public_ip = "11.1.1.1";
+		Include "/etc/silcd/silcd-primary-ip.conf";
+	};
+
+	#
+	# Secondary listener(s).  If you need to bind your server into
+	# several interfaces use the Secondary to specify the listener(s).
+	#
+	#Secondary { ip = "10.2.1.60"; port = 706; };
+	#Secondary { ip = "10.2.1.160"; port = 706; };
+
+	#
+	# ServerType field specifies the purpose of this server
+	# This is only a descriptive field.
+	#
+	ServerType = "";
+
+	#
+	# Geographic location
+	#
+	Location = "";
+
+	#
+	# Full admin name
+	#
+	Admin = "";
+
+	#
+	# Admin's email address
+	#
+	AdminEmail = "";
+
+	#
+	# Run SILC server as specific user and group.  The server must be
+	# initially run as root.
+	#
+	User = "nobody";
+	Group = "nogroup";
+
+	#
+	# Public and private keys
+	#
+	PublicKey = "/etc/silcd/silcd.pub";
+	PrivateKey = "/etc/silcd/silcd.prv";
+
+	#
+	# Motd file
+	#
+	# Specifies the text file displayed on client connection
+	#
+	#MotdFile = "/etc/silcd/motd.txt";
+
+	#
+	# Pid file
+	#
+	PidFile = "/var/run/silcd.pid";
+};
+
+#
+# Log files.
+#
+# This section is used to set various logging files, their paths, maximum
+# sizes and logging options.
+#
+# There are only four defined channels allowed for defining (see below).
+# The log channels have an importance value, and most important channels
+# are redirected on the less important ones, thus setting a valid logging
+# file for "Info" will ensure logging for all channels, while setting
+# logging file for "Errors" will ensure logging for channels "Errors"
+# and "Fatals".  If only, for example, "Info" is set then all logs go to
+# that file (like in example below).
+#
+Logging {
+	# Use timestamp in the logging files? (Usually it is a good idea,
+	# but you may want to disable this if you run silcd under some
+	# daemontool).
+	Timestamp = true;
+
+	# If QuickLogs is true, then the logging files will be updated
+	# real-time.  This causes a bit more CPU and HDD activity, but
+	# reduces memory usage.  By default it is false and log files are
+	# written with FlushDelay timeout.
+	#
+	#QuickLogs = true;
+
+	# FlushDelay tells log files update delay (seconds) in case you
+	# have chosen buffering output.  This setting has effect only if
+	# the QuickLogs is false.
+	#
+	FlushDelay = 180;
+
+	# Informational messages
+	Info {
+		File = "/var/log/silcd/silcd.log";
+		Size = "100k";
+	};
+
+	# Warning messages
+	#Warnings {
+	#	File = "/var/log/silcd/silcd_warnings.log";
+	#	Size = "50k";
+	#};
+
+	# Error messages
+	#Errors {
+	#	File = "/var/log/silcd/silcd_errors.log";
+	#	Size = "50k";
+	#};
+
+	# Fatal messages
+	#Fatals {
+	#	File = "/var/log/silcd/silcd_fatals.log";
+	#	Size = "50k";
+	#};
+};
+
+#
+# Connection Parameters
+#
+# This section defined connection parameters.  It is possible to use
+# specific parameters in different connections, and to define different
+# parameters to different connections.  The parameters can define how the
+# connection is handled and how the session is managed.  If connection
+# parameters are not used in connections the default values will apply
+# (or values defined in General section).  You can have multiple
+# ConnectionParams blocks defined.
+#
+ConnectionParams {
+	# unique name.  The name is used to reference to this parameter
+	# block from the connections.  This field is mandatory.
+	name = "normal";
+
+	# Maximum number of connections allowed.  More connections will be
+	# refused.  This can be used for example to limit number of clients.
+	# Note that this never can be larger than the connections_max
+	# specified in General section.
+	connections_max = 200;
+
+	# Maximum number of connections allowed per host.  For example, if
+	# this is one (1) it means a host can link only once to the server.
+	# Attempting to link more than once would be refused.
+	#
+	# If this connection parameters block is used with incoming server
+	# connections it is recommended that this value is set to one (1).
+	connections_max_per_host = 10;
+
+	# Required version of the remote side.  If these are specified then
+	# the remote must be of at least this version, or newer.  If older
+	# then the connection will not be allowed.
+	#
+	# version_protocol         - SILC protocol version ("major.minor")
+	# version_software         - software version ("major.minor")
+	# version_software_vendor  - vendor specific version extension
+	#
+	# The version_software_vendor may be for example a string or a build
+	# number of the software.  The string can be a regex string to match
+	# more widely.  Usually the vendor version checking is not necessary
+	# and can be omitted.  These can be overridden with ConnectionParams.
+	#version_protocol = "1.1";
+	#version_software = "1.3";
+	#version_software_vendor = "SomeVendor";
+
+	# Keepalive frequency (seconds).
+	keepalive_secs = 300;
+
+	# Reconnection parameters defines how the server reconnects to
+	# the remote if the connection was lost.  The reconnection phase
+	# use so called exponential backoff algorithm;  The reconnect
+	# interval grows when reconnect count grows.  Next example will
+	# attempt to reconnect after 10 seconds of disconnect, and the
+	# interval grows up to 600 seconds or until 7 times was attempted
+	# to reconnect.  These settings has effect only when connecting
+	# as initiator.
+	#
+	# reconnect_count        - how many times reconnect is attempted
+	# reconnect_interval	 - how often reconnect it performed (seconds)
+	# reconnect_interval_max - maximum interval for reconnect, the
+	#                          server never waits longer than this to
+	#                          reconnect (seconds).
+	# reconnect_keep_trying  - whether to keep trying even after
+	#                          reconnect_count is reached (the interval
+	#                          will be reconnect_interval_max).
+	reconnect_count = 7;
+	reconnect_interval = 10;
+	reconnect_interval_max = 600;
+	reconnect_keep_trying = true;
+
+	# Key exchange protocol rekey interval (seconds).  How often to
+	# regenerate the session key with the remote.  Initiator will perform
+	# the rekey and this setting affects only when connecting as initiator.
+	#key_exchange_rekey = 3600;
+
+	# Key exchange with Perfect Forward Secrecy (PFS). This will perform
+	# the rekey process with PFS, making the new key more secure since it
+	# is not dependent in any way of the old key. This will make the rekey
+	# process somewhat slower, than without PFS.
+	#key_exchange_pfs = true;
+
+	# Anonymous connection.  This setting has effect only when this
+	# this is used with client connections.  If set to true then clients
+	# using this connection parameter will be anonymous connections.
+	# This means that the client's username and hostname information
+	# is scrambled and anonymous mode is set for the user.
+	#anonymous = true;
+
+	# Quality of Service (QoS) settings.  The QoS can be used to handle
+	# the incoming data and limit its handling rate to avoid flooding.
+	# By default QoS is disabled and can be enabled by setting "qos" to
+	# true value.  The "qos_rate_limit" is the incmoing data reading
+	# per second, and if more frequently than the set limit is read the
+	# QoS is applied to the data.  The "qos_bytes_limit" is maximum bytes
+	# allowed for incoming data.  If more is received at once the QoS
+	# is applied to the data.  The "qos_limit_sec" and "qos_limit_usec"
+	# is the timeout used to delay the data handling, seconds and
+	# microseconds, respectively.  For server connections QoS SHOULD NOT
+	# be set.
+	#qos = true;
+	#qos_rate_limit = 10;
+	#qos_bytes_limit = 2048;
+	#qos_limit_sec = 0;
+	#qos_limit_usec = 500000;
+};
+
+#
+# Configured client connections.
+#
+# The "Host" defines the incoming IP address or hostname of the client.
+# If it is omitted all hosts will match this client connection.  The
+# "Params" is optional and can be used to set specific connection parameters
+# for this connection.
+#
+# The authentication data is specified by Passphrase and/or PublicKey.
+# If both are provided then both password and public key based authentication
+# is allowed.  The "PublicKey" includes the single key contained in the
+# specified file, while "PublicKeyDir" includes all files in the specified
+# directory, which must all be valid public keys with ".pub" suffix.
+#
+# Next example connection will match to all incoming client connections,
+# and no authentication is required.
+#
+Client {
+	#Host = "10.1.*";
+	#Passphrase = "secret";
+	#PublicKey = "/path/to/the/user_my.pub";
+	#PublicKey = "/path/to/the/user_221.pub";
+	#PublicKey = "/path/to/the/user_313.pub";
+	#PublicKeyDir = "/path/to/keys/dir/";
+	Params = "normal";
+};
+
+#
+# Configured server administrator connections
+#
+# The fields "Host", "User", and "Nick", are optional but you are encouraged
+# in using them to better identify your admins.
+#
+# The authentication data is specified by Passphrase and/or PublicKey.
+# If both are provided then both password and public key based authentication
+# is allowed.  If the PublicKey is used it includes the file path to the
+# public key file.  If none of them is provided then authentication is not
+# required.
+#
+Admin {
+        Include "/etc/silcd/silcd-admin.conf";
+};
+
+#
+# Configured server connections.
+#
+# If server connections are configured it means that this server is
+# router server.  Normal servers must not configure server connections.
+# Thus, if this server is not router do not configure this section.  If
+# your server is router, this must be configured.  The Host (mandatory)
+# specifies the remote server.
+#
+# The authentication data is specified by Passphrase and/or PublicKey.
+# If both are provided then both password and public key based authentication
+# is allowed.  If the PublicKey is used it includes the file path to the
+# public key file.  If none of them is provided then authentication is not
+# required.
+#
+# If the connection is backup connection then set the "Backup" option
+# to true.  For normal connections set it false.  If it is set to true then
+# your server will be backup router.
+#
+#ServerConnection {
+#	Host = "10.2.1.7";
+#	Passphrase = "verysecret";
+#	#PublicKey = "/etc/silcd/router.pub";
+#	Params = "normal";
+#	Backup = false;
+#};
+
+#
+# Configured router connections
+#
+# For normal servers only one entry maybe configured to this section.  It
+# must be the router this server will be connected to.  For router servers,
+# this section includes all configured router connections.  The first
+# configured connection is the primary route.  The Host (mandatory) specifies
+# the remote hostname or IP address.  The Port specifies the remote port
+# to connect when Initiator is true.  When Initiator is false the Port
+# specifies the local port (listener port).
+#
+# The authentication data is specified by Passphrase and/or PublicKey.
+# If both are provided then both password and public key based authentication
+# is allowed.  If the PublicKey is used it includes the file path to the
+# public key file.  If none of them is provided then authentication is not
+# required.
+#
+# If you are the initiator of the connection then set the "Initiator"
+# option to true.  If you are the responder of the connection (waiting for
+# incoming connection) then set it to false.
+#
+# If the connection is backup router connection then set the "BackupHost"
+# option to the IP address of the router that the backup router will
+# replace if it becomes unavailable.  Set also the router's port to the
+# "BackupPort" option.  For normal connection leave both commented.  If this
+# backup router is in our cell then set the "BackupLocal" option to true.
+# If the backup router is in other cell then set it to false.
+#
+#RouterConnection {
+#	Host = "10.2.1.100";
+#	Port = 706;
+#	Passphrase = "verysecret";
+#	#PublicKey = "/etc/silcd/router.pub";
+#	Params = "normal";
+#	Initiator = true;
+#	#BackupHost = "10.2.1.6";
+#	#BackupPort = 706;
+#	#BackupLocal = true;
+#};
+
+#
+# Denied connections
+#
+# These connections are denied to connect to our server.
+#
+# The "Reason" field is mandatory, while the "Host" field can be omitted to
+# match everything.
+#
+#Deny {
+#	Host = "10.2.1.99";
+#	Reason = "Go away spammer";
+#};
+#Deny {
+#	Host = "10.3.*";
+#	Reason = "You are not welcome.";
+#};

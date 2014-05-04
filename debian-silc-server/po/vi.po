@@ -1,0 +1,156 @@
+# Vietnamese translation for SILC Server.
+# Copyright © 2007 Free Software Foundation, Inc.
+# Clytie Siddall <clytie@riverland.net.au>, 2007
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: silc-server\n"
+"Report-Msgid-Bugs-To: pkg-silc-devel@lists.alioth.debian.org\n"
+"POT-Creation-Date: 2007-10-24 07:35+0200\n"
+"PO-Revision-Date: 2007-10-24 22:38+0930\n"
+"Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
+"Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: LocFactoryEditor 1.7b1\n"
+
+#: ../templates:2001
+#. Type: string
+#. Description
+msgid "SILC server name:"
+msgstr "Tên máy phục vụ SILC:"
+
+#: ../templates:2001
+#. Type: string
+#. Description
+msgid "Please enter the name of the SILC server (e.g. \"Our SILC server\")."
+msgstr "Hãy gõ tên của máy phục vụ SILC (v.d. « Máy phục vụ SILC của chúng tôi »)"
+
+#: ../templates:3001
+#. Type: string
+#. Description
+msgid "SILC server hostname:"
+msgstr "Tên máy của máy phục vụ SILC:"
+
+#: ../templates:3001
+#. Type: string
+#. Description
+msgid ""
+"Please enter the hostname (or the IP address) of the SILC server (e.g. silc."
+"example.org)."
+msgstr "Hãy gõ tên máy (hoặc địa chỉ IP) của máy phục vụ SILC (v.d. « silc.ví_dụ.org »)."
+
+#: ../templates:4001
+#. Type: string
+#. Description
+msgid "SILC server administrator real name:"
+msgstr "Tên thật của quản trị máy phục vụ SILC:"
+
+#: ../templates:4001
+#. Type: string
+#. Description
+msgid ""
+"Please enter the real name of the operator running the SILC server (e.g. "
+"\"J. Random Operator\")."
+msgstr "Hãy gõ tên thật của quản trị chạy máy phục vụ SILC (v.d. « Nguyễn Văn Mình »)."
+
+#: ../templates:4001
+#: ../templates:5001
+#: ../templates:6001
+#: ../templates:7001
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+msgid "This field may be left empty."
+msgstr "Trường này bỏ trống được."
+
+#: ../templates:5001
+#. Type: string
+#. Description
+msgid "SILC server administrator email address:"
+msgstr "Địa chỉ thư của quản trị máy phục vụ SILC:"
+
+#: ../templates:5001
+#. Type: string
+#. Description
+msgid ""
+"Please enter the email address of the operator running the SILC server (e.g. "
+"silc@example.org)."
+msgstr "Hãy gõ địa chỉ thư điện tử của quản trị chạy máy phục vụ SILC (v.d. « silc@ví_dụ.org »)."
+
+#: ../templates:6001
+#. Type: string
+#. Description
+msgid "SILC server organization name:"
+msgstr "Tên tổ chức máy phục vụ SILC:"
+
+#: ../templates:6001
+#. Type: string
+#. Description
+msgid ""
+"Please enter the name of the organization running the SILC server (e.g. "
+"\"Our Organization\")."
+msgstr "Hãy gõ tên của tổ chức chạy máy phục vụ SILC (v.d. « Tổ chức của chúng tôi »)."
+
+#: ../templates:7001
+#. Type: string
+#. Description
+msgid "SILC server location:"
+msgstr "Địa điểm máy phục vụ SILC:"
+
+#: ../templates:7001
+#. Type: string
+#. Description
+msgid "Please enter the name of the country where the SILC server is located."
+msgstr "Hãy gõ tên của quốc gia trong đó chạy máy phục vụ SILC (v.d. « Việt Nam »)."
+
+#: ../templates:8001
+#. Type: string
+#. Description
+msgid "SILC server administrator nickname:"
+msgstr "Tên hiệu của quản trị máy phục vụ SILC:"
+
+#: ../templates:8001
+#. Type: string
+#. Description
+msgid "Please enter the nickname of the administrator of the SILC server."
+msgstr "Hãy gõ tên hiệu của quản trị chạy máy phục vụ SILC."
+
+#: ../templates:8001
+#. Type: string
+#. Description
+msgid "The administrator will use it for identification on the server."
+msgstr "Quản trị sẽ dùng nó để nhận diện trên máy phục vụ."
+
+#: ../templates:9001
+#. Type: password
+#. Description
+msgid "SILC administrator passphrase:"
+msgstr "Cụm từ mật khẩu quản trị SILC:"
+
+#: ../templates:9001
+#. Type: password
+#. Description
+msgid "Please enter the passphrase for the SILC server administrator."
+msgstr "Hãy gõ cụm từ mật khẩu của quản trị chạy máy phục vụ SILC."
+
+#: ../templates:9001
+#. Type: password
+#. Description
+msgid ""
+"The administrator will need to use this passphrase in order to authenticate."
+msgstr "Quản trị sẽ cần phải nhập cụm từ mật khẩu này để xác thực."
+
+#: ../templates:9001
+#. Type: password
+#. Description
+msgid ""
+"Please note that it will be stored in clear text in a configuration file."
+msgstr "Ghi chú rằng nó sẽ được lưu vào tập tin cấu hình theo chữ rõ."

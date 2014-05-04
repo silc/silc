@@ -1,0 +1,272 @@
+This package was debianized by Tamas SZERB <toma@rulez.org> on
+Wed,  7 Jan 2004 15:56:35 +0100.
+
+It was downloaded from http://silcnet.org/software/download/toolkit/
+and http://silcnet.org/priikone/pre/ for pre-release versions.
+
+Upstream Author:
+
+    Pekka Riikonen <priikone@silcnet.org>
+
+Copyright:
+
+    Copyright (C) 1997-2009 Pekka Riikonen
+                  2000-2009 SILC Project
+
+License:
+
+    The SILC Toolkit distribution is dual-licensed distribution.  The following
+    licenses govern this distribution, and you are free to choose either one of
+    the licenses:
+
+     - GNU General Public License, Version 2
+
+       On Debian systems, a copy of the GNU General Public License, version 2
+       is available in /usr/share/common-licenses/GPL-2 as part of the
+       base-files package.
+
+     - Revised BSD License
+
+       Redistribution and use in source and binary forms, with or without
+       modification, are permitted provided that the following conditions are
+       met:
+
+           1. Redistributions of source code must retain the above copyright
+              notice, this list of conditions and the following disclaimer.
+           2. Redistributions in binary form must reproduce the above copyright
+              notice, this list of conditions and the following disclaimer in
+              the documentation and/or other materials provided with the
+              distribution.
+           3. The name of the author may not be used to endorse or promote
+              products derived from this software without specific prior written
+              permission.
+
+       THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+       IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+       WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+       DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
+       INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+       (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+       SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+       HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+       STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+       ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+       POSSIBILITY OF SUCH DAMAGE.
+
+Exceptions to the previous statements:
+
+  * doc/draft-riikonen-presence-attrs-04.txt,
+    doc/draft-riikonen-silc-commands-07.txt,
+    doc/draft-riikonen-silc-flags-payloads-04.txt,
+    doc/draft-riikonen-silc-ke-auth-09.txt,
+    doc/draft-riikonen-silc-multimedia-session-00.txt,
+    doc/draft-riikonen-silc-pp-09.txt,
+    doc/draft-riikonen-silc-spec-09.txt:
+
+    Licensed under the following terms (per Message-ID:
+    <Pine.NEB.4.64.0610161755240.9865@otaku.Xtrmntr.org>, quoted
+    below):
+
+    : Because the authors of contributions to the IETF standards retain most
+    : intellectual property rights with respect to such contributions under
+    : IETF policies in effect during the development of the draft SILC RFCs,
+    : and because you are an author of said documents, the Debian community
+    : hereby requests that you kindly agree to release your contributions in
+    : the draft SILC RFCs under the license below, for inclusion in Debian.
+    :
+    :         I agree to grant third parties the irrevocable
+    :         right to copy, use and distribute the work, with
+    :         or without modification, in any medium, without royalty,
+    :         provided that, unless separate permission is granted,
+    :         redistributed modified works:
+    :
+    :              (a) do not contain misleading author, version, name
+    :                  of work, or endorsement information, and
+    :
+    :              (b) do not claim endorsement of the modified work by
+    :                  the Contributor, or any organization the
+    :                  Contributor belongs to, the Internet Engineering
+    :                  Task Force (IETF), Internet Research Task Force
+    :                  (IRTF), Internet Engineering Steering Group
+    :                  (IESG), Internet Architecture Board (IAB),
+    :                  Internet Assigned Numbers Authority (IANA),
+    :                  Internet Society (ISOC), Request For Comments
+    :                  (RFC) Editor, or any combination or variation of
+    :                  such terms (including without limitation the
+    :                  IETF "4 diamonds" logo), or any terms that are
+    :                  confusingly similar thereto, and
+    :
+    :              (c) remove any claims of status as an Internet
+    :                  Standard, including without limitation removing
+    :                  the RFC boilerplate.
+    :
+    :         The IETF suggests that any citation or excerpt of
+    :         unmodified text reference the RFC or other document from
+    :         which the text is derived.
+    :
+    : To indicate that you agree to these terms, please reply to this e-mail
+    : and quote the license above and indicate that you agree to this.
+    :
+    I agree.
+    
+            Pekka
+    ________________________________________________________________________
+     Pekka Riikonen                                 priikone at silcnet.org
+     Secure Internet Live Conferencing (SILC)       http://silcnet.org/
+
+  * lib/contrib/getopti.c,
+    lib/contrib/getopti.h:
+
+    Public Domain.
+
+  * lib/contrib/nfkc.c,
+    lib/contrib/stringprep.c:
+
+    Copyright (C) 2002, 2003, 2004, 2005 Simon Josefsson
+
+    Licensed under the GNU Lesser General Public License, version 2.1 or any
+    later version.
+
+  * lib/contrib/regexpr.c,
+    lib/contrib/regexpr.h:
+
+    Copyright (C) 1991 Tatu Ylonen
+
+    Permission to use, copy, modify, distribute, and sell this software and its
+    documentation is hereby granted without fee, provided that the above
+    copyright notice appears in all source code copies, the name of Tatu Ylonen
+    is not used to advertise products containing this software or a derivation
+    thereof, and all modified versions are clearly marked as such.
+
+  * lib/silccrypt/aes.c:
+
+    Copyright (C) 1998-2006 Brian Gladman
+
+    The free distribution and use of this software in both source and binary
+    form is allowed (with or without changes) provided that:
+
+      1. distributions of this source code include the above copyright
+         notice, this list of conditions and the following disclaimer;
+
+      2. distributions in binary form include the above copyright
+         notice, this list of conditions and the following disclaimer
+         in the documentation and/or other associated materials;
+
+      3. the copyright holder's name is not used to endorse products
+         built using this software without specific written permission.
+
+    ALTERNATIVELY, provided that this notice is retained in full, this product
+    may be distributed under the terms of the GNU General Public License (GPL),
+    in which case the provisions of the GPL apply INSTEAD OF those given above.
+  
+  * lib/silccrypt/aes_x86.asm,
+    lib/silccrypt/aes_x86_64.asm:
+
+    Copyright (C) 2002 Brian Gladman
+
+    The free distribution and use of this software in both source and binary
+    form is allowed (with or without changes) provided that:
+
+      1. distributions of this source code include the above copyright
+         notice, this list of conditions and the following disclaimer;
+
+      2. distributions in binary form include the above copyright
+         notice, this list of conditions and the following disclaimer
+         in the documentation and/or other associated materials;
+
+      3. the copyright holder's name is not used to endorse products
+         built using this software without specific written permission.
+
+    ALTERNATIVELY, provided that this notice is retained in full, this product
+    may be distributed under the terms of the GNU General Public License (GPL),
+    in which case the provisions of the GPL apply INSTEAD OF those given above.
+
+  * lib/silccrypt/blowfish.c: 
+
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, dis-tribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+    THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+    IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+    Except as contained in this notice, the name of the authors shall not be
+    used in advertising or otherwise to promote the sale, use or other dealings
+    in this Software without prior written authorization from the authors.
+
+  * lib/silccrypt/md5.c,
+    lib/silccrypt/md5_internal.h:
+    
+    Public Domain.
+
+  * lib/silccrypt/rijndael_internal.h:
+    
+    Copyright (C) 1998-2006 Brian Gladman
+
+    Licensed under the GNU General Public License
+    OR under the following terms:
+
+      The free distribution and use of this software in both source and binary
+      form is allowed (with or without changes) provided that:
+
+        1. distributions of this source code include the above copyright
+           notice, this list of conditions and the following disclaimer;
+
+        2. distributions in binary form include the above copyright
+           notice, this list of conditions and the following disclaimer
+           iin the documentation and/or other associated materials;
+
+        3. the copyright holder's name is not used to endorse products
+           built using this software without specific written permission.
+
+  * lib/silccrypt/sha1.c,
+    lib/silccrypt/sha1_internal.h:
+    
+    Public Domain.
+
+  * lib/silccrypt/sha256.c:
+    
+    Public Domain.
+
+  * lib/silcrypt/twofish.c:
+
+    Copyright (C) 1999 Brian Gladman
+
+    Copyright in this implementation is held by Dr B R Gladman but I hereby
+    give permission for its free direct or derivative use subject to
+    acknowledgment of its origin and compliance with any conditions that the
+    originators of the algorithm place on its exploitation.
+
+  * lib/silcmath/tma.c,
+    lib/silcmath/tma.h:
+
+    Public Domain.
+
+  * lib/silcutil/silcconfig.c,
+    lib/silcutil/silcconfig.h:
+
+    Copyright (C) 2002-2006 Giovanni Giacobbi
+
+    Licensed under the same terms as SILC Toolkit.
+
+  * lib/silcutil/silcsnprintf.c:
+
+    Copyright (C) 1995 Patrick Powell
+
+    This code is based on code written by Patrick Powell (papowell@astart.com)
+    It may be used for any purpose as long as this notice remains intact on all
+    source code distributions
+
+  * tutorial/mybot/mybot.c:
+
+    Public Domain.

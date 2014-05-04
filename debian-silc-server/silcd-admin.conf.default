@@ -1,0 +1,28 @@
+#
+# silcd-primary-ip.conf
+#
+# Debian configuration file for the administrator of the SILC server.  Some
+# options in this file is managed using debconf.  You can invoke
+# `dpkg-reconfigure silcd` if you want to change such options.
+#
+# To gain administrator privileges, the OPER user and arguments must match
+# what is defined in this file.
+
+# IP used by the server administrator (any IP will be allowed if unset).
+#Host = "10.2.1.199";
+
+# Username used by the server administrator (any username will be allowed if
+# unset).
+#User = "priikone";
+
+# Nickname used by the server administrator (any nickname will be allowed if
+# unset).
+Nick = "";
+
+# Passphrase used for authentication (given as an argument to the OPER
+# command).  Passphrase authentication will be disabled if unset.
+Passphrase = "";
+
+# Publickey of the system administrator (no key verification will happen if
+# unset).
+#PublicKey = "/etc/silcd/admin.pub";

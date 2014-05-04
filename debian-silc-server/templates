@@ -1,0 +1,67 @@
+# These templates have been reviewed by the debian-l10n-english
+# team
+#
+# If modifications/additions/rewording are needed, please ask
+# debian-l10n-english@lists.debian.org for advice.
+#
+# Even minor modifications require translation updates and such
+# changes should be coordinated with translators and reviewers.
+
+Template: silcd/server-name
+Type: string
+_Description: SILC server name:
+ Please enter the name of the SILC server (e.g. "Our SILC server").
+
+Template: silcd/host-name
+Type: string
+_Description: SILC server hostname:
+ Please enter the hostname (or the IP address) of the SILC server
+ (e.g. silc.example.org).
+
+Template: silcd/real-name
+Type: string
+_Description: SILC server administrator real name:
+ Please enter the real name of the operator running the SILC server
+ (e.g. "J. Random Operator").
+ .
+ This field may be left empty.
+
+Template: silcd/email
+Type: string
+_Description: SILC server administrator email address:
+ Please enter the email address of the operator running the SILC server
+ (e.g. silc@example.org).
+ .
+ This field may be left empty.
+
+Template: silcd/organization
+Type: string
+_Description: SILC server organization name:
+ Please enter the name of the organization running the SILC server
+ (e.g. "Our Organization").
+ .
+ This field may be left empty.
+
+Template: silcd/country
+Type: string
+_Description: SILC server location:
+ Please enter the name of the country where the SILC server is located.
+ .
+ This field may be left empty.
+
+Template: silcd/admin-nick
+Type: string
+_Description: SILC server administrator nickname:
+ Please enter the nickname of the administrator of the SILC server.
+ .
+ The administrator will use it for identification on the server.
+
+Template: silcd/admin-passphrase
+Type: password
+_Description: SILC administrator passphrase:
+ Please enter the passphrase for the SILC server administrator.
+ .
+ The administrator will need to use this passphrase in order to authenticate.
+ .
+ Please note that it will be stored in clear text in a configuration
+ file.

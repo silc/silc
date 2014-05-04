@@ -1,0 +1,41 @@
+#!/bin/sh
+
+set -e
+
+CONFIGDIR="/etc/silcd"
+CONFIGFILE="$CONFIGDIR/silcd.conf"
+IPCONFIGFILE="$CONFIGDIR/silcd-primary-ip.conf"
+ADMINCONFIGFILE="$CONFIGDIR/silcd-admin.conf"
+
+case "$1" in
+    purge)
+        if [ -d /var/log/silcd ]; then
+            rm -rf /var/log/silcd
+        fi
+
+        # Remove conffile from ucf's database if ucf is available
+        if [ -x /usr/bin/ucf ]; then
+            for conffile in "$CONFIGFILE" "$IPCONFIGFILE" "$ADMINCONFIGFILE"; do
+                ucf --purge "$conffile"
+            done
+
+        fi
+
+        # Remove silcd configuration directory
+        rm -rf "$CONFIGDIR"
+        ;;
+
+    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0
+
+# vim: et sw=4

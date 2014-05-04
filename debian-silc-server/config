@@ -1,0 +1,69 @@
+#!/bin/sh
+
+set -e
+
+. /usr/share/debconf/confmodule
+
+CONFIGFILE="/etc/silcd/silcd.conf"
+ADMINCONFIGFILE="/etc/silcd/silcd-admin.conf"
+
+read_config() {
+    FILE="$1"
+    PARAMETER="$2"
+    sed -n -e "s/^[^#]*$PARAMETER  *=  *\"\(\(\\\.\|[^\"]\)*\)\".*$/\1/p" \
+    	"$CONFIGFILE" | sed -e 's/\\//g'
+}
+
+if [ -e "$CONFIGFILE" ]; then
+    PUBLIC_KEY="$(read_config "$CONFIGFILE" PublicKey)"
+    PRIVATE_KEY="$(read_config "$CONFIGFILE" PrivateKey)"
+
+    SERVER_NAME="$(read_config "$CONFIGFILE" ServerType)"
+    if [ -n "$SERVER_NAME" ]; then
+        db_set silcd/server-name "$SERVER_NAME"
+    fi
+    HOST_NAME="$(read_config "$CONFIGFILE" hostname)"
+    if [ -n "$HOST_NAME" ]; then
+        db_set silcd/host-name "$HOST_NAME"
+    fi
+    REAL_NAME="$(read_config "$CONFIGFILE" Admin)"
+    if [ -n "$REAL_NAME" ]; then
+        db_set silcd/real-name "$REAL_NAME"
+    fi
+    EMAIL="$(read_config "$CONFIGFILE" AdminEmail)"
+    if [ -n "$EMAIL" ]; then
+        db_set silcd/email "$EMAIL"
+    fi
+    COUNTRY="$(read_config "$CONFIGFILE" Location)"
+    if [ -n "$COUNTRY" ]; then
+        db_set silcd/country "$COUNTRY"
+    fi
+    ADMIN_NICK="$(read_config "$ADMINCONFIGFILE" Nick)"
+    if [ -n "$ADMIN_NICK" ]; then
+        db_set silcd/admin-nick "$ADMIN_NICK"
+    fi
+    ADMIN_PASSPHRASE="$(read_config "$ADMINCONFIGFILE" Passphrase)"
+    if [ -n "$ADMIN_PASSPHRASE" ]; then
+        db_set silcd/admin-passphrase "$ADMIN_PASSPHRASE"
+    fi
+else
+    PUBLIC_KEY="/etc/silcd/silcd.pub"
+    PRIVATE_KEY="/etc/silcd/silcd.prv"
+    HOST_NAME="$(hostname -f)"
+fi
+
+db_input high silcd/server-name || true
+db_input high silcd/host-name || true
+db_input medium silcd/real-name || true
+db_input medium silcd/email || true
+if [ "$DEBCONF_RECONFIGURE" = "1" ] ||
+   ! [ -e "$PUBLIC_KEY" -a -e "$PRIVATE_KEY" ]; then
+    db_input medium silcd/organization || true
+fi
+db_input medium silcd/country || true
+db_go || true
+
+db_input high silcd/admin-nick || true
+db_input high silcd/admin-passphrase || true
+db_go || true
+

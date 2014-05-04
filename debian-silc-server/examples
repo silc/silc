@@ -1,0 +1,3 @@
+debian/silcd.conf.default
+debian/silcd-admin.conf.default
+debian/silcd-primary-ip.conf.default

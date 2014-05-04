@@ -1,0 +1,141 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+# export DH_VERBOSE=1
+
+# These are used for cross-compiling and for saving the configure script
+# from having to guess our platform (since we know it already)
+DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+CFLAGS = -g
+
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+	INSTALL_PROGRAM += -s
+endif
+
+configure: configure-stamp
+configure-stamp:
+	dh_testdir
+	-test -e configure-irssi-plugin-stamp -o -e build-irssi-pluginstamp && \
+		$(MAKE) distclean && \
+		rm -f configure-irssi-plugin-stamp build-irssi-pluginstamp
+	rm -f config.guess config.sub
+	ln -sf /usr/share/misc/config.guess
+	ln -sf /usr/share/misc/config.sub
+	./configure --prefix=/usr \
+		--datadir=\$${prefix}/share \
+		--sysconfdir=/etc/silc \
+		--mandir=\$${prefix}/share/man \
+		--docdir=\$${prefix}/share/doc/silc \
+		--enable-debug \
+		--host=$(DEB_HOST_GNU_TYPE) \
+		--build=$(DEB_BUILD_GNU_TYPE) \
+		--enable-ipv6 \
+		--with-perl=no \
+		CFLAGS="$(CFLAGS)" \
+		LDFLAGS="-Wl,-z,defs"
+	touch configure-stamp
+
+configure-irssi-plugin: configure-irssi-plugin-stamp
+configure-irssi-plugin-stamp:
+	dh_testdir
+	-test -e configure-stamp -o -e build-stamp && \
+		$(MAKE) distclean && \
+		rm -f configure-stamp build-stamp
+	rm -f config.guess config.sub
+	ln -sf /usr/share/misc/config.guess
+	ln -sf /usr/share/misc/config.sub
+	./configure --prefix=/usr \
+		--mandir=\$${prefix}/share/man \
+		--docdir=\$${prefix}/share/doc/silc \
+		--enable-debug \
+		--host=$(DEB_HOST_GNU_TYPE) \
+		--build=$(DEB_BUILD_GNU_TYPE) \
+		--enable-ipv6 \
+		--without-silc-includes \
+		--enable-perl \
+		--with-perl-lib=vendor \
+		--with-silc-plugin \
+		--with-pic \
+		--without-pthreads \
+		CFLAGS="$(CFLAGS)"
+	touch configure-irssi-plugin-stamp
+
+build: build-stamp
+build-stamp: configure-stamp 
+	dh_testdir
+	# This is a crude hack until upstream fixes their autotools or includes this directory in their release
+	mkdir -p $(CURDIR)/lib/silcutil/symbian
+	$(MAKE)
+	touch build-stamp
+
+build-irssi-plugin: build-irssi-plugin-stamp
+build-irssi-plugin-stamp: configure-irssi-plugin-stamp
+	dh_testdir
+	$(MAKE)
+	touch build-irssi-plugin-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f config.guess config.sub
+	rm -f build-stamp configure-stamp
+	rm -f build-irssi-plugin-stamp configure-irssi-plugin-stamp
+	[ ! -f Makefile ] || $(MAKE) distclean
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs -psilc
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
+	dh_install -psilc --autodest --sourcedir=debian/tmp
+	dh_installdocs -psilc
+	dh_installexamples -psilc
+	dh_installman -psilc
+
+install-silc-dbg:
+	dh_testdir
+	dh_testroot
+	dh_installdocs -psilc-dbg
+
+install-irssi-plugin: build-irssi-plugin
+	dh_testdir
+	dh_testroot
+	dh_installdirs -pirssi-plugin-silc
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
+	dh_install -pirssi-plugin-silc --autodest --sourcedir=debian/tmp
+	dh_link -pirssi-plugin-silc
+	dh_installdocs -pirssi-plugin-silc
+
+install-irssi-plugin-dbg:
+	dh_testdir
+	dh_testroot
+	dh_installdocs -pirssi-plugin-silc-dbg
+
+# Build architecture-independent files here.
+binary-indep: build install
+	# We have nothing to do.
+
+# Build architecture-dependent files here.
+binary-arch: build install build-irssi-plugin install-irssi-plugin install-silc-dbg install-irssi-plugin-dbg
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs ChangeLog
+	dh_link
+	dh_strip -psilc --dbg-package=silc-dbg 
+	dh_strip -pirssi-plugin-silc --dbg-package=irssi-plugin-silc-dbg
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_perl $(CURDIR)/debian/irssi-plugin-silc/usr/share/irssi/scripts
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure \
+	build-irssi-plugin install-irssi-plugin configure-irssi-plugin

@@ -1,0 +1,3 @@
+#include "libsilc-1.1-2.symbols.common"
+libsilc-1.1.so.2 libsilc-1.1-2 #MINVER#
+ silc_poll@Base 1.1.9-1.1~

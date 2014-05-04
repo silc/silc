@@ -1,0 +1,174 @@
+# silc-server translation to spanish
+# Copyright (C) 2007 Software In the Public Interest
+# This file is distributed under the same license as the silc-serer package.
+#
+# Changes:
+# - Initial translation
+#       Rudy Godoy <rudy@kernel-panik.org>, 2007
+#
+#
+#  Traductores, si no conoce el formato PO, merece la pena leer la 
+#  documentación de gettext, especialmente las secciones dedicadas a este
+#  formato, por ejemplo ejecutando:
+#         info -n '(gettext)PO Files'
+#         info -n '(gettext)Header Entry'
+#
+# Equipo de traducción al español, por favor lean antes de traducir
+# los siguientes documentos:
+# 
+# - El proyecto de traducción de Debian al español
+#   http://www.debian.org/intl/spanish/coordinacion
+#   especialmente las notas de traducción en
+#   http://www.debian.org/intl/spanish/notas
+#
+# - La guía de traducción de po's de debconf:
+#   /usr/share/doc/po-debconf/README-trans
+#   o http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: silc-server 1.1\n"
+"Report-Msgid-Bugs-To: pkg-silc-devel@lists.alioth.debian.org\n"
+"POT-Creation-Date: 2007-10-24 07:35+0200\n"
+"PO-Revision-Date: 2007-12-30 14:16-0500\n"
+"Last-Translator: Rudy Godoy Guillén <rudy@stone-head.org>\n"
+"Language-Team: Debian l10n Spanish team <debian-l10n-spanish@lists.debian.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: string
+#. Description
+#: ../templates:2001
+msgid "SILC server name:"
+msgstr "Nombre del servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:2001
+msgid "Please enter the name of the SILC server (e.g. \"Our SILC server\")."
+msgstr "Introduzca el nombre del servidor SILC (ejm. «Nuestro servidor SILC»)."
+
+#. Type: string
+#. Description
+#: ../templates:3001
+msgid "SILC server hostname:"
+msgstr "Nombre de la máquina utilizada como servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:3001
+msgid ""
+"Please enter the hostname (or the IP address) of the SILC server (e.g. silc."
+"example.org)."
+msgstr "Introduzca el nombre de la máquina (o la dirección IP) del servidor SILC (ejm. silc.ejemplo.org)."
+
+#. Type: string
+#. Description
+#: ../templates:4001
+msgid "SILC server administrator real name:"
+msgstr "Nombre real del administrador del servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:4001
+msgid ""
+"Please enter the real name of the operator running the SILC server (e.g. "
+"\"J. Random Operator\")."
+msgstr "Introduzca el nombre real del operador que administra el servidor SILC (ejm. «José Operador»)."
+
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#: ../templates:4001 ../templates:5001 ../templates:6001 ../templates:7001
+msgid "This field may be left empty."
+msgstr "Este valor puede quedar vacío."
+
+#. Type: string
+#. Description
+#: ../templates:5001
+msgid "SILC server administrator email address:"
+msgstr "Dirección de correo electrónico del administrador del servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:5001
+msgid ""
+"Please enter the email address of the operator running the SILC server (e.g. "
+"silc@example.org)."
+msgstr "Introduzca la dirección de correo electrónico del operador que administra el servidor SILC (ejm. silc@ejemplo.org)."
+
+#. Type: string
+#. Description
+#: ../templates:6001
+msgid "SILC server organization name:"
+msgstr "Nombre de la organización del servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:6001
+msgid ""
+"Please enter the name of the organization running the SILC server (e.g. "
+"\"Our Organization\")."
+msgstr "Introduzca el nombre de la organización que hospeda el servidor SILC (ejm. «Nuestra organización»)."
+
+#. Type: string
+#. Description
+#: ../templates:7001
+msgid "SILC server location:"
+msgstr "Ubicación del servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:7001
+msgid "Please enter the name of the country where the SILC server is located."
+msgstr "Introduzca el nombre del país donde está ubicado el servidor SILC."
+
+#. Type: string
+#. Description
+#: ../templates:8001
+msgid "SILC server administrator nickname:"
+msgstr "Alias del administrador del servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:8001
+msgid "Please enter the nickname of the administrator of the SILC server."
+msgstr "Introduzca el alias del administrador del servidor SILC."
+
+#. Type: string
+#. Description
+#: ../templates:8001
+msgid "The administrator will use it for identification on the server."
+msgstr "El administrador lo utilizará para identificarse en el servidor."
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid "SILC administrator passphrase:"
+msgstr "Contraseña del administrador SILC:"
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid "Please enter the passphrase for the SILC server administrator."
+msgstr "Introduzca la contraseña para el administrador del servidor SILC."
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid ""
+"The administrator will need to use this passphrase in order to authenticate."
+msgstr "El administrador deberá utilizarla para autenticarse."
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid ""
+"Please note that it will be stored in clear text in a configuration file."
+msgstr "Tenga en cuenta de que ésta se almacenará en texto en claro en un fichero de configuración."

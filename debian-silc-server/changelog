@@ -1,0 +1,124 @@
+silc-server (1.1.18-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Jérémy Bobbio <lunar@debian.org>  Sat, 03 Oct 2009 22:05:13 +0200
+
+silc-server (1.1.17-1) unstable; urgency=low
+
+  * New upstream release.
+  * Update copyright notice in debian/copyright.
+  * Bump Standards-Version to 3.8.3, no changes required.
+
+ -- Jérémy Bobbio <lunar@debian.org>  Mon, 31 Aug 2009 14:24:57 +0200
+
+silc-server (1.1.16-1) unstable; urgency=low
+
+  [ Daniel Kahn Gillmor ]
+  * debian/control: cleaned up headers.  Thanks, Lintian!
+  * postinst: changed /usr/sbin/silcd to silcd.  Thanks, Lintian!
+
+  [ Jérémy Bobbio ]
+  * New upstream release.
+  * Update Vcs-* field and document Git usage in README.source.
+  * Build-Depend on libsilc-dev instead of libsilc-1.1-2-dev.
+  * Provide a package with debug symbols.
+  * Use $tmpdir instead of $TMPDIR in postinst script to make lintian happy.
+  * Bump Standards-Version to 3.8.2, no changes required.
+  * Update watch file.
+
+ -- Jérémy Bobbio <lunar@debian.org>  Fri, 26 Jun 2009 15:35:08 +0200
+
+silc-server (1.1.11-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Fix pending l10n issues. Debconf translations:
+    - Turkish. Closes: #491496
+    - Basque. Closes: #503068
+    - Italian. Closes: #491496
+
+ -- Christian Perrier <bubulle@debian.org>  Sun, 26 Oct 2008 08:51:12 +0100
+
+silc-server (1.1.11-1) unstable; urgency=low
+
+  * New upstream release.
+  * Add Swedish translation of debconf templates.  (Closes: #487740)
+    Thanks Martin Bagge!
+  * Bump Standards-Version to 3.8.0, no changes required. 
+  * Tighten dependency on libsilc-1.1-2 (>= 1.1.7-2) in order to get all
+    upstream fixes.
+
+ -- Jérémy Bobbio <lunar@debian.org>  Fri, 11 Jul 2008 13:06:30 +0200
+
+silc-server (1.1.6-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Jérémy Bobbio <lunar@debian.org>  Thu, 24 Apr 2008 19:47:05 +0200
+
+silc-server (1.1.5-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Jérémy Bobbio <lunar@debian.org>  Sun, 20 Apr 2008 21:42:47 +0200
+
+silc-server (1.1.4-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Jérémy Bobbio <lunar@debian.org>  Wed, 16 Apr 2008 20:09:12 +0200
+
+silc-server (1.1.3-1) unstable; urgency=low
+
+  * New upstream release.
+  * Upstream changelog has been renamed from CHANGES to ChangeLog.
+  * Upgrade silcd.conf.default to last upstream example configuration.
+
+ -- Jérémy Bobbio <lunar@debian.org>  Mon, 14 Apr 2008 21:40:27 +0200
+
+silc-server (1.1.2-1) UNRELEASED; urgency=low
+
+  * New upstream release:
+    - This release in itself is irrelevant for Debian: silcd uses the
+      system-wide libsilc and therefore will get the security update for free.
+
+ -- Jérémy Bobbio <lunar@debian.org>  Tue, 25 Mar 2008 15:32:24 +0100
+
+silc-server (1.1.1-1) unstable; urgency=low
+
+  [ Jérémy Bobbio ]
+  * New upstream release fixing a remotely exploitable crash:
+    - Fixed NEW_CLIENT packet handling when it does not contain nickname.
+  * Add Spanish translation of debconf templates.  (Closes: #459265)
+    Thanks Rudy Godoy Guillén!
+  * Add a watch file.
+  * Bump Standards-Version to 3.7.3 (no changes required).
+
+ -- Jérémy Bobbio <lunar@debian.org>  Fri, 14 Mar 2008 14:03:42 +0100
+
+silc-server (1.1-1) unstable; urgency=low
+
+  * New upstream release
+  * Debconf templates and debian/control reviewed by the debian-l10n-
+    english team as part of the Smith review project. Closes: #447330
+  * Moved homepage in debian/control to control field position
+  * Added missing lib/silcutil/win32 and lib/silcutil/symbian directories
+    which were making autotools choke
+  [Debconf translation updates]
+  * German. Closes: #447904
+  * Galician. Closes: #447925
+  * Finnish. Closes: #448298
+  * Dutch; Flemish. Closes: #448927
+  * French. Closes: #449177
+  * Russian. Closes: #449562
+  * Czech. Closes: #450650
+  * Portuguese. Closes: #445352
+  
+ -- Micah Anderson <micah@debian.org>  Sat, 24 Nov 2007 14:01:06 -0500
+
+silc-server (1.1~beta1-1) unstable; urgency=low
+
+  * Initial release.
+
+ -- Jérémy Bobbio <lunar@debian.org>  Mon, 02 Jul 2007 02:14:29 +0200
+

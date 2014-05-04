@@ -1,0 +1,5 @@
+usr/share/irssi/scripts
+usr/share/irssi/themes
+usr/share/irssi/help
+usr/lib/perl5
+usr/lib/irssi/modules/*.so*

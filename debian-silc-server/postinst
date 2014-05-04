@@ -1,0 +1,166 @@
+#!/bin/sh
+
+set -e
+
+. /usr/share/debconf/confmodule
+
+CONFIGDIR="/etc/silcd"
+CONFIGFILE="$CONFIGDIR/silcd.conf"
+IPCONFIGFILE="$CONFIGDIR/silcd-primary-ip.conf"
+ADMINCONFIGFILE="$CONFIGDIR/silcd-admin.conf"
+DEFAULT_CONFIGDIR="/usr/share/doc/silcd/examples"
+DEFAULT_CONFIGFILE="$DEFAULT_CONFIGDIR/silcd.conf.default.gz"
+DEFAULT_IPCONFIGFILE="$DEFAULT_CONFIGDIR/silcd-primary-ip.conf.default"
+DEFAULT_ADMINCONFIGFILE="$DEFAULT_CONFIGDIR/silcd-admin.conf.default"
+
+read_config() {
+    PARAMETER="$1"
+    sed -n -e "s/^[^#]*$PARAMETER  *=  *\"\(\(\\\.\|[^\"]\)*\)\".*$/\1/p" \
+    	"$CONFIGFILE" | sed -e 's/\\//g'
+}
+
+if [ -e "$CONFIGFILE" ]; then
+    PUBLIC_KEY="$(read_config PublicKey)"
+    PRIVATE_KEY="$(read_config PrivateKey)"
+else
+    PUBLIC_KEY="/etc/silcd/silcd.pub"
+    PRIVATE_KEY="/etc/silcd/silcd.prv"
+fi
+
+retrieve_debconf_answers() {
+    db_get silcd/server-name
+    SERVER_NAME="$RET"
+    db_get silcd/host-name
+    HOST_NAME="$RET"
+    db_get silcd/real-name
+    REAL_NAME="$RET"
+    db_get silcd/email
+    EMAIL="$RET"
+    db_get silcd/organization
+    ORGANIZATION="$RET"
+    db_get silcd/country
+    COUNTRY="$RET"
+    db_get silcd/admin-nick
+    ADMIN_NICK="$RET"
+    db_get silcd/admin-passphrase
+    ADMIN_PASSPHRASE="$RET"
+}
+
+rfc2253ize() {
+    # We espace: symbols ,w+"\<> and spaces at end and begining
+    echo "$1" | sed -e 's/[,;+"\\<>]/\\\0/g;s/ $/\\\0/g;s/^[ #]/\\\0/g'
+}
+
+create_key_pair() {
+    local tmpdir
+
+    retrieve_debconf_answers
+
+    if [ -z "$SERVER_NAME" -o -z "$HOST_NAME" ]; then
+        # Don't create keypair
+        return
+    fi
+
+    IDENTIFIER="UN=$(rfc2253ize "SERVER_NAME"), HN=$(rfc2253ize "$HOST_NAME")"
+    if [ -n "$REAL_NAME" ]; then
+        IDENTIFIER="$IDENTIFIER, RN=$(rfc2253ize "$REAL_NAME")"
+    fi
+    if [ -n "$EMAIL" ]; then
+        IDENTIFIER="$IDENTIFIER, E=$(rfc2253ize "$EMAIL")"
+    fi
+    if [ -n "$COUNTRY" ]; then
+        IDENTIFIER="$IDENTIFIER, C=$(rfc2253ize "$COUNTRY")"
+    fi
+
+    tmpdir=$(mktemp -d -t silcd.XXXXXX)
+    chmod 700 "$tmpdir"
+    silcd --create-key-pair="$tmpdir" --identifier="$IDENTIFIER"
+    mkdir -p "$(dirname "$PUBLIC_KEY")" "$(dirname "$PRIVATE_KEY")"
+    mv -f "$tmpdir/silcd.pub" "$PUBLIC_KEY"
+    mv -f "$tmpdir/silcd.prv" "$PRIVATE_KEY"
+    chmod 0600 "$PRIVATE_KEY"
+    rmdir "$tmpdir"
+}
+
+change_setting() {
+    FILE="$1"
+    shift
+    KEY="$1"
+    shift
+    VALUE="$*"
+ 
+    VALUE="$(echo "$VALUE" | sed -e 's,/,\\/,g;s,",\\\\",g')"
+    sed -i -e "s/\([^#]*$KEY  *=  *\"\)[^\"]*\(\"\)/\1$VALUE\2/" "$FILE"
+}
+
+update_config_file() {
+    retrieve_debconf_answers
+    IP="$(getent hosts "$HOST_NAME" | awk '{print $1}')" 
+
+    # silcd.conf
+    TEMPFILE=$(tempfile)
+    zcat "$DEFAULT_CONFIGFILE" > "$TEMPFILE"
+
+    change_setting "$TEMPFILE" ServerType "$SERVER_NAME"
+    change_setting "$TEMPFILE" hostname "$HOST_NAME"
+    change_setting "$TEMPFILE" Admin "$REAL_NAME"
+    change_setting "$TEMPFILE" AdminEmail "$EMAIL"
+    change_setting "$TEMPFILE" Location "$COUNTRY"
+
+    ucf --debconf-ok "$TEMPFILE" "$CONFIGFILE"
+
+    rm -f "$TEMPFILE"
+
+    # silcd-primary-ip.conf
+    TEMPFILE=$(tempfile)
+    cat "$DEFAULT_IPCONFIGFILE" > "$TEMPFILE"
+
+    change_setting "$TEMPFILE" ip "$IP"
+
+    ucf --debconf-ok "$TEMPFILE" "$IPCONFIGFILE"
+
+    rm -f "$TEMPFILE"
+
+    # silcd-admin.conf
+    TEMPFILE="$(tempfile)"
+    cat "$DEFAULT_ADMINCONFIGFILE" > "$TEMPFILE"
+
+    change_setting "$TEMPFILE" Nick "$ADMIN_NICK"
+    change_setting "$TEMPFILE" Passphrase "$ADMIN_PASSPHRASE"
+
+    ucf --debconf-ok "$TEMPFILE" "$ADMINCONFIGFILE"
+
+    rm -f "$TEMPFILE"
+}
+
+case "$1" in
+    configure)
+        if [ "$DEBCONF_RECONFIGURE" = "1" ] ||
+           ! [ -e "$PUBLIC_KEY" -a -e "$PRIVATE_KEY" ]; then
+            create_key_pair
+        fi
+        update_config_file
+        ;;
+
+    reconfigure)
+        create_key_pair
+        update_config_file
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+# We are going to start a daemon, so we need to be debconf clean.
+db_stop
+
+#DEBHELPER#
+
+exit 0
+
+#vim: et sw=4

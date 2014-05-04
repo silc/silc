@@ -1,0 +1,6 @@
+README.source for the silc-toolkit package
+==========================================
+
+silc-toolkit is managed in a Git repository using git-buildpackage (with
+pristine-tar).  It follows most of the advice provided by Russ Allbery at:
+http://www.eyrie.org/~eagle/notes/debian/git.html

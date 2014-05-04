@@ -1,0 +1,474 @@
+This package was debianized by Tamas SZERB <toma@rulez.org> on
+Tue, 30 Oct 2001 00:03:17 +0100.
+
+Daniel Kahn Gillmor <dkg-debian.org@fifthhorseman.net> converted it
+for silc-client 1.0.3
+
+The upstream tarball was downloaded from
+http://silcnet.org/download/client/sources/ and
+http://silcnet.org/priikone/pre/ for pre-release versions.
+
+Upstream Authors:
+
+    Pekka Riikonen <priikone@silcnet.org>
+
+Copyright:
+
+    Copyright (C) 1997-2007 Pekka Riikonen
+    and others, see CREDITS.
+   
+    silc-client is based on irssi:
+
+      Original code:
+      
+        Timo Sirainen <cras@irssi.org>
+      
+      Irssi staff (current maintainers) <staff@irssi.org>:
+      
+        Valentin Batz (senneth, vb)
+        Wouter Coekaerts (coekie)
+        Jochen Eisinger (c0ffee)
+        Geert Hauwaerts
+        Emanuele Giaquinta (exg)
+      
+      Large feature patches by:
+      
+        David Leadbeater (dg, dgl) : isupport
+        vjt@users.sf.net : SSL support
+        Joel Eriksson : SSL certs
+        Heikki Orsila : DCC SEND queueing
+        Mark Trumbull : DCC SERVER
+        Francesco Fracassi : Passive DCC
+      
+      Other patches (grep for "patch" in ChangeLog) by:
+      
+        Toby Peterson
+        Soren Jacobsen
+        Kuang-che Wu
+        Joost Vunderink (Garion)
+        Wang WenRui
+        Jean-Yves Lefort (decadix)
+        Joel Eriksson
+        Maarten van der Zwaart
+        Noah Levitt
+        Krzysztof Kowalik (Borys)
+        Peder Stray
+        mls@suse.de
+        nix@suhs.nu
+        Marcin Kowalczyk (Qrczak)
+        Petr Baudis
+        Bjoern Krombholz (fuchs)
+        aldem-irssi@aldem.net,
+        BC-bd
+        Juerd
+        Han
+        pv2b
+        Tommi Komulainen (tommik)
+        mike@po.cs.msu.su
+        zinx@magenet.net
+        yathen@web.de
+        paul@raade.org
+        Leszek Matok
+        tygrys@moo.pl
+        manoj@io.com
+        cph@cph.demon.co.uk
+        ganesh@earth.li
+        Jakub Jankowski (shasta)
+        vanilla@freebsd.org
+        Tinuk
+        Mark Glines
+        Kjetil Ødegaard
+        Chris Moore
+        ComradeP
+        Jilles Tjoelker
+        Lauri Nurmi
+        Mikko Rauhala
+        loafier
+        Nicolas Collignon
+        Daniel Koning
+
+License:
+
+    silc-client is distributed under the terms of the GNU General Public
+    License, version 2.
+
+On Debian systems, a copy of the GNU General Public License, version 2 is
+available in /usr/share/common-licenses/GPL-2 as part of the base-files
+package.
+ 
+Exceptions to the previous statements:
+
+  * apps/irssi/src/core/args.c,
+    apps/irssi/src/core/modules-load.c,
+    apps/irssi/src/core/modules.c,
+    apps/irssi/src/core/servers-setup.c,
+    apps/irssi/src/fe-common/core/autorun.c,
+    apps/irssi/src/fe-common/core/fe-help.c,
+    apps/irssi/src/fe-common/core/fe-server.c,
+    apps/irssi/src/fe-common/core/keyboard.c,
+    apps/irssi/src/fe-text/gui-windows.c,
+    apps/irssi/src/fe-text/lastlog.c,
+    apps/irssi/src/fe-text/statusbar-items.c,
+    apps/irssi/src/fe-text/term-curses.c,
+    apps/irssi/src/fe-text/textbuffer-commands.c,
+    apps/irssi/src/fe-text/textbuffer-reformats.c,
+    apps/irssi/src/fe-text/textbuffer-view.c,
+    apps/irssi/src/fe-text/textbuffer.c,
+    apps/irssi/src/perl/perl-core.c,
+    apps/irssi/src/perl/perl-fe.c,
+    apps/irssi/src/perl/perl-signals.c,
+    apps/irssi/src/perl/perl-sources.c:
+    
+    Copyright (C) 1999-2001 Timo Sirainen
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * apps/irssi/src/core/channels-setup.c,
+    apps/irssi/src/core/channels.c,
+    apps/irssi/src/core/chatnets.c,
+    apps/irssi/src/core/commands.c,
+    apps/irssi/src/core/core.c,
+    apps/irssi/src/core/ignore.c,
+    apps/irssi/src/core/levels.c,
+    apps/irssi/src/core/line-split.c,
+    apps/irssi/src/core/log-away.c,
+    apps/irssi/src/core/log.c,
+    apps/irssi/src/core/masks.c,
+    apps/irssi/src/core/net-disconnect.c,
+    apps/irssi/src/core/network.c,
+    apps/irssi/src/core/nicklist.c,
+    apps/irssi/src/core/pidwait.c,
+    apps/irssi/src/core/queries.c,
+    apps/irssi/src/core/rawlog.c,
+    apps/irssi/src/core/recode.c,
+    apps/irssi/src/core/servers-reconnect.c,
+    apps/irssi/src/core/servers.c,
+    apps/irssi/src/fe-common/core/chat-completion.c,
+    apps/irssi/src/fe-common/core/fe-channels.c,
+    apps/irssi/src/fe-common/core/fe-common-core.c,
+    apps/irssi/src/fe-common/core/fe-core-commands.c,
+    apps/irssi/src/fe-common/core/fe-ignore.c,
+    apps/irssi/src/fe-common/core/fe-log.c,
+    apps/irssi/src/fe-common/core/fe-modules.c,
+    apps/irssi/src/fe-common/core/fe-queries.c,
+    apps/irssi/src/fe-common/core/fe-recode.c,
+    apps/irssi/src/fe-common/core/fe-windows.c,
+    apps/irssi/src/fe-common/core/formats.c,
+    apps/irssi/src/fe-common/core/hilight-text.c,
+    apps/irssi/src/fe-common/core/printtext.c,
+    apps/irssi/src/fe-common/core/themes.c,
+    apps/irssi/src/fe-common/core/translation.c,
+    apps/irssi/src/fe-common/core/window-activity.c,
+    apps/irssi/src/fe-text/mainwindows.c:
+
+    Copyright (C) 1999-2000 Timo Sirainen
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * apps/irssi/src/core/chat-commands.c,
+    apps/irssi/src/core/chat-protocols.c,
+    apps/irssi/src/core/expandos.c,
+    apps/irssi/src/core/special-vars.c,
+    apps/irssi/src/fe-common/core/completion.c,
+    apps/irssi/src/fe-common/core/fe-expandos.c,
+    apps/irssi/src/fe-common/core/fe-ignore-messages.c,
+    apps/irssi/src/fe-common/core/fe-messages.c,
+    apps/irssi/src/fe-common/core/module-formats.c,
+    apps/irssi/src/fe-common/core/window-commands.c,
+    apps/irssi/src/fe-common/core/window-items.c,
+    apps/irssi/src/fe-common/silc/fe-silc-channels.c,
+    apps/irssi/src/fe-text/gui-expandos.c,
+    apps/irssi/src/fe-text/mainwindow-activity.c,
+    apps/irssi/src/fe-text/module-formats.c,
+    apps/irssi/src/perl/perl-common.c:
+
+    Copyright (C) 2000 Timo Sirainen
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+ 
+  * apps/irssi/src/core/misc.c,
+    apps/irssi/src/core/settings.c,
+    apps/irssi/src/fe-common/core/command-history.c,
+    apps/irssi/src/fe-common/core/fe-settings.c,
+    apps/irssi/src/fe-text/gui-entry.c,
+    apps/irssi/src/fe-text/gui-printtext.c,
+    apps/irssi/src/fe-text/gui-readline.c,
+    apps/irssi/src/lib-config/get.c,
+    apps/irssi/src/lib-config/parse.c,
+    apps/irssi/src/lib-config/set.c,
+    apps/irssi/src/lib-config/write.c:
+
+    Copyright (C) 1999 Timo Sirainen
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * apps/irssi/src/core/net-nonblock.c:
+
+    Copyright (C) 1998-2000 Timo Sirainen
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * apps/irssi/src/core/network-openssl.c:
+
+    Copyright (C) 2002 vjt
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * apps/irssi/src/core/nickmatch-cache.c,
+    apps/irssi/src/core/session.c,
+    apps/irssi/src/core/write-buffer.c,
+    apps/irssi/src/fe-text/statusbar-config.c,
+    apps/irssi/src/fe-text/term-dummy.c,
+    apps/irssi/src/fe-text/term-terminfo.c,
+    apps/irssi/src/fe-text/term.c,
+    apps/irssi/src/perl/module-formats.c:
+
+    Copyright (C) 2001 Timo Sirainen
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * apps/irssi/src/core/signals.c:
+
+    Copyright (C) 1999-2002 Timo Sirainen
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * apps/irssi/src/fe-common/core/fe-exec.c,
+    apps/irssi/src/fe-common/core/windows-layout.c:
+
+    Copyright (C) 2000-2001 Timo Sirainen
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * apps/irssi/src/fe-common/core/utf8.c:
+
+    Copyright (C) 1991-2002 Free Software Foundation, Inc.
+    Copyright (C) 1999 Tom Tromey
+    Copyright (C) 2000 Red Hat, Inc.
+    Copyright (C) 2002 Timo Sirainen
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * apps/irssi/src/fe-common/silc/fe-silc-messages.c:
+
+    Copyright (C) 2002 Jochen Eisinger
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * apps/irssi/src/fe-common/silc/fe-silc-messages.c:
+
+    Copyright (C) 2003 Jochen Eisinger
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * apps/irssi/src/fe-common/silc/fe-silcnet.c:
+ 
+    Copyright (C) 2000 Timo Sirainen
+    Copyright (C) 2003 Jochen Eisinger
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * apps/irssi/src/fe-text/silc.c:
+
+    Copyright (C) 1999-2000, 2007 Timo Sirainen
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * apps/irssi/src/fe-text/tparm.c:
+
+    Public Domain.
+
+  * apps/irssi/src/lib-popt/findme.c:
+    apps/irssi/src/lib-popt/findme.h,
+    apps/irssi/src/lib-popt/popt.c,
+    apps/irssi/src/lib-popt/popt.h,
+    apps/irssi/src/lib-popt/poptconfig.c,
+    apps/irssi/src/lib-popt/popthelp.c,
+    apps/irssi/src/lib-popt/poptint.h,
+    apps/irssi/src/lib-popt/poptparse.c:
+
+    Copyright (c) 1998 Red Hat Software
+
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+    THE X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+    OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+    Except as contained in this notice, the name of the X Consortium shall not
+    be used in advertising or otherwise to promote the sale, use or other
+    dealings in this Software without prior written authorization from the X
+    Consortium.
+
+  * apps/irssi/src/silc/silc-chatnets.c:
+ 
+    Copyright (C) 1999-2000 Timo Sirainen
+    Copyright (C) 2003 Jochen Eisinger
+
+    Licensed under the GNU General Public License, version 2 or any later
+    version.
+
+  * lib/contrib/getopti.c,
+    lib/contrib/getopti.h:
+
+    Public Domain.
+
+  * lib/contrib/nfkc.c,
+    lib/contrib/stringprep.c:
+
+    Copyright (C) 2002, 2003, 2004, 2005 Simon Josefsson
+
+    Licensed under the GNU Lesser General Public License, version 2.1 or any
+    later version.
+
+  * lib/contrib/regexpr.c,
+    lib/contrib/regexpr.h:
+
+    Copyright (C) 1991 Tatu Ylonen
+
+    Permission to use, copy, modify, distribute, and sell this software and its
+    documentation is hereby granted without fee, provided that the above
+    copyright notice appears in all source code copies, the name of Tatu Ylonen
+    is not used to advertise products containing this software or a derivation
+    thereof, and all modified versions are clearly marked as such.
+
+  * lib/silccrypt/aes.c:
+
+    Copyright (C) 1998-2006 Brian Gladman
+
+    The free distribution and use of this software in both source and binary
+    form is allowed (with or without changes) provided that:
+
+      1. distributions of this source code include the above copyright
+         notice, this list of conditions and the following disclaimer;
+
+      2. distributions in binary form include the above copyright
+         notice, this list of conditions and the following disclaimer
+         in the documentation and/or other associated materials;
+
+      3. the copyright holder's name is not used to endorse products
+         built using this software without specific written permission.
+
+    ALTERNATIVELY, provided that this notice is retained in full, this product
+    may be distributed under the terms of the GNU General Public License (GPL),
+    in which case the provisions of the GPL apply INSTEAD OF those given above.
+  
+  * lib/silccrypt/aes_x86.asm,
+    lib/silccrypt/aes_x86_64.asm:
+
+    Copyright (C) 2002 Brian Gladman
+
+    The free distribution and use of this software in both source and binary
+    form is allowed (with or without changes) provided that:
+
+      1. distributions of this source code include the above copyright
+         notice, this list of conditions and the following disclaimer;
+
+      2. distributions in binary form include the above copyright
+         notice, this list of conditions and the following disclaimer
+         in the documentation and/or other associated materials;
+
+      3. the copyright holder's name is not used to endorse products
+         built using this software without specific written permission.
+
+    ALTERNATIVELY, provided that this notice is retained in full, this product
+    may be distributed under the terms of the GNU General Public License (GPL),
+    in which case the provisions of the GPL apply INSTEAD OF those given above.
+
+  * lib/silccrypt/blowfish.c: 
+
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, dis-tribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+    THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+    IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+    Except as contained in this notice, the name of the authors shall not be
+    used in advertising or otherwise to promote the sale, use or other dealings
+    in this Software without prior written authorization from the authors.
+
+  * lib/silccrypt/md5.c,
+    lib/silccrypt/md5_internal.h:
+    
+    Public Domain.
+
+  * lib/silccrypt/rijndael_internal.h:
+    
+    Copyright (C) 1998-2006 Brian Gladman
+
+    Licensed under the GNU General Public License.
+
+  * lib/silccrypt/sha1.c,
+    lib/silccrypt/sha1_internal.h:
+    
+    Public Domain.
+
+  * lib/silccrypt/sha256.c:
+    
+    Public Domain.
+
+  * lib/silcrypt/twofish.c:
+
+    Copyright (C) 1999 Brian Gladman
+
+    Copyright in this implementation is held by Dr B R Gladman but I hereby
+    give permission for its free direct or derivative use subject to
+    acknowledgment of its origin and compliance with any conditions that the
+    originators of the algorithm place on its exploitation.
+
+  * lib/silcmath/tma.c,
+    lib/silcmath/tma.h:
+
+    Public Domain.
+
+  * lib/silcutil/silcconfig.c,
+    lib/silcutil/silcconfig.h:
+
+    Copyright (C) 2002-2006 Giovanni Giacobbi
+
+    Licensed under the GNU General Public License, version 2.
+
+  * lib/silcutil/silcsnprintf.c:
+
+    Copyright (C) 1995 Patrick Powell
+
+    This code is based on code written by Patrick Powell (papowell@astart.com)
+    It may be used for any purpose as long as this notice remains intact on all
+    source code distributions.

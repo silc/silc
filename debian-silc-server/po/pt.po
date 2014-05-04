@@ -1,0 +1,168 @@
+# translation of silc-server debconf to Portuguese
+# Copyright (C) Américo Monteiro 2007
+# This file is distributed under the same license as the silc-server package.
+#
+# Américo Monteiro <a_monteiro@netcabo.pt>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: ?\n"
+"Report-Msgid-Bugs-To: pkg-silc-devel@lists.alioth.debian.org\n"
+"POT-Creation-Date: 2007-10-24 07:35+0200\n"
+"PO-Revision-Date: 2007-11-09 18:20+0000\n"
+"Last-Translator: Américo Monteiro <a_monteiro@netcabo.pt>\n"
+"Language-Team: Portuguese <traduz@debianpt.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#. Type: string
+#. Description
+#: ../templates:2001
+msgid "SILC server name:"
+msgstr "Nome do servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:2001
+msgid "Please enter the name of the SILC server (e.g. \"Our SILC server\")."
+msgstr ""
+"Por favor indique o nome do servidor SILC (ex. \"Nosso servidor SILC\")."
+
+#. Type: string
+#. Description
+#: ../templates:3001
+msgid "SILC server hostname:"
+msgstr "Nome da máquina servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:3001
+msgid ""
+"Please enter the hostname (or the IP address) of the SILC server (e.g. silc."
+"example.org)."
+msgstr ""
+"Por favor indique o nome da máquina (ou o endereço IP) do servidor SILC (ex. "
+"silc.exemplo.org)."
+
+#. Type: string
+#. Description
+#: ../templates:4001
+msgid "SILC server administrator real name:"
+msgstr "Nome real do administrador do servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:4001
+msgid ""
+"Please enter the real name of the operator running the SILC server (e.g. "
+"\"J. Random Operator\")."
+msgstr ""
+"Por favor indique o nome real do operador que corre o servidor SILC (ex. "
+"\"J. Algum Operador\")."
+
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#. Type: string
+#. Description
+#: ../templates:4001 ../templates:5001 ../templates:6001 ../templates:7001
+msgid "This field may be left empty."
+msgstr "Este campo pode ser deixado em vazio."
+
+#. Type: string
+#. Description
+#: ../templates:5001
+msgid "SILC server administrator email address:"
+msgstr "Endereço de email do administrador do servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:5001
+msgid ""
+"Please enter the email address of the operator running the SILC server (e.g. "
+"silc@example.org)."
+msgstr ""
+"Por favor indique o endereço de email do operador que corre o servidor SILC "
+"(ex. silc@exemplo.org)."
+
+#. Type: string
+#. Description
+#: ../templates:6001
+msgid "SILC server organization name:"
+msgstr "Nome de organização do servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:6001
+msgid ""
+"Please enter the name of the organization running the SILC server (e.g. "
+"\"Our Organization\")."
+msgstr ""
+"Por favor indique o nome da organização que corre o servidor SILC (ex. \"A "
+"Nossa Organização\")."
+
+#. Type: string
+#. Description
+#: ../templates:7001
+msgid "SILC server location:"
+msgstr "Localização do servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:7001
+msgid "Please enter the name of the country where the SILC server is located."
+msgstr "Por favor indique o nome do país onde o servidor SILC está localizado."
+
+#. Type: string
+#. Description
+#: ../templates:8001
+msgid "SILC server administrator nickname:"
+msgstr "Nome alternativo do administrador do servidor SILC:"
+
+#. Type: string
+#. Description
+#: ../templates:8001
+msgid "Please enter the nickname of the administrator of the SILC server."
+msgstr ""
+"Por favor indique o nome alternativo (nickname) do administrador do servidor "
+"SILC."
+
+#. Type: string
+#. Description
+#: ../templates:8001
+msgid "The administrator will use it for identification on the server."
+msgstr "O administrador irá usá-lo para identificação no servidor."
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid "SILC administrator passphrase:"
+msgstr "Frase-passe do administrador SILC:"
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid "Please enter the passphrase for the SILC server administrator."
+msgstr "Por favor indique a frase-passe para o administrador do servidor SILC."
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid ""
+"The administrator will need to use this passphrase in order to authenticate."
+msgstr ""
+"O administrador irá precisar de usar esta frase-passe para se poder "
+"autenticar."
+
+#. Type: password
+#. Description
+#: ../templates:9001
+msgid ""
+"Please note that it will be stored in clear text in a configuration file."
+msgstr ""
+"Por favor, note que irá ser guardada em texto simples num ficheiro de "
+"configuração."

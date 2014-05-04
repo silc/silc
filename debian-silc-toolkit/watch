@@ -1,0 +1,3 @@
+version=3
+http://silcnet.org/download/toolkit/sources/silc-toolkit-([\d\.]+)\.tar\.gz \
+        debian git-import-orig
