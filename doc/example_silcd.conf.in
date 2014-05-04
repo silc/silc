@@ -186,7 +186,7 @@ ServerInfo {
 	#
 	# Server name (FQDN)
 	#
-	hostname = "lassi.kuo.fi.ssh.com";
+	hostname = "your.server.name.here";
 
 	#
 	# Primary listener.  Specify the IP address and the port to bind
@@ -194,7 +194,7 @@ ServerInfo {
 	# if the server is behind NAT.
 	#
 	Primary {
-		ip = "10.2.1.6";
+		ip = "127.0.0.1";
 		# public_ip = "11.1.1.1";
 		port = 706;
 	};
@@ -210,22 +210,22 @@ ServerInfo {
 	# ServerType field specifies the purpose of this server
 	# This is only a descriptive field.
 	#
-	ServerType = "Test Server";
+	ServerType = "My SILC Server";
 
 	#
 	# Geographic location
 	#
-	Location = "Kuopio, Finland";
+	Location = "Planet Earth";
 
 	#
 	# Full admin name
 	#
-	Admin = "Foo T. Bar";
+	Admin = "Your Name Here";
 
 	#
 	# Admin's email address
 	#
-	AdminEmail = "foo-admin@bar.com";
+	AdminEmail = "your@email.here";
 
 	#
 	# Run SILC server as specific user and group.  The server must be
@@ -458,11 +458,11 @@ Client {
 # required.
 #
 Admin {
-	Host = "10.2.1.199";
-	User = "priikone";
-	Nick = "pekka";
-	Passphrase = "verysecret";
-	# PublicKey = "/path/to/the/public.pub";
+	#Host = "10.2.1.199";
+	#User = "priikone";
+	#Nick = "pekka";
+	#Passphrase = "verysecret";
+	#PublicKey = "/path/to/the/public.pub";
 };
 
 #
@@ -485,11 +485,11 @@ Admin {
 # your server will be backup router.
 #
 ServerConnection {
-	Host = "10.2.1.7";
-	Passphrase = "verysecret";
+	#Host = "10.2.1.7";
+	#Passphrase = "verysecret";
 	#PublicKey = "/path/to/the/public.pub";
-	Params = "normal";
-	Backup = false;
+	#Params = "normal";
+	#Backup = false;
 };
 
 #
@@ -521,9 +521,9 @@ ServerConnection {
 # If the backup router is in other cell then set it to false.
 #
 RouterConnection {
-	Host = "10.2.1.100";
+	Host = "sauna.silcnet.org";
 	Port = 706;
-	Passphrase = "verysecret";
+	#Passphrase = "verysecret";
 	#PublicKey = "/path/to/the/public.pub";
 	Params = "normal";
 	Initiator = true;
