@@ -7,13 +7,14 @@ Group: Applications/Communications
 URL: http://silcnet.org/
 Source0: silc-client-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildRequires: silc-toolkit-devel
-Requires: silc-toolkit >= 1.1
+BuildRequires: libsilc-devel
+Requires: libsilc >= 1.1
 
 %description
-SILC (Secure Internet Live Conferencing) is a protocol which provides
-secure conferencing services on the Internet over insecure channel.
-SILC Client is used to connect to SILC server and SILC network.
+SILC (Secure Internet Live Conferencing) is a modern and secure
+conferencing protocol providing secure private messages, channel
+messages and video and audio conferencing.  SILC Client is a
+command line client used to connect to SILC server in SILC network.
 
 %prep
 %setup -q
