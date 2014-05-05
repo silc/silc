@@ -3,7 +3,7 @@
 #
 #  Author: Pekka Riikonen <priikone@silcnet.org>
 #
-#  Copyright (C) 2000 - 2005, 2007 Pekka Riikonen
+#  Copyright (C) 2000 - 2014 Pekka Riikonen
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -70,8 +70,8 @@ SILC_LINK_LIBS=$(LIBS)
 SILCCLIENT_LINK_LIBS=$(LIBS) -lsilc
 SILCSERVER_LIBS=$(LIBS) -lsilc
 else
-SILC_LINK_LIBS=
-SILCCLIENT_LINK_LIBS=
+SILC_LINK_LIBS=$(LIBS)
+SILCCLIENT_LINK_LIBS=libsilc.la
 SILCSERVER_LIBS=
 endif
 
@@ -151,7 +151,7 @@ LIBSILCCLIENT_CURRENT=@LIBSILCCLIENT_CURRENT@
 LIBSILCCLIENT_REVISION=@LIBSILCCLIENT_REVISION@
 LIBSILCCLIENT_AGE=@LIBSILCCLIENT_AGE@
 
-libsilcclient.a:
+libsilcclient.a: libsilc.a
 	find $(SILCCLIENTLIB_DIRS) -type f -name *.lo | xargs \
 	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
 	$(SILCCLIENT_LINK_LIBS) $(LIBTOOL_SILCCLIENT_VERSION) \
