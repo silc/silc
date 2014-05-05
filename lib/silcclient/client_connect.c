@@ -469,7 +469,6 @@ SILC_FSM_STATE(silc_client_st_connect_key_exchange)
   SilcClientConnection conn = fsm_context;
   SilcClient client = conn->client;
   SilcSKEParamsStruct params = {};
-  SilcClientID cid;
 
   SILC_LOG_DEBUG(("Starting key exchange protocol"));
 

@@ -1367,7 +1367,7 @@ SILC_FSM_STATE(silc_client_command_reply_motd)
 	  line[0] = ' ';
 
 	if (cmd->verbose)
-	  SAY(client, conn, SILC_CLIENT_MESSAGE_INFO, "%s", line);
+	  SAY(client, conn, SILC_CLIENT_MESSAGE_AUDIT, "%s", line);
 
 	if (!strlen(cp))
 	  break;

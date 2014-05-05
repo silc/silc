@@ -2476,7 +2476,7 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   SilcPublicKey local_pubkey;
   SilcSILCPublicKey silc_pubkey;
   SilcUInt16 port;
-  SILC_SERVER_REC *server;
+  SILC_SERVER_REC *server = NULL;
   const char *hostname, *ip;
   unsigned char *pk;
   SilcUInt32 pk_len;

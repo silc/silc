@@ -1708,7 +1708,7 @@ SILC_FSM_STATE(silc_ske_st_initiator_phase4)
   SilcSKEStatus status;
   SilcSKEKEPayload payload;
   unsigned char hash[SILC_HASH_MAXLEN];
-  SilcUInt32 hash_len;
+  SilcUInt32 hash_len = 0;
   int key_len, block_len;
 
   if (ske->aborted) {
