@@ -7,8 +7,8 @@ Group: Applications/Communications
 URL: http://silcnet.org/
 Source0: silc-server-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-BuildRequires: silc-toolkit-devel
-Requires: silc-toolkit >= 1.1
+BuildRequires: libsilc-devel
+Requires: libsilc >= 1.1
 
 %description
 SILC (Secure Internet Live Conferencing) is a protocol which provides
