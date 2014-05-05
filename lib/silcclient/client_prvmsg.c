@@ -686,6 +686,7 @@ struct SilcClientAutonegMessageKeyStruct {
   SilcHash hash;			 /* Initial message hash */
   SilcPublicKey public_key;		 /* Remote client public key */
   SilcVerifyKeyContext verify;
+  SilcSKEParamsStruct params;
   SilcUInt32 generation;		 /* Starting AKE generation */
 };
 
@@ -777,6 +778,7 @@ silc_client_autoneg_key_recv_ske(SilcPacketEngine engine,
 				 void *stream_context)
 {
   SilcClientEntry client_entry = stream_context;
+  SilcClientAutonegMessageKey ake = client_entry->internal.ake;
   SilcClientID remote_id;
 
   SILC_LOG_DEBUG(("Packet %p type %d inside private message", packet,
@@ -802,6 +804,40 @@ silc_client_autoneg_key_recv_ske(SilcPacketEngine engine,
     /* The packet is not for this client, but it must be */
     SILC_LOG_DEBUG(("Client ids do not match"));
     goto drop;
+  }
+
+  /* Responder is started here if correct packet comes in */
+  if (!ake->ske_op) {
+    if (packet->type == SILC_PACKET_KEY_EXCHANGE)
+      {
+	/* Ignore pre-set proposal */
+	if (ake->params.prop) {
+	  silc_ske_group_free(ake->params.prop->group);
+	  silc_cipher_free(ake->params.prop->cipher);
+	  silc_hash_free(ake->params.prop->hash);
+	  silc_hmac_free(ake->params.prop->hmac);
+	  silc_pkcs_public_key_free(ake->params.prop->public_key);
+	  silc_free(ake->params.prop);
+	  ake->params.prop = NULL;
+	}
+      }
+    else if (packet->type != SILC_PACKET_KEY_EXCHANGE_1)
+      {
+	SILC_LOG_DEBUG(("Invalid SKE packet for responder"));
+	silc_async_abort(client_entry->internal.op, NULL, NULL);
+	goto drop;
+      }
+
+    ake->ske_op = silc_ske_responder(ake->ske, ake->ske_stream, &ake->params);
+    if (!ake->ske_op) {
+      silc_async_abort(client_entry->internal.op, NULL, NULL);
+      goto drop;
+    }
+
+    /* We have to re-inject the packet to SKE stream because SKE wasn't
+       listenning to these packets until silc_ske_responder() was called */
+    silc_packet_stream_inject(ake->ske_stream, packet);
+    return TRUE;
   }
 
   /* Packet is ok and is for us, let it pass to SKE */
@@ -1121,7 +1157,6 @@ silc_client_autoneg_private_message_key(SilcClient client,
 					SilcUInt32 data_len)
 {
   SilcClientAutonegMessageKey ake;
-  SilcSKEParamsStruct params = {};
   SilcBool initiator = initiator_packet == NULL;
   SilcBuffer m;
 
@@ -1212,12 +1247,12 @@ silc_client_autoneg_private_message_key(SilcClient client,
 
   silc_ske_set_callbacks(ake->ske, silc_client_autoneg_key_verify_pubkey,
 			 silc_client_autoneg_key_done, client_entry);
-  params.version = client->internal->silc_client_version;
-  params.probe_timeout_secs = 5;
-  params.timeout_secs = 120;
-  params.flags = SILC_SKE_SP_FLAG_MUTUAL | SILC_SKE_SP_FLAG_PFS;
-  params.small_proposal = TRUE;
-  params.no_acks = TRUE;
+  ake->params.version = client->internal->silc_client_version;
+  ake->params.probe_timeout_secs = 5;
+  ake->params.timeout_secs = 120;
+  ake->params.flags = SILC_SKE_SP_FLAG_MUTUAL | SILC_SKE_SP_FLAG_PFS;
+  ake->params.small_proposal = TRUE;
+  ake->params.no_acks = TRUE;
 
   if (client_entry->internal.send_key &&
       client_entry->internal.ake_generation == ake->generation) {
@@ -1233,17 +1268,17 @@ silc_client_autoneg_private_message_key(SilcClient client,
 			client_entry->internal.hmac_send)), &prop->hash);
     prop->public_key = silc_pkcs_public_key_copy(client_entry->public_key);
     silc_ske_group_get_by_number(2, &prop->group);
-    prop->flags = params.flags;
-    params.prop = prop;
+    prop->flags = ake->params.flags;
+    ake->params.prop = prop;
   }
 
-  /* Start key exchange */
-  if (initiator)
-    ake->ske_op = silc_ske_initiator(ake->ske, ake->ske_stream, &params, NULL);
-  else
-    ake->ske_op = silc_ske_responder(ake->ske, ake->ske_stream, &params);
-  if (!ake->ske_op)
-    goto err;
+  /* Start key exchange, responder is started in the packet callback  */
+  if (initiator) {
+    ake->ske_op = silc_ske_initiator(ake->ske, ake->ske_stream, &ake->params,
+				     NULL);
+    if (!ake->ske_op)
+      goto err;
+  }
 
   /* Finally, set up the client entry */
   client_entry->internal.op = silc_async_alloc(silc_client_autoneg_key_abort,
@@ -1255,8 +1290,8 @@ silc_client_autoneg_private_message_key(SilcClient client,
   client_entry->internal.prv_resp = !initiator;
   silc_client_ref_client(client, conn, client_entry);
 
-  /* As responder, re-inject the initiator's private message back to the
-     stream so that the new SKE gets it. */
+  /* As responder reinject the packet to the new stream so it gets decoded
+     from the private message payload. */
   if (initiator_packet)
     silc_packet_stream_inject(conn->stream, initiator_packet);
 
