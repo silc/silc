@@ -808,25 +808,22 @@ silc_client_autoneg_key_recv_ske(SilcPacketEngine engine,
 
   /* Responder is started here if correct packet comes in */
   if (!ake->ske_op) {
-    if (packet->type == SILC_PACKET_KEY_EXCHANGE)
-      {
-	/* Ignore pre-set proposal */
-	if (ake->params.prop) {
-	  silc_ske_group_free(ake->params.prop->group);
-	  silc_cipher_free(ake->params.prop->cipher);
-	  silc_hash_free(ake->params.prop->hash);
-	  silc_hmac_free(ake->params.prop->hmac);
-	  silc_pkcs_public_key_free(ake->params.prop->public_key);
-	  silc_free(ake->params.prop);
-	  ake->params.prop = NULL;
-	}
+    if (packet->type == SILC_PACKET_KEY_EXCHANGE) {
+      /* Ignore pre-set proposal */
+      if (ake->params.prop) {
+	silc_ske_group_free(ake->params.prop->group);
+	silc_cipher_free(ake->params.prop->cipher);
+	silc_hash_free(ake->params.prop->hash);
+	silc_hmac_free(ake->params.prop->hmac);
+	silc_pkcs_public_key_free(ake->params.prop->public_key);
+	silc_free(ake->params.prop);
+	ake->params.prop = NULL;
       }
-    else if (packet->type != SILC_PACKET_KEY_EXCHANGE_1)
-      {
-	SILC_LOG_DEBUG(("Invalid SKE packet for responder"));
-	silc_async_abort(client_entry->internal.op, NULL, NULL);
-	goto drop;
-      }
+    } else if (packet->type != SILC_PACKET_KEY_EXCHANGE_1) {
+      SILC_LOG_DEBUG(("Invalid SKE packet for responder"));
+      silc_async_abort(client_entry->internal.op, NULL, NULL);
+      goto drop;
+    }
 
     ake->ske_op = silc_ske_responder(ake->ske, ake->ske_stream, &ake->params);
     if (!ake->ske_op) {
@@ -940,7 +937,7 @@ silc_client_autoneg_key_verify_pubkey_cb(SilcBool success, void *context)
   SilcVerifyKeyContext verify = context;
   SilcClientAutonegMessageKey ake = verify->context;
 
-  SILC_LOG_DEBUG(("Start"));
+  SILC_LOG_DEBUG(("Start, verify %p, ake %p", context, ake));
 
   /* Call the completion callback back to the SKE */
   if (!verify->aborted) {

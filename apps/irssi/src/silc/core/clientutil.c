@@ -411,6 +411,14 @@ static void silc_keyboard_entry_redirect_abort(SilcAsyncOperation op,
    * the operation has been aborted.
    */
   ctx->user_prompt_proc(NULL, ctx->user_context, KeyboardCompletionAborted);
+
+  /*
+   * Allow new prompt after we've abored despite us leaking Irssi prompt
+   * data.  It's more important to get new prompt up and this abort
+   * guarantees we handle things correctly towards silcclient library by
+   * calling the callback above.
+   */
+  silc_keyboard_prompt_pending = FALSE;
 }
 
 static void silc_keyboard_entry_redirect_completion(const char *line,

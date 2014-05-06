@@ -2487,14 +2487,20 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
 		  "server" : "client");
   int i;
 
+  server = (SILC_SERVER_REC*)conn->context;
   if (conn_type != SILC_CONN_CLIENT) {
-    server = (SILC_SERVER_REC*)conn->context;
     SILC_VERIFY(server);
     if (!server) {
       if (completion)
 	completion(FALSE, context);
       return;
     }
+  }
+
+  /* If we have pending public key prompt already up */
+  if (server && server->prompt_op) {
+    silc_async_abort(server->prompt_op, NULL, NULL);
+    server->prompt_op = NULL;
   }
 
   if (silc_pkcs_get_type(public_key) != SILC_PKCS_SILC) {
