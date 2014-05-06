@@ -797,7 +797,7 @@ silc_server_command_list_send_reply(SilcServerCommandContext cmd,
       valid_rcount++;
   }
 
-  if (!lch_count && !gch_count) {
+  if (!valid_lcount && !valid_rcount) {
     silc_server_command_send_status_reply(cmd, SILC_COMMAND_LIST,
 					  SILC_STATUS_OK, 0);
     return;
