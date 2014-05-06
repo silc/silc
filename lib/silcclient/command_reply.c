@@ -246,6 +246,7 @@ SILC_FSM_STATE(silc_client_command_reply_timeout)
 
   /* Timeout, reply not received in timely fashion */
   silc_list_del(conn->internal->pending_commands, cmd);
+  cmd->status = SILC_STATUS_OK;
   ERROR_CALLBACK(SILC_STATUS_ERR_TIMEDOUT);
   return SILC_FSM_FINISH;
 }
