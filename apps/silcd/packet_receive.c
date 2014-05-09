@@ -2115,7 +2115,8 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   char *username = NULL, *realname = NULL;
   SilcUInt16 username_len, nickname_len;
   SilcUInt32 id_len, tmp_len;
-  int ret;
+  int ret, i;
+  unsigned char tmp[8];
   char *host, *nickname = NULL, *nicknamec;
   const char *hostname, *ip;
 
@@ -2300,19 +2301,18 @@ SilcClientEntry silc_server_new_client(SilcServer server,
   if (client->mode & SILC_UMODE_ANONYMOUS) {
     char *scramble;
 
-    if (strlen(username) >= 2) {
-      username[0] = silc_rng_get_byte_fast(server->rng);
-      username[1] = silc_rng_get_byte_fast(server->rng);
-    }
+    for (i = 0; i < sizeof(tmp); i++)
+      tmp[i] = silc_rng_get_byte_fast(server->rng);
 
-    scramble = silc_hash_babbleprint(server->sha1hash, username,
-				     strlen(username));
+    scramble = silc_hash_babbleprint(server->sha1hash, tmp, sizeof(tmp));
     scramble[5] = '@';
     scramble[11] = '.';
     memcpy(&scramble[16], ".silc", 5);
     scramble[21] = '\0';
     silc_free(username);
     username = scramble;
+    silc_free(realname);
+    realname = NULL;
   }
 
   /* Update client entry */
