@@ -2757,6 +2757,21 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
       return;
     }
 
+    if (conn_type == SILC_CONN_CLIENT)
+      printformat_module("fe-common/silc", NULL, NULL,
+			 MSGLEVEL_CRAP, SILCTXT_PUBKEY_VERIFIED_CLIENT,
+			 (name
+			  ? name
+			  : (silc_pubkey->identifier.realname
+			     ? silc_pubkey->identifier.realname
+			     : (silc_pubkey->identifier.email
+				? silc_pubkey->identifier.email
+				: ""))),
+			 silc_pubkey->identifier.realname ?
+			 silc_pubkey->identifier.realname : "",
+			 silc_pubkey->identifier.email ?
+			 silc_pubkey->identifier.email : "");
+
     /* Local copy matched */
     if (completion)
       completion(TRUE, context);
