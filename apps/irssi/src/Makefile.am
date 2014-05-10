@@ -14,7 +14,7 @@ if SILCPLUGIN
 SBDRS=
 TEXTUI=
 else
-SBDRS=lib-popt lib-config core
+SBDRS=lib-config core
 endif
 
 noinst_HEADERS = \

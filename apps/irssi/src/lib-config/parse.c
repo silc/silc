@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -267,29 +267,27 @@ void config_parse_init(CONFIG_REC *rec, const char *name)
 	scanner->msg_handler = (GScannerMsgFunc) config_parse_error_func;
 }
 
-/* Parse configuration file */
 int config_parse(CONFIG_REC *rec)
 {
+	int fd;
+
 	g_return_val_if_fail(rec != NULL, -1);
 	g_return_val_if_fail(rec->fname != NULL, -1);
 
-	rec->handle = open(rec->fname, O_RDONLY);
-	if (rec->handle == -1)
+	fd = open(rec->fname, O_RDONLY);
+	if (fd == -1)
 		return config_error(rec, g_strerror(errno));
 
 	config_parse_init(rec, rec->fname);
-	g_scanner_input_file(rec->scanner, rec->handle);
+	g_scanner_input_file(rec->scanner, fd);
 	config_parse_loop(rec, rec->mainnode, G_TOKEN_EOF);
 	g_scanner_destroy(rec->scanner);
 
-	close(rec->handle);
-	rec->handle = -1;
+	close(fd);
 
 	return rec->last_error == NULL ? 0 : -1;
 }
 
-/* Parse configuration found from `data'. `input_name' is specifies the
-   "configuration name" which is displayed in error messages. */
 int config_parse_data(CONFIG_REC *rec, const char *data, const char *input_name)
 {
 	config_parse_init(rec, input_name);
@@ -300,9 +298,6 @@ int config_parse_data(CONFIG_REC *rec, const char *data, const char *input_name)
 	return rec->last_error == NULL ? 0 : -1;
 }
 
-/* Open configuration. The file is created if it doesn't exist, unless
-   `create_mode' is -1. `fname' can be NULL if you just want to use
-   config_parse_data() */
 CONFIG_REC *config_open(const char *fname, int create_mode)
 {
 	CONFIG_REC *rec;
@@ -316,7 +311,6 @@ CONFIG_REC *config_open(const char *fname, int create_mode)
 
 	rec = g_new0(CONFIG_REC, 1);
 	rec->fname = fname == NULL ? NULL : g_strdup(fname);
-	rec->handle = -1;
 	rec->create_mode = create_mode;
 	rec->mainnode = g_new0(CONFIG_NODE, 1);
 	rec->mainnode->type = NODE_TYPE_BLOCK;
@@ -326,7 +320,6 @@ CONFIG_REC *config_open(const char *fname, int create_mode)
 	return rec;
 }
 
-/* Release all memory used by configuration */
 void config_close(CONFIG_REC *rec)
 {
 	g_return_if_fail(rec != NULL);
@@ -334,7 +327,6 @@ void config_close(CONFIG_REC *rec)
 	config_nodes_remove_all(rec);
 	g_free(rec->mainnode);
 
-	if (rec->handle != -1) close(rec->handle);
 	g_hash_table_foreach(rec->cache, (GHFunc) g_free, NULL);
 	g_hash_table_destroy(rec->cache);
 	g_hash_table_destroy(rec->cache_nodes);
@@ -343,7 +335,6 @@ void config_close(CONFIG_REC *rec)
 	g_free(rec);
 }
 
-/* Change file name of config file */
 void config_change_file_name(CONFIG_REC *rec, const char *fname, int create_mode)
 {
 	g_return_if_fail(rec != NULL);

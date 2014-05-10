@@ -1,43 +1,20 @@
- - /whowas server nick doesn't work
-01:18 <@darix> cras: /foreach server /disconnect $tag n8 <-- doesnt work
- - /hilight -priority is broken
-19:36 [IRCNet] [muzzy] lis‰‰ bugeja irssiss‰, ilmeisesti 
-          uusin versio:  foo splittaa ulos, bar joinaa sis‰‰n, bar vaihtaa 
-          nicknamen fooksi, foo splittaa uudestaan ulos -> tulee Glib warning 
-          "is already in split list (how?)" .. :)
-
-04:35 [OPN] [slug] was just wondering if you 
-          had Irssi::keyboard_entry_redirect() on your TODO somewhere near the 
-          top, I'd love the feature
-04:35 [OPN] [slug] or someway to clear the 
-          command buffer, either way is acceptable, just my connection is a 
-          little less than reliable, so I've built myself a script that stores 
-          blowfish passes, all encrypted by one value
-04:36 [OPN] [slug] then I set a single 
-          decryption key, and it keeps it for the irssi session (lost on 
-          /upgrade though), unfortunatly it stays in the command buffer 8]
-
- - ^I in topicbar breaks things
-14:17 <@darix> cras: this doesnt work: /exec  - -o uname -a
-
- - "setup changed", or "setup reread" seems to cause crashes.. (with darix)
+19:36 [IRCNet] [muzzy] more bugs in irssi, apparently the new version:  foo splits out,
+      	       	       bar joins, bar changes his nick to foo, foo splits again ->
+		       Glib warning "is already in split list (how?)" .. :)
+22:51 [IRCNet] [zhafte] irssi bugs if you put ACT to the right, or maybe it is my terminal?
+22:52 [IRCNet] [zhafte] the numbers tend to go on top of eachother
+ 
 02:46 <@fuchs> cras, /server foonet.foo.xy and (recognizing it doesn't connect 
                fast enough), and so doing /server barnet.foo.xy (both in the 
                same chatnet) makes irssi joining the net but not rejoining the 
                channels
 
 
-14:59 <@c0ffee> cras, bug report, mode change compression appears not to work: 
-                13:58 -!- mode/#*cut* [-b+ *cut*] by *cut* (i think it was -b+b)
 21:55 <@L> 17:04.11 <L> /eval /last quit;/clear;/sb goto 10:00;/last -clear;/sb end
 21:55 <@L> 17:04.27 <L> wait after it scrolls and press page up :)
 21:55 <@L> 17:04.48 <L> oh, you can make Irssi behave correctly with /clear
            again
 
- - /msg nick@server or nick%host is fully treated as nickname (log, query)
- - max_whois won't stay with reconnects?
- - support passive DCC
- - separate format for privmsg/notice massmessages (anything non-yournick)
 20:45 < Juerd> 19:44 -!- Irssi: critical file channels.c: line 122 
                (channel_find): assertion
 20:45 < Juerd>           `name != NULL' failed.
@@ -45,18 +22,6 @@
 20:46 < Juerd> and it happens in a _query_
 20:47 <@Juerd> cras: for some reason irssi doesn't know this happens in a 
                query, and displays "< Juerd:> foo" in the status window
- - set TOS field for all connections (DCC especially)
-22:51 [IRCNet] [zhafte] irssi muuten taitaa bugaa jos 
-          pist‰‰ ACT oikeaan reunaan, vai onkohan se vain mun terminaali?
-22:52 [IRCNet] [zhafte] menev‰t v‰lill‰ p‰‰llekk‰in 
-          numerot
- - when using -w password command line parameter, hide the password so it
-   won't show with ps.
-07.06.2002 08:37 #irssi: <@Qrczak> cras: A bug. After /upgrade when being away 
-                                   the awaylog is not being written to.
-21:37 < life> Then you connect. The problem is that irssi connects to the proxy 
-              server and directly afterwards send "USER ..."
-21:37 < life> It has to wait for "HTTP 200 ok" *first*
 04.06.2002 08:54 #irssi: <@Garion> cras: i've seen it several times now - a 
                                    line of 79 or 80 chars (my win is 80 wide) 
                                    which has an empty line below it, and that 
@@ -64,35 +29,7 @@
                                    window with that line in it, thus keeping 1 
                                    line from the old window in the current 
                                    window. Very confusing
-21:43 [IRCNet] [HiroP-(~HiroP@p508035EC.dip.t-dialin.net)] Hi there. I just 
-          wanted to tell you that there seems to be a problem when joining 
-          large channels (500+ people) while a regexp ignore is active. I had 
-          one to ignore all server ads
-21:43 [IRCNet] [HiroP-(~HiroP@p508035EC.dip.t-dialin.net)] 1 *: ALL -regexp 
-          -pattern .*erver.*nline.*
-21:43 [IRCNet] [HiroP-(~HiroP@p508035EC.dip.t-dialin.net)] After joining, I 
-          could see the nicklist and 1 or 2 lines of what people were saying. 
-          Then irssi either core-dumped, got disconnected or just sat there 
-          apparently without receiving any more data (lag-counter going up to 
-          several minutes). 
 
- - %n%_ ei n‰y lastlogissa
- - darixin se pingiredirectijuttu
-21:28 < Samus_Aran> cras: /log also shows #Linuux ... which I typod a couple
-                    days ago
-21:30 < Samus_Aran> it doesnt show any of the queries which i closed, though,
-                    jush #channels
-
- - "show statusbar in empty windows" flag?
- - statusbar_item_redraw() should just set the size as dirty and calculate
-   it only when really needed.
- - possible to cache sbar_item->size when nothing else has changed in sbar? 
-   ie. mostly when redrawing.
- - use_status_window, use_msgs_window sais toimia heti
- - /msg @#chan<tab>
-
- - hilight -priority
- - tab completio jos lis‰‰ utf8 juttuja niin ei oikein toimi?
 16:39 <@Qrczak> cras: I'm not sure how exactly to reproduce it but it happens 
                 often. When I jump to the window with a query using Alt-a 
                 (after the other person said something), and close the window 
@@ -100,56 +37,55 @@
                 windows, and then that person says something again, I'm brought 
                 to the new query window automatically (that's of course bad).
 
-21.04.2002 11:59 [immy(immy@beanus.org)] GLib warning: signal_free(script 
-          destroyed) : signal still has 3 references:
- - jos kickataan nopeasti ja joinaa takas nopeasti chansyncci kaataa
-/WHOssa.. kts. qrczak logi
- - /set show_server_tags tjsp ett‰ n‰ytt‰is aina (yhdist‰ hide_server_tagsin 
-   kanssa?)
-17:35 <@peder> cras: why isnt 'topic = " {sb_topic $topic}"' in the default 
- - /SBAR topic placement bottom ei toimi??
+ - import libsoup GnuTLS driver
+   http://svn.gnome.org/viewvc/libsoup/trunk/libsoup/soup-gnutls.c?view=log
+ - lastlog, ignore, hilight and sb levelclear take a list of levels
+   argument in different ways, a uniform way would be better.
+ - /exec - -out cat file does not send the whole file
+ - %n%_ won't show at lastlog..
+ - use_status_window, use_msgs_window should work instantly..
+ - /set show_server_tags or something to always show (combine with hide_server_tagsin ?)..
+ - /SBAR topic placement bottom won't work??..
+ - /op * complaining could be better than "not a good idea"..
+ - how did tab completion complete your own nick..?
+ - /win hide could work even though there are sticky things in that window..
+ - /window server -sticky windows doesn't always realize when a server connects?..
+ - tab completion doesn't work properly if I add utf8 things?..
+ - utf8-texts tend to bug in statusbar (prompt)..
+ - if /set reuse_unused_windows off, and the window seems to be empty,
+   and there would be only one of them it could still be used (?)..
+ - /foreach server /disconnect $tag n8 does not work
+ - /whowas server nick does not work
+ - /msg nick@server or nick%host is fully treated as nickname (log, query)
+ - max_whois won't stay with reconnects?
+ - separate format for privmsg/notice massmessages (anything non-yournick)
+ - set TOS field for all connections (DCC especially)
+ - "show statusbar in empty windows" flag?
+ - statusbar_item_redraw() should just set the size as dirty and calculate
+   it only when really needed.
+ - possible to cache sbar_item->size when nothing else has changed in sbar? 
+   ie. mostly when redrawing.
+ - /msg @#chan<tab>
  - /SB GOTO -<days> <ts>
- - /query -immortal so autoclose_queries wouldn't touch them
- - /SET hiascii_control_chars if 128..128+32 should be treated as control chars
-
-...
-
- - /exec -out kanavalla ei pelaa silciss‰
+ - /query -immortal so autoclose_query wouldn't touch them
+ - autoclose_query is also closing (and finishing) dcc chats (bug #59 ?)
  - write about %[-s] etc. to default.theme
  - away handling is a bit buggy. you do /away;/away reason, irssi remembers
    the away reason only until it receives "you're no longer away" from the
    first command.. setting it back to away has then lost the reason.
- - crash: /exec -msg safari perl -e 'print "A"x600000'"
  - nick_ nick- _nick nick2 nick3 ...
-17.03.2002 22:25 #irssi.fi: <@Ion> cras: Jos sanon dcc chatissa ett‰ /exec - 
-                                   -out cat iso_tiedosto, niin miksi 
-                                   iso_tiedosto j‰‰ kesken? :)
- - /op * valitus vois olla joku parempi kuin "not a good idea"..
- - mitenk‰s tabcompletio completoi taas omaakin nickki‰..?
- - /hilight -level "public -actions" or something so it wouldn't match
-   actions.
- - vanhan irssin /upgrades uuteen ennen sit‰ vaihtoi /set autolog_path:iin
-   $1 ja kaatui?..
- - /win hide vois pelata vaikka oliskin stickyj‰ siin‰ ikkunassa
  - /SAVE -all?
-14.03.2002 19:10 #irssi: <@fantazja> cras: autoclose_query is also closing (and 
-                                     finishing) dcc chats :/
- - /window server -sticky:tetyt ikkunat ei aina meinaa tajuta kun serveri
-   yhdistyy?
- - utf8-tekstitykset bugailee statusbarissa (promptissa)
- - jos /set reuse_unused_windows off, ja ikkuna n‰ytt‰is t‰ysin tyhj‰lle
-   ja niit‰ olis vaan 1, niin sen vois kyll‰ k‰ytt‰‰ silti (?)
- - /set beep_msg_level hilight ei toimi jos on /hilight -word
-
  - /STATUSBAR xx ENABLE|DISABLE recreates all statusbars which is a bit
    annoying because some scripts want to do it and input line is cleared
    because of this..
- - move /SET hilight_*color to theme
  - /SET disconnect_timeout - default 2min, 0 = immediately
  - reconnecting messages are a bit confusing. it prints "removed reconnection"
    to the server which it's connecting to next.. maybe the whole reconnecting
    thing should work so that the record stays there until it's connected
    successfully.
+ - /set beep_msg_level hilight won't work if I have /hilight -word
+ - /hilight -priority is broken
+ - move /SET hilight_*color to theme
  - /ignore, /hilight and /lastlog could complain immediately if used
    regexp is broken. /hilight list could show also if it's broken like
    /ignore does.
@@ -163,12 +99,10 @@
     - reconnections aren't transferred(?)
 
  - Logging:
-    - /LOG OPEN doesn't autocreate directories..
     - /LOG OPEN -targets *!*cras@*.fi
     - /SET autolog -> /LOG OPEN -targets * (internally, at least)
     - /LOG OPEN shouldn't really open the file until first line is 
       written in it
-    - /WINDOW LOG OFF doesn't work
     - autoclosing logs doesn't work too well. Problems are:
 	- after certain inactivity private message logs should be closed
 	- but DCC chats shouldn't be closed until the chat itself is closed
@@ -202,6 +136,7 @@
       /CATed when setting yourself unaway
     - /AWAYLOG could show the current awaylog and optionally reset it
     - The channel name should be optional there
+    - after /upgrade when being away the awaylog is not being written to.
 
  - Window item placing:
     - !channel vs. !12345channel. it's layout saved with full name, but joined
@@ -210,9 +145,6 @@
       the query window with the dcc chat window.
     - closed DCC chats should add temporary window bind to the dcc chat so
       future chats for same nick would use the same window
-    - /JOIN #foo could *optionally* move the channel to active window
-      (default off, it confuses people)
-    - /JOIN -ircnet #foo doesn't jump to #foo like /JOIN #foo does.
 
  - DCC
     - /DCC SEND wildcard support
@@ -266,15 +198,13 @@
     - show in query windows
 
  - Crashes:
-    - irssi crashes at quit if perl is loaded as module
-    - #1  0x68cc7 in module_file_deinit_gmodule (file=0x110e20) at modules-load.c:356 
     - <dg> i've managed to reproduce the bug, if i make three split windows (/window show 3..5), then set the windows to not be sticky  and go to one of the windows, then alt+number to another window then go back the other window the display prints two windows in the same window
-    - irssi -cserver -nnick -> crashes - lib-popt is buggy!
-        - bug as well but not crash: --config=foo --home=bar -c server
-    - /SB CLEAR still crashing sometimes?
-    - make sure irssi works with 0x0 sized terminal. 1x1 sized terminal
-      doesn't work if we use recreate_windows()
-    - /UNLOAD dcc, etc. static modules
+    - the old irssi's /upgrades to the new, before it changed to /set autolog_path
+      $1 and crashed?..
+    - active_mainwin was somehow NULL and crashed.. /window kill did it,
+      probably something to do with window_close() switching to the same
+      hidden window inside the split window, which I was about to kill
+      anyways because it wasn't sticky..
 
  - Scripts:
     - print whois in active window
@@ -282,7 +212,7 @@
       happens.
     - move into scripts:
        - /SET timestamp_timeout
-       - /MSG completion list should be modifyable from scripts
+       - /MSG completion list should be modifiable from scripts
           - script to remove nick from list after /IGNORE nick
        - nick completion list should be modifyable afterwards:
           - /SET completion_nicks_lowercase (remove from irssi)
@@ -298,16 +228,12 @@
 
  - Misc IRC related things:
     - support for mode +q in dancer - also same as +b %xxx modes..
-    - properly support RFC-1459 charset (ircnet specific option), eg.
-      /QUERY p[ and msgs from p{ aren't placed there.
     - /BAN -ip, -time [<time>] (/ALIAS knockout?)
     - /KICKBAN to support same options than /BAN (would /ALIAS kickban work?)
     - ban list prints "x seconds ago" .. should be x days, mins, hours, ..
 
  - Windows:
      - /WINDOW SIZE -sticky, so f.e. /WINDOW BALANCE wouldn't affect it.
-     - /LAYOUT save|reset doesn't affect anything immediately, only after
-       restart
      - Check that /LAYOUT SAVE works properly with all the different /SETs,
        like reuse_unsued_windows, windows_auto_renumber and autoclose_windows.
        What should it do if some channel is /PARTed with autoclose_windows 
@@ -331,11 +257,8 @@
       support for vi keys easily.
     - Editor-like (or bash-like) line editor - it would wrap to next line
       instead of scrolling.
-    - When pasting text, irssi could notice it and ask "pasting 30 lines
-      of text, ok?" .. Could send some signal that sends the pasted lines
-      in GList which signal handlers could modify. Also the first pasted
-      line could be somehow buffered so that it isn't sent immediately
-      so these paste handlers could modify it too.
+    - When pasting text, irssi could send some signal that sends the pasted
+      lines in GList which signal handlers could modify.
         - Already existing / at start of line handler should use this
         - Automatically remove empty space at the start/end of lines,
 	  from start of line it would work so that if each line begins with
@@ -345,8 +268,7 @@
 	  printed as-is (a few /BINDs would do this but...)
 	- Should empty lines be pasted too? Maybe optionally
     - /BIND -askkey command
-    - /BIND -delete doesn't print that it did the deleting
-    - /BIND -deletes should be saved in config
+    - /BIND -delete should be saved in config
     - ^W (and some others) don't update cut buffer.
     - default binds: M-d, M-y
     - /PASSWORD command that asks you to type the password to entry line and
@@ -355,6 +277,7 @@
     - Key to execute the command, but not place it in history
     - Key to remove active entry from command history
     - Optionally save command history between restarts
+    - clear_history
 
  - Notify list:
     - showing who's online and who's offline doesn't work properly.
@@ -374,7 +297,6 @@
     - Show when the nick was last seen
 
  - Ignores:
-    - /IGNORE -ircnet or -tag
     - /IGNORE <nick> -> use hostmasking (related to channel syncing problem,
       see "bigger code changes") with support for -type and /SET ignore_type
     - /IGNORE -strip -pattern away * actions ..
@@ -419,8 +341,6 @@
     - /LAST -since <timestamp>
     - /LAST : use /SET timestamp_format
     - /LAST -allwindows would check the lastlog from all open windows
-    - /SCROLLBACK CLEAR all -public - a bit like /LAST -clear
-      (make /LAST -clear do /SB CLEAR lastlog)
 
  - Formats / themes:
     - scripting for formats (see the themes.txt), and make the default.theme
@@ -570,8 +490,6 @@
       signal_add() it
     - Irssi::keyboard_entry_redirect()
     - Irssi::format_get_text()
-    - "use Symbol(delete_package)" doesn't work with perl 5.004 and crashes
-      irssi .. at least remove the crashing!
     - Irssi::signal_remove() could accept hashes
     - /command parameter parser so it'd be easier to handle -options etc.
     - Try to get the Makefiles generated so that compiling with GCC would
@@ -623,7 +541,6 @@
     - A way to disable some command entirely? eg. not show in completion
       list or /HELP or anywhere..
 
- - Read server capabilities from 005 numeric
  - extra spaces after commands don't always work, eg /wii  nick, /help  xx
  - hide channel key in statusbar. This would require a $cmode_nokey or
    something..
@@ -637,7 +554,6 @@
  - /HELP <alias> should work
  - /CLEAR -all should clear the window activities as well, leaving hilights
  - support :: properly in IPv6 masks
- - /SET activity_hide_targets ircnet/#irssi
  - when you get disconnected, print your quit message to all channel windows
  - possibility to print rawlog in window
  - should $10 work (in special vars)?
@@ -679,13 +595,6 @@
    /SERVER ADD -ircnet barnet bar 6000 pass2
    dircproxy identifies ircnets based on password
  - $@0 always returns 4 (?)
-
- - HƒMƒRƒT BUGIT:
-   ( - /win new hide, /win new, /win down, /win close -> crash ?)
-     - active_mainwin oli jotenkin NULL ja kaatoi.. /window killi teki sen,
-       liittyy varmaan jotenkin siihen ett‰ window_close() vaihtoi samaan
-       hiddenikkunaan splitti-ikkunan sis‰ll‰ jota oltiin kuitenkin tappamassa
-       kun se ei ollut sticky..
 
 
 *** GTK UI

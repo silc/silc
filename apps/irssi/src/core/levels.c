@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -53,10 +53,10 @@ int level_get(const char *level)
 {
 	int n, len, match;
 
-	if (g_strcasecmp(level, "ALL") == 0 || strcmp(level, "*") == 0)
+	if (g_ascii_strcasecmp(level, "ALL") == 0 || strcmp(level, "*") == 0)
 		return MSGLEVEL_ALL;
 
-	if (g_strcasecmp(level, "NEVER") == 0)
+	if (g_ascii_strcasecmp(level, "NEVER") == 0)
 		return MSGLEVEL_NEVER;
 
 	len = strlen(level);
@@ -65,7 +65,7 @@ int level_get(const char *level)
 	/* partial match allowed, as long as it's the only one that matches */
 	match = 0;
 	for (n = 0; levels[n] != NULL; n++) {
-		if (g_strncasecmp(levels[n], level, len) == 0) {
+		if (g_ascii_strncasecmp(levels[n], level, len) == 0) {
 			if ((int)strlen(levels[n]) == len) {
 				/* full match */
 				return 1L << n;
@@ -81,10 +81,13 @@ int level_get(const char *level)
 	return match;
 }
 
-int level2bits(const char *level)
+int level2bits(const char *level, int *errorp)
 {
 	char *orig, *str, *ptr;
 	int ret, singlelevel, negative;
+
+	if (errorp != NULL)
+		*errorp = FALSE;
 
 	g_return_val_if_fail(level != NULL, 0);
 
@@ -107,7 +110,8 @@ int level2bits(const char *level)
 		if (singlelevel != 0) {
 			ret = !negative ? (ret | singlelevel) :
 				(ret & ~singlelevel);
-		}
+		} else if (errorp != NULL)
+			*errorp = TRUE;
 
        		while (*str == ' ') str++;
 		if (*str == '\0') break;
@@ -137,7 +141,7 @@ char *bits2level(int bits)
 
 	for (n = 0; levels[n] != NULL; n++) {
 		if (bits & (1L << n))
-			g_string_sprintfa(str, "%s ", levels[n]);
+			g_string_append_printf(str, "%s ", levels[n]);
 	}
         if (str->len > 0)
 		g_string_truncate(str, str->len-1);
@@ -158,7 +162,6 @@ int combine_level(int dest, const char *src)
 	list = g_strsplit(src, " ", -1);
 	for (item = list; *item != NULL; item++) {
 		itemname = *item + (**item == '+' || **item == '-' ? 1 : 0);
-                g_strup(itemname);
 		itemlevel = level_get(itemname);
 
 		if (strcmp(itemname, "NONE") == 0)

@@ -10,7 +10,7 @@
 # up in those formats, and it was really hard to change the colors since you
 # might have had to change them in tens of different places. So, then came
 # this templating system.
-    
+
 # Now the /FORMATs don't have any colors in them, and they also have very
 # little other styling. Most of the stuff you need to change is in this
 # theme file. If you can't change something here, you can always go back
@@ -47,7 +47,7 @@
 
 #############################################################################
 
-# default foreground color (%N) - 0 is the "default terminal color" 
+# default foreground color (%N) - -1 is the "default terminal color"
 default_color = "-1";
 
 # print timestamp/servertag at the end of line, not at beginning
@@ -55,8 +55,7 @@ info_eol = "false";
 
 # these characters are automatically replaced with specified color
 # (dark grey by default)
-#replaces = { "()=" = "%K$*%n"; };
-replaces = {};
+replaces = { "[]=" = "%K$*%n"; };
 
 abstracts = {
   ##
@@ -64,93 +63,62 @@ abstracts = {
   ##
 
   # text to insert at the beginning of each non-message line
-  line_start = "*** ";
+  line_start = "%B-%n!%B-%n ";
 
   # timestamp styling, nothing by default
-  timestamp = "[$0-]";
+  timestamp = "$*";
 
   # any kind of text that needs hilighting, default is to bold
-  hilight = "%_$0-%_";
+  hilight = "%_$*%_";
 
   # any kind of error message, default is bright red
-  error = "%R$0-%n";
+  error = "%R$*%n";
 
   # channel name is printed
-  channel = "%c$0-%n";
+  channel = "%_$*%_";
 
   # nick is printed
-  nick = "%c$0-%n";
+  nick = "%_$*%_";
 
   # nick host is printed
-  nickhost = "($0-)";
+  nickhost = "[$*]";
 
   # server name is printed
-  server = "$0-";
+  server = "%_$*%_";
 
   # some kind of comment is printed
-  comment = "($0-)";
+  comment = "[$*]";
 
   # reason for something is printed (part, quit, kick, ..)
-  reason = "{comment $0-}";
+  reason = "{comment $*}";
 
-  # mode change is printed
-  mode = "[$0-]";
+  # mode change is printed ([+o nick])
+  mode = "{comment $*}";
 
   ##
   ## channel specific messages
   ##
 
   # highlighted nick/host is printed (joins)
-  channick_hilight = "%c$0-%n";
-  chanhost_hilight = "{nickhost %c$0-%n}";
+  channick_hilight = "%C$*%n";
+  chanhost_hilight = "{nickhost %c$*%n}";
 
   # nick/host is printed (parts, quits, etc.)
-  channick = "$0-";
-  chanhost = "{nickhost $0-}";
+  channick = "%c$*%n";
+  chanhost = "{nickhost $*}";
 
   # highlighted channel name is printed
-  channelhilight = "%c$0-%n";
+  channelhilight = "%c$*%n";
 
   # ban/ban exception/invite list mask is printed
-  ban = "$0-";
-
-  ##
-  ## Action (/ME command)
-  ##
-
-  # Generic action
-  action = "%c* $*%n ";
-
-  # Own sent action
-  ownaction = "{action $*}";
-
-  # Own sent action with target
-  ownaction_target = "{action $0}%K:%c$1%n ";
-
-  # private action sent by others
-  pvtaction = "%Y(*) $*%n ";
-  pvtaction_query = "%Y* $*%n ";
-
-  # public action sent by others
-  pubaction = "{pvtaction_query $*}";
-
-  ##
-  ## Notice (/NOTICE command)
-  ##
-
-  # Generic notice
-  ownnotice = "%g- $1 -%n ";
-  notice = "%C- $* -%n ";
-  pubnotice_channel = "";
-  pvtnotice_host = "";
-
+  ban = "%c$*%n";
 
   ##
   ## messages
   ##
 
   # the basic styling of how to print message, $0 = nick mode, $1 = nick
-  msgnick = "%c%|<$0$1->%n ";
+  msgnick = "%K<%n$0$1-%K>%n %|";
 
   # message from you is printed. "msgownnick" specifies the styling of the
   # nick ($0 part in msgnick) and "ownmsgnick" specifies the styling of the
@@ -164,80 +132,117 @@ abstracts = {
   # Example2.2: But you still want to keep <> grey for other messages:
   #  pubmsgnick = "%K{msgnick $0 $1-%K}%n";
   #  pubmsgmenick = "%K{msgnick $0 $1-%K}%n";
-  #  pubmsghinick = "%K{msgnick $1 $0$2-%K}%n";
-  #  ownprivmsgnick = "%K{msgnick  $0-%K}%n";
-  #  privmsgnick = "%K{msgnick  %R$0-%K}%n";
+  #  pubmsghinick = "%K{msgnick $1 $0$2-%n%K}%n";
+  #  ownprivmsgnick = "%K{msgnick  $*%K}%n";
+  #  privmsgnick = "%K{msgnick  %R$*%K}%n";
 
   # $0 = nick mode, $1 = nick
-  ownmsgnick = "{msgnick $0 $1-}%g";
-  ownnick = "$0-";
+  ownmsgnick = "{msgnick $0 $1-}";
+  ownnick = "%_$*%n";
 
   # public message in channel, $0 = nick mode, $1 = nick
   pubmsgnick = "{msgnick $0 $1-}";
-  pubnick = "$0-";
+  pubnick = "%N$*%n";
 
   # public message in channel meant for me, $0 = nick mode, $1 = nick
-  pubmsgmenick = "%g<$0$1->%n %|";
-  menick = "$0-";
+  pubmsgmenick = "{msgnick $0 $1-}";
+  menick = "%Y$*%n";
 
   # public highlighted message in channel
   # $0 = highlight color, $1 = nick mode, $2 = nick
-  pubmsghinick = "{msgnick $1 $2-}$0";
+  pubmsghinick = "{msgnick $1 $0$2-%n}";
 
   # channel name is printed with message
-  msgchannel = "%w|%c$0-";
+  msgchannel = "%K:%c$*%n";
 
   # private message, $0 = nick, $1 = host
-  privmsg = "*%c$0%n* ";
+  privmsg = "[%R$0%K(%r$1-%K)%n] ";
 
   # private message from you, $0 = "msg", $1 = target nick
-  ownprivmsg = "->*%c$1-%n* %g";
-
-  # private message in query
-  privmsgnick = "*%c$0%n* ";
+  ownprivmsg = "[%r$0%K(%R$1-%K)%n] ";
 
   # own private message in query
-  ownprivmsgnick = "->*%c$0%n* %g$1-";
-  ownprivnick = "$0-";
+  ownprivmsgnick = "{msgnick  $*}";
+  ownprivnick = "%_$*%n";
+
+  # private message in query
+  privmsgnick = "{msgnick  %R$*%n}";
+
+  ##
+  ## Actions (/ME stuff)
+  ##
+
+  # used internally by this theme
+  action_core = "%_ * $*%n";
+
+  # generic one that's used by most actions
+  action = "{action_core $*} ";
+
+  # own action, both private/public
+  ownaction = "{action $*}";
+
+  # own action with target, both private/public
+  ownaction_target = "{action_core $0}%K:%c$1%n ";
+
+  # private action sent by others
+  pvtaction = "%_ (*) $*%n ";
+  pvtaction_query = "{action $*}";
+
+  # public action sent by others
+  pubaction = "{action $*}";
 
 
   ##
   ## other IRC events
   ##
 
+  # whois
+  whois = "%# $[8]0 : $1-";
+
+  # notices
+  ownnotice = "[%r$0%K(%R$1-%K)]%n ";
+  notice = "%K-%M$*%K-%n ";
+  pubnotice_channel = "%K:%m$*";
+  pvtnotice_host = "%K(%m$*%K)";
+  servernotice = "%g!$*%n ";
+
   # CTCPs
-  ownctcp = "[$0$1-] ";
-  ctcp = "$0-";
+  ownctcp = "[%r$0%K(%R$1-%K)] ";
+  ctcp = "%g$*%n";
 
   # wallops
-  wallop = "$0-: ";
-  wallop_nick = "$0-";
-  wallop_action = " * $0- ";
+  wallop = "%_$*%n: ";
+  wallop_nick = "%n$*";
+  wallop_action = "%_ * $*%n ";
 
   # netsplits
-  netsplit = "%c$0-%n";
-  netjoin = "%C$0-%n";
+  netsplit = "%R$*%n";
+  netjoin = "%C$*%n";
 
   # /names list
   names_prefix = "";
-  names_nick = "[ %n%_$0%_$1- ] ";
+  names_nick = "[%_$0%_$1-] ";
   names_nick_op = "{names_nick $*}";
-  names_users = "$0-";
-  names_channel = "{channel $0-}";
+  names_nick_halfop = "{names_nick $*}";
+  names_nick_voice = "{names_nick $*}";
+  names_users = "[%g$*%n]";
+  names_channel = "%G$*%n";
 
   # DCC
-  dcc = "$0-";
-  dccfile = "%_$0-%_";
+  dcc = "%g$*%n";
+  dccfile = "%_$*%_";
 
   # DCC chat, own msg/action
-  dccownmsg = "*%c=$1-%n*> %g";
-  dccownaction = "{action $0-}";
-  dccownaction_target = "{ownaction_target $0-}";
+  dccownmsg = "[%r$0%K($1-%K)%n] ";
+  dccownnick = "%R$*%n";
+  dccownquerynick = "%_$*%n";
+  dccownaction = "{action $*}";
+  dccownaction_target = "{action_core $0}%K:%c$1%n ";
 
   # DCC chat, others
-  dccmsg = "*%c=$1-%n* ";
-  dccquerynick = "$0-";
-  dccaction = " (*dcc*) $0- %|";
+  dccmsg = "[%G$1-%K(%g$0%K)%n] ";
+  dccquerynick = "%G$*%n";
+  dccaction = "%_ (*dcc*) $*%n %|";
 
   ##
   ## statusbar
@@ -263,13 +268,16 @@ abstracts = {
   # used for anything.
   sbend = " ";
 
+  topicsbstart = "{sbstart $*}";
+  topicsbend = "{sbend $*}";
+
   prompt = "[$*] ";
 
   sb = " %c[%n$*%c]%n";
   sbmode = "(%c+%n$*)";
-  sbusermode = "(%n$*)";
   sbaway = " (%GzZzZ%n)";
   sbservertag = ":$0 (change with ^X)";
+  sbnickmode = "$0";
 
   # activity in statusbar
 
@@ -285,70 +293,30 @@ abstracts = {
   sb_act_hilight_color = "$0$1-%n";
 
   # signed messages
-  # the following formats fit the Irssi default theme:
-  # 
-  # flag_signed = "%GS%n";
-  # flag_unknown = "%Y?%n";
-  # flag_failed = "%RF%n";
-  # 
-  # pubmsghinick_signed = "{msgnick {flag_signed} $0$2-%n}";
-  # pubmsghinick_unknown = "{msgnick {flag_unknown} $0$2-%n}";
-  # pubmsghinick_failed = "{msgnick {flag_failed} $0$2-%n}";
-  # 
-  # pubmsgmenick_signed = "{msgnick {flag_signed} $1-}";
-  # pubmsgmenick_unknown = "{msgnick {flag_unknown} $1-}";
-  # pubmsgmenick_failed = "{msgnick {flag_failed} $1-}";
-  # 
-  # pubmsgnick_signed = "{msgnick {flag_signed} $1-}";
-  # pubmsgnick_unknown = "{msgnick {flag_unknown} $1-}";
-  # pubmsgnick_failed = "{msgnick {flag_failed} $1-}";
-  # 
-  # privmsg_signed = "{privmsg {flag_signed}$0 $1}";
-  # privmsg_unknown = "{privmsg {flag_unknown}$0 $1}";
-  # privmsg_failed = "{privmsg {flag_failed}$0 $1}";
-  # 
-  # privmsgnick_signed = "{msgnick {flag_signed} %R$*%n}";
-  # privmsgnick_unknown = "{msgnick {flag_unknown} %R$*%n}";
-  # privmsgnick_failed = "{msgnick {flag_failed} %R$*%n}";
-  # 
-  # ownmsgnick_signed = "{msgnick {flag_signed} $1-}";
-  # ownprivmsgnick_signed = "{msgnick {flag_signed} $*}";
-  #
-  flag_signed = "[%cS%n]";
+  flag_signed = "[%GS%n]";
   flag_unknown = "[%Y?%n]";
   flag_failed = "[%RF%n]";
 
   pubmsghinick_signed = "{msgnick {flag_signed} $0$2-%n}";
   pubmsghinick_unknown = "{msgnick {flag_unknown} $0$2-%n}";
   pubmsghinick_failed = "{msgnick {flag_failed} $0$2-%n}";
-  
-  pubmsgmenick_signed = "%g<{flag_signed}$1->%n %|";
-  pubmsgmenick_unknown = "%g<{flag_unknown}$1->%n %|";
-  pubmsgmenick_failed = "%g<{flag_failed}$1->%n %|";
-  
-  pubmsgnick_signed = "{msgnick {flag_signed}$0 $1-}";
-  pubmsgnick_unknown = "{msgnick {flag_unknown}$0 $1-}";
-  pubmsgnick_failed = "{msgnick {flag_failed}$0 $1-}";
-  
+
+  pubmsgmenick_signed = "{msgnick {flag_signed} $1-}";
+  pubmsgmenick_unknown = "{msgnick {flag_unknown} $1-}";
+  pubmsgmenick_failed = "{msgnick {flag_failed} $1-}";
+
+  pubmsgnick_signed = "{msgnick {flag_signed} $1-}";
+  pubmsgnick_unknown = "{msgnick {flag_unknown} $1-}";
+  pubmsgnick_failed = "{msgnick {flag_failed} $1-}";
+
   privmsg_signed = "{privmsg {flag_signed}$0 $1}";
   privmsg_unknown = "{privmsg {flag_unknown}$0 $1}";
   privmsg_failed = "{privmsg {flag_failed}$0 $1}";
-  
-  privmsgnick_signed = "{privmsgnick {flag_signed}$0}";
-  privmsgnick_unknown = "{privmsgnick {flag_unknown}$0}";
-  privmsgnick_failed = "{privmsgnick {flag_failed}$0}";
-  
-  ownmsgnick_signed = "{msgnick {flag_signed} $1-}%g";
-  ownprivmsg_signed = "->*%c{flag_signed}$1-%n* %g";
-  ownprivmsgnick_signed = "->*%c{flag_signed}$0%n* %g$1-";
-};
 
-#
-# Some default formats how to print stuff on screen
-#
-formats = {
-  "fe-common/core" = {
-    endofnames = "{channel $0}: Total of {hilight $1} nicks {comment {hilight $2} ops, {hilight $4} normal}";
-    line_start_irssi = "{line_start}";
-  };
+  privmsgnick_signed = "{msgnick {flag_signed} %R$*%n}";
+  privmsgnick_unknown = "{msgnick {flag_unknown} %R$*%n}";
+  privmsgnick_failed = "{msgnick {flag_failed} %R$*%n}";
+
+  ownmsgnick_signed = "{msgnick {flag_signed} $1-}";
+  ownprivmsgnick_signed = "{msgnick {flag_signed} $*}";
 };

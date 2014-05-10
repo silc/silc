@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -355,7 +355,7 @@ static void complete_from_nicklist(GList **outlist, CHANNEL_REC *channel,
 		if (g_strncasecmp(rec->nick, nick, len) == 0 &&
 		    glist_find_icase_string(*outlist, rec->nick) == NULL) {
 			str = g_strconcat(rec->nick, suffix, NULL);
-			if (completion_lowercase) g_strdown(str);
+			if (completion_lowercase) ascii_strdown(str);
 			if (rec->own)
 				ownlist = g_list_append(ownlist, str);
                         else
@@ -407,7 +407,7 @@ static GList *completion_nicks_nonstrict(CHANNEL_REC *channel,
 		if (g_strncasecmp(str, nick, len) == 0) {
 			tnick = g_strconcat(rec->nick, suffix, NULL);
 			if (completion_lowercase)
-				g_strdown(tnick);
+				ascii_strdown(tnick);
 
 			if (glist_find_icase_string(list, tnick) == NULL)
 				list = g_list_append(list, tnick);
@@ -451,7 +451,7 @@ static GList *completion_channel_nicks(CHANNEL_REC *channel, const char *nick,
 		    rec != channel->ownnick) {
 			str = g_strconcat(rec->nick, suffix, NULL);
 			if (completion_lowercase)
-				g_strdown(str);
+				ascii_strdown(str);
                         if (glist_find_icase_string(list, str) == NULL)
 				list = g_list_append(list, str);
 			else
@@ -579,14 +579,11 @@ GList *completion_get_aliases(const char *word)
 }
 
 static void complete_window_nicks(GList **list, WINDOW_REC *window,
-                                  const char *word, const char *linestart)
+                                  const char *word, const char *nicksuffix)
 {
         CHANNEL_REC *channel;
         GList *tmplist;
         GSList *tmp;
-        const char *nicksuffix;
-
-        nicksuffix = *linestart != '\0' ? NULL : completion_char;
 
         channel = CHANNEL(window->active);
 
@@ -635,6 +632,7 @@ static void sig_complete_word(GList **list, WINDOW_REC *window,
 	if (server != NULL && server_ischannel(server, word)) {
 		/* probably completing a channel name */
 		*list = completion_get_channels(window->active_server, word);
+		if (*list != NULL) signal_stop();
                 return;
 	}
 
@@ -663,7 +661,8 @@ static void sig_complete_word(GList **list, WINDOW_REC *window,
 	} else if (channel != NULL) {
 		/* nick completion .. we could also be completing a nick
 		   after /MSG from nicks in channel */
-		complete_window_nicks(list, window, word, linestart);
+		const char *suffix = *linestart != '\0' ? NULL : completion_char;
+		complete_window_nicks(list, window, word, suffix);
 	} else if (window->level & MSGLEVEL_MSGS) {
 		/* msgs window, complete /MSG nicks */
                 *list = g_list_concat(completion_msg(server, NULL, word, NULL), *list);
@@ -707,6 +706,8 @@ static void sig_complete_msg(GList **list, WINDOW_REC *window,
 
 	msgserver = line_get_server(line);
 	*list = completion_msg(server, msgserver, word, NULL);
+	if (CHANNEL(window->active) != NULL)
+		complete_window_nicks(list, window, word, NULL);
 	if (*list != NULL) signal_stop();
 }
 
@@ -908,6 +909,33 @@ static void sig_complete_alias(GList **list, WINDOW_REC *window,
 		*list = completion_get_aliases(word);
 		if (*list != NULL) signal_stop();
 	}
+}
+
+static void sig_complete_window(GList **list, WINDOW_REC *window,
+				const char *word, const char *linestart,
+				int *want_space)
+{
+	WINDOW_REC *win;
+	WI_ITEM_REC *item;
+	GSList *tmp;
+	int len;
+
+	g_return_if_fail(list != NULL);
+	g_return_if_fail(word != NULL);
+
+	len = strlen(word);
+
+	for (tmp = windows; tmp != NULL; tmp = tmp->next) {
+		win = tmp->data;
+		item = win->active;
+
+		if (win->name != NULL && g_strncasecmp(win->name, word, len) == 0)
+			*list = g_list_append(*list, g_strdup(win->name));
+		if (item != NULL && g_strncasecmp(item->visible_name, word, len) == 0)
+			*list = g_list_append(*list, g_strdup(item->visible_name));
+	}
+
+	if (*list != NULL) signal_stop();
 }
 
 static void sig_complete_channel(GList **list, WINDOW_REC *window,
@@ -1132,10 +1160,12 @@ void chat_completion_init(void)
 	signal_add("complete command server", (SIGNAL_FUNC) sig_complete_connect);
 	signal_add("complete command disconnect", (SIGNAL_FUNC) sig_complete_tag);
 	signal_add("complete command reconnect", (SIGNAL_FUNC) sig_complete_tag);
+	signal_add("complete command window server", (SIGNAL_FUNC) sig_complete_tag);
 	signal_add("complete command topic", (SIGNAL_FUNC) sig_complete_topic);
 	signal_add("complete command away", (SIGNAL_FUNC) sig_complete_away);
 	signal_add("complete command unalias", (SIGNAL_FUNC) sig_complete_unalias);
 	signal_add("complete command alias", (SIGNAL_FUNC) sig_complete_alias);
+	signal_add("complete command window goto", (SIGNAL_FUNC) sig_complete_window);
 	signal_add("complete command window item move", (SIGNAL_FUNC) sig_complete_channel);
 	signal_add("complete command server add", (SIGNAL_FUNC) sig_complete_server);
 	signal_add("complete command server remove", (SIGNAL_FUNC) sig_complete_server);
@@ -1169,10 +1199,12 @@ void chat_completion_deinit(void)
 	signal_remove("complete command server", (SIGNAL_FUNC) sig_complete_connect);
 	signal_remove("complete command disconnect", (SIGNAL_FUNC) sig_complete_tag);
 	signal_remove("complete command reconnect", (SIGNAL_FUNC) sig_complete_tag);
+	signal_remove("complete command window server", (SIGNAL_FUNC) sig_complete_tag);
 	signal_remove("complete command topic", (SIGNAL_FUNC) sig_complete_topic);
 	signal_remove("complete command away", (SIGNAL_FUNC) sig_complete_away);
 	signal_remove("complete command unalias", (SIGNAL_FUNC) sig_complete_unalias);
 	signal_remove("complete command alias", (SIGNAL_FUNC) sig_complete_alias);
+	signal_remove("complete command window goto", (SIGNAL_FUNC) sig_complete_window);
 	signal_remove("complete command window item move", (SIGNAL_FUNC) sig_complete_channel);
 	signal_remove("complete command server add", (SIGNAL_FUNC) sig_complete_server);
 	signal_remove("complete command server remove", (SIGNAL_FUNC) sig_complete_server);

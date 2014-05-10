@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #define NEED_PERL_H
@@ -25,7 +25,6 @@
 #include "signals.h"
 #include "misc.h"
 #include "settings.h"
-#include "lib-config/iconfig.h" /* FIXME: remove before .99 */
 
 #include "perl-core.h"
 #include "perl-common.h"
@@ -35,15 +34,13 @@
 #include "XSUB.h"
 #include "irssi-core.pl.h"
 
-/* For compatibility with perl 5.004 and older */
-#ifndef HAVE_PL_PERL
-#  define PL_perl_destruct_level perl_destruct_level
-#endif
+extern char **environ;
 
 GSList *perl_scripts;
 PerlInterpreter *my_perl;
 
 static int print_script_errors;
+static char *perl_args[] = {"", "-e", "0"};
 
 #define IS_PERL_SCRIPT(file) \
 	(strlen(file) > 3 && strcmp(file+strlen(file)-3, ".pl") == 0)
@@ -117,7 +114,6 @@ static void xs_init(pTHX)
 /* Initialize perl interpreter */
 void perl_scripts_init(void)
 {
-	char *args[] = {"", "-e", "0"};
 	char *code, *use_code;
 
 	perl_scripts = NULL;
@@ -127,7 +123,7 @@ void perl_scripts_init(void)
 	my_perl = perl_alloc();
 	perl_construct(my_perl);
 
-	perl_parse(my_perl, xs_init, 3, args, NULL);
+	perl_parse(my_perl, xs_init, G_N_ELEMENTS(perl_args), perl_args, NULL);
 #if PERL_STATIC_LIBS == 1
 	perl_eval_pv("Irssi::Core::boot_Irssi_Core();", TRUE);
 #endif
@@ -168,6 +164,7 @@ void perl_scripts_deinit(void)
 	/*perl_eval_pv("eval { foreach my $lib (@DynaLoader::dl_librefs) { DynaLoader::dl_unload_file($lib); } }", TRUE);*/
 
 	/* perl interpreter */
+	PL_perl_destruct_level = 1;
 	perl_destruct(my_perl);
 	perl_free(my_perl);
 	my_perl = NULL;
@@ -207,7 +204,7 @@ static char *script_data_get_name(void)
 	name = g_string_new(NULL);
         n = 1;
 	do {
-		g_string_sprintf(name, "data%d", n);
+		g_string_printf(name, "data%d", n);
                 n++;
 	} while (perl_script_find(name->str) != NULL);
 
@@ -248,11 +245,7 @@ static int perl_script_eval(PERL_SCRIPT_REC *script)
 			g_free(error);
 		}
 	} else if (retcount > 0) {
-		/* if script returns 0, it means the script wanted to die
-		   immediately without any error message */
 		ret = POPs;
-		if (ret != &PL_sv_undef && SvIOK(ret) && SvIV(ret) == 0)
-			error = "";
 	}
 
 	PUTBACK;
@@ -271,7 +264,7 @@ static PERL_SCRIPT_REC *script_load(char *name, const char *path,
 	/* if there's a script with a same name, destroy it */
 	script = perl_script_find(name);
 	if (script != NULL)
-		perl_script_destroy(script);
+		perl_script_unload(script);
 
 	script = g_new0(PERL_SCRIPT_REC, 1);
 	script->name = name;
@@ -449,6 +442,10 @@ static void sig_autorun(void)
 
 void perl_core_init(void)
 {
+	int argc = G_N_ELEMENTS(perl_args);
+	char **argv = perl_args;
+
+	PERL_SYS_INIT3(&argc, &argv, &environ);
         print_script_errors = 1;
 	settings_add_str("perl", "perl_use_lib", PERL_USE_LIB);
 
@@ -474,4 +471,5 @@ void perl_core_deinit(void)
 	perl_signals_deinit();
 
 	signal_remove("script error", (SIGNAL_FUNC) sig_script_error);
+	PERL_SYS_TERM();
 }

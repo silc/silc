@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -45,7 +45,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "windowlist_header", "%#Ref Name                 Active item     Server          Level", 0 },
 	{ "windowlist_line", "%#$[3]0 %|$[20]1 $[15]2 $[15]3 $4", 5, { 1, 0, 0, 0, 0 } },
 	{ "windowlist_footer", "", 0 },
-	{ "windows_layout_saved", "Layout of windows is now remembered next time you start irssi", 0 },
+	{ "windows_layout_saved", "Layout of windows is now remembered", 0 },
 	{ "windows_layout_reset", "Layout of windows reset to defaults", 0 },
 	{ "window_info_header", "", 0 },
 	{ "window_info_footer", "", 0 },
@@ -180,7 +180,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "log_started", "Started logging to file {hilight $0}", 1, { 0 } },
 	{ "log_stopped", "Stopped logging to file {hilight $0}", 1, { 0 } },
 	{ "log_list_header", "%#Logs:", 0 },
-	{ "log_list", "%#$0 $1: $2 $3$4", 5, { 1, 0, 0, 0, 0, 0 } },
+	{ "log_list", "%#$0 $1: $2 $3$4$5", 6, { 1, 0, 0, 0, 0, 0 } },
 	{ "log_list_footer", "", 0 },
 	{ "windowlog_file", "Window LOGFILE set to $0", 1, { 0 } },
 	{ "windowlog_file_logging", "Can't change window's logfile while log is on", 0 },
@@ -215,6 +215,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "chan_not_synced", "Channel not fully synchronized yet, try again after a while", 0 },
 	{ "illegal_proto", "Command isn't designed for the chat protocol of the active server", 0 },
 	{ "not_good_idea", "Doing this is not a good idea. Add -YES option to command if you really mean it", 0 },
+	{ "invalid_number", "Invalid number", 0 },
 	{ "invalid_time", "Invalid timestamp", 0 },
 	{ "invalid_level", "Invalid message level", 0 },
 	{ "invalid_size", "Invalid size", 0 },
@@ -228,10 +229,10 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "theme_saved", "Theme saved to $0", 1, { 0 } },
 	{ "theme_save_failed", "Error saving theme to $0: $1", 2, { 0, 0 } },
 	{ "theme_not_found", "Theme {hilight $0} not found", 1, { 0 } },
-	{ "theme_changed", "Using now theme {hilight $0} ($1)", 2, { 0, 0 } },
+	{ "theme_changed", "Now using theme {hilight $0} ($1)", 2, { 0, 0 } },
 	{ "window_theme", "Using theme {hilight $0} in this window", 2, { 0, 0 } },
 	{ "window_theme_default", "No theme is set for this window", 0 },
-	{ "window_theme_changed", "Using now theme {hilight $0} ($1) in this window", 2, { 0, 0 } },
+	{ "window_theme_changed", "Now using theme {hilight $0} ($1) in this window", 2, { 0, 0 } },
 	{ "window_theme_removed", "Removed theme from this window", 0 },
 	{ "format_title", "%:[{hilight $0}] - [{hilight $1}]%:", 2, { 0, 0 } },
 	{ "format_subtitle", "[{hilight $0}]", 1, { 0 } },
@@ -245,7 +246,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "unignored", "Unignored {nick $0}", 1, { 0 } },
 	{ "ignore_not_found", "{nick $0} is not being ignored", 1, { 0 } },
 	{ "ignore_no_ignores", "There are no ignores", 0 },
-	{ "ignore_header", "%#Ignorance List:", 0 },
+	{ "ignore_header", "%#Ignore List:", 0 },
 	{ "ignore_line", "%#$[-4]0 $1: $2 $3 $4", 4, { 1, 0, 0, 0 } },
 	{ "ignore_footer", "", 0 },
 
@@ -269,6 +270,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "perl_error", "Perl error: $0", 1, { 0 } },
 	{ "bind_header", "%#Key                  Action", 0 },
 	{ "bind_list", "%#$[!20]0 $1 $2", 3, { 0, 0, 0 } },
+	{ "bind_command_list", "$[!30]0 $1", 2, { 0, 0 } },
 	{ "bind_footer", "", 0 },
 	{ "bind_unknown_id", "Unknown bind action: $0", 1, { 0 } },
 	{ "config_saved", "Saved configuration to file $0", 1, { 0 } },
@@ -280,9 +282,7 @@ FORMAT_REC fecommon_core_formats[] = {
 	{ "set_item", "$0 = $1", 2, { 0, 0 } },
 	{ "set_unknown", "Unknown setting $0", 1, { 0 } },
 	{ "set_not_boolean", "Setting {hilight $0} isn't boolean, use /SET", 1, { 0 } },
-	{ "translation_not_found", "Error opening translation table file $0: $1", 2, { 0, 0 } },
-	{ "translation_file_error", "Error parsing translation table file $0", 1, { 0 } },
-	{ "no_completions", "There's no completions", 0 },
+	{ "no_completions", "There are no completions", 0 },
 	{ "completion_removed", "Removed completion $0", 1, { 0 } },
 	{ "completion_header", "%#Key        Value                                    Auto", 0 },
 	{ "completion_line", "%#$[10]0 $[!40]1 $2", 3, { 0, 0, 0 } },

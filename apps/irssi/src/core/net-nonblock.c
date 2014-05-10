@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -35,38 +35,37 @@ typedef struct {
 	int tag;
 } SIMPLE_THREAD_REC;
 
-#define is_fatal_error(err) \
-	(err != 0 && err != G_IO_ERROR_AGAIN && errno != EINTR)
-
 static int g_io_channel_write_block(GIOChannel *channel, void *data, int len)
 {
         gsize ret;
-	int err, sent;
+	int sent;
+	GIOStatus status;
 
 	sent = 0;
 	do {
-		err = g_io_channel_write(channel, (char *) data + sent,
-					 len-sent, &ret);
+		status = g_io_channel_write_chars(channel, (char *) data + sent,
+						  len-sent, &ret, NULL);
                 sent += ret;
-	} while (sent < len && !is_fatal_error(err));
+	} while (sent < len && status != G_IO_STATUS_ERROR);
 
-	return err != 0 ? -1 : 0;
+	return sent < len ? -1 : 0;
 }
 
 static int g_io_channel_read_block(GIOChannel *channel, void *data, int len)
 {
 	time_t maxwait;
         gsize ret;
-	int err, received;
+	int received;
+	GIOStatus status;
 
 	maxwait = time(NULL)+2;
 	received = 0;
 	do {
-		err = g_io_channel_read(channel, (char *) data + received,
-					len-received, &ret);
+		status = g_io_channel_read_chars(channel, (char *) data + received,
+						 len-received, &ret, NULL);
 		received += ret;
 	} while (received < len && time(NULL) < maxwait &&
-		 (ret != 0 || !is_fatal_error(err)));
+		 status != G_IO_STATUS_ERROR && status != G_IO_STATUS_EOF);
 
 	return received < len ? -1 : 0;
 }
@@ -125,7 +124,7 @@ int net_gethostbyname_nonblock(const char *addr, GIOChannel *pipe,
 	else {
 		if (rec.host4) {
 			len = strlen(rec.host4) + 1;
-			g_io_channel_write_block(pipe, (void *) &len, 
+			g_io_channel_write_block(pipe, (void *) &len,
 						       sizeof(int));
 			g_io_channel_write_block(pipe, (void *) rec.host4,
 						       len);
@@ -282,8 +281,8 @@ int net_connect_nonblock(const char *server, int port, const IPADDR *my_ip,
 	}
 	rec->func = func;
 	rec->data = data;
-	rec->pipes[0] = g_io_channel_unix_new(fd[0]);
-	rec->pipes[1] = g_io_channel_unix_new(fd[1]);
+	rec->pipes[0] = g_io_channel_new(fd[0]);
+	rec->pipes[1] = g_io_channel_new(fd[1]);
 
 	/* start nonblocking host name lookup */
 	net_gethostbyname_nonblock(server, rec->pipes[1], 0);

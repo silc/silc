@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -27,7 +27,30 @@
 #include "gui-printtext.h"
 #include "term.h"
 
-const unichar empty_str[] = { 0 };
+#undef i_toupper
+#undef i_tolower
+#undef i_isalnum
+
+static unichar i_toupper(unichar c)
+{
+	if (term_type == TERM_TYPE_UTF8)
+		return g_unichar_toupper(c);
+	return (c >= 0 && c <= 255) ? toupper(c) : c;
+}
+
+static unichar i_tolower(unichar c)
+{
+	if (term_type == TERM_TYPE_UTF8)
+		return g_unichar_tolower(c);
+	return (c >= 0 && c <= 255) ? tolower(c) : c;
+}
+
+static int i_isalnum(unichar c)
+{
+	if (term_type == TERM_TYPE_UTF8)
+		return (g_unichar_isalnum(c) || mk_wcwidth(c) == 0);
+	return (c >= 0 && c <= 255) ? isalnum(c) : 0;
+}
 
 GUI_ENTRY_REC *active_entry;
 
@@ -85,9 +108,6 @@ int strlen_big5(const unsigned char *str)
 {
 	int len=0;
 
-	if (term_type != TERM_TYPE_BIG5)
-		return strlen(str);
-
 	while (*str != '\0') {
 		if (is_big5(str[0], str[1]))
 			str++;
@@ -134,14 +154,16 @@ void big5_to_unichars(const char *str, unichar *out)
 
 static int pos2scrpos(GUI_ENTRY_REC *entry, int pos)
 {
-	unichar *p;
+	int i;
 	int xpos = 0;
 
-	for (p = entry->text; p - entry->text < pos; p++) {
+	for (i = 0; i < pos; i++) {
+		unichar c = entry->text[i];
+
 		if (term_type == TERM_TYPE_BIG5)
-			xpos += big5_width(*p);
+			xpos += big5_width(c);
 		else if (entry->utf8)
-			xpos += utf8_width(*p);
+			xpos += unichar_isprint(c) ? mk_wcwidth(c) : 1;
 		else
 			xpos++;
 	}
@@ -152,13 +174,13 @@ static int scrpos2pos(GUI_ENTRY_REC *entry, int pos)
 {
 	int i, width, xpos;
 
-	for (i = 0, xpos = 0; entry->text[i]; i++) {
-		unichar *p = entry->text+i;
+	for (i = 0, xpos = 0; i < entry->text_len; i++) {
+		unichar c = entry->text[i];
 
 		if (term_type == TERM_TYPE_BIG5)
-			width = big5_width(*p);
+			width = big5_width(c);
 		else if (entry->utf8)
-			width = utf8_width(*p);
+			width = unichar_isprint(c) ? mk_wcwidth(c) : 1;
 		else
 			width = 1;
 
@@ -201,7 +223,7 @@ static void gui_entry_fix_cursor(GUI_ENTRY_REC *entry)
 
 static void gui_entry_draw_from(GUI_ENTRY_REC *entry, int pos)
 {
-	const unichar *p;
+	int i;
 	int xpos, end_xpos;
 
 	xpos = entry->xpos + entry->promptlen + 
@@ -215,15 +237,15 @@ static void gui_entry_draw_from(GUI_ENTRY_REC *entry, int pos)
 	term_set_color(root_window, ATTR_RESET);
 	term_move(root_window, xpos, entry->ypos);
 
-	p = entry->scrstart + pos < entry->text_len ?
-		entry->text + entry->scrstart + pos : empty_str;
-	for (; *p != '\0'; p++) {
+	for (i = entry->scrstart + pos; i < entry->text_len; i++) {
+		unichar c = entry->text[i];
+
 		if (entry->hidden)
 			xpos++;
 		else if (term_type == TERM_TYPE_BIG5)
-			xpos += big5_width(*p);
+			xpos += big5_width(c);
 		else if (entry->utf8)
-			xpos += utf8_width(*p);
+			xpos += unichar_isprint(c) ? mk_wcwidth(c) : 1;
 		else
 			xpos++;
 
@@ -232,22 +254,24 @@ static void gui_entry_draw_from(GUI_ENTRY_REC *entry, int pos)
 
 		if (entry->hidden)
                         term_addch(root_window, ' ');
-		else if (*p >= 32 && (entry->utf8 || (*p & 127) >= 32))
-			term_add_unichar(root_window, *p);
+		else if (unichar_isprint(c))
+			term_add_unichar(root_window, c);
 		else {
 			term_set_color(root_window, ATTR_RESET|ATTR_REVERSE);
-			term_addch(root_window, *p+'A'-1);
+			term_addch(root_window, (c & 127)+'A'-1);
 			term_set_color(root_window, ATTR_RESET);
 		}
 	}
 
         /* clear the rest of the input line */
-        if (end_xpos == term_width-1)
-		term_clrtoeol(root_window);
-	else {
-		while (xpos < end_xpos) {
-                        term_addch(root_window, ' ');
-                        xpos++;
+	if (xpos < end_xpos) {
+		if (end_xpos == term_width)
+			term_clrtoeol(root_window);
+		else {
+			while (xpos < end_xpos) {
+				term_addch(root_window, ' ');
+				xpos++;
+			}
 		}
 	}
 }
@@ -376,10 +400,10 @@ char *gui_entry_get_text(GUI_ENTRY_REC *entry)
 
 	g_return_val_if_fail(entry != NULL, NULL);
 
-	buf = g_malloc(entry->text_len*6 + 1);
 	if (entry->utf8)
-		utf16_to_utf8(entry->text, buf);
+		buf = g_ucs4_to_utf8(entry->text, -1, NULL, NULL, NULL);
 	else {
+		buf = g_malloc(entry->text_len*6 + 1);
 		if (term_type == TERM_TYPE_BIG5)
 			unichars_to_big5(entry->text, buf);
 		else
@@ -396,10 +420,11 @@ char *gui_entry_get_text_and_pos(GUI_ENTRY_REC *entry, int *pos)
 
 	g_return_val_if_fail(entry != NULL, NULL);
 
-	buf = g_malloc(entry->text_len*6 + 1);
-	if (entry->utf8)
-		utf16_to_utf8_with_pos(entry->text, entry->pos, buf, pos);
-	else {
+	if (entry->utf8) {
+		buf = g_ucs4_to_utf8(entry->text, -1, NULL, NULL, NULL);
+		*pos = g_utf8_offset_to_pointer(buf, entry->pos) - buf;
+	} else {
+		buf = g_malloc(entry->text_len*6 + 1);
 		if(term_type==TERM_TYPE_BIG5)
 			unichars_to_big5_with_pos(entry->text, entry->pos, buf, pos);
 		else
@@ -416,13 +441,20 @@ void gui_entry_insert_text(GUI_ENTRY_REC *entry, const char *str)
 {
         unichar chr;
 	int i, len;
+	const char *ptr;
 
         g_return_if_fail(entry != NULL);
 	g_return_if_fail(str != NULL);
 
         gui_entry_redraw_from(entry, entry->pos);
 
-	len = !entry->utf8 ? strlen_big5(str) : strlen_utf8(str);
+	if (entry->utf8) {
+		g_utf8_validate(str, -1, &ptr);
+		len = g_utf8_pointer_to_offset(str, ptr);
+	} else if (term_type == TERM_TYPE_BIG5)
+		len = strlen_big5(str);
+	else
+		len = strlen(str);
         entry_text_grow(entry, len);
 
         /* make space for the string */
@@ -439,9 +471,11 @@ void gui_entry_insert_text(GUI_ENTRY_REC *entry, const char *str)
 				entry->text[entry->pos + i] = str[i];
 		}
 	} else {
-                chr = entry->text[entry->pos+len];
-		utf8_to_utf16(str, entry->text+entry->pos);
-                entry->text[entry->pos+len] = chr;
+		ptr = str;
+		for (i = 0; i < len; i++) {
+			entry->text[entry->pos + i] = g_utf8_get_char(ptr);
+			ptr = g_utf8_next_char(ptr);
+		}
 	}
 
 	entry->text_len += len;
@@ -457,6 +491,9 @@ void gui_entry_insert_char(GUI_ENTRY_REC *entry, unichar chr)
 
 	if (chr == 0 || chr == 13 || chr == 10)
 		return; /* never insert NUL, CR or LF characters */
+
+	if (entry->utf8 && entry->pos == 0 && mk_wcwidth(chr) == 0)
+		return;
 
         gui_entry_redraw_from(entry, entry->pos);
 
@@ -484,14 +521,15 @@ char *gui_entry_get_cutbuffer(GUI_ENTRY_REC *entry)
 	if (entry->cutbuffer == NULL)
                 return NULL;
 
-	buf = g_malloc(entry->cutbuffer_len*6 + 1);
 	if (entry->utf8)
-		utf16_to_utf8(entry->cutbuffer, buf);
-	else if (term_type == TERM_TYPE_BIG5) {
-		unichars_to_big5(entry->cutbuffer, buf);
-	} else {
-		for (i = 0; i <= entry->cutbuffer_len; i++)
-			buf[i] = entry->cutbuffer[i];
+		buf = g_ucs4_to_utf8(entry->cutbuffer, -1, NULL, NULL, NULL);
+	else {
+		buf = g_malloc(entry->cutbuffer_len*6 + 1);
+		if (term_type == TERM_TYPE_BIG5)
+			unichars_to_big5(entry->cutbuffer, buf);
+		else
+			for (i = 0; i <= entry->cutbuffer_len; i++)
+				buf[i] = entry->cutbuffer[i];
 	}
 	return buf;
 }
@@ -509,14 +547,16 @@ void gui_entry_erase_to(GUI_ENTRY_REC *entry, int pos, int update_cutbuffer)
 
 void gui_entry_erase(GUI_ENTRY_REC *entry, int size, int update_cutbuffer)
 {
+	size_t w = 0;
+
         g_return_if_fail(entry != NULL);
 
-	if (entry->pos < size)
+	if (size == 0 || entry->pos < size)
 		return;
 
 	if (update_cutbuffer) {
 		/* put erased text to cutbuffer */
-		if (entry->cutbuffer == NULL || entry->cutbuffer_len < size) {
+		if (entry->cutbuffer_len < size) {
 			g_free(entry->cutbuffer);
 			entry->cutbuffer = g_new(unichar, size+1);
 		}
@@ -527,10 +567,9 @@ void gui_entry_erase(GUI_ENTRY_REC *entry, int size, int update_cutbuffer)
 		       size * sizeof(unichar));
 	}
 
-	if (size == 0) {
-                /* we just wanted to clear the cutbuffer */
-		return;
-	}
+	if (entry->utf8)
+		while (entry->pos-size-w > 0 &&
+		       mk_wcwidth(entry->text[entry->pos-size-w]) == 0) w++;
 
 	g_memmove(entry->text + entry->pos - size, entry->text + entry->pos,
 		  (entry->text_len-entry->pos+1) * sizeof(unichar));
@@ -538,8 +577,27 @@ void gui_entry_erase(GUI_ENTRY_REC *entry, int size, int update_cutbuffer)
 	entry->pos -= size;
         entry->text_len -= size;
 
-	gui_entry_redraw_from(entry, entry->pos);
+	gui_entry_redraw_from(entry, entry->pos-w);
 	gui_entry_fix_cursor(entry);
+	gui_entry_draw(entry);
+}
+
+void gui_entry_erase_cell(GUI_ENTRY_REC *entry)
+{
+	int size = 1;
+
+	g_return_if_fail(entry != NULL);
+
+	if (entry->utf8)
+		while (entry->pos+size < entry->text_len &&
+		       mk_wcwidth(entry->text[entry->pos+size]) == 0) size++;
+
+	g_memmove(entry->text + entry->pos, entry->text + entry->pos + size,
+		  (entry->text_len-entry->pos-size+1) * sizeof(unichar));
+
+	entry->text_len -= size;
+
+	gui_entry_redraw_from(entry, entry->pos);
 	gui_entry_draw(entry);
 }
 
@@ -758,6 +816,13 @@ void gui_entry_move_pos(GUI_ENTRY_REC *entry, int pos)
 
 	if (entry->pos + pos >= 0 && entry->pos + pos <= entry->text_len)
 		entry->pos += pos;
+
+	if (entry->utf8) {
+		int step = pos < 0 ? -1 : 1;
+		while(mk_wcwidth(entry->text[entry->pos]) == 0 &&
+		      entry->pos + step >= 0 && entry->pos + step <= entry->text_len)
+			entry->pos += step;
+	}
 
 	gui_entry_fix_cursor(entry);
 	gui_entry_draw(entry);

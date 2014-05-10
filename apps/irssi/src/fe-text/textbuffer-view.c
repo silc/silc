@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #define	G_LOG_DOMAIN "TextBufferView"
@@ -23,9 +23,6 @@
 #include "module.h"
 #include "textbuffer-view.h"
 #include "utf8.h"
-#ifdef HAVE_CUIX
-#include "cuix.h"
-#endif
 
 typedef struct {
 	char *name;
@@ -107,8 +104,8 @@ static void textbuffer_cache_unref(TEXT_BUFFER_CACHE_REC *cache)
                 textbuffer_cache_destroy(cache);
 }
 
-#define FGATTR (ATTR_NOCOLORS | ATTR_RESETFG | ATTR_BOLD | 0x0f)
-#define BGATTR (ATTR_NOCOLORS | ATTR_RESETBG | ATTR_BLINK | 0xf0)
+#define FGATTR (ATTR_NOCOLORS | ATTR_RESETFG | 0x0f)
+#define BGATTR (ATTR_NOCOLORS | ATTR_RESETBG | 0xf0)
 
 static void update_cmd_color(unsigned char cmd, int *color)
 {
@@ -120,8 +117,6 @@ static void update_cmd_color(unsigned char cmd, int *color)
 				*color |= (cmd & 0x0f) << 4;
 			else {
 				*color = (*color & FGATTR) | ATTR_RESETBG;
-                                if (cmd & LINE_COLOR_BLINK)
-					*color |= ATTR_BLINK;
 			}
 		} else {
 			/* set foreground color */
@@ -130,8 +125,6 @@ static void update_cmd_color(unsigned char cmd, int *color)
 				*color |= cmd & 0x0f;
 			else {
 				*color = (*color & BGATTR) | ATTR_RESETFG;
-                                if (cmd & LINE_COLOR_BOLD)
-					*color |= ATTR_BOLD;
 			}
 		}
 	} else switch (cmd) {
@@ -141,10 +134,31 @@ static void update_cmd_color(unsigned char cmd, int *color)
 	case LINE_CMD_REVERSE:
 		*color ^= ATTR_REVERSE;
 		break;
+	case LINE_CMD_BLINK:
+		*color ^= ATTR_BLINK;
+		break;
+	case LINE_CMD_BOLD:
+		*color ^= ATTR_BOLD;
+		break;
 	case LINE_CMD_COLOR0:
 		*color &= BGATTR;
 		break;
 	}
+}
+
+static inline unichar read_unichar(const unsigned char *data, const unsigned char **next, int *width)
+{
+	unichar chr = g_utf8_get_char_validated(data, -1);
+
+	if (chr & 0x80000000) {
+		chr = 0xfffd;
+		*next = data + 1;
+		*width = 1;
+	} else {
+		*next = g_utf8_next_char(data);
+		*width = unichar_isprint(chr) ? mk_wcwidth(chr) : 1;
+	}
+	return chr;
 }
 
 static LINE_CACHE_REC *
@@ -157,8 +171,7 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
         unsigned char cmd;
 	const unsigned char *ptr, *next_ptr, *last_space_ptr;
 	int xpos, pos, indent_pos, last_space, last_color, color, linecount;
-	int char_len;
-	unichar chr;
+	int char_width;
 
 	g_return_val_if_fail(line->text != NULL, NULL);
 
@@ -176,7 +189,7 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 			cmd = *ptr;
                         ptr++;
 
-			if (cmd == LINE_CMD_EOL || cmd == LINE_CMD_FORMAT)
+			if (cmd == LINE_CMD_EOL)
 				break;
 
 			if (cmd == LINE_CMD_CONTINUE) {
@@ -191,11 +204,6 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 				/* set indentation position here - don't do
 				   it if we're too close to right border */
 				if (xpos < view->width-5) indent_pos = xpos;
-			} else if (cmd == LINE_CMD_INDENT_FUNC) {
-				memcpy(&indent_func, ptr, sizeof(INDENT_FUNC));
-				ptr += sizeof(INDENT_FUNC);
-				if (indent_func == NULL)
-                                        indent_func = view->default_indent_func;
 			} else
 				update_cmd_color(cmd, &color);
 			continue;
@@ -205,24 +213,15 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 			/* MH */
 			if (term_type != TERM_TYPE_BIG5 ||
 			    ptr[1] == '\0' || !is_big5(ptr[0], ptr[1]))
-				char_len = 1;
+				char_width = 1;
 			else
-				char_len = 2;
-			next_ptr = ptr+char_len;
+				char_width = 2;
+			next_ptr = ptr+char_width;
 		} else {
-			char_len = 1;
-			while (ptr[char_len] != '\0' && char_len < 6)
-				char_len++;
-
-			next_ptr = ptr;
-			if (get_utf8_char(&next_ptr, char_len, &chr) < 0)
-				char_len = 1;
-			else
-				char_len = utf8_width(chr);
-			next_ptr++;
+			read_unichar(ptr, &next_ptr, &char_width);
 		}
 
-		if (xpos + char_len > view->width && sub != NULL &&
+		if (xpos + char_width > view->width && sub != NULL &&
 		    (last_space <= indent_pos || last_space <= 10) &&
 		    view->longword_noindent) {
                         /* long word, remove the indentation from this line */
@@ -230,7 +229,7 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
                         sub->indent = 0;
 		}
 
-		if (xpos + char_len > view->width) {
+		if (xpos + char_width > view->width) {
 			xpos = indent_func == NULL ? indent_pos :
 				indent_func(view, line, -1);
 
@@ -258,7 +257,7 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 			continue;
 		}
 
-		if (!view->utf8 && char_len > 1) {
+		if (!view->utf8 && char_width > 1) {
 			last_space = xpos;
 			last_space_ptr = next_ptr;
 			last_color = color;
@@ -268,7 +267,7 @@ view_update_line_cache(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 			last_color = color;
 		}
 
-		xpos += char_len;
+		xpos += char_width;
 		ptr = next_ptr;
 	}
 
@@ -342,6 +341,7 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 	LINE_CACHE_REC *cache;
         const unsigned char *text, *end, *text_newline;
 	unsigned char *tmp;
+	unichar chr;
 	int xpos, color, drawcount, first, need_move, need_clrtoeol, char_width;
 
 	if (view->dirty) /* don't bother drawing anything - redraw is coming */
@@ -414,7 +414,7 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 		if (*text == '\0') {
 			/* command */
 			text++;
-			if (*text == LINE_CMD_EOL || *text == LINE_CMD_FORMAT)
+			if (*text == LINE_CMD_EOL)
                                 break;
 
 			if (*text == LINE_CMD_CONTINUE) {
@@ -422,8 +422,6 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 				memcpy(&tmp, text+1, sizeof(unsigned char *));
 				text = tmp;
 				continue;
-			} else if (*text == LINE_CMD_INDENT_FUNC) {
-				text += sizeof(INDENT_FUNC);
 			} else {
 				update_cmd_color(*text, &color);
 				term_set_color(view->window, color);
@@ -432,37 +430,35 @@ static int view_line_draw(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line,
 			continue;
 		}
 
-		end = text;
 		if (view->utf8) {
-			unichar chr;
-			if (get_utf8_char(&end, 6, &chr)<0)
-				char_width = 1;
-			else
-				char_width = utf8_width(chr);
+			chr = read_unichar(text, &end, &char_width);
 		} else {
+			chr = *text;
+			end = text;
 			if (term_type == TERM_TYPE_BIG5 &&
 			    is_big5(end[0], end[1]))
 				char_width = 2;
 			else
 				char_width = 1;
-			end += char_width-1;
+			end += char_width;
 		}
 
 		xpos += char_width;
 		if (xpos <= term_width) {
-			if (*text >= 32 &&
-			    (end != text || (*text & 127) >= 32)) {
+			if (unichar_isprint(chr)) {
+				if (view->utf8)
+				term_add_unichar(view->window, chr);
+				else
 				for (; text < end; text++)
 					term_addch(view->window, *text);
-				term_addch(view->window, *text);
 			} else {
 				/* low-ascii */
 				term_set_color(view->window, ATTR_RESET|ATTR_REVERSE);
-				term_addch(view->window, (*text & 127)+'A'-1);
+				term_addch(view->window, (chr & 127)+'A'-1);
 				term_set_color(view->window, color);
 			}
 		}
-		text++;
+		text = end;
 	}
 
 	if (need_clrtoeol && xpos < term_width) {
@@ -606,10 +602,6 @@ void textbuffer_view_set_default_indent(TEXT_BUFFER_VIEW_REC *view,
 static void view_unregister_indent_func(TEXT_BUFFER_VIEW_REC *view,
 					INDENT_FUNC indent_func)
 {
-        INDENT_FUNC func;
-	LINE_REC *line;
-        const unsigned char *text, *tmp;
-
 	if (view->default_indent_func == indent_func)
 		view->default_indent_func = NULL;
 
@@ -617,34 +609,6 @@ static void view_unregister_indent_func(TEXT_BUFFER_VIEW_REC *view,
 	   to the indent function */
 	view_reset_cache(view);
 	view->cache = textbuffer_cache_get(view->siblings, view->width);
-
-        /* remove all references to the indent function from buffer */
-	line = view->buffer->first_line;
-	while (line != NULL) {
-		text = line->text;
-
-		for (text = line->text;; text++) {
-			if (*text != '\0')
-				continue;
-
-                        text++;
-			if (*text == LINE_CMD_EOL)
-				break;
-
-			if (*text == LINE_CMD_INDENT_FUNC) {
-				text++;
-				memcpy(&func, text, sizeof(INDENT_FUNC));
-				if (func == indent_func)
-                                        memset(&func, 0, sizeof(INDENT_FUNC));
-				text += sizeof(INDENT_FUNC);
-			} else if (*text == LINE_CMD_CONTINUE) {
-				memcpy(&tmp, text+1, sizeof(char *));
-				text = tmp-1;
-			}
-		}
-
-		line = line->next;
-	}
 }
 
 void textbuffer_views_unregister_indent_func(INDENT_FUNC indent_func)
@@ -1045,7 +1009,6 @@ static void bookmark_check_remove(char *key, LINE_REC *line,
 static void view_bookmarks_check(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 {
         BOOKMARK_FIND_REC rec;
-        LINE_REC *new_line;
 	GSList *tmp;
 
         rec.remove_line = line;
@@ -1054,16 +1017,9 @@ static void view_bookmarks_check(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 			     (GHFunc) bookmark_check_remove, &rec);
 
 	if (rec.remove_list != NULL) {
-		new_line = line->prev == NULL ? NULL :
-			(line->next == NULL ? line->prev : line->next);
 		for (tmp = rec.remove_list; tmp != NULL; tmp = tmp->next) {
 			g_hash_table_remove(view->bookmarks, tmp->data);
-			if (new_line != NULL) {
-				g_hash_table_insert(view->bookmarks,
-						    tmp->data, new_line);
-			} else {
-				g_free(tmp->data);
-			}
+			g_free(tmp->data);
 		}
 		g_slist_free(rec.remove_list);
 	}
@@ -1201,6 +1157,24 @@ void textbuffer_view_remove_line(TEXT_BUFFER_VIEW_REC *view, LINE_REC *line)
 	textbuffer_remove(view->buffer, line);
 }
 
+void textbuffer_view_remove_lines_by_level(TEXT_BUFFER_VIEW_REC *view, int level)
+{
+	LINE_REC *line, *next;
+	
+	term_refresh_freeze();
+	line = textbuffer_view_get_lines(view);
+
+	while (line != NULL) {
+		next = line->next;
+
+		if (line->info.level & level)
+			textbuffer_view_remove_line(view, line);
+		line = next;
+	}
+	textbuffer_view_redraw(view);
+	term_refresh_thaw();
+}
+
 static int g_free_true(void *data)
 {
 	g_free(data);
@@ -1326,9 +1300,6 @@ static int sig_check_linecache(void)
 void textbuffer_view_init(void)
 {
 	linecache_tag = g_timeout_add(LINE_CACHE_CHECK_TIME, (GSourceFunc) sig_check_linecache, NULL);
-#ifdef HAVE_CUIX
-        cuix_active = 0;
-#endif
 }
 
 void textbuffer_view_deinit(void)

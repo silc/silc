@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -356,56 +356,34 @@ GSList *nicklist_get_same_unique(SERVER_REC *server, void *id)
 	return rec.list;
 }
 
-#if GLIB_MAJOR_VERSION < 2
-/* glib1 doesn't have g_slist_sort_with_data, so non-standard prefixes won't be sorted correctly */
-int nicklist_compare_glib1(NICK_REC *p1, NICK_REC *p2)
-{
-	return nicklist_compare(p1, p2, NULL);
-}
-#endif
-
 /* nick record comparision for sort functions */
 int nicklist_compare(NICK_REC *p1, NICK_REC *p2, const char *nick_prefix)
 {
-	int status1, status2;
-	
+	int i;
+
 	if (p1 == NULL) return -1;
 	if (p2 == NULL) return 1;
 
-	/* we assign each status (op, halfop, voice, normal) a number
-	 * and compare them. this is easier than 100,000 if's and
-	 * returns :-)
-	 * -- yath */
+	if (p1->prefixes[0] == p2->prefixes[0])
+		return g_strcasecmp(p1->nick, p2->nick);
 
-	if (p1->other) {
-		const char *other = (nick_prefix == NULL) ? NULL : strchr(nick_prefix, p1->other);
-		status1 = (other == NULL) ? 5 : 1000 - (other - nick_prefix);
-	} else if (p1->op)
-		status1 = 4;
-	else if (p1->halfop)
-		status1 = 3;
-	else if (p1->voice)
-		status1 = 2;
-	else
-		status1 = 1;
-
-	if (p2->other) {
-		const char *other = (nick_prefix == NULL) ? NULL : strchr(nick_prefix, p2->other);
-		status2 = (other == NULL) ? 5 : 1000 - (other - nick_prefix);
-	} else if (p2->op)
-		status2 = 4;
-	else if (p2->halfop)
-		status2 = 3;
-	else if (p2->voice)
-		status2 = 2;
-	else
-		status2 = 1;
-	
-	if (status1 < status2)
+	if (!p1->prefixes[0])
 		return 1;
-	else if (status1 > status2)
+	if (!p2->prefixes[0])
 		return -1;
-	
+
+	/* They aren't equal.  We've taken care of that already.
+	 * The first one we encounter in this list is the greater.
+	 */
+
+	for (i = 0; nick_prefix[i] != '\0'; i++) {
+		if (p1->prefixes[0] == nick_prefix[i])
+			return -1;
+		if (p2->prefixes[0] == nick_prefix[i])
+			return 1;
+	}
+
+	/* we should never have gotten here... */
 	return g_strcasecmp(p1->nick, p2->nick);
 }
 
@@ -597,9 +575,13 @@ int nick_match_msg(CHANNEL_REC *channel, const char *msg, const char *nick)
 	if (fullmatch)
 		return TRUE; /* matched without fuzzyness */
 
-	/* matched with some fuzzyness .. check if there's an exact match
-	   for some other nick in the same channel. */
-        return nick_nfind(channel, msgstart, (int) (msg-msgstart)) == NULL;
+	if (channel != NULL) {
+		/* matched with some fuzzyness .. check if there's an exact match
+		   for some other nick in the same channel. */
+		return nick_nfind(channel, msgstart, (int) (msg-msgstart)) == NULL;
+	} else {
+		return TRUE;
+	}
 }
 
 void nicklist_init(void)

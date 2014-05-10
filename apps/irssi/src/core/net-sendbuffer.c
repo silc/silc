@@ -13,17 +13,16 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
 
 #include "network.h"
 #include "net-sendbuffer.h"
-
-static GSList *buffers;
+#include "line-split.h"
 
 /* Create new buffer - if `bufsize' is zero or less, DEFAULT_BUFFER_SIZE
    is used */
@@ -37,18 +36,17 @@ NET_SENDBUF_REC *net_sendbuffer_create(GIOChannel *handle, int bufsize)
         rec->send_tag = -1;
 	rec->handle = handle;
 	rec->bufsize = bufsize > 0 ? bufsize : DEFAULT_BUFFER_SIZE;
+	rec->def_bufsize = rec->bufsize;
 
-	buffers = g_slist_append(buffers, rec);
 	return rec;
 }
 
 /* Destroy the buffer. `close' specifies if socket handle should be closed. */
 void net_sendbuffer_destroy(NET_SENDBUF_REC *rec, int close)
 {
-	buffers = g_slist_remove(buffers, rec);
-
         if (rec->send_tag != -1) g_source_remove(rec->send_tag);
 	if (close) net_disconnect(rec->handle);
+	if (rec->readbuffer != NULL) line_split_free(rec->readbuffer);
 	g_free_not_null(rec->buffer);
 	g_free(rec);
 }
@@ -61,7 +59,9 @@ static int buffer_send(NET_SENDBUF_REC *rec)
 	ret = net_transmit(rec->handle, rec->buffer, rec->bufpos);
 	if (ret < 0 || rec->bufpos == ret) {
 		/* error/all sent - don't try to send it anymore */
-                g_free_and_null(rec->buffer);
+		rec->bufsize = rec->def_bufsize;
+		rec->buffer = g_realloc(rec->buffer, rec->bufsize);
+		rec->bufpos = 0;
 		return TRUE;
 	}
 
@@ -91,8 +91,16 @@ static int buffer_add(NET_SENDBUF_REC *rec, const void *data, int size)
 		rec->bufpos = 0;
 	}
 
-	if (rec->bufpos+size > rec->bufsize)
-		return FALSE;
+	while (rec->bufpos+size > rec->bufsize) {
+		if (rec->bufsize >= MAX_BUFFER_SIZE) {
+			if (!rec->dead)
+				g_warning("Dropping some data on an outgoing connection");
+			rec->dead = 1;
+			return FALSE;
+		}
+		rec->bufsize *= 2;
+		rec->buffer = g_realloc(rec->buffer, rec->bufsize);
+	}
 
 	memcpy(rec->buffer+rec->bufpos, data, size);
 	rec->bufpos += size;
@@ -110,7 +118,7 @@ int net_sendbuffer_send(NET_SENDBUF_REC *rec, const void *data, int size)
 	g_return_val_if_fail(data != NULL, -1);
 	if (size <= 0) return 0;
 
-	if (rec->buffer == NULL) {
+	if (rec->buffer == NULL || rec->bufpos == 0) {
                 /* nothing in buffer - transmit immediately */
 		ret = net_transmit(rec->handle, data, size);
 		if (ret < 0) return -1;
@@ -129,6 +137,17 @@ int net_sendbuffer_send(NET_SENDBUF_REC *rec, const void *data, int size)
 	}
 
 	return buffer_add(rec, data, size) ? 0 : -1;
+}
+
+int net_sendbuffer_receive_line(NET_SENDBUF_REC *rec, char **str, int read_socket)
+{
+	char tmpbuf[2048];
+	int recvlen = 0;
+
+	if (read_socket)
+		recvlen = net_receive(rec->handle, tmpbuf, sizeof(tmpbuf));
+
+	return line_split(tmpbuf, recvlen, str, &rec->readbuffer);
 }
 
 /* Flush the buffer, blocks until finished. */
@@ -156,13 +175,4 @@ GIOChannel *net_sendbuffer_handle(NET_SENDBUF_REC *rec)
 	g_return_val_if_fail(rec != NULL, NULL);
 
 	return rec->handle;
-}
-
-void net_sendbuffer_init(void)
-{
-	buffers = NULL;
-}
-
-void net_sendbuffer_deinit(void)
-{
 }

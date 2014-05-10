@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -38,8 +38,6 @@ CONFIG_NODE *config_node_find(CONFIG_NODE *node, const char *key)
 	return NULL;
 }
 
-/* find the section from node - if not found create it unless new_type is -1.
-   you can also specify in new_type if it's NODE_TYPE_LIST or NODE_TYPE_BLOCK */
 CONFIG_NODE *config_node_section(CONFIG_NODE *parent, const char *key, int new_type)
 {
         return config_node_section_index(parent, key, -1, new_type);
@@ -80,8 +78,6 @@ CONFIG_NODE *config_node_section_index(CONFIG_NODE *parent, const char *key,
 	return node;
 }
 
-/* find the section with the whole path.
-   create the path if necessary `create' is TRUE. */
 CONFIG_NODE *config_node_traverse(CONFIG_REC *rec, const char *section, int create)
 {
 	CONFIG_NODE *node;
@@ -203,41 +199,6 @@ int config_node_get_bool(CONFIG_NODE *parent, const char *key, int def)
 		(i_toupper(*str) == 'O' && i_toupper(str[1]) == 'N');
 }
 
-/* Get the value of keys `key' and `key_value' and put them to
-   `ret_key' and `ret_value'. Returns -1 if not found. */
-int config_node_get_keyvalue(CONFIG_NODE *node, const char *key, const char *value_key, char **ret_key, char **ret_value)
-{
-	CONFIG_NODE *keynode, *valuenode;
-	GSList *tmp;
-
-	g_return_val_if_fail(node != NULL, -1);
-	g_return_val_if_fail(key != NULL, -1);
-	g_return_val_if_fail(value_key != NULL, -1);
-	g_return_val_if_fail(ret_key != NULL, -1);
-	g_return_val_if_fail(ret_value != NULL, -1);
-
-	for (tmp = node->value; tmp != NULL; tmp = tmp->next) {
-		node = tmp->data;
-
-		if (node->type != NODE_TYPE_BLOCK)
-			continue;
-
-		keynode = config_node_find(node, key);
-		if (keynode == NULL || keynode->type != NODE_TYPE_KEY)
-			continue;
-
-		valuenode = config_node_find(node, value_key);
-
-		*ret_key = keynode->key;
-		*ret_value = valuenode != NULL && valuenode->type == NODE_TYPE_KEY ?
-			valuenode->value : NULL;
-		return 0;
-	}
-
-	return -1;
-}
-
-/* Return all values from from the list `node' in a g_strsplit() array */
 char **config_node_get_list(CONFIG_NODE *node)
 {
 	GString *values;
@@ -253,7 +214,7 @@ char **config_node_get_list(CONFIG_NODE *node)
 		node = tmp->data;
 
 		if (node->type == NODE_TYPE_VALUE)
-			g_string_sprintfa(values, "%s ", (char *) node->value);
+			g_string_append_printf(values, "%s ", (char *) node->value);
 	}
 
 	/* split the values to **str array */
@@ -268,7 +229,6 @@ char **config_node_get_list(CONFIG_NODE *node)
         return ret;
 }
 
-/* Returns n'th node from list. */
 CONFIG_NODE *config_node_nth(CONFIG_NODE *node, int index)
 {
 	GSList *tmp;
@@ -289,7 +249,6 @@ CONFIG_NODE *config_node_nth(CONFIG_NODE *node, int index)
 	return NULL;
 }
 
-/* Returns index for given key */
 int config_node_index(CONFIG_NODE *parent, const char *key)
 {
 	CONFIG_NODE *node;
@@ -317,7 +276,6 @@ int config_node_index(CONFIG_NODE *parent, const char *key)
         return -1;
 }
 
-/* Returns the first non-comment node in list */
 GSList *config_node_first(GSList *list)
 {
 	while (list != NULL) {
@@ -330,7 +288,6 @@ GSList *config_node_first(GSList *list)
 	return list;
 }
 
-/* Returns the next non-comment node in list */
 GSList *config_node_next(GSList *list)
 {
 	list = list->next;

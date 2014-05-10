@@ -8,6 +8,8 @@
 #define IS_NICK(server) \
 	(NICK(server) ? TRUE : FALSE)
 
+#define	MAX_USER_PREFIXES 7 /* Max prefixes kept for any user-in-chan. 7+1 is a memory unit */
+
 struct _NICK_REC {
 #include "nick-rec.h"
 };
@@ -48,10 +50,7 @@ void nicklist_update_flags_unique(SERVER_REC *server, void *id,
 /* Specify which nick in channel is ours */
 void nicklist_set_own(CHANNEL_REC *channel, NICK_REC *nick);
 
-/* Nick record comparision for sort functions */
-#if GLIB_MAJOR_VERSION < 2
-int nicklist_compare_glib1(NICK_REC *p1, NICK_REC *p2);
-#endif
+/* Nick record comparison for sort functions */
 int nicklist_compare(NICK_REC *p1, NICK_REC *p2, const char *nick_prefix);
 
 /* Check is `msg' is meant for `nick'. */

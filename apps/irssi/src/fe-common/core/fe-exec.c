@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -24,6 +24,7 @@
 #include "commands.h"
 #include "pidwait.h"
 #include "line-split.h"
+#include "network.h"
 #include "net-sendbuffer.h"
 #include "misc.h"
 #include "levels.h"
@@ -196,11 +197,16 @@ static void process_destroy(PROCESS_REC *rec, int status)
 static void processes_killall(int signum)
 {
 	GSList *tmp;
+	int kill_ret;
 
 	for (tmp = processes; tmp != NULL; tmp = tmp->next) {
 		PROCESS_REC *rec = tmp->data;
 
-		kill(rec->pid, signum);
+		kill_ret = kill(-rec->pid, signum);
+		if (kill_ret != 0)
+		        printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
+		                  "Error sending signal %d to pid %d: %s",
+		                  signum, rec->pid, g_strerror(errno));
 	}
 }
 
@@ -209,17 +215,17 @@ static int signal_name_to_id(const char *name)
 	/* check only the few most common signals, too much job to check
 	   them all. if we sometimes want more, procps-sources/proc/sig.c
 	   would be useful for copypasting */
-	if (g_strcasecmp(name, "hup") == 0)
+	if (g_ascii_strcasecmp(name, "hup") == 0)
                 return SIGHUP;
-	if (g_strcasecmp(name, "int") == 0)
+	if (g_ascii_strcasecmp(name, "int") == 0)
                 return SIGINT;
-	if (g_strcasecmp(name, "term") == 0)
+	if (g_ascii_strcasecmp(name, "term") == 0)
                 return SIGTERM;
-	if (g_strcasecmp(name, "kill") == 0)
+	if (g_ascii_strcasecmp(name, "kill") == 0)
                 return SIGKILL;
-	if (g_strcasecmp(name, "usr1") == 0)
+	if (g_ascii_strcasecmp(name, "usr1") == 0)
                 return SIGUSR1;
-	if (g_strcasecmp(name, "usr2") == 0)
+	if (g_ascii_strcasecmp(name, "usr2") == 0)
                 return SIGUSR2;
         return -1;
 }
@@ -303,9 +309,9 @@ static void process_exec(PROCESS_REC *rec, const char *cmd)
 
 	if (rec->pid != 0) {
 		/* parent process */
-                GIOChannel *outio = g_io_channel_unix_new(in[1]);
+                GIOChannel *outio = g_io_channel_new(in[1]);
 
-		rec->in = g_io_channel_unix_new(out[0]);
+		rec->in = g_io_channel_new(out[0]);
 		rec->out = net_sendbuffer_create(outio, 0);
 
                 close(out[1]);
@@ -349,17 +355,12 @@ static void process_exec(PROCESS_REC *rec, const char *cmd)
 static void sig_exec_input_reader(PROCESS_REC *rec)
 {
         char tmpbuf[512], *str;
-        gsize recvlen;
-	int err, ret;
+        int recvlen;
+	int ret;
 
 	g_return_if_fail(rec != NULL);
 
-	recvlen = 0;
-	err = g_io_channel_read(rec->in, tmpbuf,
-				sizeof(tmpbuf), &recvlen);
-	if (err != 0 && err != G_IO_ERROR_AGAIN && errno != EINTR)
-		recvlen = -1;
-
+	recvlen = net_receive(rec->in, tmpbuf, sizeof(tmpbuf));
 	do {
 		ret = line_split(tmpbuf, recvlen, &str, &rec->databuf);
 		if (ret == -1) {
@@ -382,7 +383,7 @@ static void handle_exec(const char *args, GHashTable *optlist,
 	PROCESS_REC *rec;
 	SERVER_REC *target_server;
         char *target, *level;
-	int notice, signum, interactive, target_nick, target_channel;
+	int notice, signum, interactive, target_nick, target_channel, kill_ret;
 
 	/* check that there's no unknown options. we allowed them
 	   because signals can be used as options, but there should be
@@ -449,8 +450,12 @@ static void handle_exec(const char *args, GHashTable *optlist,
 	}
 
 	if (signum != -1) {
-		/* send a signal to process */
-                kill(rec->pid, signum);
+		/* send a signal to process group */
+                kill_ret = kill(-rec->pid, signum);
+                if (kill_ret != 0)
+                        printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
+                                  "Error sending signal %d to pid %d: %s",
+                                  signum, rec->pid, g_strerror(errno));
                 return;
 	}
 
@@ -517,7 +522,7 @@ static void handle_exec(const char *args, GHashTable *optlist,
 	rec->name = g_strdup(g_hash_table_lookup(optlist, "name"));
 
 	level = g_hash_table_lookup(optlist, "level");
-	rec->level = level == NULL ? MSGLEVEL_CLIENTCRAP : level2bits(level);
+	rec->level = level == NULL ? MSGLEVEL_CLIENTCRAP : level2bits(level, NULL);
 
 	rec->read_tag = g_input_add(rec->in, G_INPUT_READ,
 				    (GInputFunction) sig_exec_input_reader,
@@ -533,8 +538,8 @@ static void handle_exec(const char *args, GHashTable *optlist,
 /* SYNTAX: EXEC [-] [-nosh] [-out | -msg <target> | -notice <target>]
 		[-name <name>] <cmd line>
 	   EXEC -out | -window | -msg <target> | -notice <target> |
-		-close | -<signal> <id>
-	   EXEC -in <id> <text to send to process> */
+		-close | -<signal> %<id>
+	   EXEC -in %<id> <text to send to process> */
 static void cmd_exec(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
 	GHashTable *optlist;

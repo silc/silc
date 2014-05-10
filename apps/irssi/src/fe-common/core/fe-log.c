@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -36,6 +36,7 @@
 #include "formats.h"
 #include "themes.h"
 #include "printtext.h"
+#include "fe-common-core.h"
 
 /* close autologs after 5 minutes of inactivity */
 #define AUTOLOG_INACTIVITY_CLOSE (60*5)
@@ -49,6 +50,8 @@ static int skip_next_printtext;
 static const char *log_theme_name;
 
 static int log_dir_create_mode;
+
+static char **autolog_ignore_targets;
 
 static char *log_colorizer_strip(const char *str)
 {
@@ -89,7 +92,7 @@ static void cmd_log_open(const char *data)
 		return;
 	if (*fname == '\0') cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 
-	level = level2bits(levels);
+	level = level2bits(levels, NULL);
 	log = log_create_rec(fname, level != 0 ? level : MSGLEVEL_ALL);
 
 	/* -<server tag> */
@@ -200,11 +203,11 @@ static char *log_items_get_list(LOG_REC *log)
 	for (tmp = log->items; tmp != NULL; tmp = tmp->next) {
 		rec = tmp->data;
 
-                g_string_sprintfa(str, "%s, ", rec->name);
+                g_string_append_printf(str, "%s, ", rec->name);
 	}
 	g_string_truncate(str, str->len-2);
 	if(rec->servertag != NULL)
-		g_string_sprintfa(str, " (%s)", rec->servertag);
+		g_string_append_printf(str, " (%s)", rec->servertag);
 
 	ret = str->str;
 	g_string_free(str, FALSE);
@@ -227,7 +230,8 @@ static void cmd_log_list(void)
 
 		printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_LOG_LIST,
 			    index, rec->fname, items != NULL ? items : "",
-			    levelstr, rec->autoopen ? " -autoopen" : "");
+			    levelstr, rec->autoopen ? " -autoopen" : "",
+			    rec->handle != -1 ? " active" : "");
 
 		g_free_not_null(items);
 		g_free(levelstr);
@@ -252,6 +256,7 @@ static LOG_REC *logs_find_item(int type, const char *item,
 	for (tmp = logs; tmp != NULL; tmp = tmp->next) {
 		LOG_REC *log = tmp->data;
 
+		if (type == LOG_ITEM_TARGET && log->temp == 0) continue;
 		logitem = log_item_find(log, type, item, servertag);
 		if (logitem != NULL) {
 			if (ret_item != NULL) *ret_item = logitem;
@@ -277,11 +282,11 @@ static void cmd_window_log(const char *data)
 	log = logs_find_item(LOG_ITEM_WINDOW_REFNUM, window, NULL, NULL);
 
         open_log = close_log = FALSE;
-	if (g_strcasecmp(set, "ON") == 0)
+	if (g_ascii_strcasecmp(set, "ON") == 0)
 		open_log = TRUE;
-	else if (g_strcasecmp(set, "OFF") == 0) {
+	else if (g_ascii_strcasecmp(set, "OFF") == 0) {
 		close_log = TRUE;
-	} else if (g_strcasecmp(set, "TOGGLE") == 0) {
+	} else if (g_ascii_strcasecmp(set, "TOGGLE") == 0) {
                 open_log = log == NULL;
                 close_log = log != NULL;
 	} else {
@@ -388,14 +393,14 @@ static void autologs_close_all(void)
 	}
 }
 
-/* '%' -> '%%', '/' -> '_' */
+/* '%' -> '%%', badness -> '_' */
 static char *escape_target(const char *target)
 {
 	char *str, *p;
 
 	p = str = g_malloc(strlen(target)*2+1);
 	while (*target != '\0') {
-		if (*target == '/')
+		if (strchr("/\\|*?\"<>:", *target))
 			*p++ = '_';
 		else {
 			if (*target == '%')
@@ -424,11 +429,13 @@ static void autolog_open(SERVER_REC *server, const char *server_tag,
 
 	/* '/' -> '_' - don't even accidentally try to log to
 	   #../../../file if you happen to join to such channel..
+	   similar for some characters that are metacharacters
+	   and/or illegal in Windows filenames.
 
 	   '%' -> '%%' - so strftime() won't mess with them */
 	fixed_target = escape_target(target);
 	if (CHAT_PROTOCOL(server)->case_insensitive)
-		g_strdown(fixed_target);
+		ascii_strdown(fixed_target);
 
         /* $0 = target, $1 = server tag */
         params = g_strconcat(fixed_target, " ", server_tag, NULL);
@@ -444,7 +451,7 @@ static void autolog_open(SERVER_REC *server, const char *server_tag,
 			log->colorizer = log_colorizer_strip;
 		log_item_add(log, LOG_ITEM_TARGET, target, server_tag);
 
-		dir = g_dirname(log->real_fname);
+		dir = g_path_get_dirname(log->real_fname);
 		mkpath(dir, log_dir_create_mode);
 		g_free(dir);
 
@@ -455,10 +462,13 @@ static void autolog_open(SERVER_REC *server, const char *server_tag,
 	g_free(fname);
 }
 
-static void autolog_open_check(SERVER_REC *server, const char *server_tag,
-			       const char *target, int level)
+static void autolog_open_check(TEXT_DEST_REC *dest)
 {
-	char **targets, **tmp;
+	const char *deftarget;
+	SERVER_REC *server = dest->server;
+	const char *server_tag = dest->server_tag;
+	const char *target = dest->target;
+	int level = dest->level;
 
 	/* FIXME: kind of a kludge, but we don't want to reopen logs when
 	   we're parting the channel with /WINDOW CLOSE.. Maybe a small
@@ -468,18 +478,20 @@ static void autolog_open_check(SERVER_REC *server, const char *server_tag,
 	    (autolog_level & level) == 0 || target == NULL || *target == '\0')
 		return;
 
-	/* there can be multiple targets separated with comma */
-	targets = g_strsplit(target, ",", -1);
-	for (tmp = targets; *tmp != NULL; tmp++)
-		autolog_open(server, server_tag, *tmp);
-	g_strfreev(targets);
+	deftarget = server ? server->nick : "unknown";
+
+	if (autolog_ignore_targets != NULL &&
+	    strarray_find_dest(autolog_ignore_targets, dest))
+		return;
+
+	if (target != NULL)
+		autolog_open(server, server_tag, strcmp(target, "*") ? target : deftarget);
 }
 
 static void log_single_line(WINDOW_REC *window, const char *server_tag,
 			    const char *target, int level, const char *text)
 {
 	char windownum[MAX_INT_STRLEN];
-	char **targets, **tmp;
 	LOG_REC *log;
 
 	if (window != NULL) {
@@ -491,15 +503,7 @@ static void log_single_line(WINDOW_REC *window, const char *server_tag,
 			log_write_rec(log, text, level);
 	}
 
-	if (target == NULL)
-		log_file_write(server_tag, NULL, level, text, FALSE);
-	else {
-		/* there can be multiple items separated with comma */
-		targets = g_strsplit(target, ",", -1);
-		for (tmp = targets; *tmp != NULL; tmp++)
-			log_file_write(server_tag, *tmp, level, text, FALSE);
-		g_strfreev(targets);
-	}
+	log_file_write(server_tag, target, level, text, FALSE);
 }
 
 static void log_line(TEXT_DEST_REC *dest, const char *text)
@@ -510,8 +514,7 @@ static void log_line(TEXT_DEST_REC *dest, const char *text)
 		return;
 
 	/* let autolog open the log records */
-	autolog_open_check(dest->server, dest->server_tag,
-			   dest->target, dest->level);
+	autolog_open_check(dest);
 
 	if (logs == NULL)
 		return;
@@ -698,6 +701,11 @@ static void read_settings(void)
         if (log_file_create_mode & 0400) log_dir_create_mode |= 0100;
         if (log_file_create_mode & 0040) log_dir_create_mode |= 0010;
         if (log_file_create_mode & 0004) log_dir_create_mode |= 0001;
+
+	if (autolog_ignore_targets != NULL)
+		g_strfreev(autolog_ignore_targets);
+
+	autolog_ignore_targets = g_strsplit(settings_get_str("autolog_ignore_targets"), " ", -1);
 }
 
 void fe_log_init(void)
@@ -711,6 +719,7 @@ void fe_log_init(void)
         settings_add_str("log", "autolog_path", "~/irclogs/$tag/$0.log");
 	settings_add_level("log", "autolog_level", "all -crap -clientcrap -ctcps");
         settings_add_str("log", "log_theme", "");
+	settings_add_str("log", "autolog_ignore_targets", "");
 
 	autolog_level = 0;
 	log_theme_name = NULL;
@@ -764,4 +773,7 @@ void fe_log_deinit(void)
 	signal_remove("awaylog show", (SIGNAL_FUNC) sig_awaylog_show);
 	signal_remove("theme destroyed", (SIGNAL_FUNC) sig_theme_destroyed);
 	signal_remove("setup changed", (SIGNAL_FUNC) read_settings);
+
+	if (autolog_ignore_targets != NULL)
+		g_strfreev(autolog_ignore_targets);
 }

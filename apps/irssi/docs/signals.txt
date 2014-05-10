@@ -55,6 +55,11 @@ modules.c:
  "module unloaded", MODULE_REC, MODULE_FILE_REC
  "module error", int error, char *text, char *rootmodule, char *submodule
 
+network-openssl.c:
+ "tlsa available", SERVER_REC
+ "tlsa verification success", SERVER_REC
+ "tlsa verification failed", SERVER_REC
+
 nicklist.c:
  "nicklist new", CHANNEL_REC, NICK_REC
  "nicklist remove", CHANNEL_REC, NICK_REC
@@ -211,13 +216,14 @@ notifylist.c:
  "notifylist remove", NOTIFYLIST_REC
  "notifylist joined", SERVER_REC, char *nick, char *user, char *host, char *realname, char *awaymsg
  "notifylist away changed", SERVER_REC, char *nick, char *user, char *host, char *realname, char *awaymsg
- "notifylist unidle", SERVER_REC, char *nick, char *user, char *host, char *realname, char *awaymsg
  "notifylist left", SERVER_REC, char *nick, char *user, char *host, char *realname, char *awaymsg
 
 proxy/listen.c:
 
  "proxy client connected", CLIENT_REC
  "proxy client disconnected", CLIENT_REC
+ "proxy client command", CLIENT_REC, char *args, char *data
+ "proxy client dump", CLIENT_REC, char *data
 
 FE common
 ---------
@@ -269,13 +275,15 @@ themes.c:
 
 window-activity.c:
  "window hilight", WINDOW_REC
+ "window dehilight", WINDOW_REC
  "window activity", WINDOW_REC, int old_level
  "window item hilight", WI_ITEM_REC
- "window item activity", WI_ITEM_REC, int old_lvel
+ "window item activity", WI_ITEM_REC, int old_level
 
 window-items.c:
  "window item new", WINDOW_REC, WI_ITEM_REC
  "window item remove", WINDOW_REC, WI_ITEM_REC
+ "window item moved", WINDOW_REC, WI_ITEM_REC, WINDOW_REC
  "window item changed", WINDOW_REC, WI_ITEM_REC
  "window item server changed", WINDOW_REC, WI_ITEM_REC
 
@@ -292,6 +300,9 @@ windows.c:
 
 FE IRC
 ------
+
+fe-events.c:
+ "default event numeric", SERVER_REC, char *data, char *nick, char *address
 
 fe-irc-messages.c:
  "message irc op_public", SERVER_REC, char *msg, char *nick, char *address, char *target

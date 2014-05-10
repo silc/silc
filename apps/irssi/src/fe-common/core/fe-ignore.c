@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -64,9 +64,9 @@ static void ignore_print(int index, IGNORE_REC *rec)
 	if (rec->fullword) g_string_append(options, "-full ");
 	if (rec->replies) g_string_append(options, "-replies ");
 	if (rec->servertag != NULL) 
-		g_string_sprintfa(options, "-network %s ", rec->servertag);
+		g_string_append_printf(options, "-network %s ", rec->servertag);
 	if (rec->pattern != NULL)
-		g_string_sprintfa(options, "-pattern %s ", rec->pattern);
+		g_string_append_printf(options, "-pattern %s ", rec->pattern);
 
 	if (options->len > 1) g_string_truncate(options, options->len-1);
 
@@ -152,9 +152,9 @@ static void cmd_ignore(const char *data)
 		mask = NULL;
 	}
 	channels = (chanarg == NULL || *chanarg == '\0') ? NULL :
-		g_strsplit(replace_chars(chanarg, ',', ' '), " ", -1);
+		g_strsplit(chanarg, ",", -1);
 
-	rec = patternarg != NULL ? NULL: ignore_find(NULL, mask, channels);
+	rec = patternarg != NULL ? NULL: ignore_find(servertag, mask, channels);
 	new_ignore = rec == NULL;
 
 	if (rec == NULL) {

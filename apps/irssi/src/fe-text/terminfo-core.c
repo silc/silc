@@ -43,66 +43,66 @@ typedef struct {
         const char *ti_name; /* terminfo name */
 	const char *tc_name; /* termcap name */
 	int type;
-        void *ptr;
+	unsigned int offset;
 } TERMINFO_REC;
 
 TERM_REC *current_term;
-static TERM_REC temp_term; /* not really used for anything */
 
 /* Define only what we might need */
 static TERMINFO_REC tcaps[] = {
         /* Terminal size */
-	{ "cols",	"co",	CAP_TYPE_INT,	&temp_term.width },
-	{ "lines",	"li",	CAP_TYPE_INT,	&temp_term.height },
+	{ "cols",	"co",	CAP_TYPE_INT,	G_STRUCT_OFFSET(TERM_REC, width) },
+	{ "lines",	"li",	CAP_TYPE_INT,	G_STRUCT_OFFSET(TERM_REC, height) },
 
         /* Cursor movement */
-	{ "smcup",	"ti",	CAP_TYPE_STR,	&temp_term.TI_smcup },
-	{ "rmcup",	"te",	CAP_TYPE_STR,	&temp_term.TI_rmcup },
-	{ "cup",	"cm",	CAP_TYPE_STR,	&temp_term.TI_cup },
-	{ "hpa",	"ch",	CAP_TYPE_STR,	&temp_term.TI_hpa },
-	{ "vpa",	"vh",	CAP_TYPE_STR,	&temp_term.TI_vpa },
-	{ "cub1",	"le",	CAP_TYPE_STR,	&temp_term.TI_cub1 },
-	{ "cuf1",	"nd",	CAP_TYPE_STR,	&temp_term.TI_cuf1 },
-	{ "civis",	"vi",	CAP_TYPE_STR,	&temp_term.TI_civis },
-	{ "cnorm",	"ve",	CAP_TYPE_STR,	&temp_term.TI_cnorm },
+	{ "smcup",	"ti",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_smcup) },
+	{ "rmcup",	"te",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_rmcup) },
+	{ "cup",	"cm",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_cup) },
+	{ "hpa",	"ch",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_hpa) },
+	{ "vpa",	"vh",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_vpa) },
+	{ "cub1",	"le",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_cub1) },
+	{ "cuf1",	"nd",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_cuf1) },
+	{ "civis",	"vi",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_civis) },
+	{ "cnorm",	"ve",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_cnorm) },
 
         /* Scrolling */
-	{ "csr",      	"cs",	CAP_TYPE_STR,	&temp_term.TI_csr },
-	{ "wind",      	"wi",	CAP_TYPE_STR,	&temp_term.TI_wind },
-	{ "ri",      	"sr",	CAP_TYPE_STR,	&temp_term.TI_ri },
-	{ "rin",      	"SR",	CAP_TYPE_STR,	&temp_term.TI_rin },
-	{ "ind",      	"sf",	CAP_TYPE_STR,	&temp_term.TI_ind },
-	{ "indn",      	"SF",	CAP_TYPE_STR,	&temp_term.TI_indn },
-	{ "il",      	"AL",	CAP_TYPE_STR,	&temp_term.TI_il },
-	{ "il1",      	"al",	CAP_TYPE_STR,	&temp_term.TI_il1 },
-	{ "dl",      	"DL",	CAP_TYPE_STR,	&temp_term.TI_dl },
-	{ "dl1",      	"dl",	CAP_TYPE_STR,	&temp_term.TI_dl1 },
+	{ "csr",      	"cs",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_csr) },
+	{ "wind",      	"wi",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_wind) },
+	{ "ri",      	"sr",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_ri) },
+	{ "rin",      	"SR",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_rin) },
+	{ "ind",      	"sf",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_ind) },
+	{ "indn",      	"SF",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_indn) },
+	{ "il",      	"AL",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_il) },
+	{ "il1",      	"al",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_il1) },
+	{ "dl",      	"DL",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_dl) },
+	{ "dl1",      	"dl",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_dl1) },
 
 	/* Clearing screen */
-	{ "clear",     	"cl",	CAP_TYPE_STR,	&temp_term.TI_clear },
-	{ "ed",     	"cd",	CAP_TYPE_STR,	&temp_term.TI_ed },
+	{ "clear",     	"cl",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_clear) },
+	{ "ed",     	"cd",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_ed) },
 
         /* Clearing to end of line */
-	{ "el",     	"ce",	CAP_TYPE_STR,	&temp_term.TI_el },
+	{ "el",     	"ce",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_el) },
 
         /* Repeating character */
-	{ "rep",     	"rp",	CAP_TYPE_STR,	&temp_term.TI_rep },
+	{ "rep",     	"rp",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_rep) },
 
 	/* Colors */
-	{ "sgr0",     	"me",	CAP_TYPE_STR,	&temp_term.TI_sgr0 },
-	{ "smul",     	"us",	CAP_TYPE_STR,	&temp_term.TI_smul },
-	{ "rmul",     	"ue",	CAP_TYPE_STR,	&temp_term.TI_rmul },
-	{ "smso",     	"so",	CAP_TYPE_STR,	&temp_term.TI_smso },
-	{ "rmso",     	"se",	CAP_TYPE_STR,	&temp_term.TI_rmso },
-	{ "bold",     	"md",	CAP_TYPE_STR,	&temp_term.TI_bold },
-	{ "blink",     	"mb",	CAP_TYPE_STR,	&temp_term.TI_blink },
-	{ "setaf",     	"AF",	CAP_TYPE_STR,	&temp_term.TI_setaf },
-	{ "setab",     	"AB",	CAP_TYPE_STR,	&temp_term.TI_setab },
-	{ "setf",     	"Sf",	CAP_TYPE_STR,	&temp_term.TI_setf },
-	{ "setb",     	"Sb",	CAP_TYPE_STR,	&temp_term.TI_setb },
+	{ "colors",	"Co",   CAP_TYPE_INT,   G_STRUCT_OFFSET(TERM_REC, TI_colors) },
+	{ "sgr0",     	"me",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_sgr0) },
+	{ "smul",     	"us",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_smul) },
+	{ "rmul",     	"ue",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_rmul) },
+	{ "smso",     	"so",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_smso) },
+	{ "rmso",     	"se",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_rmso) },
+	{ "bold",     	"md",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_bold) },
+	{ "blink",     	"mb",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_blink) },
+	{ "setaf",     	"AF",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_setaf) },
+	{ "setab",     	"AB",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_setab) },
+	{ "setf",     	"Sf",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_setf) },
+	{ "setb",     	"Sb",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_setb) },
 
         /* Beep */
-	{ "bel",     	"bl",	CAP_TYPE_STR,	&temp_term.TI_bel },
+	{ "bel",     	"bl",	CAP_TYPE_STR,	G_STRUCT_OFFSET(TERM_REC, TI_bel) },
 };
 
 /* Move cursor (cursor_address / cup) */
@@ -288,13 +288,13 @@ static void _clrtoeol(TERM_REC *term)
 }
 
 /* Repeat character (rep / rp) */
-static void _repeat(TERM_REC *term, int chr, int count)
+static void _repeat(TERM_REC *term, char chr, int count)
 {
 	tput(tparm(term->TI_rep, chr, count));
 }
 
 /* Repeat character (manual) */
-static void _repeat_manual(TERM_REC *term, int chr, int count)
+static void _repeat_manual(TERM_REC *term, char chr, int count)
 {
 	while (count > 0) {
 		putc(chr, term->out);
@@ -306,6 +306,11 @@ static void _repeat_manual(TERM_REC *term, int chr, int count)
 static void _set_normal(TERM_REC *term)
 {
 	tput(tparm(term->TI_normal));
+}
+
+static void _set_blink(TERM_REC *term)
+{
+	tput(tparm(term->TI_blink));
 }
 
 /* Bold on */
@@ -329,13 +334,13 @@ static void _set_standout(TERM_REC *term, int set)
 /* Change foreground color */
 static void _set_fg(TERM_REC *term, int color)
 {
-	tput(tparm(term->TI_fg[color & 0x0f]));
+	tput(tparm(term->TI_fg[color % term->TI_colors]));
 }
 
 /* Change background color */
 static void _set_bg(TERM_REC *term, int color)
 {
-	tput(tparm(term->TI_bg[color & 0x0f]));
+	tput(tparm(term->TI_bg[color % term->TI_colors]));
 }
 
 /* Beep */
@@ -362,7 +367,7 @@ static void term_fill_capabilities(TERM_REC *term)
 	char *tptr = term->buffer2;
 #endif
 	for (i = 0; i < sizeof(tcaps)/sizeof(tcaps[0]); i++) {
-		ptr = (char *) term + (int) ((char *) tcaps[i].ptr - (char *) &temp_term);
+		ptr = G_STRUCT_MEMBER_P(term, tcaps[i].offset);
 
 		switch (tcaps[i].type) {
 		case CAP_TYPE_FLAG:
@@ -384,24 +389,18 @@ static void term_fill_capabilities(TERM_REC *term)
 	}
 }
 
-/* Terminal was resized - ask the width/height from terminfo again */
-void terminfo_resize(TERM_REC *term)
-{
-	/* FIXME: is this possible? */
-}
-
 static void terminfo_colors_deinit(TERM_REC *term)
 {
 	int i;
 
 	if (terminfo_is_colors_set(term)) {
-		for (i = 0; i < 16; i++) {
+		for (i = 0; i < term->TI_colors; i++) {
 			g_free(term->TI_fg[i]);
 			g_free(term->TI_bg[i]);
 		}
 
-                memset(term->TI_fg, 0, sizeof(term->TI_fg));
-                memset(term->TI_bg, 0, sizeof(term->TI_fg));
+		g_free_and_null(term->TI_fg);
+		g_free_and_null(term->TI_bg);
 	}
 }
 
@@ -409,18 +408,36 @@ static void terminfo_colors_deinit(TERM_REC *term)
    terminal capabilities don't contain color codes */
 void terminfo_setup_colors(TERM_REC *term, int force)
 {
-	static char ansitab[8] = { 0, 4, 2, 6, 1, 5, 3, 7 };
-	const char *bold, *blink;
-	int i;
+	static const char ansitab[16] = {
+		0, 4, 2, 6, 1, 5, 3, 7,
+		8, 12, 10, 14, 9, 13, 11, 15
+	};
+	unsigned int i, color;
 
 	terminfo_colors_deinit(term);
-        term->has_colors = term->TI_setf || term->TI_setaf;
+
+	if (force && term->TI_setf == NULL && term->TI_setaf == NULL)
+		term->TI_colors = 8;
+
+	if ((term->TI_setf || term->TI_setaf || force) &&
+	     term->TI_colors > 0) {
+		term->TI_fg = g_new0(char *, term->TI_colors);
+		term->TI_bg = g_new0(char *, term->TI_colors);
+		term->set_fg = _set_fg;
+		term->set_bg = _set_bg;
+	} else {
+		/* no colors */
+		term->TI_colors = 0;
+		term->set_fg = term->set_bg = _ignore_parm;
+	}
 
 	if (term->TI_setaf) {
-		for (i = 0; i < 8; i++)
-                        term->TI_fg[i] = g_strdup(tparm(term->TI_setaf, ansitab[i], 0));
+		for (i = 0; i < term->TI_colors; i++) {
+			color = i < 16 ? ansitab[i] : i;
+			term->TI_fg[i] = g_strdup(tparm(term->TI_setaf, color, 0));
+		}
 	} else if (term->TI_setf) {
-		for (i = 0; i < 8; i++)
+		for (i = 0; i < term->TI_colors; i++)
                         term->TI_fg[i] = g_strdup(tparm(term->TI_setf, i, 0));
 	} else if (force) {
 		for (i = 0; i < 8; i++)
@@ -428,31 +445,16 @@ void terminfo_setup_colors(TERM_REC *term, int force)
 	}
 
 	if (term->TI_setab) {
-		for (i = 0; i < 8; i++)
-                        term->TI_bg[i] = g_strdup(tparm(term->TI_setab, ansitab[i], 0));
+		for (i = 0; i < term->TI_colors; i++) {
+			color = i < 16 ? ansitab[i] : i;
+			term->TI_bg[i] = g_strdup(tparm(term->TI_setab, color, 0));
+		}
 	} else if (term->TI_setb) {
-		for (i = 0; i < 8; i++)
+		for (i = 0; i < term->TI_colors; i++)
                         term->TI_bg[i] = g_strdup(tparm(term->TI_setb, i, 0));
 	} else if (force) {
 		for (i = 0; i < 8; i++)
                         term->TI_bg[i] = g_strdup_printf("\033[%dm", 40+ansitab[i]);
-	}
-
-	if (term->TI_setf || term->TI_setaf || force) {
-                term->set_fg = _set_fg;
-                term->set_bg = _set_bg;
-
-		/* bold fg, blink bg */
-		bold = term->TI_bold ? term->TI_bold : "";
-		for (i = 0; i < 8; i++)
-			term->TI_fg[i+8] = g_strconcat(bold, term->TI_fg[i], NULL);
-
-		blink = term->TI_blink ? term->TI_blink : "";
-		for (i = 0; i < 8; i++)
-			term->TI_bg[i+8] = g_strconcat(blink, term->TI_bg[i], NULL);
-	} else {
-		/* no colors */
-                term->set_fg = term->set_bg = _ignore_parm;
 	}
 }
 
@@ -517,19 +519,19 @@ static int term_setup(TERM_REC *term)
 
 	term_env = getenv("TERM");
 	if (term_env == NULL) {
-		fprintf(term->out, "TERM environment not set\n");
+		fprintf(stderr, "TERM environment not set\n");
                 return 0;
 	}
 
 #ifdef HAVE_TERMINFO
 	if (setupterm(term_env, 1, &err) != 0) {
-		fprintf(term->out, "setupterm() failed for TERM=%s: %d\n", term_env, err);
+		fprintf(stderr, "setupterm() failed for TERM=%s: %d\n", term_env, err);
 		return 0;
 	}
 #else
 	if (tgetent(term->buffer1, term_env) < 1)
 	{
-		fprintf(term->out, "Termcap not found for TERM=%s\n", term_env);
+		fprintf(stderr, "Termcap not found for TERM=%s\n", term_env);
 		return 0;
 	}
 #endif
@@ -542,7 +544,7 @@ static int term_setup(TERM_REC *term)
 	else if (term->TI_hpa && term->TI_vpa)
 		term->move = _move_pa;
 	else {
-                fprintf(term->out, "Terminal doesn't support cursor movement\n");
+                fprintf(stderr, "Terminal doesn't support cursor movement\n");
 		return 0;
 	}
 	term->move_relative = _move_relative;
@@ -559,7 +561,7 @@ static int term_setup(TERM_REC *term)
 	else if (term->scroll == NULL && (term->TI_il1 && term->TI_dl1))
 		term->scroll = _scroll_line_1;
 	else if (term->scroll == NULL) {
-                fprintf(term->out, "Terminal doesn't support scrolling\n");
+                fprintf(stderr, "Terminal doesn't support scrolling\n");
 		return 0;
 	}
 
@@ -576,7 +578,7 @@ static int term_setup(TERM_REC *term)
 		/* we could do this by line inserts as well, but don't
 		   bother - if some terminal has insert line it most probably
 		   has delete line as well, if not a regular clear screen */
-                fprintf(term->out, "Terminal doesn't support clearing screen\n");
+                fprintf(stderr, "Terminal doesn't support clearing screen\n");
 		return 0;
 	}
 
@@ -584,7 +586,7 @@ static int term_setup(TERM_REC *term)
 	if (term->TI_el)
 		term->clrtoeol = _clrtoeol;
 	else {
-                fprintf(term->out, "Terminal doesn't support clearing to end of line\n");
+                fprintf(stderr, "Terminal doesn't support clearing to end of line\n");
 		return 0;
 	}
 
@@ -595,6 +597,7 @@ static int term_setup(TERM_REC *term)
 		term->repeat = _repeat_manual;
 
 	/* Bold, underline, standout */
+	term->set_blink = term->TI_blink ? _set_blink : _ignore;
 	term->set_bold = term->TI_bold ? _set_bold : _ignore;
 	term->set_uline = term->TI_smul && term->TI_rmul ?
 		_set_uline : _ignore_parm;

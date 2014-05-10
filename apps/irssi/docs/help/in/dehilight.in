@@ -1,6 +1,7 @@
 
 @SYNTAX:dehilight@
 
-Remove given highlight. If parameter is a number, deletes the specified hilight entry from the list.
+Removes the specified item from highlight list.
 
-See also: HILIGHT, SET HILIGHT
+See also: HILIGHT
+

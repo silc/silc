@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -68,7 +68,7 @@ static void sig_window_create_override(gpointer tab)
 static void gui_window_created(WINDOW_REC *window, void *automatic)
 {
 	MAIN_WINDOW_REC *parent;
-        int empty_window, new_parent;
+        int new_parent;
 
 	g_return_if_fail(window != NULL);
 
@@ -83,8 +83,6 @@ static void gui_window_created(WINDOW_REC *window, void *automatic)
 		parent = WINDOW_MAIN(active_win);
 	}
 	window_create_override = -1;
-
-        empty_window = parent->active == NULL;
 
 	if (parent->active == NULL) parent->active = window;
 	window->gui_data = gui_window_init(window, parent);

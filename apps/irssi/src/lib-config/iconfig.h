@@ -14,6 +14,9 @@ enum {
 #define is_node_list(a) \
         ((a)->type == NODE_TYPE_BLOCK || (a)->type == NODE_TYPE_LIST)
 
+typedef struct _CONFIG_NODE CONFIG_NODE;
+typedef struct _CONFIG_REC CONFIG_REC;
+
 struct _CONFIG_NODE {
 	int type;
         char *key;
@@ -45,7 +48,6 @@ struct _CONFIG_NODE {
 
 struct _CONFIG_REC {
 	char *fname;
-	int handle;
 	int create_mode;
 	int modifycounter; /* increase every time something is changed */
 
@@ -57,6 +59,7 @@ struct _CONFIG_REC {
 	GScanner *scanner;
 
 	/* while writing to configuration file.. */
+	GIOChannel *handle;
 	int tmp_indent_level; /* indentation position */
 	int tmp_last_lf; /* last character was a line feed */
 };
@@ -72,7 +75,7 @@ void config_change_file_name(CONFIG_REC *rec, const char *fname, int create_mode
 
 /* Parse configuration file */
 int config_parse(CONFIG_REC *rec);
-/* Parse configuration found from `data'. `input_name' is specifies the
+/* Parse configuration found from `data'. `input_name' specifies the
    "configuration name" which is displayed in error messages. */
 int config_parse_data(CONFIG_REC *rec, const char *data, const char *input_name);
 
@@ -117,12 +120,9 @@ CONFIG_NODE *config_node_section(CONFIG_NODE *parent, const char *key, int new_t
 CONFIG_NODE *config_node_section_index(CONFIG_NODE *parent, const char *key,
 				       int index, int new_type);
 /* Find the section with the whole path.
-   Create the path if necessary `create' is TRUE. */
+   Create the path if necessary if `create' is TRUE. */
 CONFIG_NODE *config_node_traverse(CONFIG_REC *rec, const char *section, int create);
-/* Get the value of keys `key' and `key_value' and put them to
-   `ret_key' and `ret_value'. Returns -1 if not found. */
-int config_node_get_keyvalue(CONFIG_NODE *node, const char *key, const char *value_key, char **ret_key, char **ret_value);
-/* Return all values from from the list `node' in a g_strsplit() array */
+/* Return all values from the list `node' in a g_strsplit() array */
 char **config_node_get_list(CONFIG_NODE *node);
 /* Add all values in `array' to `node' */
 void config_node_add_list(CONFIG_REC *rec, CONFIG_NODE *node, char **array);
@@ -131,12 +131,21 @@ char *config_node_get_str(CONFIG_NODE *parent, const char *key, const char *def)
 int config_node_get_int(CONFIG_NODE *parent, const char *key, int def);
 int config_node_get_bool(CONFIG_NODE *parent, const char *key, int def);
 
+/*
+ * key != NULL && value == NULL
+ * remove node with key 'key', equivalent to
+ * config_node_remove(rec, parent, config_node_find(parent, key))
+ * key == NULL && value != NULL
+ * create a new node with type NODE_TYPE_VALUE and value 'value'
+ * key != NULL && value != NULL
+ * if a node with key 'key' exists change its value to 'value',
+ * otherwise create a new node with type NODE_TYPE_KEY, key 'key' and value 'value'
+ * */
 void config_node_set_str(CONFIG_REC *rec, CONFIG_NODE *parent, const char *key, const char *value);
 void config_node_set_int(CONFIG_REC *rec, CONFIG_NODE *parent, const char *key, int value);
 void config_node_set_bool(CONFIG_REC *rec, CONFIG_NODE *parent, const char *key, int value);
 
-/* Remove one node from block/list.
-   ..set_str() with value = NULL does the same. */
+/* Remove one node from block/list. */
 void config_node_remove(CONFIG_REC *rec, CONFIG_NODE *parent, CONFIG_NODE *node);
 /* Remove n'th node from a list */
 void config_node_list_remove(CONFIG_REC *rec, CONFIG_NODE *node, int index);

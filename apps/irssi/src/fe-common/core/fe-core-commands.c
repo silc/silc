@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "core.h"
@@ -25,7 +25,6 @@
 #include "commands.h"
 #include "levels.h"
 #include "misc.h"
-#include "line-split.h"
 #include "settings.h"
 #include "irssi-version.h"
 #include "servers.h"
@@ -82,7 +81,7 @@ static void cmd_echo(const char *data, void *server, WI_ITEM_REC *item)
 
         levelstr = g_hash_table_lookup(optlist, "level");
 	level = levelstr == NULL ? 0 :
-		level2bits(g_hash_table_lookup(optlist, "level"));
+		level2bits(g_hash_table_lookup(optlist, "level"), NULL);
 	if (level == 0) level = MSGLEVEL_CRAP;
 
 	winname = g_hash_table_lookup(optlist, "window");
@@ -114,11 +113,12 @@ static void cmd_version(char *data)
 /* SYNTAX: CAT <file> */
 static void cmd_cat(const char *data)
 {
-	LINEBUF_REC *buffer = NULL;
 	char *fname, *fposstr;
-	char tmpbuf[1024], *str;
 	void *free_arg;
-	int f, ret, recvlen, fpos;
+	int fpos;
+	GIOChannel *handle;
+	GString *buf;
+	gsize tpos;
 
 	if (!cmd_get_params(data, &free_arg, 2, &fname, &fposstr))
 		return;
@@ -127,29 +127,27 @@ static void cmd_cat(const char *data)
 	fpos = atoi(fposstr);
         cmd_params_free(free_arg);
 
-	f = open(fname, O_RDONLY);
+	handle = g_io_channel_new_file(fname, "r", NULL);
 	g_free(fname);
 
-	if (f == -1) {
+	if (handle == NULL) {
 		/* file not found */
 		printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
 			  "%s", g_strerror(errno));
 		return;
 	}
 
-        lseek(f, fpos, SEEK_SET);
-	do {
-		recvlen = read(f, tmpbuf, sizeof(tmpbuf));
+	g_io_channel_set_encoding(handle, NULL, NULL);
+	g_io_channel_seek_position(handle, fpos, G_SEEK_SET, NULL);
+	buf = g_string_sized_new(512);
+	while (g_io_channel_read_line_string(handle, buf, &tpos, NULL) == G_IO_STATUS_NORMAL) {
+		buf->str[tpos] = '\0';
+		printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP |
+			  MSGLEVEL_NEVER, "%s", buf->str);
+	}
+	g_string_free(buf, TRUE);
 
-		ret = line_split(tmpbuf, recvlen, &str, &buffer);
-		if (ret > 0) {
-			printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP |
-				  MSGLEVEL_NEVER, "%s", str);
-		}
-	} while (ret > 0);
-	line_split_free(buffer);
-
-	close(f);
+	g_io_channel_unref(handle);
 }
 
 /* SYNTAX: BEEP */
@@ -171,34 +169,10 @@ static void cmd_nick(const char *data, SERVER_REC *server)
 	signal_stop();
 }
 
-static void cmd_join(const char *data, SERVER_REC *server)
-{
-	GHashTable *optlist;
-	char *channels;
-	void *free_arg;
-
-	g_return_if_fail(data != NULL);
-
-	if (!cmd_get_params(data, &free_arg, 1 | PARAM_FLAG_OPTIONS |
-			    PARAM_FLAG_UNKNOWN_OPTIONS | PARAM_FLAG_GETREST,
-			    "join", &optlist, &channels))
-		return;
-
-	server = cmd_options_get_server("join", optlist, server);
-	if (g_hash_table_lookup(optlist, "invite") &&
-	    server != NULL && server->last_invite == NULL) {
-                /* ..all this trouble just to print this error message */
-		printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE, TXT_NOT_INVITED);
-		signal_stop();
-	}
-
-	cmd_params_free(free_arg);
-}
-
 /* SYNTAX: UPTIME */
 static void cmd_uptime(char *data)
 {
-	time_t uptime;
+	long uptime;
 
 	g_return_if_fail(data != NULL);
 
@@ -321,7 +295,7 @@ static void event_list_subcommands(const char *command)
 		if (g_strncasecmp(rec->cmd, command, len) == 0 &&
 		    rec->cmd[len] == ' ' &&
 		    strchr(rec->cmd+len+1, ' ') == NULL) {
-                        g_string_sprintfa(str, "%s ", rec->cmd+len+1);
+                        g_string_append_printf(str, "%s ", rec->cmd+len+1);
 		}
 	}
 
@@ -346,7 +320,6 @@ void fe_core_commands_init(void)
 	command_bind("beep", NULL, (SIGNAL_FUNC) cmd_beep);
 	command_bind("uptime", NULL, (SIGNAL_FUNC) cmd_uptime);
 	command_bind_first("nick", NULL, (SIGNAL_FUNC) cmd_nick);
-	command_bind_first("join", NULL, (SIGNAL_FUNC) cmd_join);
 
 	signal_add("send command", (SIGNAL_FUNC) event_command);
 	signal_add_last("send command", (SIGNAL_FUNC) event_command_last);
@@ -365,7 +338,6 @@ void fe_core_commands_deinit(void)
 	command_unbind("beep", (SIGNAL_FUNC) cmd_beep);
 	command_unbind("uptime", (SIGNAL_FUNC) cmd_uptime);
 	command_unbind("nick", (SIGNAL_FUNC) cmd_nick);
-	command_unbind("join", (SIGNAL_FUNC) cmd_join);
 
 	signal_remove("send command", (SIGNAL_FUNC) event_command);
 	signal_remove("send command", (SIGNAL_FUNC) event_command_last);

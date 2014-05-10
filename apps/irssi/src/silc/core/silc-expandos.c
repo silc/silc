@@ -124,7 +124,7 @@ static char *expando_cumode_space(SERVER_REC *server, void *item,
 static char *expando_silc_version(SERVER_REC *server, void *item,
                                  int *free_ret)
 {
-  return VERSION;
+  return SILC_VERSION_STRING;
 }
 
 void silc_expandos_init(void)

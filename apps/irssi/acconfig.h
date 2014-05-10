@@ -1,16 +1,11 @@
-/* paths */
-#undef SYSCONFDIR
-#undef HELPDIR
-#undef PLUGINSDIR
-
 /* misc.. */
 #undef HAVE_IPV6
-#undef HAVE_POPT_H
 #undef HAVE_SOCKS_H
-#undef HAVE_PL_PERL
 #undef HAVE_STATIC_PERL
 #undef HAVE_GMODULE
-#undef WANT_BIG5
+#undef HAVE_GC_H
+#undef HAVE_GC_GC_H
+#undef USE_GC
 
 /* macros/curses checks */
 #undef HAS_CURSES
@@ -27,18 +22,8 @@
 #undef HAVE_CURSES_RESIZETERM
 #undef HAVE_CURSES_WRESIZE
 
-/* nls */
-#undef ENABLE_NLS
-#undef HAVE_CATGETS
-#undef HAVE_GETTEXT
-#undef HAVE_LC_MESSAGES
-#undef HAVE_STPCPY
-
 /* terminfo/termcap */
 #undef HAVE_TERMINFO
-
-/* If set to 64, enables 64bit off_t for some systems (eg. Linux, Solaris) */
-#undef _FILE_OFFSET_BITS
 
 /* What type should be used for uoff_t */
 #undef UOFF_T_INT
@@ -47,4 +32,3 @@
 
 /* printf()-format for uoff_t, eg. "u" or "lu" or "llu" */
 #undef PRIuUOFF_T
-

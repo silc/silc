@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -25,28 +25,14 @@
 #include "lib-config/iconfig.h"
 #include "misc.h"
 
-static gboolean recode_get_charset(const char **charset)
-{
-	*charset = settings_get_str("term_charset");
-	if (**charset)
-		/* we use the same test as in src/fe-text/term.c:123 */
-		return (g_strcasecmp(*charset, "utf-8") == 0);
-
-#ifdef HAVE_GLIB2
-	return g_get_charset(charset);
-#else
-	return FALSE;
-#endif
-}
+static char *translit_charset;
+static gboolean term_is_utf8;
 
 gboolean is_utf8(void)
 {
-	const char *charset;
-
-	return recode_get_charset(&charset);
+	return term_is_utf8;
 }
 
-#ifdef HAVE_GLIB2
 static gboolean is_translit(const char *charset)
 {
 	char *pos;
@@ -54,15 +40,11 @@ static gboolean is_translit(const char *charset)
 	pos = stristr(charset, "//translit");
 	return (pos != NULL);
 }
-#endif
 
 gboolean is_valid_charset(const char *charset)
 {
-#ifdef HAVE_GLIB2
-	const char *from="UTF-8";
-	const char *str="irssi";
-	char *recoded, *to = NULL;
-	gboolean valid;
+	GIConv cd;
+	char *to = NULL;
 
 	if (!charset || *charset == '\0')
 		return FALSE;
@@ -70,28 +52,48 @@ gboolean is_valid_charset(const char *charset)
 	if (settings_get_bool("recode_transliterate") && !is_translit(charset))
 		charset = to = g_strconcat(charset, "//TRANSLIT", NULL);
 
-	recoded = g_convert(str, strlen(str), charset, from, NULL, NULL, NULL);
-	valid = (recoded != NULL);
-	g_free(recoded);
+	cd = g_iconv_open(charset, "UTF-8");
 	g_free(to);
-	return valid;
-#else
-	if (!charset || *charset =='\0')
-		return FALSE;
-	return TRUE;
-#endif
+	if (cd != (GIConv)-1) {
+		g_iconv_close(cd);
+		return TRUE;
+	}
+	return FALSE;
+}
+
+static char *find_conversion(const SERVER_REC *server, const char *target)
+{
+	char *conv = NULL;
+
+	if (server != NULL && target != NULL) {
+		char *tagtarget = g_strdup_printf("%s/%s", server->tag, target);
+		conv = iconfig_get_str("conversions", tagtarget, NULL);
+		g_free(tagtarget);
+	}
+	if (conv == NULL && target != NULL)
+		conv = iconfig_get_str("conversions", target, NULL);
+	if (conv == NULL && server != NULL)
+		conv = iconfig_get_str("conversions", server->tag, NULL);
+	return conv;
+}
+
+static int str_is_ascii(const char *str)
+{
+	int i;
+
+	for (i = 0; str[i] != '\0'; i++)
+		if (str[i] & 0x80)
+			return 0;
+	return 1;
 }
 
 char *recode_in(const SERVER_REC *server, const char *str, const char *target)
 {
-#ifdef HAVE_GLIB2
 	const char *from = NULL;
-	const char *to = NULL;
-	char *translit_to = NULL;
+	const char *to = translit_charset;
 	char *recoded = NULL;
-	gboolean term_is_utf8, str_is_utf8, translit, recode, autodetect;
+	gboolean str_is_utf8, recode, autodetect;
 	int len;
-	int i;
 
 	if (!str)
 		return NULL;
@@ -104,50 +106,34 @@ char *recode_in(const SERVER_REC *server, const char *str, const char *target)
 
 	/* Only validate for UTF-8 if an 8-bit encoding. */
 	str_is_utf8 = 0;
-	for (i = 0; i < len; ++i) {
-		if (str[i] & 0x80) {
-			str_is_utf8 = g_utf8_validate(str, len, NULL);
-			break;
-		}
-	}
-	translit = settings_get_bool("recode_transliterate");
+	if (!str_is_ascii(str))
+		str_is_utf8 = g_utf8_validate(str, len, NULL);
+	else if (!strchr(str, '\e'))
+		str_is_utf8 = 1;
 	autodetect = settings_get_bool("recode_autodetect_utf8");
-	term_is_utf8 = recode_get_charset(&to);
 
 	if (autodetect && str_is_utf8)
 		if (term_is_utf8)
 			return g_strdup(str);
 		else
 			from = "UTF-8";
-			
-	else {
-		if (server != NULL && server->tag != NULL && target != NULL) {
-			char *tagtarget = g_strdup_printf("%s/%s", server->tag, target);
-			from = iconfig_get_str("conversions", tagtarget, NULL);
-			g_free(tagtarget);
-		}
+	else
+		from = find_conversion(server, target);
 
-		if (target != NULL && from == NULL)
-			from = iconfig_get_str("conversions", target, NULL);
-
-		if (from == NULL && server != NULL)
-			from = iconfig_get_str("conversions", server->tag, NULL);
-
-	}
-
-	if (translit && !is_translit(to))
-		to = translit_to = g_strconcat(to, "//TRANSLIT", NULL);
-		
 	if (from)
 		recoded = g_convert_with_fallback(str, len, to, from, NULL, NULL, NULL, NULL);
 
 	if (!recoded) {
-		if (term_is_utf8) {
-			if (!str_is_utf8)
+		if (str_is_utf8)
+			if (term_is_utf8)
+				return g_strdup(str);
+			else
+				from = "UTF-8";
+		else
+			if (term_is_utf8)
 				from = settings_get_str("recode_fallback");
-
-		} else if (str_is_utf8)
-			from = "UTF-8";
+			else
+				from = NULL;
 
 		if (from)
 			recoded = g_convert_with_fallback(str, len, to, from, NULL, NULL, NULL, NULL);
@@ -155,21 +141,16 @@ char *recode_in(const SERVER_REC *server, const char *str, const char *target)
 		if (!recoded)
 			recoded = g_strdup(str);
 	}
-	g_free(translit_to);
 	return recoded;
-#else
-	return g_strdup(str);
-#endif
 }
 
 char *recode_out(const SERVER_REC *server, const char *str, const char *target)
 {
-#ifdef HAVE_GLIB2
 	char *recoded = NULL;
-	const char *from = NULL;
+	const char *from = translit_charset;
 	const char *to = NULL;
 	char *translit_to = NULL;
-	gboolean translit, term_is_utf8, recode;
+	gboolean translit, recode;
 	int len;
 
 	if (!str)
@@ -183,16 +164,8 @@ char *recode_out(const SERVER_REC *server, const char *str, const char *target)
 
 	translit = settings_get_bool("recode_transliterate");
 
-	if (server != NULL && server->tag != NULL && target != NULL) {
-		char *tagtarget = g_strdup_printf("%s/%s", server->tag, target);
-		to = iconfig_get_str("conversions", tagtarget, NULL);
-		g_free(tagtarget);
-	}
-	if (to == NULL || *to == '\0')
-		to = iconfig_get_str("conversions", target, NULL);
-	if ((to == NULL || *to == '\0') && server != NULL)
-		to = iconfig_get_str("conversions", server->tag, NULL);
-	if (to == NULL || *to == '\0')
+	to = find_conversion(server, target);
+	if (to == NULL)
 		/* default outgoing charset if set */
 		to = settings_get_str("recode_out_default_charset");
 
@@ -200,7 +173,6 @@ char *recode_out(const SERVER_REC *server, const char *str, const char *target)
 		if (translit && !is_translit(to))
 			to = translit_to = g_strconcat(to ,"//TRANSLIT", NULL);
 
-		term_is_utf8 = recode_get_charset(&from);
 		recoded = g_convert(str, len, to, from, NULL, NULL, NULL);
 	}
 	g_free(translit_to);
@@ -208,9 +180,17 @@ char *recode_out(const SERVER_REC *server, const char *str, const char *target)
 		recoded = g_strdup(str);
 
 	return recoded;
-#else
-	return g_strdup(str);
-#endif
+}
+
+void recode_update_charset(void)
+{
+	const char *charset = settings_get_str("term_charset");
+	term_is_utf8 = !g_ascii_strcasecmp(charset, "UTF-8");
+	g_free(translit_charset);
+	if (settings_get_bool("recode_transliterate") && !is_translit(charset))
+		translit_charset = g_strconcat(charset, "//TRANSLIT", NULL);
+	else
+		translit_charset = g_strdup(charset);
 }
 
 void recode_init(void)
@@ -223,6 +203,6 @@ void recode_init(void)
 }
 
 void recode_deinit(void)
-{	
-
+{
+	g_free(translit_charset);
 }

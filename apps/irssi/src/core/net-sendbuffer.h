@@ -2,14 +2,18 @@
 #define __NET_SENDBUFFER_H
 
 #define DEFAULT_BUFFER_SIZE 8192
+#define MAX_BUFFER_SIZE 1048576
 
 struct _NET_SENDBUF_REC {
         GIOChannel *handle;
+        LINEBUF_REC *readbuffer; /* receive buffer */
 
         int send_tag;
         int bufsize;
         int bufpos;
         char *buffer; /* Buffer is NULL until it's actually needed. */
+        int def_bufsize;
+        unsigned int dead:1;
 };
 
 /* Create new buffer - if `bufsize' is zero or less, DEFAULT_BUFFER_SIZE
@@ -23,13 +27,12 @@ void net_sendbuffer_destroy(NET_SENDBUF_REC *rec, int close);
    occured. */
 int net_sendbuffer_send(NET_SENDBUF_REC *rec, const void *data, int size);
 
+int net_sendbuffer_receive_line(NET_SENDBUF_REC *rec, char **str, int read_socket);
+
 /* Flush the buffer, blocks until finished. */
 void net_sendbuffer_flush(NET_SENDBUF_REC *rec);
 
 /* Returns the socket handle */
 GIOChannel *net_sendbuffer_handle(NET_SENDBUF_REC *rec);
-
-void net_sendbuffer_init(void);
-void net_sendbuffer_deinit(void);
 
 #endif

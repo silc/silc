@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #define NEED_PERL_H
@@ -25,6 +25,7 @@
 #include "perl-core.h"
 #include "perl-common.h"
 #include "perl-sources.h"
+#include "misc.h"
 
 typedef struct {
         PERL_SCRIPT_REC *script;
@@ -123,7 +124,6 @@ int perl_input_add(int source, int condition, SV *func, SV *data, int once)
 {
         PERL_SCRIPT_REC *script;
 	PERL_SOURCE_REC *rec;
-	GIOChannel *channel;
         const char *pkg;
 
         pkg = perl_get_package();
@@ -138,10 +138,8 @@ int perl_input_add(int source, int condition, SV *func, SV *data, int once)
 	rec->func = perl_func_sv_inc(func, pkg);
 	rec->data = SvREFCNT_inc(data);
 
-	channel = g_io_channel_unix_new(source);
-	rec->tag = g_input_add(channel, condition,
+	rec->tag = g_input_add_poll(source, G_PRIORITY_DEFAULT, condition,
 			       (GInputFunction) perl_source_event, rec);
-	g_io_channel_unref(channel);
 
 	perl_sources = g_slist_append(perl_sources, rec);
 	return rec->tag;

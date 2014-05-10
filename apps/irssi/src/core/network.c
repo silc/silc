@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -42,11 +42,18 @@ union sockaddr_union {
 #  define SIZEOF_SOCKADDR(so) (sizeof(so.sin))
 #endif
 
+GIOChannel *g_io_channel_new(int handle)
+{
+	GIOChannel *chan;
 #ifdef WIN32
-#  define g_io_channel_new(handle) g_io_channel_win32_new_stream_socket(handle)
+	chan = g_io_channel_win32_new_socket(handle);
 #else
-#  define g_io_channel_new(handle) g_io_channel_unix_new(handle)
+	chan = g_io_channel_unix_new(handle);
 #endif
+	g_io_channel_set_encoding(chan, NULL, NULL);
+	g_io_channel_set_buffered(chan, FALSE);
+	return chan;
+}
 
 /* Cygwin need this, don't know others.. */
 /*#define BLOCKING_SOCKETS 1*/
@@ -127,11 +134,9 @@ static int sin_get_port(union sockaddr_union *so)
 GIOChannel *net_connect(const char *addr, int port, IPADDR *my_ip)
 {
 	IPADDR ip4, ip6, *ip;
-        int family;
 
 	g_return_val_if_fail(addr != NULL, NULL);
 
-        family = my_ip == NULL ? 0 : my_ip->family;
 	if (net_gethostbyname(addr, &ip4, &ip6) == -1)
 		return NULL;
 
@@ -182,10 +187,8 @@ GIOChannel *net_connect_ip(IPADDR *ip, int port, IPADDR *my_ip)
 #ifndef WIN32
 	fcntl(handle, F_SETFL, O_NONBLOCK);
 #endif
-	setsockopt(handle, SOL_SOCKET, SO_REUSEADDR,
-		   (char *) &opt, sizeof(opt));
-	setsockopt(handle, SOL_SOCKET, SO_KEEPALIVE,
-		   (char *) &opt, sizeof(opt));
+	setsockopt(handle, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	setsockopt(handle, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt));
 
 	/* set our own address */
 	if (my_ip != NULL) {
@@ -293,10 +296,8 @@ GIOChannel *net_listen(IPADDR *my_ip, int *port)
 #ifndef WIN32
 	fcntl(handle, F_SETFL, O_NONBLOCK);
 #endif
-	setsockopt(handle, SOL_SOCKET, SO_REUSEADDR,
-		   (char *) &opt, sizeof(opt));
-	setsockopt(handle, SOL_SOCKET, SO_KEEPALIVE,
-		   (char *) &opt, sizeof(opt));
+	setsockopt(handle, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	setsockopt(handle, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt));
 
 	/* specify the address/port we want to listen in */
 	ret = bind(handle, &so.sa, SIZEOF_SOCKADDR(so));
@@ -347,36 +348,42 @@ GIOChannel *net_accept(GIOChannel *handle, IPADDR *addr, int *port)
 int net_receive(GIOChannel *handle, char *buf, int len)
 {
         gsize ret;
-	int err;
+	GIOStatus status;
+	GError *err = NULL;
 
 	g_return_val_if_fail(handle != NULL, -1);
 	g_return_val_if_fail(buf != NULL, -1);
 
-	err = g_io_channel_read(handle, buf, len, &ret);
-	if (err == 0 && ret == 0)
+	status = g_io_channel_read_chars(handle, buf, len, &ret, &err);
+	if (err != NULL) {
+	        g_warning(err->message);
+	        g_error_free(err);
+	}
+	if (status == G_IO_STATUS_ERROR || status == G_IO_STATUS_EOF)
 		return -1; /* disconnected */
 
-	if (err == G_IO_ERROR_AGAIN || (err != 0 && errno == EINTR))
-		return 0; /* no bytes received */
-
-	return err == 0 ? (int)ret : -1;
+	return ret;
 }
 
 /* Transmit data, return number of bytes sent, -1 = error */
 int net_transmit(GIOChannel *handle, const char *data, int len)
 {
         gsize ret;
-	int err;
+	GIOStatus status;
+	GError *err = NULL;
 
 	g_return_val_if_fail(handle != NULL, -1);
 	g_return_val_if_fail(data != NULL, -1);
 
-	err = g_io_channel_write(handle, (char *) data, len, &ret);
-	if (err == G_IO_ERROR_AGAIN ||
-	    (err != 0 && (errno == EINTR || errno == EPIPE)))
-		return 0;
+	status = g_io_channel_write_chars(handle, (char *) data, len, &ret, &err);
+	if (err != NULL) {
+	        g_warning(err->message);
+	        g_error_free(err);
+	}
+	if (status == G_IO_STATUS_ERROR)
+		return -1;
 
-	return err == 0 ? (int)ret : -1;
+	return ret;
 }
 
 /* Get socket address/port */
@@ -589,12 +596,6 @@ const char *net_gethosterror(int error)
 {
 #ifdef HAVE_IPV6
 	g_return_val_if_fail(error != 0, NULL);
-
-	if (error == 1) {
-		/* getnameinfo() failed ..
-		   FIXME: does strerror return the right error message? */
-		return g_strerror(errno);
-	}
 
 	return gai_strerror(error);
 #else

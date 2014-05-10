@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -118,12 +118,11 @@ static void sig_connected(SERVER_REC *server)
 
 	g_return_if_fail(IS_SERVER(server));
 
-	if (server->connrec->chatnet == NULL || server->session_reconnect ||
-	    server->connrec->no_autojoin_channels)
+	if (server->connrec->chatnet == NULL || server->session_reconnect)
 		return;
 
 	rec = chatnet_find(server->connrec->chatnet);
-	if (rec != NULL && rec->autosendcmd)
+	if (!server->connrec->no_autosendcmd && rec != NULL && rec->autosendcmd)
 		eval_special_string(rec->autosendcmd, "", server, NULL);
 }
 

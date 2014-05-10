@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -325,7 +325,7 @@ void command_runsub(const char *cmd, const char *data,
 
 	subcmd = g_strconcat("command ", newcmd, NULL);
 
-	g_strdown(subcmd);
+	ascii_strdown(subcmd);
 	if (!signal_emit(subcmd, 3, args, server, item)) {
 		defcmd = g_strdup_printf("default command %s", cmd);
 		if (!signal_emit(defcmd, 3, data, server, item)) {
@@ -403,7 +403,7 @@ static void command_calc_options(COMMAND_REC *rec, const char *options)
 
 		oldopt = optlist_find(list, name);
 		if (oldopt != NULL) {
-                        /* already specified - overwrite old defination */
+                        /* already specified - overwrite old definition */
 			g_free(oldopt->data);
 			oldopt->data = g_strdup(*tmp);
 		} else {
@@ -561,7 +561,7 @@ static int get_cmd_options(char **data, int ignore_unknown,
 	char *option, *arg, **optlist;
 	int pos;
 
-	/* get option definations */
+	/* get option definitions */
 	rec = cmd == NULL ? NULL : command_find(cmd);
 	optlist = rec == NULL ? NULL : rec->options;
 
@@ -637,7 +637,7 @@ static int get_cmd_options(char **data, int ignore_unknown,
 		if (option == NULL)
 			break;
 
-		if (*optlist[pos] == '@' && !i_isdigit(**data))
+		if (*optlist[pos] == '@' && !is_numeric(*data, ' '))
 			break; /* expected a numeric argument */
 
 		/* save the argument */
@@ -891,7 +891,7 @@ static void parse_command(const char *command, int expand_aliases,
 	}
 
 	cmd = g_strconcat("command ", newcmd, NULL);
-	g_strdown(cmd);
+	ascii_strdown(cmd);
 
 	oldcmd = current_command;
 	current_command = cmd+8;
@@ -931,7 +931,7 @@ static void event_command(const char *line, SERVER_REC *server, void *item)
 		return;
 	}
 
-	/* same cmdchar twice ignores aliases ignores aliases */
+	/* same cmdchar twice ignores aliases */
 	line++;
 	if (*line == *cmdchar) {
 		line++;
@@ -950,10 +950,10 @@ static int eval_recursion_depth=0;
 static void cmd_eval(const char *data, SERVER_REC *server, void *item)
 {
 	g_return_if_fail(data != NULL);
-	if (eval_recursion_depth > 100) 
+	if (eval_recursion_depth > 100)
 		cmd_return_error(CMDERR_EVAL_MAX_RECURSE);
 
- 
+
 	eval_recursion_depth++;
 	eval_special_string(data, "", server, item);
 	eval_recursion_depth--;

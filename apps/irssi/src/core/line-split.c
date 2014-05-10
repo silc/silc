@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -43,8 +43,7 @@ static void linebuf_append(LINEBUF_REC *rec, const char *data, int len)
 {
 	if (rec->len+len > rec->alloc) {
 		rec->alloc = nearest_power(rec->len+len);;
-		rec->str = rec->str == NULL ? g_malloc(rec->alloc) :
-			g_realloc(rec->str, rec->alloc);
+		rec->str = g_realloc(rec->str, rec->alloc);
 	}
 
 	memcpy(rec->str + rec->len, data, len);
@@ -53,12 +52,7 @@ static void linebuf_append(LINEBUF_REC *rec, const char *data, int len)
 
 static char *linebuf_find(LINEBUF_REC *rec, char chr)
 {
-        int n;
-
-	for (n = 0; n < rec->len; n++)
-		if (rec->str[n] == chr) return rec->str+n;
-
-	return NULL;
+	return memchr(rec->str, chr, rec->len);
 }
 
 static int remove_newline(LINEBUF_REC *rec)
@@ -114,7 +108,6 @@ int line_split(const char *data, int len, char **output, LINEBUF_REC **buffer)
 			return -1;
 
 		/* no new data got but still something in buffer.. */
-                len = 0;
 		if (linebuf_find(rec, '\n') == NULL) {
 			/* connection closed and last line is missing \n ..
 			   just add it so we can see if it had

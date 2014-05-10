@@ -1,5 +1,3 @@
-LIBTOOL = $(PERL_LIBTOOL)
-
 include $(top_srcdir)/Makefile.defines.in
 
 moduledir = @SILC_IRSSIDIR@
@@ -8,10 +6,9 @@ if SILCPLUGIN
 perl_dirs = silc
 SCRIPTDIR="$(datadir)/irssi/scripts"
 else
-perl_dirs = common ui textui silc
+perl_dirs = common silc ui textui
 SCRIPTDIR="$(datadir)/silc/scripts"
 endif
-
 
 module_LTLIBRARIES = $(perl_module_lib) $(perl_module_fe_lib)
 noinst_LTLIBRARIES = $(perl_static_lib) $(perl_static_fe_lib)
@@ -22,7 +19,8 @@ EXTRA_LTLIBRARIES = \
 libperl_core_la_LDFLAGS = -module -avoid-version -rpath $(moduledir)
 libfe_perl_la_LDFLAGS = -module -avoid-version -rpath $(moduledir)
 
-perl-core.c: perl-signals-list.h irssi-core.pl.h
+perl-core.lo: irssi-core.pl.h
+perl-signals.lo: perl-signals-list.h
 
 INCLUDES += \
 	-I$(top_srcdir)/src \
@@ -53,17 +51,6 @@ noinst_HEADERS = \
 	perl-common.h \
 	perl-signals.h \
 	perl-sources.h
-
-libperl_core_la_DEPENDENCIES = .libs/libperl_orig.a .libs/DynaLoader.a
-
-.libs/libperl_orig.a:
-	if [ ! -d .libs ]; then mkdir .libs; fi
-	rm -f .libs/libperl_orig.a
-	if [ x$(LIBPERL_A) = x ]; then touch .libs/libperl_orig.a; else $(LN_S) $(LIBPERL_A) .libs/libperl_orig.a; fi
-.libs/DynaLoader.a:
-	if [ ! -d .libs ]; then mkdir .libs; fi
-	rm -f .libs/DynaLoader.a
-	$(LN_S) $(DYNALOADER_A) .libs/DynaLoader.a
 
 libperl_core_la_SOURCES = \
 	$(perl_sources)
@@ -100,6 +87,15 @@ common_sources = \
 	common/typemap \
 	common/module.h
 
+silc_sources = \
+	silc/Silc.xs \
+	silc/Silc.pm \
+	silc/Channel.xs \
+	silc/Server.xs \
+	silc/Query.xs \
+	silc/typemap \
+	silc/module.h
+
 ui_sources = \
 	ui/UI.xs \
 	ui/UI.pm \
@@ -120,24 +116,13 @@ textui_sources = \
 	textui/typemap \
 	textui/module.h
 
-silc_sources = \
-	silc/Silc.xs \
-	silc/Silc.pm \
-	silc/Channel.xs \
-	silc/Server.xs \
-	silc/Query.xs \
-	silc/typemap \
-	silc/module.h
-
 EXTRA_DIST = \
-	libperl_dynaloader.la \
-	libperl_orig.la \
 	get-signals.pl \
 	irssi-core.pl \
 	$(common_sources) \
+	$(silc_sources) \
 	$(ui_sources) \
-	$(textui_sources) \
-	$(silc_sources)
+	$(textui_sources)
 
 all-local:
 	for dir in $(perl_dirs); do \

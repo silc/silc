@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #define	G_LOG_DOMAIN "TextBuffer"
@@ -32,14 +32,14 @@
 
 #define TEXT_CHUNK_USABLE_SIZE (LINE_TEXT_CHUNK_SIZE-2-(int)sizeof(char*))
 
-static GMemChunk *buffer_chunk, *line_chunk, *text_chunk;
-
 TEXT_BUFFER_REC *textbuffer_create(void)
 {
 	TEXT_BUFFER_REC *buffer;
 
-	buffer = g_mem_chunk_alloc0(buffer_chunk);
+	buffer = g_slice_new0(TEXT_BUFFER_REC);
 	buffer->last_eol = TRUE;
+	buffer->last_fg = LINE_COLOR_DEFAULT;
+	buffer->last_bg = LINE_COLOR_DEFAULT | LINE_COLOR_BG;
         return buffer;
 }
 
@@ -48,7 +48,7 @@ void textbuffer_destroy(TEXT_BUFFER_REC *buffer)
 	g_return_if_fail(buffer != NULL);
 
 	textbuffer_remove_all_lines(buffer);
-        g_mem_chunk_free(buffer_chunk, buffer);
+        g_slice_free(TEXT_BUFFER_REC, buffer);
 }
 
 static TEXT_CHUNK_REC *text_chunk_find(TEXT_BUFFER_REC *buffer,
@@ -77,7 +77,7 @@ static TEXT_CHUNK_REC *text_chunk_create(TEXT_BUFFER_REC *buffer)
 	TEXT_CHUNK_REC *rec;
 	unsigned char *buf, *ptr, **pptr;
 
-	rec = g_mem_chunk_alloc(text_chunk);
+	rec = g_slice_new(TEXT_CHUNK_REC);
 	rec->pos = 0;
 	rec->refcount = 0;
 
@@ -106,7 +106,7 @@ static TEXT_CHUNK_REC *text_chunk_create(TEXT_BUFFER_REC *buffer)
 static void text_chunk_destroy(TEXT_BUFFER_REC *buffer, TEXT_CHUNK_REC *chunk)
 {
 	buffer->text_chunks = g_slist_remove(buffer->text_chunks, chunk);
-	g_mem_chunk_free(text_chunk, chunk);
+	g_slice_free(TEXT_CHUNK_REC, chunk);
 }
 
 static void text_chunk_line_free(TEXT_BUFFER_REC *buffer, LINE_REC *line)
@@ -138,8 +138,6 @@ static void text_chunk_line_free(TEXT_BUFFER_REC *buffer, LINE_REC *line)
 				break;
 
 			text = tmp-1;
-		} else if (cmd == LINE_CMD_INDENT_FUNC) {
-			text += sizeof(int (*) ());
 		}
 	}
 }
@@ -180,8 +178,7 @@ static LINE_REC *textbuffer_line_create(TEXT_BUFFER_REC *buffer)
 	if (buffer->cur_text == NULL)
                 text_chunk_create(buffer);
 
-	rec = g_mem_chunk_alloc(line_chunk);
-        rec->refcount = 1;
+	rec = g_slice_new(LINE_REC);
 	rec->text = buffer->cur_text->buffer + buffer->cur_text->pos;
 
 	buffer->cur_text->refcount++;
@@ -214,46 +211,9 @@ static LINE_REC *textbuffer_line_insert(TEXT_BUFFER_REC *buffer,
         return line;
 }
 
-void textbuffer_line_ref(LINE_REC *line)
-{
-	g_return_if_fail(line != NULL);
-
-	if (++line->refcount == 255)
-                g_error("line reference counter wrapped - shouldn't happen");
-}
-
-void textbuffer_line_unref(TEXT_BUFFER_REC *buffer, LINE_REC *line)
-{
-	g_return_if_fail(buffer != NULL);
-	g_return_if_fail(line != NULL);
-
-	if (--line->refcount == 0) {
-		text_chunk_line_free(buffer, line);
-		g_mem_chunk_free(line_chunk, line);
-	}
-}
-
-void textbuffer_line_unref_list(TEXT_BUFFER_REC *buffer, GList *list)
-{
-	g_return_if_fail(buffer != NULL);
-
-	while (list != NULL) {
-                if (list->data != NULL)
-			textbuffer_line_unref(buffer, list->data);
-                list = list->next;
-	}
-}
-
 LINE_REC *textbuffer_line_last(TEXT_BUFFER_REC *buffer)
 {
-	LINE_REC *line;
-
-	line = buffer->cur_line;
-	if (line != NULL) {
-		while (line->next != NULL)
-			line = line->next;
-	}
-        return line;
+	return buffer->cur_line;
 }
 
 int textbuffer_line_exists_after(LINE_REC *line, LINE_REC *search)
@@ -264,6 +224,55 @@ int textbuffer_line_exists_after(LINE_REC *line, LINE_REC *search)
                 line = line->next;
 	}
         return FALSE;
+}
+
+void textbuffer_line_add_colors(TEXT_BUFFER_REC *buffer, LINE_REC **line,
+				int fg, int bg, int flags)
+{
+	unsigned char data[20];
+	int pos;
+
+        /* get the fg & bg command chars */
+	fg = fg < 0 ? LINE_COLOR_DEFAULT : fg & 0x0f;
+	bg = LINE_COLOR_BG | (bg < 0 ? LINE_COLOR_DEFAULT : bg & 0x0f);
+
+	pos = 0;
+	if (fg != buffer->last_fg) {
+		buffer->last_fg = fg;
+		data[pos++] = 0;
+		data[pos++] = fg == 0 ? LINE_CMD_COLOR0 : fg;
+	}
+	if (bg != buffer->last_bg) {
+                buffer->last_bg = bg;
+		data[pos++] = 0;
+		data[pos++] = bg;
+	}
+
+	if ((flags & GUI_PRINT_FLAG_UNDERLINE) != (buffer->last_flags & GUI_PRINT_FLAG_UNDERLINE)) {
+		data[pos++] = 0;
+		data[pos++] = LINE_CMD_UNDERLINE;
+	}
+	if ((flags & GUI_PRINT_FLAG_REVERSE) != (buffer->last_flags & GUI_PRINT_FLAG_REVERSE)) {
+		data[pos++] = 0;
+		data[pos++] = LINE_CMD_REVERSE;
+	}
+	if ((flags & GUI_PRINT_FLAG_BLINK) != (buffer->last_flags & GUI_PRINT_FLAG_BLINK)) {
+		data[pos++] = 0;
+		data[pos++] = LINE_CMD_BLINK;
+	}
+	if ((flags & GUI_PRINT_FLAG_BOLD) != (buffer->last_flags & GUI_PRINT_FLAG_BOLD)) {
+		data[pos++] = 0;
+		data[pos++] = LINE_CMD_BOLD;
+	}
+	if (flags & GUI_PRINT_FLAG_INDENT) {
+		data[pos++] = 0;
+		data[pos++] = LINE_CMD_INDENT;
+	}
+
+        if (pos > 0)
+		*line = textbuffer_insert(buffer, *line, data, pos, NULL);
+
+	buffer->last_flags = flags;
 }
 
 LINE_REC *textbuffer_append(TEXT_BUFFER_REC *buffer,
@@ -296,6 +305,12 @@ LINE_REC *textbuffer_insert(TEXT_BUFFER_REC *buffer, LINE_REC *insert_after,
 	buffer->last_eol = len >= 2 &&
 		data[len-2] == 0 && data[len-1] == LINE_CMD_EOL;
 
+	if (buffer->last_eol) {
+		buffer->last_fg = LINE_COLOR_DEFAULT;
+		buffer->last_bg = LINE_COLOR_DEFAULT | LINE_COLOR_BG;
+		buffer->last_flags = 0;
+	}
+
         return line;
 }
 
@@ -312,17 +327,17 @@ void textbuffer_remove(TEXT_BUFFER_REC *buffer, LINE_REC *line)
 		line->next->prev = line->prev;
 
 	if (buffer->cur_line == line) {
-		buffer->cur_line = line->next != NULL ?
-			line->next : line->prev;
+		buffer->cur_line = line->prev;
 	}
 
         line->prev = line->next = NULL;
 
 	buffer->lines_count--;
-        textbuffer_line_unref(buffer, line);
+        text_chunk_line_free(buffer, line);
+	g_slice_free(LINE_REC, line);
 }
 
-/* Removes all lines from buffer, ignoring reference counters */
+/* Removes all lines from buffer */
 void textbuffer_remove_all_lines(TEXT_BUFFER_REC *buffer)
 {
 	GSList *tmp;
@@ -331,13 +346,13 @@ void textbuffer_remove_all_lines(TEXT_BUFFER_REC *buffer)
 	g_return_if_fail(buffer != NULL);
 
 	for (tmp = buffer->text_chunks; tmp != NULL; tmp = tmp->next)
-                g_mem_chunk_free(text_chunk, tmp->data);
+                g_slice_free(TEXT_CHUNK_REC, tmp->data);
 	g_slist_free(buffer->text_chunks);
 	buffer->text_chunks = NULL;
 
 	while (buffer->first_line != NULL) {
 		line = buffer->first_line->next;
-		g_mem_chunk_free(line_chunk, buffer->first_line);
+		g_slice_free(LINE_REC, buffer->first_line);
                 buffer->first_line = line;
 	}
 	buffer->lines_count = 0;
@@ -348,54 +363,33 @@ void textbuffer_remove_all_lines(TEXT_BUFFER_REC *buffer)
 	buffer->last_eol = TRUE;
 }
 
-static void set_color(GString *str, int cmd, int *last_fg, int *last_bg)
+static void set_color(GString *str, int cmd)
 {
-	if (cmd & LINE_COLOR_DEFAULT) {
-		g_string_sprintfa(str, "\004%c", FORMAT_STYLE_DEFAULTS);
+	int color = -1;
 
-		/* need to reset the fg/bg color */
-		if (cmd & LINE_COLOR_BG) {
-                        *last_bg = -1;
-			if (*last_fg != -1) {
-				g_string_sprintfa(str, "\004%c%c",
-						  *last_fg,
-						  FORMAT_COLOR_NOCHANGE);
-			}
-		} else {
-                        *last_fg = -1;
-			if (*last_bg != -1) {
-				g_string_sprintfa(str, "\004%c%c",
-						  FORMAT_COLOR_NOCHANGE,
-						  *last_bg);
-			}
-		}
-                return;
-	}
+	if (!(cmd & LINE_COLOR_DEFAULT))
+		color = (cmd & 0x0f)+'0';
 
 	if ((cmd & LINE_COLOR_BG) == 0) {
                 /* change foreground color */
-                *last_fg = (cmd & 0x0f)+'0';
-		g_string_sprintfa(str, "\004%c%c", *last_fg,
-				  FORMAT_COLOR_NOCHANGE);
+		g_string_append_printf(str, "\004%c%c",
+				  color, FORMAT_COLOR_NOCHANGE);
 	} else {
 		/* change background color */
-                *last_bg = (cmd & 0x0f)+'0';
-		g_string_sprintfa(str, "\004%c%c",
-				  FORMAT_COLOR_NOCHANGE, *last_bg);
+		g_string_append_printf(str, "\004%c%c",
+				  FORMAT_COLOR_NOCHANGE, color);
 	}
 }
 
 void textbuffer_line2text(LINE_REC *line, int coloring, GString *str)
 {
         unsigned char cmd, *ptr, *tmp;
-        int last_fg, last_bg;
 
 	g_return_if_fail(line != NULL);
 	g_return_if_fail(str != NULL);
 
         g_string_truncate(str, 0);
 
-        last_fg = last_bg = -1;
 	for (ptr = line->text;;) {
 		if (*ptr != 0) {
 			g_string_append_c(str, (char) *ptr);
@@ -407,7 +401,7 @@ void textbuffer_line2text(LINE_REC *line, int coloring, GString *str)
                 cmd = *ptr;
 		ptr++;
 
-		if (cmd == LINE_CMD_EOL || cmd == LINE_CMD_FORMAT) {
+		if (cmd == LINE_CMD_EOL) {
                         /* end of line */
 			break;
 		}
@@ -426,7 +420,7 @@ void textbuffer_line2text(LINE_REC *line, int coloring, GString *str)
 
 		if ((cmd & 0x80) == 0) {
 			/* set color */
-                        set_color(str, cmd, &last_fg, &last_bg);
+                        set_color(str, cmd);
 		} else switch (cmd) {
 		case LINE_CMD_UNDERLINE:
 			g_string_append_c(str, 31);
@@ -434,14 +428,21 @@ void textbuffer_line2text(LINE_REC *line, int coloring, GString *str)
 		case LINE_CMD_REVERSE:
 			g_string_append_c(str, 22);
 			break;
+		case LINE_CMD_BLINK:
+			g_string_append_printf(str, "\004%c",
+					  FORMAT_STYLE_BLINK);
+			break;
+		case LINE_CMD_BOLD:
+			g_string_append_printf(str, "\004%c",
+					  FORMAT_STYLE_BOLD);
+			break;
 		case LINE_CMD_COLOR0:
-			g_string_sprintfa(str, "\004%c%c",
+			g_string_append_printf(str, "\004%c%c",
 					  '0', FORMAT_COLOR_NOCHANGE);
 			break;
 		case LINE_CMD_INDENT:
-			break;
-		case LINE_CMD_INDENT_FUNC:
-                        ptr += sizeof(void *);
+			g_string_append_printf(str, "\004%c",
+					  FORMAT_STYLE_INDENT);
 			break;
 		}
 	}
@@ -459,6 +460,7 @@ GList *textbuffer_find_text(TEXT_BUFFER_REC *buffer, LINE_REC *startline,
 	GList *matches;
 	GString *str;
         int i, match_after, line_matched;
+	char * (*match_func)(const char *, const char *);
 
 	g_return_val_if_fail(buffer != NULL, NULL);
 	g_return_val_if_fail(text != NULL, NULL);
@@ -479,27 +481,26 @@ GList *textbuffer_find_text(TEXT_BUFFER_REC *buffer, LINE_REC *startline,
 
 	line = startline != NULL ? startline : buffer->first_line;
 
+	if (fullword)
+		match_func = case_sensitive ? strstr_full : stristr_full;
+	else
+		match_func = case_sensitive ? strstr : stristr;
+
 	for (; line != NULL; line = line->next) {
-		if ((line->info.level & level) == 0 ||
-		    (line->info.level & nolevel) != 0)
-                        continue;
+		line_matched = (line->info.level & level) != 0 &&
+			(line->info.level & nolevel) == 0;
 
-		if (*text == '\0') {
-                        /* no search word, everything matches */
-                        textbuffer_line_ref(line);
-			matches = g_list_append(matches, line);
-			continue;
-		}
+		if (*text != '\0') {
+			textbuffer_line2text(line, FALSE, str);
 
-                textbuffer_line2text(line, FALSE, str);
-
-		line_matched =
+			if (line_matched)
+			line_matched =
 #ifdef HAVE_REGEX_H
 			regexp ? regexec(&preg, str->str, 0, NULL, 0) == 0 :
 #endif
-			fullword ? strstr_full_case(str->str, text, !case_sensitive) != NULL :
-			case_sensitive ? strstr(str->str, text) != NULL :
-			stristr(str->str, text) != NULL;
+			match_func(str->str, text) != NULL;
+		}
+
 		if (line_matched) {
                         /* add the -before lines */
 			pre_line = line;
@@ -510,17 +511,14 @@ GList *textbuffer_find_text(TEXT_BUFFER_REC *buffer, LINE_REC *startline,
                                 pre_line = pre_line->prev;
 			}
 
-			for (; pre_line != line; pre_line = pre_line->next) {
-				textbuffer_line_ref(pre_line);
+			for (; pre_line != line; pre_line = pre_line->next)
 				matches = g_list_append(matches, pre_line);
-			}
 
 			match_after = after;
 		}
 
 		if (line_matched || match_after > 0) {
 			/* matched */
-                        textbuffer_line_ref(line);
 			matches = g_list_append(matches, line);
 
 			if ((!line_matched && --match_after == 0) ||
@@ -537,18 +535,8 @@ GList *textbuffer_find_text(TEXT_BUFFER_REC *buffer, LINE_REC *startline,
 
 void textbuffer_init(void)
 {
-	buffer_chunk = g_mem_chunk_new("text buffer chunk",
-				       sizeof(TEXT_BUFFER_REC),
-				       sizeof(TEXT_BUFFER_REC)*32, G_ALLOC_AND_FREE);
-	line_chunk = g_mem_chunk_new("line chunk", sizeof(LINE_REC),
-				     sizeof(LINE_REC)*1024, G_ALLOC_AND_FREE);
-	text_chunk = g_mem_chunk_new("text chunk", sizeof(TEXT_CHUNK_REC),
-				     sizeof(TEXT_CHUNK_REC)*32, G_ALLOC_AND_FREE);
 }
 
 void textbuffer_deinit(void)
 {
-	g_mem_chunk_destroy(buffer_chunk);
-	g_mem_chunk_destroy(line_chunk);
-	g_mem_chunk_destroy(text_chunk);
 }

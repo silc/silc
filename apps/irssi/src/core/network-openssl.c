@@ -13,22 +13,29 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
 #include "network.h"
 #include "misc.h"
+#include "servers.h"
 
 #ifdef HAVE_OPENSSL
 
 #include <openssl/crypto.h>
 #include <openssl/x509.h>
+#include <openssl/x509v3.h>
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+
+#ifdef HAVE_DANE
+#include <validator/validator.h>
+#include <validator/val_dane.h>
+#endif
 
 /* ssl i/o channel object */
 typedef struct
@@ -38,30 +45,209 @@ typedef struct
 	GIOChannel *giochan;
 	SSL *ssl;
 	SSL_CTX *ctx;
-	unsigned int got_cert:1;
 	unsigned int verify:1;
+	SERVER_REC *server;
+	int port;
 } GIOSSLChannel;
-	
-static SSL_CTX *ssl_ctx = NULL;
+
+static int ssl_inited = FALSE;
 
 static void irssi_ssl_free(GIOChannel *handle)
 {
 	GIOSSLChannel *chan = (GIOSSLChannel *)handle;
 	g_io_channel_unref(chan->giochan);
 	SSL_free(chan->ssl);
-	if (chan->ctx != ssl_ctx)
-		SSL_CTX_free(chan->ctx);
+	SSL_CTX_free(chan->ctx);
 	g_free(chan);
 }
 
-static gboolean irssi_ssl_verify(SSL *ssl, SSL_CTX *ctx, X509 *cert)
+/* Checks if the given string has internal NUL characters. */
+static gboolean has_internal_nul(const char* str, int len) {
+	/* Remove trailing nul characters. They would give false alarms */
+	while (len > 0 && str[len-1] == 0)
+		len--;
+	return strlen(str) != len;
+}
+
+/* tls_dns_name - Extract valid DNS name from subjectAltName value */
+static const char *tls_dns_name(const GENERAL_NAME * gn)
 {
-	if (SSL_get_verify_result(ssl) != X509_V_OK) {
+	const char *dnsname;
+
+	/* We expect the OpenSSL library to construct GEN_DNS extension objects as
+	   ASN1_IA5STRING values. Check we got the right union member. */
+	if (ASN1_STRING_type(gn->d.ia5) != V_ASN1_IA5STRING) {
+		g_warning("Invalid ASN1 value type in subjectAltName");
+		return NULL;
+	}
+
+	/* Safe to treat as an ASCII string possibly holding a DNS name */
+	dnsname = (char *) ASN1_STRING_data(gn->d.ia5);
+
+	if (has_internal_nul(dnsname, ASN1_STRING_length(gn->d.ia5))) {
+		g_warning("Internal NUL in subjectAltName");
+		return NULL;
+	}
+
+	return dnsname;
+}
+
+/* tls_text_name - extract certificate property value by name */
+static char *tls_text_name(X509_NAME *name, int nid)
+{
+	int     pos;
+	X509_NAME_ENTRY *entry;
+	ASN1_STRING *entry_str;
+	int     utf8_length;
+	unsigned char *utf8_value;
+	char *result;
+
+	if (name == 0 || (pos = X509_NAME_get_index_by_NID(name, nid, -1)) < 0) {
+		return NULL;
+	}
+
+	entry = X509_NAME_get_entry(name, pos);
+	g_return_val_if_fail(entry != NULL, NULL);
+	entry_str = X509_NAME_ENTRY_get_data(entry);
+	g_return_val_if_fail(entry_str != NULL, NULL);
+
+	/* Convert everything into UTF-8. It's up to OpenSSL to do something
+	   reasonable when converting ASCII formats that contain non-ASCII
+	   content. */
+	if ((utf8_length = ASN1_STRING_to_UTF8(&utf8_value, entry_str)) < 0) {
+		g_warning("Error decoding ASN.1 type=%d", ASN1_STRING_type(entry_str));
+		return NULL;
+	}
+
+	if (has_internal_nul((char *)utf8_value, utf8_length)) {
+		g_warning("NUL character in hostname in certificate");
+		OPENSSL_free(utf8_value);
+		return NULL;
+	}
+
+	result = g_strdup((char *) utf8_value);
+	OPENSSL_free(utf8_value);
+	return result;
+}
+
+
+/** check if a hostname in the certificate matches the hostname we used for the connection */
+static gboolean match_hostname(const char *cert_hostname, const char *hostname)
+{
+	const char *hostname_left;
+
+	if (!strcasecmp(cert_hostname, hostname)) { /* exact match */
+		return TRUE;
+	} else if (cert_hostname[0] == '*' && cert_hostname[1] == '.' && cert_hostname[2] != 0) { /* wildcard match */
+		/* The initial '*' matches exactly one hostname component */
+		hostname_left = strchr(hostname, '.');
+		if (hostname_left != NULL && ! strcasecmp(hostname_left + 1, cert_hostname + 2)) {
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/* based on verify_extract_name from tls_client.c in postfix */
+static gboolean irssi_ssl_verify_hostname(X509 *cert, const char *hostname)
+{
+	int gen_index, gen_count;
+	gboolean matched = FALSE, has_dns_name = FALSE;
+	const char *cert_dns_name;
+	char *cert_subject_cn;
+	const GENERAL_NAME *gn;
+	STACK_OF(GENERAL_NAME) * gens;
+
+	/* Verify the dNSName(s) in the peer certificate against the hostname. */
+	gens = X509_get_ext_d2i(cert, NID_subject_alt_name, 0, 0);
+	if (gens) {
+		gen_count = sk_GENERAL_NAME_num(gens);
+		for (gen_index = 0; gen_index < gen_count && !matched; ++gen_index) {
+			gn = sk_GENERAL_NAME_value(gens, gen_index);
+			if (gn->type != GEN_DNS)
+				continue;
+
+			/* Even if we have an invalid DNS name, we still ultimately
+			   ignore the CommonName, because subjectAltName:DNS is
+			   present (though malformed). */
+			has_dns_name = TRUE;
+			cert_dns_name = tls_dns_name(gn);
+			if (cert_dns_name && *cert_dns_name) {
+				matched = match_hostname(cert_dns_name, hostname);
+			}
+		}
+
+		/* Free stack *and* member GENERAL_NAME objects */
+		sk_GENERAL_NAME_pop_free(gens, GENERAL_NAME_free);
+	}
+
+	if (has_dns_name) {
+		if (! matched) {
+			/* The CommonName in the issuer DN is obsolete when SubjectAltName is available. */
+			g_warning("None of the Subject Alt Names in the certificate match hostname '%s'", hostname);
+		}
+		return matched;
+	} else { /* No subjectAltNames, look at CommonName */
+		cert_subject_cn = tls_text_name(X509_get_subject_name(cert), NID_commonName);
+		if (cert_subject_cn && *cert_subject_cn) {
+			matched = match_hostname(cert_subject_cn, hostname);
+			if (! matched) {
+				g_warning("SSL certificate common name '%s' doesn't match host name '%s'", cert_subject_cn, hostname);
+			}
+		} else {
+			g_warning("No subjectAltNames and no valid common name in certificate");
+		}
+		free(cert_subject_cn);
+	}
+
+	return matched;
+}
+
+static gboolean irssi_ssl_verify(SSL *ssl, SSL_CTX *ctx, const char* hostname, int port, X509 *cert, SERVER_REC *server)
+{
+	long result;
+#ifdef HAVE_DANE
+	int dane_ret;
+	struct val_daneparams daneparams;
+	struct val_danestatus *danestatus = NULL;
+
+	// Check if a TLSA record is available.
+	daneparams.port = port;
+	daneparams.proto = DANE_PARAM_PROTO_TCP;
+
+	dane_ret = val_getdaneinfo(NULL, hostname, &daneparams, &danestatus);
+
+	if (dane_ret == VAL_DANE_NOERROR) {
+		signal_emit("tlsa available", 1, server);
+	}
+
+	if (danestatus != NULL) {
+		int do_certificate_check = 1;
+
+		if (val_dane_check(NULL, ssl, danestatus, &do_certificate_check) != VAL_DANE_NOERROR) {
+			g_warning("DANE: TLSA record for hostname %s port %d could not be verified", hostname, port);
+			signal_emit("tlsa verification failed", 1, server);
+			val_free_dane(danestatus);
+			return FALSE;
+		}
+
+		signal_emit("tlsa verification success", 1, server);
+		val_free_dane(danestatus);
+
+		if (do_certificate_check == 0) {
+			return TRUE;
+		}
+	}
+#endif
+
+	result = SSL_get_verify_result(ssl);
+	if (result != X509_V_OK) {
 		unsigned char md[EVP_MAX_MD_SIZE];
 		unsigned int n;
 		char *str;
 
-		g_warning("Could not verify SSL servers certificate:");
+		g_warning("Could not verify SSL servers certificate: %s",
+				X509_verify_cert_error_string(result));
 		if ((str = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0)) == NULL)
 			g_warning("  Could not get subject-name from peer certificate");
 		else {
@@ -90,216 +276,51 @@ static gboolean irssi_ssl_verify(SSL *ssl, SSL_CTX *ctx, X509 *cert)
 			}
 		}
 		return FALSE;
+	} else if (! irssi_ssl_verify_hostname(cert, hostname)){
+		return FALSE;
 	}
 	return TRUE;
-}
-
-
-#if GLIB_MAJOR_VERSION < 2
-
-static GIOError ssl_errno(gint e)
-{
-	switch(e)
-	{
-		case EINVAL:
-			return G_IO_ERROR_INVAL;
-		case EINTR:
-		case EAGAIN:
-			return G_IO_ERROR_AGAIN;
-		default:
-			return G_IO_ERROR_INVAL;
-	}
-	/*UNREACH*/
-	return G_IO_ERROR_INVAL;
-}
-
-static GIOError irssi_ssl_cert_step(GIOSSLChannel *chan)
-{
-	X509 *cert;
-	gint err;
-	switch(err = SSL_do_handshake(chan->ssl))
-	{
-		case 1:
-			if(!(cert = SSL_get_peer_certificate(chan->ssl)))
-			{
-				g_warning("SSL server supplied no certificate");
-				return G_IO_ERROR_INVAL;
-			}
-			if (chan->verify && ! irssi_ssl_verify(chan->ssl, chan->ctx, cert)) {
-				X509_free(cert);
-				return G_IO_ERROR_INVAL;
-			}
-			X509_free(cert);
-			return G_IO_ERROR_NONE;
-		default:
-			if(SSL_get_error(chan->ssl, err) == SSL_ERROR_WANT_READ)
-				return G_IO_ERROR_AGAIN;
-			return ssl_errno(errno);
-	}
-	/*UNREACH*/
-	return G_IO_ERROR_INVAL;
-}
-
-static GIOError irssi_ssl_read(GIOChannel *handle, gchar *buf, guint len, guint *ret)
-{
-	GIOSSLChannel *chan = (GIOSSLChannel *)handle;
-	gint err;
-	
-	if(! chan->got_cert)
-	{
-		gint cert_err = irssi_ssl_cert_step(chan);
-		if(cert_err != G_IO_ERROR_NONE)
-			return cert_err;
-	}
-	
-	err = SSL_read(chan->ssl, buf, len);
-	if(err < 0)
-	{
-		*ret = 0;
-		if(SSL_get_error(chan->ssl, err) == SSL_ERROR_WANT_READ)
-			return G_IO_ERROR_AGAIN;
-		return ssl_errno(errno);
-	}
-	else
-	{
-		*ret = err;
-		return G_IO_ERROR_NONE;
-	}
-	/*UNREACH*/
-	return -1;
-}
-
-static GIOError irssi_ssl_write(GIOChannel *handle, gchar *buf, guint len, guint *ret)
-{
-	GIOSSLChannel *chan = (GIOSSLChannel *)handle;
-	gint err;
-
-	if(chan->got_cert)
-	{
-		gint cert_err = irssi_ssl_cert_step(chan);
-		if(cert_err != G_IO_ERROR_NONE)
-			return cert_err;
-	}
-	
-
-	err = SSL_write(chan->ssl, (const char *)buf, len);
-	if(err < 0)
-	{
-		*ret = 0;
-		if(SSL_get_error(chan->ssl, err) == SSL_ERROR_WANT_READ)
-			return G_IO_ERROR_AGAIN;
-		return ssl_errno(errno);
-	}
-	else
-	{
-		*ret = err;
-		return G_IO_ERROR_NONE;
-	}
-	/*UNREACH*/
-	return G_IO_ERROR_INVAL;
-}
-
-static GIOError irssi_ssl_seek(GIOChannel *handle, gint offset, GSeekType type)
-{
-	GIOSSLChannel *chan = (GIOSSLChannel *)handle;
-	GIOError e;
-	e = g_io_channel_seek(chan->giochan, offset, type);
-	return (e == G_IO_ERROR_NONE) ? G_IO_ERROR_NONE : G_IO_ERROR_INVAL;
-}
-
-static void irssi_ssl_close(GIOChannel *handle)
-{
-	GIOSSLChannel *chan = (GIOSSLChannel *)handle;
-	g_io_channel_close(chan->giochan);
-}
-
-static guint irssi_ssl_create_watch(GIOChannel *handle, gint priority, GIOCondition cond,
-			     GIOFunc func, gpointer data, GDestroyNotify notify)
-{
-	GIOSSLChannel *chan = (GIOSSLChannel *)handle;
-
-	return chan->giochan->funcs->io_add_watch(handle, priority, cond, func, data, notify);
-}
-
-/* ssl function pointers */
-static GIOFuncs irssi_ssl_channel_funcs =
-{
-	irssi_ssl_read,
-	irssi_ssl_write,
-	irssi_ssl_seek,
-	irssi_ssl_close,
-	irssi_ssl_create_watch,
-	irssi_ssl_free
-};
-
-#else /* GLIB_MAJOR_VERSION < 2 */
-
-static GIOStatus ssl_errno(gint e)
-{
-	switch(e)
-	{
-		case EINVAL:
-			return G_IO_STATUS_ERROR;
-		case EINTR:
-		case EAGAIN:
-			return G_IO_STATUS_AGAIN;
-		default:
-			return G_IO_STATUS_ERROR;
-	}
-	/*UNREACH*/
-	return G_IO_STATUS_ERROR;
-}
-
-static GIOStatus irssi_ssl_cert_step(GIOSSLChannel *chan)
-{
-	X509 *cert;
-	gint err;
-	switch(err = SSL_do_handshake(chan->ssl))
-	{
-		case 1:
-			if(!(cert = SSL_get_peer_certificate(chan->ssl)))
-			{
-				g_warning("SSL server supplied no certificate");
-				return G_IO_STATUS_ERROR;
-			}
-			if (chan->verify && ! irssi_ssl_verify(chan->ssl, chan->ctx, cert)) {
-				X509_free(cert);
-				return G_IO_STATUS_ERROR;
-			}
-			X509_free(cert);
-			return G_IO_STATUS_NORMAL;
-		default:
-			if(SSL_get_error(chan->ssl, err) == SSL_ERROR_WANT_READ)
-				return G_IO_STATUS_AGAIN;
-			return ssl_errno(errno);
-	}
-	/*UNREACH*/
-	return G_IO_STATUS_ERROR;
 }
 
 static GIOStatus irssi_ssl_read(GIOChannel *handle, gchar *buf, gsize len, gsize *ret, GError **gerr)
 {
 	GIOSSLChannel *chan = (GIOSSLChannel *)handle;
-	gint err;
-	
-	if(! chan->got_cert)
-	{
-		gint cert_err = irssi_ssl_cert_step(chan);
-		if(cert_err != G_IO_STATUS_NORMAL)
-			return cert_err;
-	}
-	
-	err = SSL_read(chan->ssl, buf, len);
-	if(err < 0)
+	gint ret1, err;
+	const char *errstr;
+	gchar *errmsg;
+
+	ret1 = SSL_read(chan->ssl, buf, len);
+	if(ret1 <= 0)
 	{
 		*ret = 0;
-		if(SSL_get_error(chan->ssl, err) == SSL_ERROR_WANT_READ)
+		err = SSL_get_error(chan->ssl, ret1);
+		if(err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE)
 			return G_IO_STATUS_AGAIN;
-		return ssl_errno(errno);
+		else if(err == SSL_ERROR_ZERO_RETURN)
+			return G_IO_STATUS_EOF;
+		else if (err == SSL_ERROR_SYSCALL)
+		{
+			errstr = ERR_reason_error_string(ERR_get_error());
+			if (errstr == NULL && ret1 == -1)
+				errstr = strerror(errno);
+			if (errstr == NULL)
+				errstr = "server closed connection unexpectedly";
+		}
+		else
+		{
+			errstr = ERR_reason_error_string(ERR_get_error());
+			if (errstr == NULL)
+				errstr = "unknown SSL error";
+		}
+		errmsg = g_strdup_printf("SSL read error: %s", errstr);
+		*gerr = g_error_new_literal(G_IO_CHANNEL_ERROR, G_IO_CHANNEL_ERROR_FAILED,
+					    errmsg);
+		g_free(errmsg);
+		return G_IO_STATUS_ERROR;
 	}
 	else
 	{
-		*ret = err;
+		*ret = ret1;
 		return G_IO_STATUS_NORMAL;
 	}
 	/*UNREACH*/
@@ -309,26 +330,42 @@ static GIOStatus irssi_ssl_read(GIOChannel *handle, gchar *buf, gsize len, gsize
 static GIOStatus irssi_ssl_write(GIOChannel *handle, const gchar *buf, gsize len, gsize *ret, GError **gerr)
 {
 	GIOSSLChannel *chan = (GIOSSLChannel *)handle;
-	gint err;
+	gint ret1, err;
+	const char *errstr;
+	gchar *errmsg;
 
-	if(! chan->got_cert)
-	{
-		gint cert_err = irssi_ssl_cert_step(chan);
-		if(cert_err != G_IO_STATUS_NORMAL)
-			return cert_err;
-	}
-
-	err = SSL_write(chan->ssl, (const char *)buf, len);
-	if(err < 0)
+	ret1 = SSL_write(chan->ssl, (const char *)buf, len);
+	if(ret1 <= 0)
 	{
 		*ret = 0;
-		if(SSL_get_error(chan->ssl, err) == SSL_ERROR_WANT_READ)
+		err = SSL_get_error(chan->ssl, ret1);
+		if(err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE)
 			return G_IO_STATUS_AGAIN;
-		return ssl_errno(errno);
+		else if(err == SSL_ERROR_ZERO_RETURN)
+			errstr = "server closed connection";
+		else if (err == SSL_ERROR_SYSCALL)
+		{
+			errstr = ERR_reason_error_string(ERR_get_error());
+			if (errstr == NULL && ret1 == -1)
+				errstr = strerror(errno);
+			if (errstr == NULL)
+				errstr = "server closed connection unexpectedly";
+		}
+		else
+		{
+			errstr = ERR_reason_error_string(ERR_get_error());
+			if (errstr == NULL)
+				errstr = "unknown SSL error";
+		}
+		errmsg = g_strdup_printf("SSL write error: %s", errstr);
+		*gerr = g_error_new_literal(G_IO_CHANNEL_ERROR, G_IO_CHANNEL_ERROR_FAILED,
+					    errmsg);
+		g_free(errmsg);
+		return G_IO_STATUS_ERROR;
 	}
 	else
 	{
-		*ret = err;
+		*ret = ret1;
 		return G_IO_STATUS_NORMAL;
 	}
 	/*UNREACH*/
@@ -338,17 +375,15 @@ static GIOStatus irssi_ssl_write(GIOChannel *handle, const gchar *buf, gsize len
 static GIOStatus irssi_ssl_seek(GIOChannel *handle, gint64 offset, GSeekType type, GError **gerr)
 {
 	GIOSSLChannel *chan = (GIOSSLChannel *)handle;
-	GIOError e;
-	e = g_io_channel_seek(chan->giochan, offset, type);
-	return (e == G_IO_ERROR_NONE) ? G_IO_STATUS_NORMAL : G_IO_STATUS_ERROR;
+
+	return chan->giochan->funcs->io_seek(handle, offset, type, gerr);
 }
 
 static GIOStatus irssi_ssl_close(GIOChannel *handle, GError **gerr)
 {
 	GIOSSLChannel *chan = (GIOSSLChannel *)handle;
-	g_io_channel_close(chan->giochan);
 
-	return G_IO_STATUS_NORMAL;
+	return chan->giochan->funcs->io_close(handle, gerr);
 }
 
 static GSource *irssi_ssl_create_watch(GIOChannel *handle, GIOCondition cond)
@@ -383,47 +418,48 @@ static GIOFuncs irssi_ssl_channel_funcs = {
     irssi_ssl_get_flags
 };
 
-#endif
-
 static gboolean irssi_ssl_init(void)
 {
 	SSL_library_init();
 	SSL_load_error_strings();
-	
-	ssl_ctx = SSL_CTX_new(SSLv23_client_method());
-	if(!ssl_ctx)
-	{
-		g_error("Initialization of the SSL library failed");
-		return FALSE;
-	}
+	OpenSSL_add_all_algorithms();
+	ssl_inited = TRUE;
 
 	return TRUE;
 
 }
 
-static GIOChannel *irssi_ssl_get_iochannel(GIOChannel *handle, const char *mycert, const char *mypkey, const char *cafile, const char *capath, gboolean verify)
+static GIOChannel *irssi_ssl_get_iochannel(GIOChannel *handle, int port, SERVER_REC *server)
 {
 	GIOSSLChannel *chan;
 	GIOChannel *gchan;
-	int err, fd;
+	int fd;
 	SSL *ssl;
-	X509 *cert = NULL;
 	SSL_CTX *ctx = NULL;
 
+	const char *mycert = server->connrec->ssl_cert;
+	const char *mypkey = server->connrec->ssl_pkey;
+	const char *cafile = server->connrec->ssl_cafile;
+	const char *capath = server->connrec->ssl_capath;
+	gboolean verify = server->connrec->ssl_verify;
+
 	g_return_val_if_fail(handle != NULL, NULL);
-	
-	if(!ssl_ctx && !irssi_ssl_init())
+
+	if(!ssl_inited && !irssi_ssl_init())
 		return NULL;
 
 	if(!(fd = g_io_channel_unix_get_fd(handle)))
 		return NULL;
 
-	if (mycert && *mycert) {	
+	ctx = SSL_CTX_new(SSLv23_client_method());
+	if (ctx == NULL) {
+		g_error("Could not allocate memory for SSL context");
+		return NULL;
+	}
+	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
+
+	if (mycert && *mycert) {
 		char *scert = NULL, *spkey = NULL;
-		if ((ctx = SSL_CTX_new(SSLv23_client_method())) == NULL) {
-			g_error("Could not allocate memory for SSL context");
-			return NULL;
-		}
 		scert = convert_home(mycert);
 		if (mypkey && *mypkey)
 			spkey = convert_home(mypkey);
@@ -440,10 +476,6 @@ static GIOChannel *irssi_ssl_get_iochannel(GIOChannel *handle, const char *mycer
 	if ((cafile && *cafile) || (capath && *capath)) {
 		char *scafile = NULL;
 		char *scapath = NULL;
-		if (! ctx && (ctx = SSL_CTX_new(SSLv23_client_method())) == NULL) {
-			g_error("Could not allocate memory for SSL context");
-			return NULL;
-		}
 		if (cafile && *cafile)
 			scafile = convert_home(cafile);
 		if (capath && *capath)
@@ -458,90 +490,104 @@ static GIOChannel *irssi_ssl_get_iochannel(GIOChannel *handle, const char *mycer
 		g_free(scafile);
 		g_free(scapath);
 		verify = TRUE;
+	} else {
+		if (!SSL_CTX_set_default_verify_paths(ctx))
+			g_warning("Could not load default certificates");
 	}
 
-	if (ctx == NULL)
-		ctx = ssl_ctx;
-	
 	if(!(ssl = SSL_new(ctx)))
 	{
 		g_warning("Failed to allocate SSL structure");
+		SSL_CTX_free(ctx);
 		return NULL;
 	}
 
-	if(!(err = SSL_set_fd(ssl, fd)))
+	if(!SSL_set_fd(ssl, fd))
 	{
 		g_warning("Failed to associate socket to SSL stream");
 		SSL_free(ssl);
-		if (ctx != ssl_ctx)
-			SSL_CTX_free(ctx);
+		SSL_CTX_free(ctx);
 		return NULL;
 	}
 
-	if((err = SSL_connect(ssl)) <= 0)
-	{
-		switch(err = SSL_get_error(ssl, err))
-		{
-			case SSL_ERROR_SYSCALL:
-				if(errno == EINTR || errno == EAGAIN)
-			case SSL_ERROR_WANT_READ:
-			case SSL_ERROR_WANT_WRITE:
-					break;
-			default:
-					SSL_free(ssl);
-					if (ctx != ssl_ctx)
-						SSL_CTX_free(ctx);
-					return NULL;
-		}
-	}
-	else if(!(cert = SSL_get_peer_certificate(ssl)))
-	{
-		g_warning("SSL server supplied no certificate");
-		if (ctx != ssl_ctx)
-			SSL_CTX_free(ctx);
-		SSL_free(ssl);
-		return NULL;
-	}
-	else
-	{
-		if (verify && ! irssi_ssl_verify(ssl, ctx, cert)) {
-			SSL_free(ssl);
-			if (ctx != ssl_ctx)
-				SSL_CTX_free(ctx);
-			return NULL;
-		}
-		X509_free(cert);
-	}
+	SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE |
+			SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
 	chan = g_new0(GIOSSLChannel, 1);
 	chan->fd = fd;
 	chan->giochan = handle;
 	chan->ssl = ssl;
 	chan->ctx = ctx;
-	chan->got_cert = cert != NULL;
+	chan->server = server;
+	chan->port = port;
 	chan->verify = verify;
 
 	gchan = (GIOChannel *)chan;
 	gchan->funcs = &irssi_ssl_channel_funcs;
 	g_io_channel_init(gchan);
-	
+	gchan->is_readable = gchan->is_writeable = TRUE;
+	gchan->use_buffer = FALSE;
+
 	return gchan;
 }
 
-GIOChannel *net_connect_ip_ssl(IPADDR *ip, int port, IPADDR *my_ip, const char *cert, const char *pkey, const char *cafile, const char *capath, gboolean verify)
+GIOChannel *net_connect_ip_ssl(IPADDR *ip, int port, IPADDR *my_ip, SERVER_REC *server)
 {
 	GIOChannel *handle, *ssl_handle;
 
 	handle = net_connect_ip(ip, port, my_ip);
-	ssl_handle  = irssi_ssl_get_iochannel(handle, cert, pkey, cafile, capath, verify);
+	if (handle == NULL)
+		return NULL;
+	ssl_handle  = irssi_ssl_get_iochannel(handle, port, server);
 	if (ssl_handle == NULL)
 		g_io_channel_unref(handle);
 	return ssl_handle;
 }
 
+int irssi_ssl_handshake(GIOChannel *handle)
+{
+	GIOSSLChannel *chan = (GIOSSLChannel *)handle;
+	int ret, err;
+	X509 *cert;
+	const char *errstr;
+
+	ret = SSL_connect(chan->ssl);
+	if (ret <= 0) {
+		err = SSL_get_error(chan->ssl, ret);
+		switch (err) {
+			case SSL_ERROR_WANT_READ:
+				return 1;
+			case SSL_ERROR_WANT_WRITE:
+				return 3;
+			case SSL_ERROR_ZERO_RETURN:
+				g_warning("SSL handshake failed: %s", "server closed connection");
+				return -1;
+			case SSL_ERROR_SYSCALL:
+				errstr = ERR_reason_error_string(ERR_get_error());
+				if (errstr == NULL && ret == -1)
+					errstr = strerror(errno);
+				g_warning("SSL handshake failed: %s", errstr != NULL ? errstr : "server closed connection unexpectedly");
+				return -1;
+			default:
+				errstr = ERR_reason_error_string(ERR_get_error());
+				g_warning("SSL handshake failed: %s", errstr != NULL ? errstr : "unknown SSL error");
+				return -1;
+		}
+	}
+
+	cert = SSL_get_peer_certificate(chan->ssl);
+	if (cert == NULL) {
+		g_warning("SSL server supplied no certificate");
+		return -1;
+	}
+	ret = !chan->verify || irssi_ssl_verify(chan->ssl, chan->ctx, chan->server->connrec->address, chan->port, cert, chan->server);
+	X509_free(cert);
+	return ret ? 0 : -1;
+}
+
 #else /* HAVE_OPENSSL */
 
-GIOChannel *net_connect_ip_ssl(IPADDR *ip, int port, IPADDR *my_ip, const char *cert, const char *pkey, const char *cafile, const char *capath, gboolean verify)
+GIOChannel *net_connect_ip_ssl(IPADDR *ip, int port, IPADDR *my_ip, SERVER_REC *server)
 {
 	g_warning("Connection failed: SSL support not enabled in this build.");
 	errno = ENOSYS;

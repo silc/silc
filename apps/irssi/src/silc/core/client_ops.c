@@ -2869,7 +2869,7 @@ void silc_get_auth_method(SilcClient client, SilcClientConnection conn,
 
   /* Check whether we find the password for this server in our
      configuration.  If it's set, always send it server. */
-  setup = server_setup_find_port(hostname, port);
+  setup = server_setup_find(hostname, port, "silcnet");
   if (setup && setup->password) {
     completion(SILC_AUTH_PASSWORD, setup->password, strlen(setup->password),
 	       context);

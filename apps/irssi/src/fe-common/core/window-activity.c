@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -31,6 +31,7 @@
 #include "nicklist.h"
 #include "hilight-text.h"
 #include "formats.h"
+#include "fe-common-core.h"
 
 static char **hide_targets;
 static int hide_level, msg_level, hilight_level;
@@ -69,14 +70,9 @@ void window_item_activity(WI_ITEM_REC *item, int data_level,
 		    GINT_TO_POINTER(old_data_level));
 }
 
-#define hide_target_activity(data_level, target) \
-	((target) != NULL && hide_targets != NULL && \
-	strarray_find(hide_targets, target) != -1)
-
 static void sig_hilight_text(TEXT_DEST_REC *dest, const char *msg)
 {
 	WI_ITEM_REC *item;
-        char *tagtarget;
 	int data_level;
 
 	if (dest->window == active_win || (dest->level & hide_level))
@@ -89,19 +85,10 @@ static void sig_hilight_text(TEXT_DEST_REC *dest, const char *msg)
 			DATA_LEVEL_MSG : DATA_LEVEL_TEXT;
 	}
 
-	if ((dest->level & MSGLEVEL_HILIGHT) == 0 && dest->target != NULL) {
+	if (hide_targets != NULL && (dest->level & MSGLEVEL_HILIGHT) == 0 && dest->target != NULL) {
 		/* check for both target and tag/target */
-		if (hide_target_activity(data_level, dest->target))
+		if (strarray_find_dest(hide_targets, dest))
 			return;
-
-		tagtarget = dest->server_tag == NULL ? NULL :
-			g_strdup_printf("%s/%s", dest->server_tag,
-					dest->target);
-		if (hide_target_activity(data_level, tagtarget)) {
-			g_free(tagtarget);
-			return;
-		}
-		g_free(tagtarget);
 	}
 
 	if (dest->target != NULL) {

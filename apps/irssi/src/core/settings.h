@@ -45,7 +45,7 @@ typedef struct {
 #define iconfig_node_clear(a) config_node_clear(mainconfig, a)
 #define iconfig_node_add_list(a, b) config_node_add_list(mainconfig, a, b)
 
-extern CONFIG_REC *mainconfig;
+extern struct _CONFIG_REC *mainconfig;
 extern const char *default_config;
 
 /* Functions for handling the "settings" node of Irssi configuration */
@@ -55,6 +55,7 @@ int settings_get_bool(const char *key);
 int settings_get_time(const char *key); /* as milliseconds */
 int settings_get_level(const char *key);
 int settings_get_size(const char *key); /* as bytes */
+char *settings_get_print(SETTINGS_REC *rec);
 
 /* Functions to add/remove settings */
 void settings_add_str_module(const char *module, const char *section,

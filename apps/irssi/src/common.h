@@ -1,11 +1,6 @@
 #ifndef __COMMON_H
 #define __COMMON_H
 
-#define IRSSI_WEBSITE "http://irssi.org/"
-#define IRSSI_AUTHOR_EMAIL "cras@irssi.org"
-#define IRSSI_AUTHOR "Timo Sirainen <"IRSSI_AUTHOR_EMAIL">"
-
-#define IRSSI_DIR_SHORT "~/.silc"
 #define IRSSI_DIR_FULL "%s/.silc" /* %s == g_get_home_dir() */
 
 #define IRSSI_GLOBAL_CONFIG "silc.conf" /* config file name in /etc/ */
@@ -14,7 +9,7 @@
 #define DEFAULT_SERVER_ADD_PORT 706
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include "irssi-config.h"
 #endif
 
 #ifndef PACKAGE
@@ -25,12 +20,8 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <ctype.h>
-#  ifdef HAVE_STRING_H
 #include <string.h>
-#endif
-#ifdef HAVE_STDLIB_H
-#  include <stdlib.h>
-#endif
+#include <stdlib.h>
 #include <errno.h>
 #include <time.h>
 
@@ -54,6 +45,15 @@
 #include <glib.h>
 #ifdef HAVE_GMODULE
 #  include <gmodule.h>
+#endif
+
+#if !GLIB_CHECK_VERSION(2,10,0)
+#define g_slice_alloc(size)      g_malloc(size)
+#define g_slice_alloc0(size)     g_malloc0(size)
+#define g_slice_free1(size, mem) g_free(mem)
+#define g_slice_new(type)        g_new(type, 1)
+#define g_slice_new0(type)       g_new0(type, 1)
+#define g_slice_free(type, mem)  g_free(mem)
 #endif
 
 #ifdef USE_GC
@@ -114,8 +114,6 @@ const char *get_irssi_config(void);
 #define i_isxdigit(x) isxdigit((int) (unsigned char) (x))
 
 typedef struct _IPADDR IPADDR;
-typedef struct _CONFIG_REC CONFIG_REC;
-typedef struct _CONFIG_NODE CONFIG_NODE;
 
 typedef struct _LINEBUF_REC LINEBUF_REC;
 typedef struct _NET_SENDBUF_REC NET_SENDBUF_REC;

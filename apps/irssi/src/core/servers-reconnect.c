@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -48,12 +48,11 @@ void reconnect_save_status(SERVER_CONNECT_REC *conn, SERVER_REC *server)
 	if (!server->connected) {
 		/* default to channels/usermode from connect record
 		   since server isn't fully connected yet */
+		/* XXX when is reconnect_save_status() called with
+		 * server->connected==FALSE? */
 		g_free_not_null(conn->channels);
 		conn->channels = server->connrec->no_autojoin_channels ? NULL :
 			g_strdup(server->connrec->channels);
-
-		g_free_not_null(conn->channels);
-		conn->channels = g_strdup(server->connrec->channels);
 	}
 
 	signal_emit("server reconnect save status", 2, conn, server);
@@ -189,7 +188,8 @@ server_connect_copy_skeleton(SERVER_CONNECT_REC *src, int connect_info)
 
 	dest->channels = g_strdup(src->channels);
 	dest->away_reason = g_strdup(src->away_reason);
-        dest->no_autojoin_channels = src->no_autojoin_channels;
+	dest->no_autojoin_channels = src->no_autojoin_channels;
+	dest->no_autosendcmd = src->no_autosendcmd;
 
 	dest->use_ssl = src->use_ssl;
 	dest->ssl_cert = g_strdup(src->ssl_cert);
@@ -204,10 +204,10 @@ server_connect_copy_skeleton(SERVER_CONNECT_REC *src, int connect_info)
 #define server_should_reconnect(server) \
 	((server)->connection_lost && !(server)->no_reconnect && \
 	((server)->connrec->chatnet != NULL || \
-		(!(server)->banned && !(server)->dns_error)))
+		!(server)->banned))
 
 #define sserver_connect_ok(rec, net) \
-	(!(rec)->banned && !(rec)->dns_error && (rec)->chatnet != NULL && \
+	(!(rec)->banned && (rec)->chatnet != NULL && \
 	g_strcasecmp((rec)->chatnet, (net)) == 0)
 
 static void sig_reconnect(SERVER_REC *server)
@@ -403,7 +403,7 @@ static void cmd_reconnect(const char *data, SERVER_REC *server)
                 return;
 	}
 
-	if (g_strcasecmp(tag, "all") == 0) {
+	if (g_ascii_strcasecmp(tag, "all") == 0) {
 		/* reconnect all servers in reconnect queue */
                 reconnect_all();
 		cmd_params_free(free_arg);
@@ -416,7 +416,7 @@ static void cmd_reconnect(const char *data, SERVER_REC *server)
 			cmd_param_error(CMDERR_NOT_CONNECTED);
                 rec = reconnects->data;
 	} else {
-		if (g_strncasecmp(data, "RECON-", 6) == 0)
+		if (g_ascii_strncasecmp(data, "RECON-", 6) == 0)
 			data += 6;
 
 		tagnum = atoi(tag);
@@ -440,7 +440,7 @@ static void cmd_disconnect(const char *data, SERVER_REC *server)
 {
 	RECONNECT_REC *rec;
 
-	if (g_strncasecmp(data, "RECON-", 6) != 0)
+	if (g_ascii_strncasecmp(data, "RECON-", 6) != 0)
 		return; /* handle only reconnection removing */
 
 	rec = reconnect_find_tag(atoi(data+6));

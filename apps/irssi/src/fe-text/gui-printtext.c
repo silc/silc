@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -28,14 +28,10 @@
 #include "term.h"
 #include "gui-printtext.h"
 #include "gui-windows.h"
-#ifdef HAVE_CUIX
-#include "cuix.h"
-#endif
 
 int mirc_colors[] = { 15, 0, 1, 2, 12, 4, 5, 6, 14, 10, 3, 11, 9, 13, 8, 7 };
 static int scrollback_lines, scrollback_time, scrollback_burst_remove;
 
-static int last_fg, last_bg, last_flags;
 static int next_xpos, next_ypos;
 
 static GHashTable *indent_functions;
@@ -164,66 +160,6 @@ static void get_colors(int flags, int *fg, int *bg, int *attr)
 	if (flags & GUI_PRINT_FLAG_BLINK) *attr |= ATTR_BLINK;
 }
 
-static void line_add_colors(TEXT_BUFFER_REC *buffer, LINE_REC **line,
-			    int fg, int bg, int flags)
-{
-	unsigned char data[20];
-	int pos;
-
-        /* get the fg & bg command chars */
-	fg = fg < 0 ? LINE_COLOR_DEFAULT : fg & 0x0f;
-	bg = LINE_COLOR_BG | (bg < 0 ? LINE_COLOR_DEFAULT : bg & 0x0f);
-	if (flags & GUI_PRINT_FLAG_BOLD)
-		fg |= LINE_COLOR_BOLD;
-	if (flags & GUI_PRINT_FLAG_BLINK)
-                bg |= LINE_COLOR_BLINK;
-
-	pos = 0;
-	if (fg != last_fg) {
-		last_fg = fg;
-		data[pos++] = 0;
-		data[pos++] = fg == 0 ? LINE_CMD_COLOR0 : fg;
-	}
-	if (bg != last_bg) {
-                last_bg = bg;
-		data[pos++] = 0;
-		data[pos++] = bg;
-	}
-
-	if ((flags & GUI_PRINT_FLAG_UNDERLINE) != (last_flags & GUI_PRINT_FLAG_UNDERLINE)) {
-		data[pos++] = 0;
-		data[pos++] = LINE_CMD_UNDERLINE;
-	}
-	if ((flags & GUI_PRINT_FLAG_REVERSE) != (last_flags & GUI_PRINT_FLAG_REVERSE)) {
-		data[pos++] = 0;
-		data[pos++] = LINE_CMD_REVERSE;
-	}
-	if (flags & GUI_PRINT_FLAG_INDENT) {
-		data[pos++] = 0;
-		data[pos++] = LINE_CMD_INDENT;
-	}
-
-        if (pos > 0)
-		*line = textbuffer_insert(buffer, *line, data, pos, NULL);
-
-	last_flags = flags;
-}
-
-static void line_add_indent_func(TEXT_BUFFER_REC *buffer, LINE_REC **line,
-				 const char *function)
-{
-        GSList *list;
-        unsigned char data[1+sizeof(INDENT_FUNC)];
-
-        list = g_hash_table_lookup(indent_functions, function);
-	if (list != NULL) {
-		data[0] = LINE_CMD_INDENT_FUNC;
-		memcpy(data+1, list->data, sizeof(INDENT_FUNC));
-		*line = textbuffer_insert(buffer, *line,
-					  data, sizeof(data), NULL);
-	}
-}
-
 static void view_add_eol(TEXT_BUFFER_VIEW_REC *view, LINE_REC **line)
 {
 	static const unsigned char eol[] = { 0, LINE_CMD_EOL };
@@ -270,32 +206,22 @@ static void sig_gui_print_text(WINDOW_REC *window, void *fgcolor,
 	insert_after = gui->use_insert_after ?
 		gui->insert_after : view->buffer->cur_line;
 
-	if (flags & GUI_PRINT_FLAG_NEWLINE)
+	if (flags & GUI_PRINT_FLAG_NEWLINE) {
                 view_add_eol(view, &insert_after);
-	line_add_colors(view->buffer, &insert_after, fg, bg, flags);
-
-	if (flags & GUI_PRINT_FLAG_INDENT_FUNC) {
-		/* specify the indentation function */
-                line_add_indent_func(view->buffer, &insert_after, str);
-	} else {
-		insert_after = textbuffer_insert(view->buffer, insert_after,
-						 (unsigned char *) str,
-						 strlen(str), &lineinfo);
 	}
+	textbuffer_line_add_colors(view->buffer, &insert_after, fg, bg, flags);
+
+	insert_after = textbuffer_insert(view->buffer, insert_after,
+					 (unsigned char *) str,
+					 strlen(str), &lineinfo);
 	if (gui->use_insert_after)
                 gui->insert_after = insert_after;
-#ifdef HAVE_CUIX
-        cuix_refresh ();
-#endif
 }
 
 static void sig_gui_printtext_finished(WINDOW_REC *window)
 {
 	TEXT_BUFFER_VIEW_REC *view;
 	LINE_REC *insert_after;
-
-        last_fg = last_bg = -1;
-	last_flags = 0;
 
 	view = WINDOW_GUI(window)->view;
 	insert_after = WINDOW_GUI(window)->use_insert_after ?

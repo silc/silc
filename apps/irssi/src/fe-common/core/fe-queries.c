@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -124,7 +124,7 @@ static void signal_query_nick_changed(QUERY_REC *query, const char *oldnick)
 	g_return_if_fail(query != NULL);
 
 	format_create_dest_tag(&dest, query->server, query->server_tag,
-			       query->name, MSGLEVEL_CLIENTNOTICE, NULL);
+			       query->name, MSGLEVEL_NICKS, NULL);
 
 	/* don't print the nick change message if only the case was changed */
 	if (g_strcasecmp(query->name, oldnick) != 0) {

@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -387,7 +387,7 @@ WINDOW_REC *window_find_item(SERVER_REC *server, const char *name)
 	}
 
 	if (item == NULL)
-		return 0;
+		return NULL;
 
 	return window_item_window(item);
 }
@@ -574,14 +574,15 @@ static void window_print_daychange(WINDOW_REC *window, struct tm *tm)
         THEME_REC *theme;
         TEXT_DEST_REC dest;
 	char *format, str[256];
+	int ret;
 
 	theme = active_win->theme != NULL ? active_win->theme : current_theme;
 	format_create_dest(&dest, NULL, NULL, MSGLEVEL_NEVER, window);
 	format = format_get_text_theme(theme, MODULE_NAME, &dest,
 				       TXT_DAYCHANGE);
-	if (strftime(str, sizeof(str), format, tm) <= 0)
-                str[0] = '\0';
+	ret = strftime(str, sizeof(str), format, tm);
 	g_free(format);
+	if (ret <= 0) return;
 
 	printtext_string_window(window, MSGLEVEL_NEVER, str);
 }

@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -33,51 +33,80 @@
 
 static void set_print(SETTINGS_REC *rec)
 {
-	const char *value;
-	char value_int[MAX_INT_STRLEN];
+	char *value;
 
-	switch (rec->type) {
-	case SETTING_TYPE_BOOLEAN:
-		value = settings_get_bool(rec->key) ? "ON" : "OFF";
-		break;
-	case SETTING_TYPE_INT:
-		ltoa(value_int, settings_get_int(rec->key));
-		value = value_int;
-		break;
-	case SETTING_TYPE_STRING:
-	case SETTING_TYPE_TIME:
-	case SETTING_TYPE_LEVEL:
-	case SETTING_TYPE_SIZE:
-		value = settings_get_str(rec->key);
-		break;
-	default:
-		value = "";
-	}
+	value = settings_get_print(rec);
 	printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_SET_ITEM,
 		    rec->key, value);
+	g_free(value);
+}
+
+static void set_print_pattern(const char *pattern)
+{
+	GSList *sets, *tmp;
+	const char *last_section;
+
+	last_section = "";
+	sets = settings_get_sorted();
+	for (tmp = sets; tmp != NULL; tmp = tmp->next) {
+		SETTINGS_REC *rec = tmp->data;
+
+		if (stristr(rec->key, pattern) == NULL)
+			continue;
+		if (strcmp(last_section, rec->section) != 0) {
+			/* print section */
+			printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP,
+				    TXT_SET_TITLE, rec->section);
+			last_section = rec->section;
+		}
+		set_print(rec);
+	}
+	g_slist_free(sets);
 }
 
 static void set_boolean(const char *key, const char *value)
 {
-	if (g_strcasecmp(value, "ON") == 0)
+	char *stripped_value;
+	stripped_value = g_strdup(value);
+	g_strstrip(stripped_value);
+
+	if (g_ascii_strcasecmp(stripped_value, "ON") == 0)
 		settings_set_bool(key, TRUE);
-	else if (g_strcasecmp(value, "OFF") == 0)
+	else if (g_ascii_strcasecmp(stripped_value, "OFF") == 0)
 		settings_set_bool(key, FALSE);
-	else if (g_strcasecmp(value, "TOGGLE") == 0)
+	else if (g_ascii_strcasecmp(stripped_value, "TOGGLE") == 0)
 		settings_set_bool(key, !settings_get_bool(key));
 	else
-		printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_NOT_TOGGLE);
+		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR, TXT_NOT_TOGGLE);
+
+    g_free(stripped_value);
+}
+
+static void set_int(const char *key, const char *value)
+{
+	char *endp;
+	long longval;
+	int error;
+
+	errno = 0;
+	longval = strtol(value, &endp, 10);
+	error = errno;
+	while (i_isspace(*endp))
+		endp++;
+	if (error != 0 || *endp != '\0' || longval < INT_MIN || longval > INT_MAX)
+		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR, TXT_INVALID_NUMBER);
+	else
+		settings_set_int(key, (int)longval);
 }
 
 /* SYNTAX: SET [-clear | -default] [<key> [<value>]] */
 static void cmd_set(char *data)
 {
         GHashTable *optlist;
-	GSList *sets, *tmp;
-	const char *last_section;
 	char *key, *value;
 	void *free_arg;
-	int found, clear, set_default;
+	int clear, set_default;
+	SETTINGS_REC *rec;
 
 	if (!cmd_get_params(data, &free_arg, 2 | PARAM_FLAG_GETREST | PARAM_FLAG_OPTIONS,
 			    "set", &optlist, &key, &value))
@@ -89,23 +118,11 @@ static void cmd_set(char *data)
 	if (*key == '\0')
 		clear = set_default = FALSE;
 
-	last_section = ""; found = 0;
-	sets = settings_get_sorted();
-	for (tmp = sets; tmp != NULL; tmp = tmp->next) {
-		SETTINGS_REC *rec = tmp->data;
-
-		if (((clear || set_default || *value != '\0') && g_strcasecmp(rec->key, key) != 0) ||
-		    (*value == '\0' && *key != '\0' && stristr(rec->key, key) == NULL))
-			continue;
-
-		if (strcmp(last_section, rec->section) != 0) {
-			/* print section */
-			printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP,
-				    TXT_SET_TITLE, rec->section);
-			last_section = rec->section;
-		}
-
-		if (clear || set_default || *value != '\0') {
+	if (!(clear || set_default || *value != '\0'))
+		set_print_pattern(key);
+	else {
+		rec = settings_get_record(key);
+		if (rec != NULL) {
 			/* change the setting */
 			switch (rec->type) {
 			case SETTING_TYPE_BOOLEAN:
@@ -117,9 +134,12 @@ static void cmd_set(char *data)
 					set_boolean(key, value);
 				break;
 			case SETTING_TYPE_INT:
-				settings_set_int(key, clear ? 0 :
-						 set_default ? rec->default_value.v_int :
-						 atoi(value));
+				if (clear)
+					settings_set_int(key, 0);
+				else if (set_default)
+					settings_set_int(key, rec->default_value.v_int);
+				else
+					set_int(key, value);
 				break;
 			case SETTING_TYPE_STRING:
 				settings_set_str(key, clear ? "" :
@@ -146,20 +166,13 @@ static void cmd_set(char *data)
 				break;
 			}
 			signal_emit("setup changed", 0);
-		}
-
-                set_print(rec);
-		found = TRUE;
-
-		if (clear || *value != '\0')
-			break;
+			printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP,
+				    TXT_SET_TITLE, rec->section);
+			set_print(rec);
+		} else
+			printformat(NULL, NULL, MSGLEVEL_CLIENTERROR,
+				    TXT_SET_UNKNOWN, key);
 	}
-	g_slist_free(sets);
-
-        if (!found) {
-		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR,
-			    TXT_SET_UNKNOWN, key);
-	 }
 
         cmd_params_free(free_arg);
 }

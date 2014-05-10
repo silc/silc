@@ -13,22 +13,23 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
+#include "signals.h"
 #include "settings.h"
 
 #include "term.h"
 #include "mainwindows.h"
-#ifdef HAVE_CUIX
-#include "cuix.h"
+
+#if defined(USE_NCURSES) && !defined(RENAMED_NCURSES)
+#  include <ncurses.h>
+#else
+#  include <curses.h>
 #endif
-
-#include "term-curses.h"
-
 #include <termios.h>
 #include <signal.h>
 
@@ -43,6 +44,12 @@
 #ifndef _POSIX_VDISABLE
 #  define _POSIX_VDISABLE 0
 #endif
+
+struct _TERM_WINDOW {
+	int x, y;
+        int width, height;
+	WINDOW *win;
+};
 
 TERM_WINDOW *root_window;
 
@@ -302,7 +309,7 @@ void term_move(TERM_WINDOW *window, int x, int y)
         wmove(window->win, y, x);
 }
 
-void term_addch(TERM_WINDOW *window, int chr)
+void term_addch(TERM_WINDOW *window, char chr)
 {
         waddch(window->win, chr);
 }
@@ -352,26 +359,14 @@ void term_refresh_thaw(void)
 
 void term_refresh(TERM_WINDOW *window)
 {
-#ifdef HAVE_CUIX
-    if (!cuix_active) {
-#endif
 	if (window != NULL)
 		wnoutrefresh(window->win);
 
 	if (freeze_refresh == 0) {
 		move(curs_y, curs_x);
 		wnoutrefresh(stdscr);
-#ifdef HAVE_CUIX
-                cuix_refresh ();
-#endif
 		doupdate();
 	}
-#ifdef HAVE_CUIX
-    } else {
-        update_panels ();
-        doupdate ();
-    }
-#endif
 }
 
 void term_stop(void)
@@ -382,24 +377,19 @@ void term_stop(void)
 	irssi_redraw();
 }
 
-void term_auto_detach(int set)
-{
-}
-
 void term_set_input_type(int type)
 {
 }
 
-int term_gets(unichar *buffer, int size)
+void term_gets(GArray *buffer, int *line_count)
 {
-	int count;
 #ifdef WIDEC_CURSES
 	wint_t key;
 #else
 	int key;
 #endif
 
-	for (count = 0; count < size; ) {
+	for (;;) {
 #ifdef WIDEC_CURSES
 		if (get_wch(&key) == ERR)
 #else
@@ -411,8 +401,8 @@ int term_gets(unichar *buffer, int size)
 			continue;
 #endif
 
-		buffer[count++] = key;
+		g_array_append_val(buffer, key);
+		if (key == '\r' || key == '\n')
+			(*line_count)++;
 	}
-
-	return count;
 }

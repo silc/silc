@@ -9,7 +9,6 @@ INCLUDES += \
 	-DTHEMESDIR=\""$(silc_etcdir)"\"
 
 libfe_common_core_a_SOURCES = \
-	autorun.c \
 	chat-completion.c \
 	command-history.c \
 	completion.c \
@@ -28,6 +27,7 @@ libfe_common_core_a_SOURCES = \
 	fe-server.c \
 	fe-settings.c \
 	utf8.c \
+	wcwidth.c \
 	formats.c \
 	hilight-text.c \
 	keyboard.c \
@@ -35,7 +35,6 @@ libfe_common_core_a_SOURCES = \
 	printtext.c \
 	fe-recode.c \
 	themes.c \
-	translation.c \
 	window-activity.c \
 	window-commands.c \
 	window-items.c \
@@ -43,7 +42,6 @@ libfe_common_core_a_SOURCES = \
 	fe-windows.c
 
 noinst_HEADERS = \
-	autorun.h \
 	command-history.h \
 	chat-completion.h \
 	completion.h \
@@ -53,7 +51,6 @@ noinst_HEADERS = \
 	fe-exec.h \
 	fe-messages.h \
 	fe-queries.h \
-	utf8.h \
 	formats.h \
 	hilight-text.h \
 	keyboard.h \
@@ -62,8 +59,8 @@ noinst_HEADERS = \
 	printtext.h \
 	fe-recode.h \
 	themes.h \
-	translation.h \
 	window-activity.h \
 	window-items.h \
 	windows-layout.h \
-	fe-windows.h
+	fe-windows.h \
+	utf8.h

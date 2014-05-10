@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -49,15 +49,22 @@ void printformat_module_dest_args(const char *module, TEXT_DEST_REC *dest,
 	char *arglist[MAX_FORMAT_PARAMS];
 	char buffer[DEFAULT_FORMAT_ARGLIST_SIZE];
 	FORMAT_REC *formats;
-	THEME_REC *theme;
-	char *str;
-
-	theme = window_get_theme(dest->window);
 
 	formats = g_hash_table_lookup(default_formats, module);
 	format_read_arglist(va, &formats[formatnum],
 			    arglist, sizeof(arglist)/sizeof(char *),
 			    buffer, sizeof(buffer));
+
+	printformat_module_dest_charargs(module, dest, formatnum, arglist);
+}
+
+void printformat_module_dest_charargs(const char *module, TEXT_DEST_REC *dest,
+				      int formatnum, char **arglist)
+{
+	THEME_REC *theme;
+	char *str;
+
+	theme = window_get_theme(dest->window);
 
 	if (!sending_print_starting) {
 		sending_print_starting = TRUE;
@@ -219,31 +226,31 @@ static char *printtext_get_args(TEXT_DEST_REC *dest, const char *str,
 		}
 		case 'd': {
 			int d = (int) va_arg(va, int);
-			g_string_sprintfa(out, "%d", d);
+			g_string_append_printf(out, "%d", d);
 			break;
 		}
 		case 'f': {
 			double f = (double) va_arg(va, double);
-			g_string_sprintfa(out, "%0.2f", f);
+			g_string_append_printf(out, "%0.2f", f);
 			break;
 		}
 		case 'u': {
 			unsigned int d =
 				(unsigned int) va_arg(va, unsigned int);
-			g_string_sprintfa(out, "%u", d);
+			g_string_append_printf(out, "%u", d);
 			break;
                 }
 		case 'l': {
 			long d = (long) va_arg(va, long);
 
 			if (*++str != 'd' && *str != 'u') {
-				g_string_sprintfa(out, "%ld", d);
+				g_string_append_printf(out, "%ld", d);
 				str--;
 			} else {
 				if (*str == 'd')
-					g_string_sprintfa(out, "%ld", d);
+					g_string_append_printf(out, "%ld", d);
 				else
-					g_string_sprintfa(out, "%lu", d);
+					g_string_append_printf(out, "%lu", d);
 			}
 			break;
 		}
@@ -338,7 +345,7 @@ void printtext_string(void *server, const char *target, int level, const char *t
 
 	if (!sending_print_starting) {
 		sending_print_starting = TRUE;
-		signal_emit_id(signal_print_starting, 1, dest);
+		signal_emit_id(signal_print_starting, 1, &dest);
                 sending_print_starting = FALSE;
 	}
 
@@ -360,7 +367,7 @@ void printtext_string_window(WINDOW_REC *window, int level, const char *text)
 
 	if (!sending_print_starting) {
 		sending_print_starting = TRUE;
-		signal_emit_id(signal_print_starting, 1, dest);
+		signal_emit_id(signal_print_starting, 1, &dest);
                 sending_print_starting = FALSE;
 	}
 
@@ -462,9 +469,9 @@ static void sig_gui_dialog(const char *type, const char *text)
 {
 	char *format;
 
-	if (g_strcasecmp(type, "warning") == 0)
+	if (g_ascii_strcasecmp(type, "warning") == 0)
 		format = "%_Warning:%_ %s";
-	else if (g_strcasecmp(type, "error") == 0)
+	else if (g_ascii_strcasecmp(type, "error") == 0)
 		format = "%_Error:%_ %s";
 	else
 		format = "%s";

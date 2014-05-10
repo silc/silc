@@ -1,5 +1,5 @@
 
- Irssi 0.8 documentation - http://irssi.org/
+ Irssi 0.8 documentation - http://www.irssi.org/
 
  Copyright(c) 2000 Timo Sirainen <cras@irssi.org>
 
@@ -7,7 +7,7 @@
  Index
 
 	0. Generic babbling
-	1. Installation
+	1. Command line parameters
 	2. Message levels
 	3. Flood protection
 	4. Configuration
@@ -20,11 +20,11 @@
 	11. Logging
 
 	( not written yet: )
-	12. Aliases
+	12. Commands
 	13. Themes
 	14. Last log (currently text version only)
 	15. Nick and word completion
-	16. Translation tables
+	16. Recode
 	17. Windowing system (text version)
 	18. Keyboard (text version)
 	19. Perl scripting
@@ -132,45 +132,7 @@
 	these features down somewhere so people (and me!) would find them.
 
 
- 1. Installation
-
- 1.1 Configuration
-
-	configure script accepts these parameters:
-
-	--enable-ipv6      Enable IPv6 support
-	--disable-curses-windows  Don't use curses windows. Use this if
-	                   screen drawing seems too slow for some reason.
-			   This option may not work properly with all
-			   curseses (solaris8).
-	--enable-memdebug  Enable memory debugging, great for finding
-	                   memory leaks
-
-	--with-perl=static Build Perl support statically to irssi binary
-	                   (default is to build a module)
-	--with-perl-lib=[site|vendor|DIR]  Specify installation dir for
-	                   Perl libraries. Site is the default (usually
-			   /usr/local/lib/perl/...), vendor uses the path
-			   where the base of the perl is installed
-			   (/usr/lib/perl/...), or DIR specifies exactly
-			   where you want to install it.
-	--without-perl     Disable Perl support
-
-	--with-socks       Build with socks library
-	--with-bot         Build irssi-bot
-	--with-proxy       Build irssi-proxy module
-	--without-textui   Build without text frontend
-	--with-servertest  Build test irc server which you can use to try
-	                   crash irc clients
-
-	In short:
-
-	./configure
-	make
-	make install
-
-
- 1.2 Command line parameters
+ 1. Command line parameters
 
 	--connect -c <server>	Connect to server at startup
 	--port -p <port>	 - specify port
@@ -243,7 +205,7 @@
 	2.2 seconds by default for each message (helps with some servers).
 	You can change it with /SET cmd_queue_speed <milliseconds>. You can
 	also change the number of commands before flood protection activates
-	(ie. the burst count) with /SET cmd_max_at_once <count>.
+	(ie. the burst count) with /SET cmds_max_at_once <count>.
 
 	IRC servers also have an input buffer where the client's commands
 	are saved before processed. It's size is server specific (can be as
@@ -378,7 +340,7 @@
 	    -modes: Maximum number of mode changes in one /MODE command
 	    -whois: Maximum number of nicks in one /WHOIS command
 	    -cmdspeed: Same as /SET cmd_queue_speed, see section 3.1
-	    -cmdmax: Same as /SET cmd_max_at_once, see section 3.1
+	    -cmdmax: Same as /SET cmds_max_at_once, see section 3.1
 	    -nick, -user, -realname: Specify what nick/user/name to use
 	    -host: Specify what host name to use, if you have multiple
 	    -autosendcmd: Command to send after connecting to a server
@@ -442,7 +404,7 @@
 	    -ircnet: Same as -network. Deprecated. Do not use.
 	    -host: Specify what host name to use, if you have multiple
 	    -cmdspeed: Same as /SET cmd_queue_speed, see section 3.1
-	    -cmdmax: Same as /SET cmd_max_at_once, see section 3.1
+	    -cmdmax: Same as /SET cmds_max_at_once, see section 3.1
 	    -port: This is pretty much like the port argument later, except
 	           this can be used to modify existing server's port.
 
@@ -467,6 +429,9 @@
 	After connected to server, Irssi can automatically change your user
 	mode. You can set it with /SET usermode <mode>, default is +i.
 
+	/SET resolve_prefer_ipv6 - If ON, prefer IPv6 for hosts that
+	     have both v4 and v6 addresses.
+
  5.5 Automatic reconnecting
 
 	If you get disconnected from server, Irssi will try to reconnect
@@ -486,9 +451,12 @@
 	with /RECONNECT <n>. /RECONNECT without any arguments will
 	disconnect from the active server and reconnect back immediately.
 
- 5.6 Command redirections
+ 5.6 Server redirections
 
-	FIXME
+	Getting replies matched to IRC commands can be quite complicated.
+	Server redirection allow this in a relatively easy way. They are
+	used internally and are available to scripts; see Server redirections
+	in perl.txt for details.
 
  5.7 Server idle command queue
 
@@ -529,23 +497,22 @@
 
  5.9 Lag checking
 
-	Irssi will constantly check how big the lag to the server is. It's
-	done by sending IRSSILAG CTCP replies to ourself. Using PING command
-	for this would seem more reasonable, but there was too many problems
-	with it - some servers didn't even know the whole PING command!
+	Irssi will constantly check how big the lag to the server is. It is
+	done by sending PING commands. Lag checking is disabled for broken
+	servers that do not support PING.
 
 	If the lag is too big, Irssi will reconnect to different IRC server.
 	This is sometimes useful if the connection has been stuck for 30
 	minutes but it still hasn't been closed.
 
-	/SET lag_check_time <seconds> - Specifies how often to check the
-	     lag. If it is set to 0, the lag detection is disabled. Default
-	     is 30 seconds.
-	/SET lag_max_before_disconnect <seconds> - Specifies how big the lag
+	/SET lag_check_time <time> - Specifies how often to check the lag.
+	     If it is set to 0, the lag detection is disabled. Default
+	     is 1 minute.
+	/SET lag_max_before_disconnect <time> - Specifies how big the lag
 	     can be before reconnecting to another server. Default is 5
 	     minutes.
-	/SET lag_min_show <100th seconds> - Specifies the minimum lag to
-	     display in status bar. Default is 1 second.
+	/SET lag_min_show <time> - Specifies the minimum lag to display
+	     in status bar. Default is 1 second.
 
  5.10 Raw log
 
@@ -594,16 +561,16 @@
 	channel mode character (#+&!) before the channel name, Irssi
 	automatically uses # channels.
 
-	Channel name may contain any characters except SPACE, BELL, NUL,
-	CR, LF or comma (','). You can also restrict the channel to only
-	certain users by adding the hostmask to the end of the channel
-	name separated with a ':' character, like #channel:*!*@*.fi lets
-	only people from .fi domain join the channel. This doesn't work with
-	all IRC servers and it's pretty difficult to use, since everyone
-	will have to always join the #channel:*!*@*.fi channel, #channel or
-	#channel:*!*@*.se channels are different channels. Ban exceptions
-	(+e) and especially invite lists (+I) replace this functionality
-	pretty well, see section 6.5.
+	Channel names may contain any characters except SPACE, BELL, NUL,
+	CR, LF or comma (','). On IRCnet and a few other networks, you can
+	also restrict the channel to only certain servers by adding the
+	mask to the end of the channel name separated with a ':'
+	character, for example #channel:*.fi lets only people on .fi
+	servers join the channel. Other servers will not even know about
+	the channel. This is pretty difficult to use, since everyone will
+	have to always join #channel:*.fi; #channel and #channel:*.fi are
+	different channels. Ban exceptions (+e) and especially invite
+	lists (+I) replace this functionality pretty well, see section 6.5.
 
 	If channel has a password (aka. key), you can join it with
 	/JOIN #channel pass, or multiple channels with passwords with
@@ -668,25 +635,21 @@
 	- Channel mode
 	- WHO list to get nicks' hosts - useful for /BAN for example
 	- Ban list - useful for allowing /UNBAN to use wildcards
-	- Exception list, Invite list - these are asked only from servers
-	  that support +I and +e modes, mostly just IRCNet and some EFNet
-	  servers. These aren't really needed for anything currenty, except
-	  /INVITELIST and /BANS uses them to display the lists.
 
 	If you have joined many channels at once, Irssi tries to optimize
 	the commands it sends to server. Instead of sending two commands
 	to ask two channels' mode, it just sends MODE #a,#b. Same thing with
-	WHO list and ban/except/invite lists. Some servers do not support
-	this and they reply with different kinds of error messages, Irssi
-	tries to deal with them all right and resend the commands again
-	separately. However, some strange servers sometimes use some weird
-	error replies that Irssi doesn't know about, and the channel never
-	gets synchronized. If this happens with some server you know, please
+	WHO list and ban lists. Some servers do not support this and they
+	reply with different kinds of error messages, Irssi tries to deal
+	with them all right and resend the commands again separately.
+	However, some strange servers sometimes use some weird error replies
+	that Irssi doesn't know about, and the channel never gets
+	synchronized. If this happens with some server you know, please
 	let the Irssi's author know about it.
 
  6.5 Channel modes
 
-	Irssi knows these channel modes:
+	Common channel modes are:
 
 	i - Invite only - People can't join to channel without being
 	    /INVITEd, or being in invite list (+I, see below).
@@ -711,39 +674,25 @@
 	            flooding, like some bot allows max. 5 users to join in
 	            one minute or so.
 
-	a - Anonymous - No-one's nick name, host or anything else can be
-	    seen. All messages, joins, parts, modes, etc. are seen as coming
-	    from nick "anonymous", this could be pretty confusing but nice
-	    feature if you want total anonymity. This mode can only be set,
-	    never unset. This mode isn't supported by all servers.
-
-	    NOTE: there is/was one bug :) Channel operators can guess if some
-	    nick might be in the channel and try to kick it. If nick was in
-	    channel, everyone will see the nick that was kicked.
-
-	r - Re-op - If channel becomes opless for longer than 45 (?) minutes,
-	    op everyone in the channel. This works only in !channels. This
-	    mode can only be set, not unset by channel creator.
-
 	b - Set/remove ban. For example MODE #channel +b *!*@*.org bans
 	    everyone from .org domain.
 
 	    If someone from .org domain was already in channel before the
-	    ban was set, he/she couldn't be able to write any messages to
-	    channel (doesn't work with all servers).
+	    ban was set, he/she cannot send any messages to channel (doesn't
+	    work with all servers).
 
-	    Ban can also be overridden with /INVITE, although many stupid
+	    Bans can also be overridden with /INVITE, although many stupid
 	    IRC clients automatically kick the user out because they see
 	    the ban and think that because of it the user shouldn't be in
 	    the channel (doesn't work with all servers).
 
 	e - Ban exceptions. You could for example ban everyone from
-	    *!*@*.org but set ban exception to *!*@*.host.org - works only
-	    in IRCnet/EFnet servers.
+	    *!*@*.org but set ban exception to *!*@*.host.org - does not work
+	    with all servers.
 
 	I - Invite list. If channel is invite only (+i), people in this
-	    list can join it without being /INVITEd - works only in
-	    IRCnet/EFnet servers.
+	    list can join it without being /INVITEd - does not work with all
+	    servers.
 
 	    This is excellent for in-country channels that don't want
 	    foreigners (spammers!) to join the channel, for example setting
@@ -752,13 +701,8 @@
 	    in the channels and sending /MSG bot invite command to it
 	    /INVITEs you to the channel.
 
-	    The ':' feature in channel modes is quite similiar, see section
-	    6.2.
-
-	O - Channel owner, the nick who creates a !channel receives this
-	    mode. It isn't displayed anywhere, you can't pass it to anyone
-	    else and you can't regain it again. This is needed for setting
-	    +r mode in channel when it's first created.
+	    On IRCnet, the ':' feature in channel names can also be used for
+	    a similar effect, see section 6.2.
 
 	o <nick> - Grant or revoke channel operator status from nick
 	v <nick> - Grant or revoke voice status from nick, only people with
@@ -778,6 +722,10 @@
 	command to op 6 people and Irssi will split it to two commands in
 	IRCnet/EFnet.
 
+	Many networks have additional modes and/or change the meaning of existing
+	modes. Check the documentation for the network or the server software in
+	use for details.
+
 	Instead of manually setting o, v and b modes you probably want to
 	use /OP, /DEOP, /VOICE, /DEVOICE, /BAN and /UNBAN commands.
 
@@ -793,16 +741,16 @@
 	you can simply unban it with /UNBAN *really*
 
 	Using /BAN <nicks>, Irssi will automatically create the mask. You
-	can change the way it's created with /BANTYPE command:
+	can change the way it's created with the ban_type setting:
 
-	/BANTYPE normal|host|domain|custom
+	/SET ban_type normal|host|domain|custom
 
 	Normal - *!user@*.domain.net
 	Host   - *!*@host.domain.net
 	Domain - *!*@*.domain.net
 	Custom [nick] [user] [host] [domain]
-	       eg. /bantype custom nick domain - nick!*@*.domain.net
-	       eg. /bantype custom user host - *!user@host.domain.net
+	       eg. /SET ban_type custom nick domain - nick!*@*.domain.net
+	       eg. /SET ban_type custom user host - *!user@host.domain.net
 
 	Irssi has also a couple of commands to help banning people:
 
@@ -845,11 +793,9 @@
 	are in IRC all the time. So I made a bit more featureful notify
 	list:
 
-	/NOTIFY [-list] [-away] [-idle [minutes]] <mask> [network [network...]]
+	/NOTIFY [-list] [-away] <mask> [network [network...]]
 
 	    -away: Notifies about away-status changes
-	    -idle: Notifies if idle time is first larger than <minutes>
-	           (default is hour) and then it drops down.
             -list: Lists the notify list entries with all their settings
 	    <mask>: Either a simple "nick" or "nick!*@*blah.org". The nick
 	            can't contain wildcards, but the user/host can.
@@ -1031,6 +977,44 @@ If <color> is a
 
 	You can disable this feature by setting awaylog_level to NONE.
 
+ 12. Commands
+
+	Any char in the `cmdchars' setting can begin a command. The
+	syntax for a command is the following:
+
+	<CMDCHAR>[<CMDCHAR>][^]<DATA>
+
+	If <CMDCHAR> is repeated two times, alias expansion is
+	disabled, enabled otherwise. If `^' is present, command output
+	is disabled. If <DATA> begins with a space, command lookup is
+	inhibited and the data is sent to the active window item
+	(useful to send a line that begins with <CMDCHAR>).
+
+ 16. Recode
+
+	irssi supports selective encoding of incoming/outgoing messages
+	through the recode system. All incoming/outgoing messages can be
+	optionally converted to/from the charset specified by the
+	`term_charset' variable (which defaults to the locale encoding and
+	should _not_ be changed in most cases), by setting the `recode'
+	variable to 'ON'.
+	Since there is no way in IRC to know the encoding associated to a
+	message, for incoming messages irssi uses the following algorithm:
+
+	if `recode_autodetect_utf8' is 'ON' and the message is valid UTF-8 the
+	encoding is assumed to be UTF-8.
+	if an encoding is set for the target (through /recode) use it,
+	otherwise fallback to the value of `recode_fallback'.
+
+	For outgoing messages it is simpler:
+
+	if an encoding is set for the target (through /recode) use it,
+	otherwise fallback to the value of `recode_out_default_charset'.
+
+	/SET recode_transliterate - Append '//TRANSLIT' to the destination
+	encoding for both incoming/outgoing messages. '//TRANSLIT' is a GNU
+	iconv specific extension to peform transliteration (locale dependent)
+	when a character is not representable in the destination encoding.
 
 .. no, the docs end here, I got bored of writing these after a few days and 
 haven't touched these since then.

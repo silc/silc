@@ -5,7 +5,7 @@ dnl =============
 dnl
 dnl - Determine which version of curses is installed on your system
 dnl   and set the -I/-L/-l compiler entries and add a few preprocessor
-dnl   symbols 
+dnl   symbols
 dnl - Do an AC_SUBST on the CURSES_INCLUDEDIR and CURSES_LIBS so that
 dnl   @CURSES_INCLUDEDIR@ and @CURSES_LIBS@ will be available in
 dnl   Makefile.in's
@@ -15,7 +15,7 @@ dnl   CURSES_INCLUDEDIR - contains -I's and possibly -DRENAMED_CURSES if
 dnl                       an ncurses.h that's been renamed to curses.h
 dnl                       is found.
 dnl   CURSES_LIBS       - sets -L and -l's appropriately
-dnl   CFLAGS            - if --with-sco, add -D_SVID3 
+dnl   CFLAGS            - if --with-sco, add -D_SVID3
 dnl   has_curses        - exports result of tests to rest of configure
 dnl
 dnl Usage:
@@ -39,7 +39,7 @@ dnl - call AM_CONDITIONAL(HAS_CURSES, test "$has_curses" = true) from
 dnl   configure.in
 dnl - your Makefile.am can look something like this
 dnl   -----------------------------------------------
-dnl   INCLUDES= blah blah blah $(CURSES_INCLUDEDIR) 
+dnl   INCLUDES= blah blah blah $(CURSES_INCLUDEDIR)
 dnl   if HAS_CURSES
 dnl   CURSES_TARGETS=name_of_curses_prog
 dnl   endif
@@ -57,25 +57,25 @@ dnl
 dnl /*=== Curses version detection defines ===*/
 dnl /* Found some version of curses that we're going to use */
 dnl #undef HAS_CURSES
-dnl    
+dnl   
 dnl /* Use SunOS SysV curses? */
 dnl #undef USE_SUNOS_CURSES
-dnl 
+dnl
 dnl /* Use old BSD curses - not used right now */
 dnl #undef USE_BSD_CURSES
-dnl 
+dnl
 dnl /* Use SystemV curses? */
 dnl #undef USE_SYSV_CURSES
-dnl 
+dnl
 dnl /* Use Ncurses? */
 dnl #undef USE_NCURSES
-dnl 
+dnl
 dnl /* If you Curses does not have color define this one */
 dnl #undef NO_COLOR_CURSES
-dnl 
+dnl
 dnl /* Define if you want to turn on SCO-specific code */
 dnl #undef SCO_FLAVOR
-dnl 
+dnl
 dnl /* Set to reflect version of ncurses *
 dnl  *   0 = version 1.*
 dnl  *   1 = version 1.9.9g
@@ -83,10 +83,10 @@ dnl  *   2 = version 4.0/4.1 */
 dnl #undef NCURSES_970530
 dnl
 dnl /*=== End new stuff for acconfig.h ===*/
-dnl 
+dnl
 
 
-AC_DEFUN(AC_CHECK_CURSES,[
+AC_DEFUN([AC_CHECK_CURSES],[
 	search_ncurses=true
 	screen_manager=""
 	has_curses=false
@@ -119,7 +119,7 @@ AC_DEFUN(AC_CHECK_CURSES,[
 	])
 
 	AC_ARG_WITH(vcurses,
-	  [  --with-vcurses[=incdir] Used to force SysV curses],
+	  [[  --with-vcurses[=incdir] Used to force SysV curses]],
 	  if test x$withval != xyes; then
 		CURSES_INCLUDEDIR="-I$withval"
 	  fi
@@ -127,7 +127,7 @@ AC_DEFUN(AC_CHECK_CURSES,[
 	)
 
 	AC_ARG_WITH(ncurses,
-	  [  --with-ncurses[=dir]    Compile with ncurses/locate base dir],
+	  [[  --with-ncurses[=dir]    Compile with ncurses/locate base dir]],
 	  if test x$withval = xno ; then
 		search_ncurses=false
 	  elif test x$withval != xyes ; then
@@ -142,7 +142,7 @@ AC_DEFUN(AC_CHECK_CURSES,[
 ])
 
 
-AC_DEFUN(AC_USE_SUNOS_CURSES, [
+AC_DEFUN([AC_USE_SUNOS_CURSES], [
 	search_ncurses=false
 	screen_manager="SunOS 4.x /usr/5include curses"
 	AC_MSG_RESULT(Using SunOS 4.x /usr/5include curses)
@@ -156,7 +156,7 @@ AC_DEFUN(AC_USE_SUNOS_CURSES, [
 	AC_MSG_RESULT(Please note that some screen refreshs may fail)
 ])
 
-AC_DEFUN(AC_USE_OSF1_CURSES, [
+AC_DEFUN([AC_USE_OSF1_CURSES], [
        AC_MSG_RESULT(Using OSF1 curses)
        search_ncurses=false
        screen_manager="OSF1 curses"
@@ -167,7 +167,7 @@ AC_DEFUN(AC_USE_OSF1_CURSES, [
        CURSES_LIBS="-lcurses"
 ])
 
-AC_DEFUN(AC_USE_SYSV_CURSES, [
+AC_DEFUN([AC_USE_SYSV_CURSES], [
 	AC_MSG_RESULT(Using SysV curses)
 	AC_DEFINE(HAS_CURSES)
 	has_curses=true
@@ -198,11 +198,11 @@ dnl	AC_WARN(display/input problems.)
 dnl	AC_WARN(Reconsider using xcurses)
 dnl)
 
-	
+
 dnl
-dnl Parameters: directory filename cureses_LIBS curses_INCLUDEDIR nicename
+dnl Parameters: directory filename curses_LIBS curses_INCLUDEDIR nicename
 dnl
-AC_DEFUN(AC_NCURSES, [
+AC_DEFUN([AC_NCURSES], [
     if $search_ncurses
     then
         if test -f $1/$2
@@ -220,7 +220,7 @@ AC_DEFUN(AC_NCURSES, [
 	    ], $CURSES_LIBS)
 	    CURSES_INCLUDEDIR="$4"
 	    search_ncurses=false
-	    screen_manager=$5
+	    screen_manager="$5"
             AC_DEFINE(HAS_CURSES)
             has_curses=true
 	    has_ncurses=true
@@ -229,24 +229,26 @@ AC_DEFUN(AC_NCURSES, [
     fi
 ])
 
-AC_DEFUN(AC_SEARCH_NCURSES, [
+AC_DEFUN([AC_SEARCH_NCURSES], [
     AC_CHECKING("location of ncurses.h file")
 
-    AC_NCURSES(/usr/include, ncurses.h, -lncurses,, "ncurses on /usr/include")
-    AC_NCURSES(/usr/include/ncurses, ncurses.h, -lncurses, -I/usr/include/ncurses, "ncurses on /usr/include/ncurses")
-    AC_NCURSES(/usr/local/include, ncurses.h, -L/usr/local/lib -lncurses, -I/usr/local/include, "ncurses on /usr/local")
-    AC_NCURSES(/usr/pkg/include, ncurses.h, -L/usr/pkg/lib -lncurses, -I/usr/pkg/include, "ncurses on /usr/pkg")
-    AC_NCURSES(/usr/contrib/include, ncurses.h, -L/usr/contrib/lib -lncurses, -I/usr/contrib/include, "ncurses on /usr/contrib")
-    AC_NCURSES(/usr/local/include/ncurses, ncurses.h, -L/usr/local/lib -L/usr/local/lib/ncurses -lncurses, -I/usr/local/include/ncurses, "ncurses on /usr/local/include/ncurses")
-
-    AC_NCURSES(/usr/local/include/ncurses, curses.h, -L/usr/local/lib -lncurses, -I/usr/local/include/ncurses -DRENAMED_NCURSES, "renamed ncurses on /usr/local/.../ncurses")
-
-    AC_NCURSES(/usr/include/ncurses, curses.h, -lncurses, -I/usr/include/ncurses -DRENAMED_NCURSES, "renamed ncurses on /usr/include/ncurses")
+    AC_NCURSES(/usr/include, ncurses.h, -lncurses,,
+	       [ncurses in /usr/include])
+    AC_NCURSES(/usr/include/ncurses, ncurses.h, -lncurses, -I/usr/include/ncurses,
+	       [ncurses in /usr/include/ncurses])
+    AC_NCURSES(/usr/local/include, ncurses.h, -L/usr/local/lib -lncurses, -I/usr/local/include,
+	       [ncurses in /usr/local/include])
+    AC_NCURSES(/usr/local/include/ncurses, ncurses.h, -L/usr/local/lib -lncurses, -I/usr/local/include/ncurses,
+	       [ncurses in /usr/local/include/ncurses])
+    AC_NCURSES(/usr/local/include/ncurses, curses.h, -L/usr/local/lib -lncurses, -I/usr/local/include/ncurses -DRENAMED_NCURSES,
+	       [renamed ncurses in /usr/local/include/ncurses])
+    AC_NCURSES(/usr/include/ncurses, curses.h, -lncurses, -I/usr/include/ncurses -DRENAMED_NCURSES,
+	       [renamed ncurses in /usr/include/ncurses])
 
     dnl
     dnl We couldn't find ncurses, try SysV curses
     dnl
-    if $search_ncurses 
+    if $search_ncurses
     then
         AC_EGREP_HEADER(init_color, /usr/include/curses.h,
 	    AC_USE_SYSV_CURSES)

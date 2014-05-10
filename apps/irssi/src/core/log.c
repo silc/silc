@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -31,10 +31,6 @@
 #include "settings.h"
 
 #define DEFAULT_LOG_FILE_CREATE_MODE 600
-
-#ifdef HAVE_FCNTL
-static struct flock lock;
-#endif
 
 GSList *logs;
 
@@ -55,7 +51,7 @@ static int log_item_str2type(const char *type)
 	int n;
 
 	for (n = 0; log_item_types[n] != NULL; n++) {
-		if (g_strcasecmp(log_item_types[n], type) == 0)
+		if (g_ascii_strcasecmp(log_item_types[n], type) == 0)
 			return n;
 	}
 
@@ -102,6 +98,7 @@ static char *log_filename(LOG_REC *log)
 int log_start_logging(LOG_REC *log)
 {
 	char *dir;
+	struct flock lock;
 
 	g_return_val_if_fail(log != NULL, FALSE);
 
@@ -116,7 +113,7 @@ int log_start_logging(LOG_REC *log)
 	    strcmp(log->real_fname, log->fname) != 0) {
 		/* path may contain variables (%time, $vars),
 		   make sure the directory is created */
-		dir = g_dirname(log->real_fname);
+		dir = g_path_get_dirname(log->real_fname);
 		mkpath(dir, log_dir_create_mode);
 		g_free(dir);
 	}
@@ -129,7 +126,6 @@ int log_start_logging(LOG_REC *log)
 		log->failed = TRUE;
 		return FALSE;
 	}
-#ifdef HAVE_FCNTL
         memset(&lock, 0, sizeof(lock));
 	lock.l_type = F_WRLCK;
 	if (fcntl(log->handle, F_SETLK, &lock) == -1 && errno == EACCES) {
@@ -139,7 +135,6 @@ int log_start_logging(LOG_REC *log)
 		log->failed = TRUE;
 		return FALSE;
 	}
-#endif
 	lseek(log->handle, 0, SEEK_END);
 
 	log->opened = log->last = time(NULL);
@@ -154,6 +149,8 @@ int log_start_logging(LOG_REC *log)
 
 void log_stop_logging(LOG_REC *log)
 {
+	struct flock lock;
+
 	g_return_if_fail(log != NULL);
 
 	if (log->handle == -1)
@@ -165,11 +162,9 @@ void log_stop_logging(LOG_REC *log)
 			    settings_get_str("log_close_string"),
 			    "\n", time(NULL));
 
-#ifdef HAVE_FCNTL
         memset(&lock, 0, sizeof(lock));
 	lock.l_type = F_UNLCK;
 	fcntl(log->handle, F_SETLK, &lock);
-#endif
 
 	write_buffer_flush();
 	close(log->handle);
@@ -250,11 +245,9 @@ static int itemcmp(const char *patt, const char *item)
 {
 	/* returns 0 on match, nonzero otherwise */
 
-	if (item == NULL)
-		return g_strcasecmp(patt, "*") != 0;
-	if (*patt == '*')
+	if (!strcmp(patt, "*"))
 		return 0;
-        return g_strcasecmp(patt, item);
+        return item ? g_strcasecmp(patt, item) : 1;
 }
 
 LOG_ITEM_REC *log_item_find(LOG_REC *log, int type, const char *item,
@@ -301,8 +294,7 @@ void log_file_write(const char *server_tag, const char *item, int level,
 
 		if (rec->items == NULL)
 			fallbacks = g_slist_append(fallbacks, rec);
-		else if (item != NULL &&
-			 log_item_find(rec, LOG_ITEM_TARGET, item,
+		else if (log_item_find(rec, LOG_ITEM_TARGET, item,
 				       server_tag) != NULL)
 			log_write_rec(rec, str, level);
 	}
@@ -548,7 +540,7 @@ static void log_read_config(void)
 		log->handle = -1;
 		log->fname = g_strdup(node->key);
 		log->autoopen = config_node_get_bool(node, "auto_open", FALSE);
-		log->level = level2bits(config_node_get_str(node, "level", 0));
+		log->level = level2bits(config_node_get_str(node, "level", 0), NULL);
 
 		signal_emit("log config read", 2, log, node);
 

@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -47,11 +47,11 @@ static char *term_lines_empty; /* 1 if line is entirely empty */
 static int vcmove, vcx, vcy, curs_visible;
 static int crealx, crealy, cforcemove;
 static int curs_x, curs_y;
-static int auto_detach;
 
 static int last_fg, last_bg, last_attrs;
 
-static int redraw_needed, redraw_tag;
+static GSource *sigcont_source;
+static volatile sig_atomic_t got_sigcont;
 static int freeze_counter;
 
 static TERM_INPUT_FUNC input_func;
@@ -61,19 +61,42 @@ static int term_inbuf_pos;
 /* SIGCONT handler */
 static void sig_cont(int p)
 {
-        redraw_needed = TRUE;
-	terminfo_cont(current_term);
+        got_sigcont = TRUE;
 }
 
-static int redraw_timeout(void)
+/* SIGCONT GSource */
+static gboolean sigcont_prepare(GSource *source, gint *timeout)
 {
-	if (redraw_needed) {
-		irssi_redraw();
-                redraw_needed = FALSE;
-	}
+	*timeout = -1;
+	return got_sigcont;
+}
+
+static gboolean sigcont_check(GSource *source)
+{
+	return got_sigcont;
+}
+
+static gboolean sigcont_dispatch(GSource *source, GSourceFunc callback, gpointer user_data)
+{
+	got_sigcont = FALSE;
+	if (callback == NULL)
+		return TRUE;
+	return callback(user_data);
+}
+
+static gboolean do_redraw(gpointer unused)
+{
+	terminfo_cont(current_term);
+	irssi_redraw();
 
         return 1;
 }
+
+static GSourceFuncs sigcont_funcs = {
+	.prepare = sigcont_prepare,
+	.check = sigcont_check,
+	.dispatch = sigcont_dispatch
+};
 
 int term_init(void)
 {
@@ -100,13 +123,14 @@ int term_init(void)
 	act.sa_flags = 0;
 	act.sa_handler = sig_cont;
 	sigaction(SIGCONT, &act, NULL);
-        redraw_tag = g_timeout_add(500, (GSourceFunc) redraw_timeout, NULL);
+	sigcont_source = g_source_new(&sigcont_funcs, sizeof(GSource));
+	g_source_set_callback(sigcont_source, do_redraw, NULL, NULL);
+	g_source_attach(sigcont_source, NULL);
 
 	curs_x = curs_y = 0;
 	term_width = current_term->width;
 	term_height = current_term->height;
 	root_window = term_window_create(0, 0, term_width, term_height);
-        term_detached = FALSE;
 
         term_lines_empty = g_new0(char, term_height);
 
@@ -120,7 +144,8 @@ void term_deinit(void)
 {
 	if (current_term != NULL) {
 		signal(SIGCONT, SIG_DFL);
-		g_source_remove(redraw_tag);
+		g_source_destroy(sigcont_source);
+		g_source_unref(sigcont_source);
 
 		term_common_deinit();
 		terminfo_core_deinit(current_term);
@@ -130,8 +155,6 @@ void term_deinit(void)
 
 static void term_move_real(void)
 {
-	if (term_detached) return;
-
 	if (vcx != crealx || vcy != crealy || cforcemove) {
 		if (curs_visible) {
 			terminfo_set_cursor_visible(FALSE);
@@ -165,7 +188,6 @@ static void term_move_reset(int x, int y)
 void term_resize(int width, int height)
 {
 	if (width < 0 || height < 0) {
-		terminfo_resize(current_term);
 		width = current_term->width;
                 height = current_term->height;
 	}
@@ -189,22 +211,18 @@ void term_resize_final(int width, int height)
 /* Returns TRUE if terminal has colors */
 int term_has_colors(void)
 {
-        return current_term->has_colors;
+        return current_term->TI_colors > 0;
 }
 
 /* Force the colors on any way you can */
 void term_force_colors(int set)
 {
-	if (term_detached) return;
-
 	terminfo_setup_colors(current_term, set);
 }
 
 /* Clear screen */
 void term_clear(void)
 {
-	if (term_detached) return;
-
         term_set_color(root_window, ATTR_RESET);
 	terminfo_clear();
         term_move_reset(0, 0);
@@ -215,8 +233,6 @@ void term_clear(void)
 /* Beep */
 void term_beep(void)
 {
-	if (term_detached) return;
-
         terminfo_beep(current_term);
 }
 
@@ -253,8 +269,6 @@ void term_window_clear(TERM_WINDOW *window)
 {
 	int y;
 
-	if (term_detached) return;
-
         terminfo_set_normal();
         if (window->y == 0 && window->height == term_height) {
         	term_clear();
@@ -271,8 +285,6 @@ void term_window_scroll(TERM_WINDOW *window, int count)
 {
 	int y;
 
-	if (term_detached) return;
-
 	terminfo_scroll(window->y, window->y+window->height-1, count);
         term_move_reset(vcx, vcy);
 
@@ -285,8 +297,8 @@ void term_window_scroll(TERM_WINDOW *window, int count)
 void term_set_color(TERM_WINDOW *window, int col)
 {
 	int set_normal;
-
-	if (term_detached) return;
+	int fg = col & 0x0f;
+	int bg = (col & 0xf0) >> 4;
 
         set_normal = ((col & ATTR_RESETFG) && last_fg != -1) ||
 		((col & ATTR_RESETBG) && last_bg != -1);
@@ -314,30 +326,30 @@ void term_set_color(TERM_WINDOW *window, int col)
 		terminfo_set_standout(FALSE);
 
 	/* set foreground color */
-	if ((col & 0x0f) != last_fg &&
-	    ((col & 0x0f) != 0 || (col & ATTR_RESETFG) == 0)) {
+	if (fg != last_fg &&
+	    (fg != 0 || (col & ATTR_RESETFG) == 0)) {
                 if (term_use_colors) {
-			last_fg = col & 0x0f;
+			last_fg = fg;
 			terminfo_set_fg(last_fg);
 		}
 	}
 
 	/* set background color */
-	if (col & ATTR_BLINK)
-		col |= 0x80;
-	else if (col & 0x80)
+	if (col & 0x80 && window->term->TI_colors == 8)
 		col |= ATTR_BLINK;
+	if (col & ATTR_BLINK)
+		current_term->set_blink(current_term);
 
-	if ((col & 0xf0) >> 4 != last_bg &&
-	    ((col & 0xf0) != 0 || (col & ATTR_RESETBG) == 0)) {
+	if (bg != last_bg &&
+	    (bg != 0 || (col & ATTR_RESETBG) == 0)) {
                 if (term_use_colors) {
-			last_bg = (col & 0xf0) >> 4;
+			last_bg = bg;
 			terminfo_set_bg(last_bg);
 		}
 	}
 
 	/* bold */
-	if (col & 0x08)
+	if (col & 0x08 && window->term->TI_colors == 8)
 		col |= ATTR_BOLD;
 	if (col & ATTR_BOLD)
 		terminfo_set_bold();
@@ -386,23 +398,19 @@ static void term_printed_text(int count)
 		cforcemove = TRUE;
 }
 
-void term_addch(TERM_WINDOW *window, int chr)
+void term_addch(TERM_WINDOW *window, char chr)
 {
-	if (term_detached) return;
-
 	if (vcmove) term_move_real();
 
-	if (vcy < term_height-1 || vcx < term_width-1) {
-		/* With UTF-8, move cursor only if this char is either
-		   single-byte (8. bit off) or beginning of multibyte
-		   (7. bit off) */
-		if (term_type != TERM_TYPE_UTF8 ||
-		    (chr & 0x80) == 0 || (chr & 0x40) == 0) {
-			term_printed_text(1);
-		}
-
-		putc(chr, window->term->out);
+	/* With UTF-8, move cursor only if this char is either
+	   single-byte (8. bit off) or beginning of multibyte
+	   (7. bit off) */
+	if (term_type != TERM_TYPE_UTF8 ||
+	    (chr & 0x80) == 0 || (chr & 0x40) == 0) {
+		term_printed_text(1);
 	}
+
+	putc(chr, window->term->out);
 }
 
 static void term_addch_utf8(TERM_WINDOW *window, unichar chr)
@@ -410,22 +418,18 @@ static void term_addch_utf8(TERM_WINDOW *window, unichar chr)
 	char buf[10];
 	int i, len;
 
-	len = utf16_char_to_utf8(chr, buf);
+	len = g_unichar_to_utf8(chr, buf);
 	for (i = 0;  i < len; i++)
                 putc(buf[i], window->term->out);
 }
 
 void term_add_unichar(TERM_WINDOW *window, unichar chr)
 {
-	if (term_detached) return;
-
 	if (vcmove) term_move_real();
-	if (vcy == term_height-1 && vcx == term_width-1)
-		return; /* last char in screen */
 
 	switch (term_type) {
 	case TERM_TYPE_UTF8:
-	  	term_printed_text(utf8_width(chr));
+	  	term_printed_text(unichar_isprint(chr) ? mk_wcwidth(chr) : 1);
                 term_addch_utf8(window, chr);
 		break;
 	case TERM_TYPE_BIG5:
@@ -448,22 +452,15 @@ void term_addstr(TERM_WINDOW *window, const char *str)
 {
 	int len;
 
-	if (term_detached) return;
-
 	if (vcmove) term_move_real();
 	len = strlen(str); /* FIXME utf8 or big5 */
         term_printed_text(len);
 
-	if (vcy != term_height || vcx != 0)
-		fputs(str, window->term->out);
-	else
-		fwrite(str, 1, len-1, window->term->out);
+	fwrite(str, 1, len, window->term->out);
 }
 
 void term_clrtoeol(TERM_WINDOW *window)
 {
-	if (term_detached) return;
-
 	/* clrtoeol() doesn't necessarily understand colors */
 	if (last_fg == -1 && last_bg == -1 &&
 	    (last_attrs & (ATTR_UNDERLINE|ATTR_REVERSE)) == 0) {
@@ -489,7 +486,7 @@ void term_move_cursor(int x, int y)
 
 void term_refresh(TERM_WINDOW *window)
 {
-	if (term_detached || freeze_counter > 0)
+	if (freeze_counter > 0)
 		return;
 
 	term_move(root_window, curs_x, curs_y);
@@ -515,59 +512,29 @@ void term_refresh_thaw(void)
                 term_refresh(NULL);
 }
 
-void term_auto_detach(int set)
-{
-        auto_detach = set;
-}
-
-void term_detach(void)
+void term_stop(void)
 {
 	terminfo_stop(current_term);
-
-        fclose(current_term->in);
-        fclose(current_term->out);
-
-	current_term->in = NULL;
-	current_term->out = NULL;
-        term_detached = TRUE;
-}
-
-void term_attach(FILE *in, FILE *out)
-{
-	current_term->in = in;
-	current_term->out = out;
-        term_detached = FALSE;
-
+	kill(getpid(), SIGTSTP);
 	terminfo_cont(current_term);
 	irssi_redraw();
 }
 
-void term_stop(void)
-{
-	if (term_detached) {
-		kill(getpid(), SIGTSTP);
-	} else {
-		terminfo_stop(current_term);
-		kill(getpid(), SIGTSTP);
-		terminfo_cont(current_term);
-		irssi_redraw();
-	}
-}
-
 static int input_utf8(const unsigned char *buffer, int size, unichar *result)
 {
-        const unsigned char *end = buffer;
+	unichar c = g_utf8_get_char_validated(buffer, size);
 
-	switch (get_utf8_char(&end, size, result)) {
-	case -2:
+	switch (c) {
+	case (unichar)-1:
 		/* not UTF8 - fallback to 8bit ascii */
 		*result = *buffer;
 		return 1;
-	case -1:
+	case (unichar)-2:
                 /* need more data */
 		return -1;
 	default:
-		return (int) (end-buffer)+1;
+		*result = c;
+		return g_utf8_skip[*buffer];
 	}
 }
 
@@ -608,40 +575,36 @@ void term_set_input_type(int type)
 	}
 }
 
-int term_gets(unichar *buffer, int size)
+void term_gets(GArray *buffer, int *line_count)
 {
 	int ret, i, char_len;
 
-	if (term_detached)
-		return 0;
-
         /* fread() doesn't work */
-	if (size > sizeof(term_inbuf)-term_inbuf_pos)
-		size = sizeof(term_inbuf)-term_inbuf_pos;
 
 	ret = read(fileno(current_term->in),
-		   term_inbuf + term_inbuf_pos, size);
+		   term_inbuf + term_inbuf_pos, sizeof(term_inbuf)-term_inbuf_pos);
 	if (ret == 0) {
 		/* EOF - terminal got lost */
-		if (auto_detach)
-                        term_detach();
 		ret = -1;
 	} else if (ret == -1 && (errno == EINTR || errno == EAGAIN))
 		ret = 0;
+	if (ret == -1)
+		signal_emit("command quit", 1, "Lost terminal");
 
 	if (ret > 0) {
                 /* convert input to unichars. */
 		term_inbuf_pos += ret;
-                ret = 0;
 		for (i = 0; i < term_inbuf_pos; ) {
+			unichar key;
 			char_len = input_func(term_inbuf+i, term_inbuf_pos-i,
-					      buffer);
+					      &key);
 			if (char_len < 0)
 				break;
+			g_array_append_val(buffer, key);
+			if (key == '\r' || key == '\n')
+				(*line_count)++;
 
 			i += char_len;
-                        buffer++;
-                        ret++;
 		}
 
 		if (i >= term_inbuf_pos)
@@ -651,6 +614,4 @@ int term_gets(unichar *buffer, int size)
                         term_inbuf_pos -= i;
 		}
 	}
-
-	return ret;
 }

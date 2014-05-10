@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #define NEED_PERL_H
@@ -47,10 +47,6 @@ typedef struct {
 	char *stash;
         PERL_OBJECT_FUNC fill_func;
 } PERL_OBJECT_REC;
-
-#ifndef HAVE_PL_PERL
-STRLEN PL_na;
-#endif
 
 static GHashTable *iobject_stashes, *plain_stashes;
 static GSList *use_protocols;
@@ -232,7 +228,7 @@ char *perl_get_use_list(void)
 	str = g_string_new(NULL);
 
 	use_lib = settings_get_str("perl_use_lib");
-	g_string_sprintf(str, "use lib qw(%s/scripts "SCRIPTDIR" %s);",
+	g_string_printf(str, "use lib qw(%s/scripts "SCRIPTDIR" %s);",
 			 get_irssi_dir(), use_lib);
 
         g_string_append(str, "use Irssi;");
@@ -240,7 +236,7 @@ char *perl_get_use_list(void)
 		g_string_append(str, "use Irssi::UI;");
 
 	for (tmp = use_protocols; tmp != NULL; tmp = tmp->next)
-		g_string_sprintfa(str, "use Irssi::%s;", (char *) tmp->data);
+		g_string_append_printf(str, "use Irssi::%s;", (char *) tmp->data);
 
 	ret = str->str;
         g_string_free(str, FALSE);
@@ -305,6 +301,7 @@ void perl_connect_fill_hash(HV *hv, SERVER_CONNECT_REC *conn)
 
 	hv_store(hv, "reconnection", 12, newSViv(conn->reconnection), 0);
 	hv_store(hv, "no_autojoin_channels", 20, newSViv(conn->no_autojoin_channels), 0);
+	hv_store(hv, "no_autosendcmd", 14, newSViv(conn->no_autosendcmd), 0);
 	hv_store(hv, "unix_socket", 11, newSViv(conn->unix_socket), 0);
 	hv_store(hv, "use_ssl", 7, newSViv(conn->use_ssl), 0);
 	hv_store(hv, "no_connect", 10, newSViv(conn->no_connect), 0);
@@ -436,7 +433,8 @@ void perl_nick_fill_hash(HV *hv, NICK_REC *nick)
 	hv_store(hv, "op", 2, newSViv(nick->op), 0);
 	hv_store(hv, "halfop", 6, newSViv(nick->halfop), 0);
 	hv_store(hv, "voice", 5, newSViv(nick->voice), 0);
-	hv_store(hv, "other", 5, newSViv(nick->other), 0);
+	hv_store(hv, "other", 5, newSViv(nick->prefixes[0]), 0);
+	hv_store(hv, "prefixes", 8, new_pv(nick->prefixes), 0);
 
 	hv_store(hv, "last_check", 10, newSViv(nick->last_check), 0);
 	hv_store(hv, "send_massjoin", 13, newSViv(nick->send_massjoin), 0);
@@ -571,6 +569,7 @@ static void perl_register_protocol(CHAT_PROTOCOL_REC *rec)
 		"Nick"
 	};
 	static char *find_use_code =
+		"use lib qw(%s);\n"
 		"my $pkg = Irssi::%s; $pkg =~ s/::/\\//;\n"
 		"foreach my $i (@INC) {\n"
 		"  return 1 if (-f \"$i/$pkg.pm\");\n"
@@ -584,13 +583,8 @@ static void perl_register_protocol(CHAT_PROTOCOL_REC *rec)
 	chat_type = chat_protocol_lookup(rec->name);
 	g_return_if_fail(chat_type >= 0);
 
-#if GLIB_MAJOR_VERSION < 2
-	name = g_strdup(rec->name);
-	g_strdown(name+1);
-#else
 	name = g_ascii_strdown(rec->name,-1);
 	*name = *(rec->name);
-#endif
 
 	/* window items: channel, query */
 	type = module_get_uniq_id_str("WINDOW ITEM TYPE", "CHANNEL");
@@ -634,7 +628,8 @@ static void perl_register_protocol(CHAT_PROTOCOL_REC *rec)
 		perl_eval_pv(code, TRUE);
 	}
 
-	pcode = g_strdup_printf(find_use_code, name);
+	pcode = g_strdup_printf(find_use_code, 
+	                        settings_get_str("perl_use_lib"), name);
 	sv = perl_eval_pv(pcode, TRUE);
 	g_free(pcode);
 

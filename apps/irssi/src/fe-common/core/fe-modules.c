@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -130,15 +130,15 @@ static char **module_prefixes_get(void)
         char **list, *name;
         int count;
 
-	list = g_new(char *, 2 + 3*g_slist_length(chat_protocols));
+	list = g_new(char *, 3 + 3*g_slist_length(chat_protocols));
 	list[0] = "fe";
+	list[1] = "fe_common";
 
-	count = 1;
+	count = 2;
 	for (tmp = chat_protocols; tmp != NULL; tmp = tmp->next) {
 		CHAT_PROTOCOL_REC *rec = tmp->data;
 
-		name = g_strdup(rec->name);
-                g_strdown(name);
+		name = g_ascii_strdown(rec->name, -1);
 
 		list[count++] = name;
                 list[count++] = g_strconcat("fe_", name, NULL);
@@ -151,7 +151,7 @@ static char **module_prefixes_get(void)
 
 static void module_prefixes_free(char **list)
 {
-	char **pos = list+1;
+	char **pos = list+2;
 
 	while (*pos != NULL) {
                 g_free(*pos);

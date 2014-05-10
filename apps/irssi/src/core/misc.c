@@ -13,16 +13,14 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
 #include "misc.h"
-#include "pidwait.h"
 
-#include <errno.h>
 #ifdef HAVE_REGEX_H
 #  include <regex.h>
 #endif
@@ -87,6 +85,16 @@ int g_input_add(GIOChannel *source, int condition,
 {
 	return g_input_add_full(source, G_PRIORITY_DEFAULT, condition,
 				function, data);
+}
+
+/* easy way to bypass glib polling of io channel internal buffer */
+int g_input_add_poll(int fd, int priority, int condition,
+		     GInputFunction function, void *data)
+{
+	GIOChannel *source = g_io_channel_unix_new(fd);
+	int ret = g_input_add_full(source, priority, condition, function, data);
+	g_io_channel_unref(source);
+	return ret;
 }
 
 int g_timeval_cmp(const GTimeVal *tv1, const GTimeVal *tv2)
@@ -308,7 +316,7 @@ char *stristr(const char *data, const char *key)
 	((unsigned char) (c) < 128 && \
 	(i_isspace(c) || i_ispunct(c)))
 
-char *strstr_full_case(const char *data, const char *key, int icase)
+static char *strstr_full_case(const char *data, const char *key, int icase)
 {
 	const char *start, *max;
 	int keylen, datalen, pos, match;
@@ -576,23 +584,23 @@ uoff_t str_to_uofft(const char *str)
 }
 
 /* convert all low-ascii (<32) to ^<A..> combinations */
-char *show_lowascii(const char *channel)
+char *show_lowascii(const char *str)
 {
-	char *str, *p;
+	char *ret, *p;
 
-	str = p = g_malloc(strlen(channel)*2+1);
-	while (*channel != '\0') {
-		if ((unsigned char) *channel >= 32)
-			*p++ = *channel;
+	ret = p = g_malloc(strlen(str)*2+1);
+	while (*str != '\0') {
+		if ((unsigned char) *str >= 32)
+			*p++ = *str;
 		else {
 			*p++ = '^';
-			*p++ = *channel + 'A'-1;
+			*p++ = *str + 'A'-1;
 		}
-		channel++;
+		str++;
 	}
 	*p = '\0';
 
-	return str;
+	return ret;
 }
 
 /* Get time in human readable form with localtime() + asctime() */
@@ -748,17 +756,22 @@ int expand_escape(const char **data)
                 /* control character (\cA = ^A) */
                 (*data)++;
 		return i_toupper(**data) - 64;
-	default:
-		if (!i_isdigit(**data))
-			return -1;
-
+	case '0': case '1': case '2': case '3':
+	case '4': case '5': case '6': case '7':
                 /* octal */
+		digit[1] = digit[2] = digit[3] = '\0';
                 digit[0] = (*data)[0];
-                digit[1] = (*data)[1];
-		digit[2] = (*data)[2];
-                digit[3] = '\0';
-		*data += 2;
+		if ((*data)[1] >= '0' && (*data)[1] <= '7') {
+			++*data;
+			digit[1] = **data;
+			if ((*data)[1] >= '0' && (*data)[1] <= '7') {
+				++*data;
+				digit[2] = **data;
+			}
+		}
 		return strtol(digit, NULL, 8);
+	default:
+		return -1;
 	}
 }
 
@@ -803,70 +816,82 @@ int nearest_power(int num)
 int parse_time_interval(const char *time, int *msecs)
 {
 	const char *desc;
-	int number, sign, len, ret;
+	int number, sign, len, ret, digits;
 
 	*msecs = 0;
 
 	/* max. return value is around 24 days */
-	number = 0; sign = 1; ret = TRUE;
-	for (;;) {
-		if (*time == '-') {
-			sign = -sign;
+	number = 0; sign = 1; ret = TRUE; digits = FALSE;
+	while (i_isspace(*time))
+		time++;
+	if (*time == '-') {
+		sign = -sign;
+		time++;
+		while (i_isspace(*time))
 			time++;
-			continue;
-		}
-
+	}
+	for (;;) {
 		if (i_isdigit(*time)) {
 			number = number*10 + (*time - '0');
 			time++;
+			digits = TRUE;
 			continue;
 		}
 
+		if (!digits)
+			return FALSE;
+
 		/* skip punctuation */
-		while (*time != '\0' && i_ispunct(*time))
+		while (*time != '\0' && i_ispunct(*time) && *time != '-')
 			time++;
 
 		/* get description */
 		for (len = 0, desc = time; i_isalpha(*time); time++)
 			len++;
 
+		while (i_isspace(*time))
+			time++;
+
 		if (len == 0) {
+			if (*time != '\0')
+				return FALSE;
 			*msecs += number * 1000; /* assume seconds */
 			*msecs *= sign;
 			return TRUE;
 		}
 
-		if (g_strncasecmp(desc, "days", len) == 0) {
+		if (g_ascii_strncasecmp(desc, "days", len) == 0) {
 			if (number > 24) {
 				/* would overflow */
 				return FALSE;
 			}
 			*msecs += number * 1000*3600*24;
-		} else if (g_strncasecmp(desc, "hours", len) == 0)
+		} else if (g_ascii_strncasecmp(desc, "hours", len) == 0)
 			*msecs += number * 1000*3600;
-		else if (g_strncasecmp(desc, "minutes", len) == 0 ||
-			 g_strncasecmp(desc, "mins", len) == 0)
+		else if (g_ascii_strncasecmp(desc, "minutes", len) == 0 ||
+			 g_ascii_strncasecmp(desc, "mins", len) == 0)
 			*msecs += number * 1000*60;
-		else if (g_strncasecmp(desc, "seconds", len) == 0 ||
-			 g_strncasecmp(desc, "secs", len) == 0)
+		else if (g_ascii_strncasecmp(desc, "seconds", len) == 0 ||
+			 g_ascii_strncasecmp(desc, "secs", len) == 0)
 			*msecs += number * 1000;
-		else if (g_strncasecmp(desc, "milliseconds", len) == 0 ||
-			 g_strncasecmp(desc, "millisecs", len) == 0 ||
-			 g_strncasecmp(desc, "mseconds", len) == 0 ||
-			 g_strncasecmp(desc, "msecs", len) == 0)
+		else if (g_ascii_strncasecmp(desc, "milliseconds", len) == 0 ||
+			 g_ascii_strncasecmp(desc, "millisecs", len) == 0 ||
+			 g_ascii_strncasecmp(desc, "mseconds", len) == 0 ||
+			 g_ascii_strncasecmp(desc, "msecs", len) == 0)
 			*msecs += number;
 		else {
 			ret = FALSE;
 		}
 
 		/* skip punctuation */
-		while (*time != '\0' && i_ispunct(*time))
+		while (*time != '\0' && i_ispunct(*time) && *time != '-')
 			time++;
 
 		if (*time == '\0')
 			break;
 
 		number = 0;
+		digits = FALSE;
 	}
 
 	*msecs *= sign;
@@ -907,13 +932,13 @@ int parse_size(const char *size, int *bytes)
 			return FALSE;
 		}
 
-		if (g_strncasecmp(desc, "gbytes", len) == 0)
+		if (g_ascii_strncasecmp(desc, "gbytes", len) == 0)
 			*bytes += number * 1024*1024*1024;
-		if (g_strncasecmp(desc, "mbytes", len) == 0)
+		if (g_ascii_strncasecmp(desc, "mbytes", len) == 0)
 			*bytes += number * 1024*1024;
-		if (g_strncasecmp(desc, "kbytes", len) == 0)
+		if (g_ascii_strncasecmp(desc, "kbytes", len) == 0)
 			*bytes += number * 1024;
-		if (g_strncasecmp(desc, "bytes", len) == 0)
+		if (g_ascii_strncasecmp(desc, "bytes", len) == 0)
 			*bytes += number;
 
 		/* skip punctuation */
@@ -922,4 +947,22 @@ int parse_size(const char *size, int *bytes)
 	}
 
 	return TRUE;
+}
+
+char *ascii_strup(char *str)
+{
+	char *s;
+
+	for (s = str; *s; s++)
+		*s = g_ascii_toupper (*s);
+	return str;
+}
+
+char *ascii_strdown(char *str)
+{
+	char *s;
+
+	for (s = str; *s; s++)
+		*s = g_ascii_tolower (*s);
+	return str;
 }

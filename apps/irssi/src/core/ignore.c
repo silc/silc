@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -58,6 +58,10 @@ static int ignore_check_replies_rec(IGNORE_REC *rec, CHANNEL_REC *channel,
 	return FALSE;
 }
 
+#define ignore_match_channel(rec, channel) \
+	((rec)->channels == NULL || ((channel) != NULL && \
+		strarray_find((rec)->channels, (channel)) != -1))
+
 static int ignore_check_replies(CHANNEL_REC *chanrec, const char *text)
 {
 	GSList *tmp;
@@ -70,6 +74,7 @@ static int ignore_check_replies(CHANNEL_REC *chanrec, const char *text)
 		IGNORE_REC *rec = tmp->data;
 
 		if (rec->mask != NULL && rec->replies &&
+		    ignore_match_channel(rec, chanrec->name) &&
 		    ignore_check_replies_rec(rec, chanrec, text))
 			return TRUE;
 	}
@@ -112,49 +117,13 @@ static int ignore_match_pattern(IGNORE_REC *rec, const char *text)
 	((rec)->servertag == NULL || \
 	g_strcasecmp((server)->tag, (rec)->servertag) == 0)
 
-#define ignore_match_channel(rec, channel) \
-	((rec)->channels == NULL || ((channel) != NULL && \
-		strarray_find((rec)->channels, (channel)) != -1))
-
-static int ignore_check_without_mask(GSList *list, CHANNEL_REC *channel,
-				     int level, const char *text)
-{
-	GSList *tmp;
-        int len, best_mask, best_match, best_patt;
-
-        best_mask = best_patt = -1; best_match = FALSE;
-	for (tmp = list; tmp != NULL; tmp = tmp->next) {
-		IGNORE_REC *rec = tmp->data;
-
-		if (ignore_match_level(rec, level) &&
-		    ignore_match_pattern(rec, text)) {
-			len = rec->mask == NULL ? 0 : strlen(rec->mask);
-			if (len > best_mask) {
-				best_mask = len;
-				best_match = !rec->exception;
-			} else if (len == best_mask && rec->pattern != NULL) {
-				len = strlen(rec->pattern);
-				if (len > best_patt) {
-					best_patt = len;
-					best_match = !rec->exception;
-				}
-			}
-		}
-	}
-
-	if (best_match || (level & MSGLEVEL_PUBLIC) == 0)
-		return best_match;
-
-        return ignore_check_replies(channel, text);
-}
-
 int ignore_check(SERVER_REC *server, const char *nick, const char *host,
 		 const char *channel, const char *text, int level)
 {
 	CHANNEL_REC *chanrec;
 	NICK_REC *nickrec;
         IGNORE_REC *rec;
-	GSList *tmp, *list;
+	GSList *tmp;
         char *nickmask;
         int len, best_mask, best_match, best_patt;
 
@@ -169,31 +138,36 @@ int ignore_check(SERVER_REC *server, const char *nick, const char *host,
 		if (nickrec->host == NULL)
 			nicklist_set_host(chanrec, nickrec, host);
 
-		list = nickmatch_find(nickmatch, nickrec);
-		return ignore_check_without_mask(list, chanrec, level, text);
+		tmp = nickmatch_find(nickmatch, nickrec);
+		nickmask = NULL;
+	} else {
+		tmp = ignores;
+		nickmask = g_strconcat(nick, "!", host, NULL);
 	}
 
-	nickmask = g_strconcat(nick, "!", host, NULL);
-
         best_mask = best_patt = -1; best_match = FALSE;
-	for (tmp = ignores; tmp != NULL; tmp = tmp->next) {
+	for (; tmp != NULL; tmp = tmp->next) {
+		int match = 1;
 		rec = tmp->data;
 
-		if (ignore_match_level(rec, level) &&
-		    ignore_match_server(rec, server) &&
-		    ignore_match_channel(rec, channel) &&
-		    ignore_match_nickmask(rec, nick, nickmask) &&
+		if (nickmask != NULL)
+			match = ignore_match_server(rec, server) &&
+				ignore_match_channel(rec, channel) &&
+				ignore_match_nickmask(rec, nick, nickmask);
+		if (match &&
+		    ignore_match_level(rec, level) &&
 		    ignore_match_pattern(rec, text)) {
 			len = rec->mask == NULL ? 0 : strlen(rec->mask);
 			if (len > best_mask) {
 				best_mask = len;
 				best_match = !rec->exception;
-			} else if (len == best_mask && rec->pattern != NULL) {
-				len = strlen(rec->pattern);
+			} else if (len == best_mask) {
+				len = rec->pattern == NULL ? 0 : strlen(rec->pattern);
 				if (len > best_patt) {
 					best_patt = len;
 					best_match = !rec->exception;
-				}
+				} else if (len == best_patt && rec->exception)
+					best_match = 0;
 			}
 		}
 	}
@@ -421,7 +395,7 @@ static void read_ignores(void)
 
 		rec->mask = g_strdup(config_node_get_str(node, "mask", NULL));
 		rec->pattern = g_strdup(config_node_get_str(node, "pattern", NULL));
-		rec->level = level2bits(config_node_get_str(node, "level", ""));
+		rec->level = level2bits(config_node_get_str(node, "level", ""), NULL);
                 rec->exception = config_node_get_bool(node, "exception", FALSE);
 		rec->regexp = config_node_get_bool(node, "regexp", FALSE);
 		rec->fullword = config_node_get_bool(node, "fullword", FALSE);

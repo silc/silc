@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -32,7 +32,7 @@
 #include "window-items.h"
 #include "printtext.h"
 
-void window_item_add(WINDOW_REC *window, WI_ITEM_REC *item, int automatic)
+static void window_item_add_signal(WINDOW_REC *window, WI_ITEM_REC *item, int automatic, int send_signal)
 {
 	g_return_if_fail(window != NULL);
 	g_return_if_fail(item != NULL);
@@ -52,7 +52,8 @@ void window_item_add(WINDOW_REC *window, WI_ITEM_REC *item, int automatic)
 	}
 
 	window->items = g_slist_append(window->items, item);
-	signal_emit("window item new", 2, window, item);
+	if (send_signal)
+		signal_emit("window item new", 2, window, item);
 
 	if (g_slist_length(window->items) == 1 ||
 	    (!automatic && settings_get_bool("autofocus_new_items"))) {
@@ -61,7 +62,12 @@ void window_item_add(WINDOW_REC *window, WI_ITEM_REC *item, int automatic)
 	}
 }
 
-void window_item_remove(WI_ITEM_REC *item)
+void window_item_add(WINDOW_REC *window, WI_ITEM_REC *item, int automatic)
+{
+	window_item_add_signal(window, item, automatic, TRUE);
+}
+
+static void window_item_remove_signal(WI_ITEM_REC *item, int emit_signal)
 {
 	WINDOW_REC *window;
 
@@ -80,14 +86,17 @@ void window_item_remove(WI_ITEM_REC *item)
 				       window->items->data);
 	}
 
-	signal_emit("window item remove", 2, window, item);
+	if (emit_signal)
+		signal_emit("window item remove", 2, window, item);
+}
+
+void window_item_remove(WI_ITEM_REC *item)
+{
+	window_item_remove_signal(item, TRUE);
 }
 
 void window_item_destroy(WI_ITEM_REC *item)
 {
-	WINDOW_REC *window;
-
-	window = window_item_window(item);
         window_item_remove(item);
         item->destroy(item);
 }
@@ -107,12 +116,18 @@ void window_item_change_server(WI_ITEM_REC *item, void *server)
 
 void window_item_set_active(WINDOW_REC *window, WI_ITEM_REC *item)
 {
+		WINDOW_REC *old_window;
+
         g_return_if_fail(window != NULL);
 
-        if (item != NULL && window_item_window(item) != window) {
+        if (item != NULL) {
+            old_window = window_item_window(item);
+        	if (old_window != window) {
                 /* move item to different window */
-                window_item_remove(item);
-                window_item_add(window, item, FALSE);
+                window_item_remove_signal(item, FALSE);
+                window_item_add_signal(window, item, FALSE, FALSE);
+                signal_emit("window item moved", 3, window, item, old_window);
+        	}
         }
 
 	if (window->active != item) {

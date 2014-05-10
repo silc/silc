@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -24,6 +24,7 @@
 #include "commands.h"
 #include "misc.h"
 #include "servers.h"
+#include "settings.h"
 
 #include "levels.h"
 
@@ -167,7 +168,7 @@ static void cmd_window(const char *data, void *server, WI_ITEM_REC *item)
 		command_runsub("window", data, server, item);
 }
 
-/* SYNTAX: WINDOW NEW [hide] */
+/* SYNTAX: WINDOW NEW [HIDDEN|SPLIT] */
 static void cmd_window_new(const char *data, void *server, WI_ITEM_REC *item)
 {
 	WINDOW_REC *window;
@@ -175,8 +176,8 @@ static void cmd_window_new(const char *data, void *server, WI_ITEM_REC *item)
 
 	g_return_if_fail(data != NULL);
 
-	type = (g_strncasecmp(data, "hid", 3) == 0 || g_strcasecmp(data, "tab") == 0) ? 1 :
-		(g_strcasecmp(data, "split") == 0 ? 2 : 0);
+	type = (g_ascii_strncasecmp(data, "hid", 3) == 0 || g_ascii_strcasecmp(data, "tab") == 0) ? 1 :
+		(g_ascii_strcasecmp(data, "split") == 0 ? 2 : 0);
 	signal_emit("gui window create override", 1, GINT_TO_POINTER(type));
 
 	window = window_create(NULL, FALSE);
@@ -244,16 +245,23 @@ static void cmd_window_refnum(const char *data)
 		window_set_active(window);
 }
 
-/* return the first window number with the highest activity */
-static WINDOW_REC *window_highest_activity(WINDOW_REC *window)
+/**
+ * return the window with the highest activity
+ *
+ * If ignore_refnum is true, the most recently active window with the highest
+ * activity will be returned. If ignore_refnum is false, the refnum will be used
+ * to break ties between windows with equally high activity.
+ */
+static WINDOW_REC *window_highest_activity(WINDOW_REC *window,
+                                           int ignore_refnum)
 {
 	WINDOW_REC *rec, *max_win;
 	GSList *tmp;
-	int max_act, through;
+	int max_act, max_ref, through;
 
 	g_return_val_if_fail(window != NULL, NULL);
 
-	max_win = NULL; max_act = 0; through = FALSE;
+	max_win = NULL; max_act = 0; max_ref = 0; through = FALSE;
 
 	tmp = g_slist_find(windows, window);
 	for (;; tmp = tmp->next) {
@@ -267,13 +275,64 @@ static WINDOW_REC *window_highest_activity(WINDOW_REC *window)
 
 		rec = tmp->data;
 
-		if (rec->data_level > 0 && max_act < rec->data_level) {
+		/* ignore refnum */
+		if (ignore_refnum &&
+		    rec->data_level > 0 && max_act < rec->data_level) {
 			max_act = rec->data_level;
 			max_win = rec;
+		}
+
+		/* windows with lower refnums break ties */
+		else if (!ignore_refnum &&
+		         rec->data_level > 0 &&
+		         (rec->data_level > max_act ||
+		          (rec->data_level == max_act && rec->refnum < max_ref))) {
+			max_act = rec->data_level;
+			max_win = rec;
+			max_ref = rec->refnum;
 		}
 	}
 
 	return max_win;
+}
+
+static inline int is_nearer(int r1, int r2)
+{
+	int a = r2 < active_win->refnum;
+	int b = r1 < r2;
+
+	if (r1 > active_win->refnum)
+		return a || b;
+	else
+		return a && b;
+}
+
+static WINDOW_REC *window_find_item_cycle(SERVER_REC *server, const char *name)
+{
+	WINDOW_REC *rec, *win;
+	GSList *tmp;
+
+	win = NULL;
+
+	tmp = g_slist_find(windows, active_win);
+	tmp = tmp->next;
+	for (;; tmp = tmp->next) {
+		if (tmp == NULL)
+			tmp = windows;
+
+		if (tmp->data == active_win)
+			break;
+
+		rec = tmp->data;
+
+		if (window_item_find_window(rec, server, name) != NULL &&
+		    (win == NULL || is_nearer(rec->refnum, win->refnum))) {
+			win = rec;
+			if (server != NULL) break;
+		}
+	}
+
+	return win;
 }
 
 /* SYNTAX: WINDOW GOTO active|<number>|<name> */
@@ -293,10 +352,16 @@ static void cmd_window_goto(const char *data)
 	if (!cmd_get_params(data, &free_arg, 1, &target))
 		return;
 
-	if (g_strcasecmp(target, "active") == 0)
-                window = window_highest_activity(active_win);
-	else
-                window = window_find_item(active_win->active_server, target);
+	if (g_ascii_strcasecmp(target, "active") == 0)
+		window = window_highest_activity(active_win,
+			settings_get_bool("active_window_ignore_refnum"));
+	else {
+		window = window_find_name(target);
+		if (window == NULL && active_win->active_server != NULL)
+			window = window_find_item_cycle(active_win->active_server, target);
+		if (window == NULL)
+			window = window_find_item_cycle(NULL, target);
+	}
 
 	if (window != NULL)
 		window_set_active(window);
@@ -356,11 +421,11 @@ static void cmd_window_immortal(const char *data)
 
 	if (*data == '\0')
 		set = active_win->immortal;
-	else if (g_strcasecmp(data, "ON") == 0)
+	else if (g_ascii_strcasecmp(data, "ON") == 0)
                 set = TRUE;
-	else if (g_strcasecmp(data, "OFF") == 0)
+	else if (g_ascii_strcasecmp(data, "OFF") == 0)
                 set = FALSE;
-	else if (g_strcasecmp(data, "TOGGLE") == 0)
+	else if (g_ascii_strcasecmp(data, "TOGGLE") == 0)
                 set = !active_win->immortal;
 	else {
 		printformat_window(active_win, MSGLEVEL_CLIENTERROR,
@@ -779,6 +844,8 @@ static void cmd_foreach_window(const char *data)
 
 void window_commands_init(void)
 {
+	settings_add_bool("lookandfeel", "active_window_ignore_refnum", TRUE);
+
 	command_bind("window", NULL, (SIGNAL_FUNC) cmd_window);
 	command_bind("window new", NULL, (SIGNAL_FUNC) cmd_window_new);
 	command_bind("window close", NULL, (SIGNAL_FUNC) cmd_window_close);

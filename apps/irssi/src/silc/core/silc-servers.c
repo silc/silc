@@ -298,12 +298,9 @@ static void silc_connect_cb(SilcClient client,
     /* We have successfully connected to server */
 
     /* Enable queueing until we have our requested nick */
-    if (((opt_nickname &&
-	  !silc_utf8_strcasecmp(opt_nickname,
-				conn->local_entry->nickname)) ||
-	 (settings_get_str("nick") &&
-	  !silc_utf8_strcasecmp(settings_get_str("nick"),
-				conn->local_entry->nickname))) &&
+    if (settings_get_str("nick") &&
+	!silc_utf8_strcasecmp(settings_get_str("nick"),
+			      conn->local_entry->nickname) &&
 	silc_utf8_strcasecmp(conn->local_entry->nickname,
 			     conn->local_entry->username))
       silc_queue_enable(conn);
@@ -410,8 +407,7 @@ static void sig_connected_stream_created(SilcSocketStreamStatus status,
 
   /* Set connection parameters */
   memset(&params, 0, sizeof(params));
-  params.nickname = (opt_nickname ? (char *)opt_nickname :
-		     (char *)settings_get_str("nick"));
+  params.nickname = (char *)settings_get_str("nick");
   params.timeout_secs = settings_get_int("key_exchange_timeout_secs");
   params.rekey_secs = settings_get_int("key_exchange_rekey_secs");
   params.pfs = settings_get_bool("key_exchange_rekey_pfs");

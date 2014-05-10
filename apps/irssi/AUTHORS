@@ -7,7 +7,13 @@ Irssi staff (current maintainers) <staff@irssi.org>:
   Valentin Batz (senneth, vb)
   Wouter Coekaerts (coekie)
   Jochen Eisinger (c0ffee)
-  Geert Hauwaerts
+  Geert Hauwaerts (Geert)
+  Jilles Tjoelker (jilles)
+  Alexander Færøy (ahf)
+  Jase Thew (bazerka)
+
+Former developers:
+
   Emanuele Giaquinta (exg)
 
 Large feature patches by:
@@ -37,7 +43,7 @@ Other patches (grep for "patch" in ChangeLog) by:
   Marcin Kowalczyk (Qrczak)
   Petr Baudis
   Bjoern Krombholz (fuchs)
-  aldem-irssi@aldem.net,
+  aldem-irssi@aldem.net
   BC-bd
   Juerd
   Han
@@ -56,12 +62,19 @@ Other patches (grep for "patch" in ChangeLog) by:
   vanilla@freebsd.org
   Tinuk
   Mark Glines
-  Kjetil �degaard
+  Kjetil Ødegaard
   Chris Moore
   ComradeP
-  Jilles Tjoelker
   Lauri Nurmi
   Mikko Rauhala
   loafier
   Nicolas Collignon
   Daniel Koning
+  Yi-Hsuan Hsin
+  Jon Mayo
+  Johan Kiviniemi
+  JasonX
+  Lukas Mai
+  Ismael Luceno
+  Thomas Karpiniec
+  Svante Kvarnström

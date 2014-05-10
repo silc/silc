@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -24,7 +24,6 @@
 #include "commands.h"
 #include "special-vars.h"
 #include "settings.h"
-#include "recode.h"
 
 #include "chat-protocols.h"
 #include "servers.h"
@@ -71,7 +70,7 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr,
 
 	if (chatnet == NULL)
 		chatnet = g_hash_table_lookup(optlist, "network");
-	
+
 	conn = server_create_conn(proto != NULL ? proto->id : -1, addr,
 				  atoi(portstr), chatnet, password, nick);
 	if (proto == NULL)
@@ -114,6 +113,9 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr,
 	if (g_hash_table_lookup(optlist, "!") != NULL)
 		conn->no_autojoin_channels = TRUE;
 
+    if (g_hash_table_lookup(optlist, "noautosendcmd") != NULL)
+        conn->no_autosendcmd = TRUE;
+
 	if (g_hash_table_lookup(optlist, "noproxy") != NULL)
                 g_free_and_null(conn->proxy);
 
@@ -134,6 +136,7 @@ static SERVER_CONNECT_REC *get_server_connect(const char *data, int *plus_addr,
 
 /* SYNTAX: CONNECT [-4 | -6] [-ssl] [-ssl_cert <cert>] [-ssl_pkey <pkey>]
                    [-ssl_verify] [-ssl_cafile <cafile>] [-ssl_capath <capath>]
+                   [-!] [-noautosendcmd]
 		   [-noproxy] [-network <network>] [-host <hostname>]
 		   [-rawlog <file>]
 		   <address>|<chatnet> [<port> [<password> [<nick>]]] */
@@ -239,6 +242,7 @@ static void sig_default_command_server(const char *data, SERVER_REC *server,
 
 /* SYNTAX: SERVER [-4 | -6] [-ssl] [-ssl_cert <cert>] [-ssl_pkey <pkey>]
                   [-ssl_verify] [-ssl_cafile <cafile>] [-ssl_capath <capath>]
+                  [-!] [-noautosendcmd]
 		  [-noproxy] [-network <network>] [-host <hostname>]
 		  [-rawlog <file>]
                   [+]<address>|<chatnet> [<port> [<password> [<nick>]]] */
@@ -315,42 +319,11 @@ static void cmd_quit(const char *data)
 	signal_emit("gui exit", 0);
 }
 
-/* SYNTAX: JOIN [-invite] [-<server tag>] <channels> [<keys>] */
-static void cmd_join(const char *data, SERVER_REC *server)
-{
-	GHashTable *optlist;
-	char *channels;
-	void *free_arg;
-
-	g_return_if_fail(data != NULL);
-
-	if (!cmd_get_params(data, &free_arg, 1 | PARAM_FLAG_OPTIONS |
-			    PARAM_FLAG_UNKNOWN_OPTIONS | PARAM_FLAG_GETREST,
-			    "join", &optlist, &channels))
-		return;
-
-	/* -<server tag> */
-	server = cmd_options_get_server("join", optlist, server);
-	if (server == NULL || !server->connected)
-                cmd_param_error(CMDERR_NOT_CONNECTED);
-
-	if (g_hash_table_lookup(optlist, "invite"))
-		channels = server->last_invite;
-	else {
-		if (*channels == '\0')
-			cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
-	}
-
-	if (channels != NULL)
-		server->channels_join(server, channels, FALSE);
-	cmd_params_free(free_arg);
-}
-
 /* SYNTAX: MSG [-<server tag>] [-channel | -nick] <targets> <message> */
 static void cmd_msg(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 {
 	GHashTable *optlist;
-	char *target, *origtarget, *msg, *recoded;
+	char *target, *origtarget, *msg;
 	void *free_arg;
 	int free_ret, target_type = SEND_TARGET_NICK;
 
@@ -395,23 +368,21 @@ static void cmd_msg(const char *data, SERVER_REC *server, WI_ITEM_REC *item)
 		else {
 			/* Need to rely on server_ischannel(). If the protocol
 			   doesn't really know if it's channel or nick based on
-			   the name, it should just assume it's nick, because 
+			   the name, it should just assume it's nick, because
 			   when typing text to channels it's always sent with
 			   /MSG -channel. */
 			target_type = server_ischannel(server, target) ?
 				SEND_TARGET_CHANNEL : SEND_TARGET_NICK;
 		}
 	}
-	recoded = recode_out(server, msg, target);
 	if (target != NULL) {
-		signal_emit("server sendmsg", 4, server, target, recoded,
+		signal_emit("server sendmsg", 4, server, target, msg,
 			    GINT_TO_POINTER(target_type));
 	}
 	signal_emit(target != NULL && target_type == SEND_TARGET_CHANNEL ?
 		    "message own_public" : "message own_private", 4,
-		    server, recoded, target, origtarget);
-		    
-	g_free(recoded);
+		    server, msg, target, origtarget);
+
 	if (free_ret && target != NULL) g_free(target);
 	cmd_params_free(free_arg);
 }
@@ -478,7 +449,6 @@ void chat_commands_init(void)
 	command_bind("connect", NULL, (SIGNAL_FUNC) cmd_connect);
 	command_bind("disconnect", NULL, (SIGNAL_FUNC) cmd_disconnect);
 	command_bind("quit", NULL, (SIGNAL_FUNC) cmd_quit);
-	command_bind("join", NULL, (SIGNAL_FUNC) cmd_join);
 	command_bind("msg", NULL, (SIGNAL_FUNC) cmd_msg);
 	command_bind("foreach", NULL, (SIGNAL_FUNC) cmd_foreach);
 	command_bind("foreach server", NULL, (SIGNAL_FUNC) cmd_foreach_server);
@@ -488,8 +458,7 @@ void chat_commands_init(void)
 	signal_add("default command server", (SIGNAL_FUNC) sig_default_command_server);
 	signal_add("server sendmsg", (SIGNAL_FUNC) sig_server_sendmsg);
 
-	command_set_options("connect", "4 6 !! -network ssl +ssl_cert +ssl_pkey ssl_verify +ssl_cafile +ssl_capath +host noproxy -rawlog");
-	command_set_options("join", "invite");
+	command_set_options("connect", "4 6 !! -network ssl +ssl_cert +ssl_pkey ssl_verify +ssl_cafile +ssl_capath +host noproxy -rawlog noautosendcmd");
 	command_set_options("msg", "channel nick");
 }
 
@@ -500,7 +469,6 @@ void chat_commands_deinit(void)
 	command_unbind("connect", (SIGNAL_FUNC) cmd_connect);
 	command_unbind("disconnect", (SIGNAL_FUNC) cmd_disconnect);
 	command_unbind("quit", (SIGNAL_FUNC) cmd_quit);
-	command_unbind("join", (SIGNAL_FUNC) cmd_join);
 	command_unbind("msg", (SIGNAL_FUNC) cmd_msg);
 	command_unbind("foreach", (SIGNAL_FUNC) cmd_foreach);
 	command_unbind("foreach server", (SIGNAL_FUNC) cmd_foreach_server);

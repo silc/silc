@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -32,6 +32,7 @@
 #define LAG_REFRESH_TIME 10
 
 static GList *activity_list;
+static guint8 actlist_sort;
 static GSList *more_visible; /* list of MAIN_WINDOW_RECs which have --more-- */
 static GHashTable *input_entries;
 static int last_lag, last_lag_unknown, lag_timeout_tag;
@@ -72,11 +73,14 @@ static char *get_activity_list(MAIN_WINDOW_REC *window, int normal, int hilight)
 {
         THEME_REC *theme;
 	GString *str;
+	GString *format;
 	GList *tmp;
-        char *ret, *name, *format, *value;
+        char *ret, *name, *value;
         int is_det;
+	int add_name = settings_get_bool("actlist_names");
 
 	str = g_string_new(NULL);
+	format = g_string_new(NULL);
 
 	theme = window != NULL && window->active != NULL &&
 		window->active->theme != NULL ?
@@ -99,35 +103,37 @@ static char *get_activity_list(MAIN_WINDOW_REC *window, int normal, int hilight)
 		switch (window->data_level) {
 		case DATA_LEVEL_NONE:
 		case DATA_LEVEL_TEXT:
-			name = "{sb_act_text %d}";
+			name = "{sb_act_text %d";
 			break;
 		case DATA_LEVEL_MSG:
-			name = "{sb_act_msg %d}";
+			name = "{sb_act_msg %d";
 			break;
 		default:
                         if (window->hilight_color == NULL)
-				name = "{sb_act_hilight %d}";
+				name = "{sb_act_hilight %d";
 			else
                                 name = NULL;
 			break;
 		}
 
 		if (name != NULL)
-			format = g_strdup_printf(name, window->refnum);
+			g_string_printf(format, name, window->refnum);
 		else
-			format = g_strdup_printf("{sb_act_hilight_color %s %d}",
+			g_string_printf(format, "{sb_act_hilight_color %s %d",
 						 window->hilight_color,
 						 window->refnum);
+		if (add_name && window->active != NULL)
+			g_string_append_printf(format, ":%s", window->active->visible_name);
+		g_string_append_c(format, '}');
 
-		value = theme_format_expand(theme, format);
+		value = theme_format_expand(theme, format->str);
 		g_string_append(str, value);
                 g_free(value);
-
-		g_free(format);
 	}
 
 	ret = str->len == 0 ? NULL : str->str;
         g_string_free(str, ret == NULL);
+	g_string_free(format, TRUE);
         return ret;
 }
 
@@ -151,28 +157,72 @@ static void item_act(SBAR_ITEM_REC *item, int get_size_only)
 	g_free_not_null(actlist);
 }
 
+static int window_level_recent_cmp(WINDOW_REC *w1, WINDOW_REC *w2)
+{
+	if (w1->data_level >= w2->data_level)
+		return -1;
+	else
+		return 1;
+}
+
+static int window_level_cmp(WINDOW_REC *w1, WINDOW_REC *w2)
+{
+	if (w1->data_level > w2->data_level ||
+	    (w1->data_level == w2->data_level && w1->refnum < w2->refnum))
+		return -1;
+	else
+		return 1;
+}
+
 static void sig_statusbar_activity_hilight(WINDOW_REC *window, gpointer oldlevel)
 {
-	GList *tmp;
-	int inspos;
+	GList *node;
 
 	g_return_if_fail(window != NULL);
 
-	if (settings_get_bool("actlist_moves")) {
+	node = g_list_find(activity_list, window);
+
+	if (actlist_sort == 1) {
 		/* Move the window to the first in the activity list */
-		if (g_list_find(activity_list, window) != NULL)
-			activity_list = g_list_remove(activity_list, window);
+		if (node != NULL)
+			activity_list = g_list_delete_link(activity_list, node);
 		if (window->data_level != 0)
 			activity_list = g_list_prepend(activity_list, window);
 		statusbar_items_redraw("act");
 		return;
 	}
 
-	if (g_list_find(activity_list, window) != NULL) {
+	if (actlist_sort == 2) {
+		if (node != NULL) {
+			if (window->data_level == GPOINTER_TO_INT(oldlevel)) {
+				if (window->hilight_color != 0)
+					statusbar_items_redraw("act");
+				return;
+			}
+			activity_list = g_list_delete_link(activity_list, node);
+		}
+		if (window->data_level != 0)
+			activity_list = g_list_insert_sorted(activity_list, window, (GCompareFunc)
+							     window_level_cmp);
+		statusbar_items_redraw("act");
+		return;
+	}
+
+	if (actlist_sort == 3) {
+		if (node != NULL)
+			activity_list = g_list_delete_link(activity_list, node);
+		if (window->data_level != 0)
+			activity_list = g_list_insert_sorted(activity_list, window, (GCompareFunc)
+							     window_level_recent_cmp);
+		statusbar_items_redraw("act");
+		return;
+	}
+
+	if (node != NULL) {
 		/* already in activity list */
 		if (window->data_level == 0) {
 			/* remove from activity list */
-			activity_list = g_list_remove(activity_list, window);
+			activity_list = g_list_delete_link(activity_list, node);
 			statusbar_items_redraw("act");
 		} else if (window->data_level != GPOINTER_TO_INT(oldlevel) ||
 			 window->hilight_color != 0) {
@@ -187,28 +237,21 @@ static void sig_statusbar_activity_hilight(WINDOW_REC *window, gpointer oldlevel
 		return;
 
 	/* add window to activity list .. */
-	inspos = 0;
-	for (tmp = activity_list; tmp != NULL; tmp = tmp->next, inspos++) {
-		WINDOW_REC *rec = tmp->data;
-
-		if (window->refnum < rec->refnum) {
-			activity_list =
-				g_list_insert(activity_list, window, inspos);
-			break;
-		}
-	}
-	if (tmp == NULL)
-		activity_list = g_list_append(activity_list, window);
+	activity_list = g_list_insert_sorted(activity_list, window, (GCompareFunc)
+					     window_refnum_cmp);
 
 	statusbar_items_redraw("act");
 }
 
 static void sig_statusbar_activity_window_destroyed(WINDOW_REC *window)
 {
+	GList *node;
+
 	g_return_if_fail(window != NULL);
 
-	if (g_list_find(activity_list, window) != NULL)
-		activity_list = g_list_remove(activity_list, window);
+	node = g_list_find(activity_list, window);
+	if (node != NULL)
+		activity_list = g_list_delete_link(activity_list, node);
 	statusbar_items_redraw("act");
 }
 
@@ -369,14 +412,29 @@ static void item_input(SBAR_ITEM_REC *item, int get_size_only)
 
 static void read_settings(void)
 {
+	const char *str;
+
 	if (active_entry != NULL)
 		gui_entry_set_utf8(active_entry, term_type == TERM_TYPE_UTF8);
+
+	str = settings_get_str("actlist_sort");
+	if (g_ascii_strcasecmp(str, "recent") == 0)
+		actlist_sort = 1;
+	else if (g_ascii_strcasecmp(str, "level") == 0)
+		actlist_sort = 2;
+	else if (g_ascii_strcasecmp(str, "level,recent") == 0)
+		actlist_sort = 3;
+	else {
+		settings_set_str("actlist_sort", "refnum");
+		actlist_sort = 0;
+	}
 }
 
 void statusbar_items_init(void)
 {
 	settings_add_time("misc", "lag_min_show", "1sec");
-	settings_add_bool("lookandfeel", "actlist_moves", FALSE);
+	settings_add_str("lookandfeel", "actlist_sort", "refnum");
+	settings_add_bool("lookandfeel", "actlist_names", FALSE);
 
 	statusbar_item_register("window", NULL, item_window_active);
 	statusbar_item_register("window_empty", NULL, item_window_empty);

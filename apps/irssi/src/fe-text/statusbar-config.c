@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -25,6 +25,7 @@
 #include "settings.h"
 #include "levels.h"
 #include "lib-config/iconfig.h"
+#include "misc.h"
 
 #include "statusbar.h"
 #include "printtext.h"
@@ -163,16 +164,16 @@ static void statusbar_read(STATUSBAR_GROUP_REC *group, CONFIG_NODE *node)
 	}
 
         visible_str = config_node_get_str(node, "visible", "");
-	if (g_strcasecmp(visible_str, "active") == 0)
+	if (g_ascii_strcasecmp(visible_str, "active") == 0)
                 bar->visible = STATUSBAR_VISIBLE_ACTIVE;
-	else if (g_strcasecmp(visible_str, "inactive") == 0)
+	else if (g_ascii_strcasecmp(visible_str, "inactive") == 0)
 		bar->visible = STATUSBAR_VISIBLE_INACTIVE;
 	else
 		bar->visible = STATUSBAR_VISIBLE_ALWAYS;
 
-	if (g_strcasecmp(config_node_get_str(node, "type", ""), "window") == 0)
+	if (g_ascii_strcasecmp(config_node_get_str(node, "type", ""), "window") == 0)
                 bar->type = STATUSBAR_TYPE_WINDOW;
-	if (g_strcasecmp(config_node_get_str(node, "placement", ""), "top") == 0)
+	if (g_ascii_strcasecmp(config_node_get_str(node, "placement", ""), "top") == 0)
                 bar->placement = STATUSBAR_TOP;
 	bar->position = config_node_get_int(node, "position", 0);
 
@@ -378,9 +379,9 @@ static void cmd_statusbar_reset(const char *data, void *server,
 static void cmd_statusbar_type(const char *data, void *server,
 			       void *item, CONFIG_NODE *node)
 {
-	if (g_strcasecmp(data, "window") == 0)
+	if (g_ascii_strcasecmp(data, "window") == 0)
 		iconfig_node_set_str(node, "type", "window");
-        else if (g_strcasecmp(data, "root") == 0)
+        else if (g_ascii_strcasecmp(data, "root") == 0)
 		iconfig_node_set_str(node, "type", "root");
 	else {
 		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR,
@@ -392,9 +393,9 @@ static void cmd_statusbar_type(const char *data, void *server,
 static void cmd_statusbar_placement(const char *data, void *server,
 				    void *item, CONFIG_NODE *node)
 {
-	if (g_strcasecmp(data, "top") == 0)
+	if (g_ascii_strcasecmp(data, "top") == 0)
 		iconfig_node_set_str(node, "placement", "top");
-        else if (g_strcasecmp(data, "bottom") == 0)
+        else if (g_ascii_strcasecmp(data, "bottom") == 0)
 		iconfig_node_set_str(node, "placement", "bottom");
 	else {
 		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR,
@@ -413,11 +414,11 @@ static void cmd_statusbar_position(const char *data, void *server,
 static void cmd_statusbar_visible(const char *data, void *server,
 				  void *item, CONFIG_NODE *node)
 {
-	if (g_strcasecmp(data, "always") == 0)
+	if (g_ascii_strcasecmp(data, "always") == 0)
 		iconfig_node_set_str(node, "visible", "always");
-        else if (g_strcasecmp(data, "active") == 0)
+        else if (g_ascii_strcasecmp(data, "active") == 0)
 		iconfig_node_set_str(node, "visible", "active");
-        else if (g_strcasecmp(data, "inactive") == 0)
+        else if (g_ascii_strcasecmp(data, "inactive") == 0)
 		iconfig_node_set_str(node, "visible", "inactive");
 	else {
 		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR,
@@ -495,7 +496,7 @@ static void cmd_statusbar_add(const char *data, void *server,
 	value = g_hash_table_lookup(optlist, "alignment");
 	if (value != NULL) {
 		iconfig_node_set_str(node, "alignment",
-				     g_strcasecmp(value, "right") == 0 ?
+				     g_ascii_strcasecmp(value, "right") == 0 ?
 				     "right" : NULL);
 	}
 
@@ -550,7 +551,7 @@ static void cmd_statusbar(const char *data)
 
 	/* call the subcommand */
 	signal = g_strconcat("command statusbar ", cmd, NULL);
-        g_strdown(signal);
+	ascii_strdown(signal);
 	if (!signal_emit(signal, 4, params, NULL, NULL, node)) {
 		printformat(NULL, NULL, MSGLEVEL_CLIENTERROR,
 			    TXT_STATUSBAR_UNKNOWN_COMMAND, cmd);

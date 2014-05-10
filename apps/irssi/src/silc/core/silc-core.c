@@ -42,12 +42,11 @@
 #include "fe-common/core/keyboard.h"
 #include "fe-common/silc/module-formats.h"
 
-#ifndef SILC_PLUGIN
-/* Command line option variables */
+#ifdef SILC_PLUGIN
+static int init_failed = 0;
+#else
 static char *opt_pkcs = NULL;
 static int opt_bits = 0;
-#else
-static int init_failed = 0;
 #endif
 
 static int running = 0;
@@ -60,7 +59,6 @@ extern SilcClientOperations ops;
 SilcPublicKey irssi_pubkey = NULL;
 SilcPrivateKey irssi_privkey = NULL;
 
-char *opt_nickname = NULL;
 char *opt_hostname = NULL;
 
 /* Default hash function */
@@ -236,8 +234,8 @@ static bool i_debug;
 #endif
 
 #ifdef SILC_DEBUG
-static bool silc_irssi_debug_print(char *file, char *function, int line,
-				   char *message, void *context)
+static SilcBool silc_irssi_debug_print(char *file, char *function, int line,
+				       char *message, void *context)
 {
   printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP,
 	    "DEBUG: %s:%d: %s", function, line, message);
@@ -245,7 +243,7 @@ static bool silc_irssi_debug_print(char *file, char *function, int line,
 }
 #endif
 
-static void sig_setup_changed(void)
+static void silc_sig_setup_changed(void)
 {
 #ifdef SILC_DEBUG
   bool debug = settings_get_bool("debug");
@@ -265,7 +263,7 @@ static void sig_setup_changed(void)
 
 /* Log callbacks */
 
-static bool silc_log_misc(SilcLogType type, char *message, void *context)
+static SilcBool silc_log_misc(SilcLogType type, char *message, void *context)
 {
   printtext(NULL, NULL, MSGLEVEL_CLIENTCRAP, "%s: %s",
 	    (type == SILC_LOG_INFO ? "[Info]" :
@@ -273,7 +271,7 @@ static bool silc_log_misc(SilcLogType type, char *message, void *context)
   return TRUE;
 }
 
-static bool silc_log_stderr(SilcLogType type, char *message, void *context)
+static SilcBool silc_log_stderr(SilcLogType type, char *message, void *context)
 {
   fprintf(stderr, "%s: %s\n",
 	  (type == SILC_LOG_INFO ? "[Info]" :
@@ -362,18 +360,9 @@ static void silc_register_hmac(SilcClient client, const char *hmac)
 /* Finalize init. Init finish signal calls this. */
 
 #ifdef SILC_PLUGIN
-#define FUNCTION_EXIT goto out
 void silc_opt_callback(const char *data, SERVER_REC *server,
 			WI_ITEM_REC *item)
-#else
-#define FUNCTION_EXIT exit(0)
-void silc_opt_callback(poptContext con,
-		       enum poptCallbackReason reason,
-		       const struct poptOption *opt,
-		       const char *arg, void *data)
-#endif
 {
-#ifdef SILC_PLUGIN
   unsigned char **argv=NULL, *tmp;
   SilcUInt32 *argv_lens=NULL, *argv_types=NULL, argc=0;
   int i;
@@ -392,86 +381,38 @@ void silc_opt_callback(poptContext con,
 
   if (argc < 2)
     goto err;
-#else
-  if (strcmp(opt->longName, "nick") == 0) {
-    g_free(opt_nickname);
-    opt_nickname = g_strdup(arg);
-  }
 
-  if (strcmp(opt->longName, "hostname") == 0) {
-    silc_free(opt_hostname);
-    opt_hostname = strdup(arg);
-  }
-#endif
-
-#ifdef SILC_PLUGIN
   if ((argc == 2) && (strcasecmp(argv[1], "list-ciphers") == 0)) {
-#else
-  if (strcmp(opt->longName, "list-ciphers") == 0) {
-    silc_cipher_register_default();
-#endif
     silc_client_list_ciphers();
-    FUNCTION_EXIT;
+    goto out;
   }
 
-#ifdef SILC_PLUGIN
   if ((argc == 2) && (strcasecmp(argv[1], "list-hash-funcs") == 0)) {
-#else
-  if (strcmp(opt->longName, "list-hash-funcs") == 0) {
-    silc_hash_register_default();
-#endif
     silc_client_list_hash_funcs();
-    FUNCTION_EXIT;
+    goto out;
   }
 
-#ifdef SILC_PLUGIN
   if ((argc == 2) && (strcasecmp(argv[1], "list-hmacs") == 0)) {
-#else
-  if (strcmp(opt->longName, "list-hmacs") == 0) {
-    silc_hmac_register_default();
-#endif
     silc_client_list_hmacs();
-    FUNCTION_EXIT;
+    goto out;
   }
 
-#ifdef SILC_PLUGIN
   if ((argc == 2) && (strcasecmp(argv[1], "list-pkcs") == 0)) {
-#else
-  if (strcmp(opt->longName, "list-pkcs") == 0) {
-    silc_pkcs_register_default();
-#endif
     silc_client_list_pkcs();
-    FUNCTION_EXIT;
+    goto out;
   }
 
-#ifdef SILC_PLUGIN
   if ((argc < 5) && (strcasecmp(argv[1], "debug") == 0)) {
-#else
-  if (strcmp(opt->longName, "debug") == 0) {
-    silc_log_debug(TRUE);
-    silc_log_debug_hexdump(TRUE);
-    silc_log_set_debug_string(arg);
-#endif
-#ifdef SILC_PLUGIN
     if (argc == 2) {
       printformat_module("fe-common/silc", NULL, NULL,
 		         MSGLEVEL_CRAP, SILCTXT_CONFIG_DEBUG,
 			 (i_debug == TRUE ? "enabled" : "disabled"));
       goto out;
     }
-#endif
 #ifndef SILC_DEBUG
-#ifdef SILC_PLUGIN
     printformat_module("fe-common/silc", NULL, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_CONFIG_NODEBUG);
 #else
-    fprintf(stdout,
-	    "Run-time debugging is not enabled. To enable it recompile\n"
-	    "the client with --enable-debug configuration option.\n");
-    sleep(1);
-#endif
-#else
-#ifdef SILC_PLUGIN
     if (strcasecmp(argv[2], "on") == 0) {
       settings_set_bool("debug", TRUE);
       if (argc == 4)
@@ -480,23 +421,17 @@ void silc_opt_callback(poptContext con,
       settings_set_bool("debug", FALSE);
     } else
       goto err;
-    sig_setup_changed();
+    silc_sig_setup_changed();
     printformat_module("fe-common/silc", NULL, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_CONFIG_DEBUG,
 		       (settings_get_bool("debug") == TRUE ?
 			"enabled" : "disabled"));
     goto out;
 #endif
-#endif
   }
 
-#ifdef SILC_PLUGIN
   if (strcasecmp(argv[1], "create-key-pair") == 0) {
-#else
-  if (strcmp(opt->longName, "create-key-pair") == 0) {
-#endif
     /* Create new key pair and exit */
-#ifdef SILC_PLUGIN
     char *endptr, *pkcs=NULL;
     long int val;
     int bits=0;
@@ -533,24 +468,10 @@ void silc_opt_callback(poptContext con,
     printformat_module("fe-common/silc", NULL, NULL,
 		       MSGLEVEL_CRAP, SILCTXT_CONFIG_NEXTTIME);
     goto out;
-#else
-    silc_cipher_register_default();
-    silc_pkcs_register_default();
-    silc_hash_register_default();
-    silc_hmac_register_default();
-    silc_create_key_pair(opt_pkcs, opt_bits, NULL, NULL,
-			 NULL, NULL, NULL, NULL, TRUE);
-    exit(0);
-#endif
   }
 
-#ifdef SILC_PLUGIN
   if ((argc < 4) && (strcasecmp(argv[1], "passphrase-change") == 0)) {
-#else
-  if (strcmp(opt->longName, "passphrase-change") == 0) {
-#endif
     /* Change the passphrase of the private key file */
-#ifdef SILC_PLUGIN
     CREATE_KEY_REC *rec;
 
     rec = g_new0(CREATE_KEY_REC, 1);
@@ -561,29 +482,8 @@ void silc_opt_callback(poptContext con,
 				    	    NULL, SILCTXT_CONFIG_PASS_ASK1),
 			    ENTRY_REDIRECT_FLAG_HIDDEN, rec);
     goto out;
-#else
-    silc_cipher_register_default();
-    silc_pkcs_register_default();
-    silc_hash_register_default();
-    silc_hmac_register_default();
-    silc_change_private_key_passphrase(arg, NULL, NULL);
-    exit(0);
-#endif
   }
 
-#ifndef SILC_PLUGIN
-  if (strcmp(opt->longName, "show-key") == 0) {
-    /* Dump the key */
-    silc_cipher_register_default();
-    silc_pkcs_register_default();
-    silc_hash_register_default();
-    silc_hmac_register_default();
-    silc_show_public_key_file((char *)arg);
-    exit(0);
-  }
-#endif
-
-#ifdef SILC_PLUGIN
 err:
   printformat_module("fe-common/silc", NULL, NULL,
 		     MSGLEVEL_CRAP, SILCTXT_CONFIG_UNKNOWN,
@@ -596,9 +496,8 @@ out:
   silc_free(argv);
   silc_free(argv_lens);
   silc_free(argv_types);
-#endif
 }
-#undef FUNCTION_EXIT
+#endif /* SILC_PLUGIN */
 
 /* Called to indicate the client library has stopped. */
 static void
@@ -642,7 +541,9 @@ static void sig_init_finished(void)
   }
 
   /* Initialize the SILC client */
-  opt_hostname = (opt_hostname ? opt_hostname : silc_net_localhost());
+  opt_hostname = (char *)settings_get_str("hostname");
+  if (!opt_hostname || *opt_hostname == '\0')
+    opt_hostname = silc_net_localhost();
   if (!silc_client_init(silc_client, settings_get_str("user_name"),
 			opt_hostname, settings_get_str("real_name"),
 			silc_running, NULL)) {
@@ -668,36 +569,134 @@ static void sig_init_finished(void)
   my_silc_scheduler(NULL);
 }
 
+#ifndef SILC_PLUGIN
+static gboolean list_ciphers(const gchar *option_name, const gchar *value,
+			     gpointer data, GError **error)
+{
+  silc_cipher_register_default();
+  silc_client_list_ciphers();
+  exit(0);
+  return true;
+}
+
+static gboolean list_hash_funcs(const gchar *option_name, const gchar *value,
+			        gpointer data, GError **error)
+{
+  silc_hash_register_default();
+  silc_client_list_hash_funcs();
+  exit(0);
+  return true;
+}
+
+static gboolean list_hmacs(const gchar *option_name, const gchar *value,
+			   gpointer data, GError **error)
+{
+  silc_hmac_register_default();
+  silc_client_list_hmacs();
+  exit(0);
+  return true;
+}
+
+static gboolean list_pkcs(const gchar *option_name, const gchar *value,
+			  gpointer data, GError **error)
+{
+  silc_pkcs_register_default();
+  silc_client_list_pkcs();
+  exit(0);
+  return true;
+}
+
+#ifdef SILC_DEBUG
+static gboolean enable_debug(const gchar *option_name, const gchar *value,
+			     gpointer data, GError **error)
+{
+  /* Set debug string setting but don't enable it.  User must be
+     /set enable on to get the debugs. */
+  settings_set_str("debug_string", (char *)value);
+
+  /* Default debugging when -d was given in command line */
+  silc_log_debug(TRUE);
+  silc_log_debug_hexdump(TRUE);
+  silc_log_set_debug_string((char *)value);
+  return true;
+}
+#else
+static gboolean enable_debug(const gchar *option_name, const gchar *value,
+			     gpointer data, GError **error)
+{
+  fprintf(stdout,
+	  "Run-time debugging is not enabled. To enable it recompile\n"
+	  "the client with --enable-debug configuration option.\n");
+  sleep(1);
+  return true;
+}
+#endif /* SILC_DEBUG */
+
+static gboolean create_keypair(const gchar *option_name, const gchar *value,
+			       gpointer data, GError **error)
+{
+  silc_cipher_register_default();
+  silc_pkcs_register_default();
+  silc_hash_register_default();
+  silc_hmac_register_default();
+  silc_create_key_pair(opt_pkcs, opt_bits, NULL, NULL, NULL, NULL,
+		       NULL, NULL, TRUE);
+  exit(0);
+  return true;
+}
+
+static gboolean change_passphrase(const gchar *option_name, const gchar *value,
+			          gpointer data, GError **error)
+{
+  silc_cipher_register_default();
+  silc_pkcs_register_default();
+  silc_hash_register_default();
+  silc_hmac_register_default();
+  silc_change_private_key_passphrase((char *)value, NULL, NULL);
+  exit(0);
+  return true;
+}
+
+static gboolean show_key(const gchar *option_name, const gchar *value,
+			          gpointer data, GError **error)
+{
+  silc_cipher_register_default();
+  silc_pkcs_register_default();
+  silc_hash_register_default();
+  silc_hmac_register_default();
+  silc_show_public_key_file((char *)value);
+  exit(0);
+  return true;
+}
+#endif /* !SILC_PLUGIN */
+
 /* Init SILC. Called from src/fe-text/silc.c */
 
 void silc_core_init(void)
 {
 #ifndef SILC_PLUGIN
-  static struct poptOption silc_options[] = {
-    { NULL, '\0', POPT_ARG_CALLBACK, (void *)&silc_opt_callback, '\0', NULL },
-    { "list-ciphers", 0, POPT_ARG_NONE, NULL, 0,
-      "List supported ciphers", NULL },
-    { "list-hash-funcs", 0, POPT_ARG_NONE, NULL, 0,
-      "List supported hash functions", NULL },
-    { "list-hmacs", 0, POPT_ARG_NONE, NULL, 0,
+  static GOptionEntry silc_options[] = {
+    { "list-ciphers", 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK,
+      list_ciphers, "List supported ciphers", NULL },
+    { "list-hash-funcs", 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK,
+      list_hash_funcs, "List supported hash functions", NULL },
+    { "list-hmacs", 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK, list_hmacs,
       "List supported HMACs", NULL },
-    { "list-pkcs", 0, POPT_ARG_NONE, NULL, 0,
+    { "list-pkcs", 0, G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK, list_pkcs,
       "List supported PKCSs", NULL },
-#ifdef SILC_DEBUG
-    { "debug", 'd', POPT_ARG_STRING, NULL, 0,
-      "Enable debugging", "STRING" },
-#endif /* SILC_DEBUG */
-    { "create-key-pair", 'C', POPT_ARG_NONE, NULL, 0,
-      "Create new public key pair", NULL },
-    { "pkcs", 0, POPT_ARG_STRING, &opt_pkcs, 0,
+    { "debug", 'd', 0, G_OPTION_ARG_CALLBACK, enable_debug,
+      "Enable debugging", NULL },
+    { "create-key-pair", 'C', G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK,
+      create_keypair, "Create new public key pair", NULL },
+    { "pkcs", 0, 0, G_OPTION_ARG_STRING, &opt_pkcs,
       "Set the PKCS of the public key pair (-C)", "PKCS" },
-    { "bits", 0, POPT_ARG_INT, &opt_bits, 0,
+    { "bits", 0, 0, G_OPTION_ARG_INT, &opt_bits,
       "Set the length of the public key pair (-C)", "VALUE" },
-    { "passphrase-change", 'P', POPT_ARG_STRING, NULL, 0,
+    { "passphrase-change", 'P', 0, G_OPTION_ARG_CALLBACK, change_passphrase,
       "Change the passphrase of private key file", "FILE" },
-    { "show-key", 'S', POPT_ARG_STRING, NULL, 0,
+    { "show-key", 'S', 0, G_OPTION_ARG_CALLBACK, show_key, 
       "Show the contents of the public key", "FILE" },
-    { NULL, '\0', 0, NULL }
+    { NULL }
   };
 #endif
 
@@ -750,14 +749,14 @@ void silc_core_init(void)
   settings_add_str("debug", "debug_string", "");
 #endif
 
-  signal_add("setup changed", (SIGNAL_FUNC) sig_setup_changed);
+  signal_add("setup changed", (SIGNAL_FUNC) silc_sig_setup_changed);
 #ifndef SILC_PLUGIN
   signal_add("irssi init finished", (SIGNAL_FUNC) sig_init_finished);
-#endif
+#endif /* !SILC_PLUGIN */
 
 #if defined (SILC_PLUGIN) && defined (SILC_DEBUG)
   if (settings_get_bool("debug") == TRUE)
-    sig_setup_changed();
+    silc_sig_setup_changed();
 #endif
 
   silc_init_userinfo();
@@ -851,12 +850,7 @@ void silc_core_deinit(void)
       silc_client_run_one(silc_client);
   }
 
-  if (opt_hostname)
-    silc_free(opt_hostname);
-  if (opt_nickname)
-    g_free(opt_nickname);
-
-  signal_remove("setup changed", (SIGNAL_FUNC) sig_setup_changed);
+  signal_remove("setup changed", (SIGNAL_FUNC) silc_sig_setup_changed);
 #ifdef SILC_PLUGIN
   command_unbind("silc", (SIGNAL_FUNC) silc_opt_callback);
 #else

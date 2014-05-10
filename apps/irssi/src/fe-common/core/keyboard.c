@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -228,6 +228,7 @@ static int expand_combo(const char *start, const char *end, GSList **out)
 	if (list->next == NULL) {
                 /* only one way to generate the combo, good */
                 rec = list->data;
+		g_slist_free(list);
 		return expand_key(rec->key, out);
 	}
 
@@ -252,6 +253,7 @@ static int expand_combo(const char *start, const char *end, GSList **out)
 	}
 
         rec = list->data;
+	g_slist_free(list);
 	if (!expand_key(rec->key, out)) {
 		/* illegal key combo, remove from list */
 		expand_out_free(*out);
@@ -298,7 +300,7 @@ static int expand_key(const char *key, GSList **out)
 			expand_out_char(*out, *key);
 			expand_out_char(*out, '-');
                         last_hyphen = FALSE; /* optional */
-		} else if (last_hyphen && i_isalnum(*key) && !i_isdigit(*key)) {
+		} else if (last_hyphen && i_isalpha(*key)) {
                         /* possibly beginning of keycombo */
 			start = key;
                         last_hyphen = FALSE;
@@ -571,11 +573,8 @@ int key_pressed(KEYBOARD_REC *keyboard, const char *key)
                 g_strconcat(keyboard->key_state, "-", key, NULL);
 	g_free_and_null(keyboard->key_state);
 
-#if GLIB_MAJOR_VERSION == 2
-#  define GSearchFunc GCompareFunc
-#endif
 	rec = g_tree_search(key_states,
-			    (GSearchFunc) key_states_search,
+			    (GCompareFunc) key_states_search,
 			    combo);
 	if (rec == NULL) {
 		/* unknown key combo, eat the invalid key
@@ -673,7 +672,7 @@ static void cmd_show_keys(const char *searchkey, int full)
 	printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_BIND_FOOTER);
 }
 
-/* SYNTAX: BIND [-delete] [<key> [<command> [<data>]]] */
+/* SYNTAX: BIND [-list] [-delete] [<key> [<command> [<data>]]] */
 static void cmd_bind(const char *data)
 {
 	GHashTable *optlist;
@@ -684,6 +683,19 @@ static void cmd_bind(const char *data)
 	if (!cmd_get_params(data, &free_arg, 3 | PARAM_FLAG_GETREST | PARAM_FLAG_OPTIONS,
 			    "bind", &optlist, &key, &id, &keydata))
 		return;
+
+	if (g_hash_table_lookup(optlist, "list")) {
+		GSList *tmp;
+
+		for (tmp = keyinfos; tmp != NULL; tmp = tmp->next) {
+			KEYINFO_REC *rec = tmp->data;
+
+			printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_BIND_COMMAND_LIST,
+				    rec->id, rec->description ? rec->description : "");
+		}
+		cmd_params_free(free_arg);
+		return;
+	}
 
 	if (*key != '\0' && g_hash_table_lookup(optlist, "delete")) {
                 /* delete key */
@@ -832,7 +844,7 @@ void keyboard_init(void)
         key_config_frozen = 0;
 	memset(used_keys, 0, sizeof(used_keys));
 
-	key_bind("command", "Run any IRC command", NULL, NULL, (SIGNAL_FUNC) sig_command);
+	key_bind("command", "Run any command", NULL, NULL, (SIGNAL_FUNC) sig_command);
 	key_bind("key", "Specify name for key binding", NULL, NULL, (SIGNAL_FUNC) sig_key);
 	key_bind("multi", "Run multiple commands", NULL, NULL, (SIGNAL_FUNC) sig_multi);
 	key_bind("nothing", "Do nothing", NULL, NULL, (SIGNAL_FUNC) sig_nothing);
@@ -843,7 +855,7 @@ void keyboard_init(void)
 	signal_add("complete command bind", (SIGNAL_FUNC) sig_complete_bind);
 
 	command_bind("bind", NULL, (SIGNAL_FUNC) cmd_bind);
-	command_set_options("bind", "delete");
+	command_set_options("bind", "delete list");
 }
 
 void keyboard_deinit(void)

@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -24,17 +24,12 @@
 #include "misc.h"
 #include "levels.h"
 #include "settings.h"
-#include "irssi-version.h"
-#ifdef HAVE_NL_LANGINFO
-#  include <langinfo.h>
-#endif
 
 #include "servers.h"
 #include "channels.h"
 #include "servers-setup.h"
-#include "recode.h"
 
-#include "autorun.h"
+#include "special-vars.h"
 #include "fe-core-commands.h"
 #include "fe-queries.h"
 #include "hilight-text.h"
@@ -44,7 +39,6 @@
 #include "printtext.h"
 #include "formats.h"
 #include "themes.h"
-#include "translation.h"
 #include "fe-channels.h"
 #include "fe-windows.h"
 #include "window-activity.h"
@@ -99,13 +93,6 @@ void window_commands_deinit(void);
 
 static void sig_setup_changed(void);
 
-static void print_version(void)
-{
-	printf(PACKAGE" " IRSSI_VERSION" (%d %04d)\n",
-	       IRSSI_VERSION_DATE, IRSSI_VERSION_TIME);
-        exit(0);
-}
-
 static void sig_connected(SERVER_REC *server)
 {
 	MODULE_DATA_SET(server, g_new0(MODULE_SERVER_REC, 1));
@@ -131,24 +118,16 @@ static void sig_channel_destroyed(CHANNEL_REC *channel)
 	MODULE_DATA_UNSET(channel);
 }
 
-void fe_common_core_init(void)
+void fe_common_core_register_options(void)
 {
-	static struct poptOption version_options[] = {
-		{ NULL, '\0', POPT_ARG_CALLBACK, (void *)&print_version, '\0', NULL },
-		{ "version", 'v', POPT_ARG_NONE, NULL, 0, "Display irssi version" },
-		{ NULL, '\0', 0, NULL }
-	};
-
-	static struct poptOption options[] = {
-		{ NULL, '\0', POPT_ARG_INCLUDE_TABLE, version_options, 0, NULL, NULL },
-		POPT_AUTOHELP
-		{ "connect", 'c', POPT_ARG_STRING, &autocon_server, 0, "Automatically connect to server/network", "SERVER" },
-		{ "password", 'w', POPT_ARG_STRING, &autocon_password, 0, "Autoconnect password", "PASSWORD" },
-		{ "port", 'p', POPT_ARG_INT, &autocon_port, 0, "Autoconnect port", "PORT" },
-		{ "noconnect", '!', POPT_ARG_NONE, &no_autoconnect, 0, "Disable autoconnecting", NULL },
-		{ "nick", 'n', POPT_ARG_STRING, &cmdline_nick, 0, "Specify nick to use", NULL },
-		{ "hostname", 'h', POPT_ARG_STRING, &cmdline_hostname, 0, "Specify host name to use", NULL },
-		{ NULL, '\0', 0, NULL }
+	static GOptionEntry options[] = {
+		{ "connect", 'c', 0, G_OPTION_ARG_STRING, &autocon_server, "Automatically connect to server/network", "SERVER" },
+		{ "password", 'w', 0, G_OPTION_ARG_STRING, &autocon_password, "Autoconnect password", "PASSWORD" },
+		{ "port", 'p', 0, G_OPTION_ARG_INT, &autocon_port, "Autoconnect port", "PORT" },
+		{ "noconnect", '!', 0, G_OPTION_ARG_NONE, &no_autoconnect, "Disable autoconnecting", NULL },
+		{ "nick", 'n', 0, G_OPTION_ARG_STRING, &cmdline_nick, "Specify nick to use", NULL },
+		{ "hostname", 'h', 0, G_OPTION_ARG_STRING, &cmdline_hostname, "Specify host name to use", NULL },
+		{ NULL }
 	};
 
 	autocon_server = NULL;
@@ -158,6 +137,11 @@ void fe_common_core_init(void)
 	cmdline_nick = NULL;
 	cmdline_hostname = NULL;
 	args_register(options);
+}
+
+void fe_common_core_init(void)
+{
+	const char *str;
 
 	settings_add_bool("lookandfeel", "timestamps", TRUE);
 	settings_add_level("lookandfeel", "timestamp_level", "ALL");
@@ -174,13 +158,8 @@ void fe_common_core_init(void)
 
 	settings_add_bool("lookandfeel", "use_status_window", TRUE);
 	settings_add_bool("lookandfeel", "use_msgs_window", FALSE);
-#if defined (HAVE_NL_LANGINFO) && defined(CODESET)
-	settings_add_str("lookandfeel", "term_charset", 
-			 *nl_langinfo(CODESET) != '\0' ? 
-			 nl_langinfo(CODESET) : "ISO8859-1");
-#else
-	settings_add_str("lookandfeel", "term_charset", "ISO8859-1");
-#endif
+	g_get_charset(&str);
+	settings_add_str("lookandfeel", "term_charset", str);
 	themes_init();
         theme_register(fecommon_core_formats);
 
@@ -199,7 +178,6 @@ void fe_common_core_init(void)
 	fe_modules_init();
 	fe_server_init();
 	fe_settings_init();
-	translation_init();
 	windows_init();
 	window_activity_init();
 	window_commands_init();
@@ -243,7 +221,6 @@ void fe_common_core_deinit(void)
 	fe_modules_deinit();
 	fe_server_deinit();
 	fe_settings_deinit();
-	translation_deinit();
 	windows_deinit();
 	window_activity_deinit();
 	window_commands_deinit();
@@ -369,10 +346,13 @@ static void autoconnect_servers(void)
 		if (rec->autoconnect &&
 		    (rec->chatnet == NULL ||
 		     gslist_find_icase_string(chatnets, rec->chatnet) == NULL)) {
-			if (rec->chatnet != NULL)
+			if (rec->chatnet != NULL) {
 				chatnets = g_slist_append(chatnets, rec->chatnet);
+				str = g_strdup_printf("-network %s %s %d", rec->chatnet, rec->address, rec->port);
+			} else {
+				str = g_strdup_printf("%s %d", rec->address, rec->port);
+			}
 
-			str = g_strdup_printf("%s %d", rec->address, rec->port);
 			signal_emit("command connect", 1, str);
 			g_free(str);
 		}
@@ -407,6 +387,37 @@ static void sig_setup_changed(void)
 
 	if (changed)
 		create_windows();
+}
+
+static void autorun_startup(void)
+{
+	char *path;
+	GIOChannel *handle;
+	GString *buf;
+	gsize tpos;
+
+	/* open ~/.irssi/startup and run all commands in it */
+	path = g_strdup_printf("%s/startup", get_irssi_dir());
+	handle = g_io_channel_new_file(path, "r", NULL);
+	g_free(path);
+	if (handle == NULL) {
+		/* file not found */
+		return;
+	}
+
+	g_io_channel_set_encoding(handle, NULL, NULL);
+	buf = g_string_sized_new(512);
+	while (g_io_channel_read_line_string(handle, buf, &tpos, NULL) == G_IO_STATUS_NORMAL) {
+		buf->str[tpos] = '\0';
+		if (buf->str[0] != '#') {
+			eval_special_string(buf->str, "",
+					    active_win->active_server,
+					    active_win->active);
+		}
+	}
+	g_string_free(buf, TRUE);
+
+	g_io_channel_unref(handle);
 }
 
 void fe_common_core_finish_init(void)
@@ -454,4 +465,21 @@ void fe_common_core_finish_init(void)
 
         autorun_startup();
 	autoconnect_servers();
+}
+
+gboolean strarray_find_dest(char **array, const TEXT_DEST_REC *dest)
+{
+	g_return_val_if_fail(array != NULL, FALSE);
+
+	if (strarray_find(array, dest->target) != -1)
+		return TRUE;
+
+	if (dest->server_tag != NULL) {
+		char *tagtarget = g_strdup_printf("%s/%s", dest->server_tag, dest->target);
+		int ret = strarray_find(array, tagtarget);
+		g_free(tagtarget);
+		if (ret != -1)
+			return TRUE;
+	}
+	return FALSE;
 }

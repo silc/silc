@@ -12,9 +12,10 @@ touch $file
 cd apps/irssi
 ln -fs ../../Makefile.defines.in Makefile.defines.in
 ln -fs ../../Makefile.defines_int.in Makefile.defines_int.in
-sh autogen.sh 2>/dev/null 1>/dev/null
-sed '/#undef PACKAGE_/d' config.h.in > config.h.in.tmp
-sed '/#undef PACKAGE/d' config.h.in.tmp > config.h.in
+NOCONFIGURE=yes sh autogen.sh 2>/dev/null 1>/dev/null
+sed '/#undef PACKAGE_/d' irssi-config.h.in > irssi-config.h.in.tmp
+sed '/#undef PACKAGE/d' irssi-config.h.in.tmp > irssi-config.h.in
+rm -f irssi-config.h.in.tmp
 cd "$cur"
 version_date=`date +%Y%m%d`
 echo "/* automatically created by autogen.sh */" > $file

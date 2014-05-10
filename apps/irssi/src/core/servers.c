@@ -13,15 +13,15 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
 #include "signals.h"
 #include "commands.h"
-#include "line-split.h"
+#include "net-disconnect.h"
 #include "net-nonblock.h"
 #include "net-sendbuffer.h"
 #include "misc.h"
@@ -77,8 +77,8 @@ static char *server_create_address_tag(const char *address)
 	/* try to generate a reasonable server tag */
 	if (strchr(address, '.') == NULL) {
 		start = end = NULL;
-	} else if (g_strncasecmp(address, "irc", 3) == 0 ||
-	    g_strncasecmp(address, "chat", 4) == 0) {
+	} else if (g_ascii_strncasecmp(address, "irc", 3) == 0 ||
+	    g_ascii_strncasecmp(address, "chat", 4) == 0) {
 		/* irc-2.cs.hut.fi -> hut, chat.bt.net -> bt */
 		end = strrchr(address, '.');
 		start = end-1;
@@ -128,7 +128,7 @@ static char *server_create_tag(SERVER_CONNECT_REC *conn)
 	num = 2;
 	while (server_find_tag(str->str) != NULL ||
 	       server_find_lookup_tag(str->str) != NULL) {
-		g_string_sprintf(str, "%s%d", tag, num);
+		g_string_printf(str, "%s%d", tag, num);
 		num++;
 	}
 	g_free(tag);
@@ -167,6 +167,39 @@ static void server_connect_callback_init(SERVER_REC *server, GIOChannel *handle)
 	server_connect_finished(server);
 }
 
+#ifdef HAVE_OPENSSL
+static void server_connect_callback_init_ssl(SERVER_REC *server, GIOChannel *handle)
+{
+	int error;
+
+	g_return_if_fail(IS_SERVER(server));
+
+	error = irssi_ssl_handshake(handle);
+	if (error == -1) {
+		server->connection_lost = TRUE;
+		server_connect_failed(server, NULL);
+		return;
+	}
+	if (error & 1) {
+		if (server->connect_tag != -1)
+			g_source_remove(server->connect_tag);
+		server->connect_tag = g_input_add(handle, error == 1 ? G_INPUT_READ : G_INPUT_WRITE,
+						  (GInputFunction)
+						  server_connect_callback_init_ssl,
+						  server);
+		return;
+	}
+
+	lookup_servers = g_slist_remove(lookup_servers, server);
+	if (server->connect_tag != -1) {
+		g_source_remove(server->connect_tag);
+		server->connect_tag = -1;
+	}
+
+	server_connect_finished(server);
+}
+#endif
+
 static void server_real_connect(SERVER_REC *server, IPADDR *ip,
 				const char *unix_socket)
 {
@@ -191,9 +224,7 @@ static void server_real_connect(SERVER_REC *server, IPADDR *ip,
 		port = server->connrec->proxy != NULL ?
 			server->connrec->proxy_port : server->connrec->port;
 		handle = server->connrec->use_ssl ?
-			net_connect_ip_ssl(ip, port, own_ip, server->connrec->ssl_cert, server->connrec->ssl_pkey,
-server->connrec->ssl_cafile, server->connrec->ssl_capath, server->connrec->ssl_verify) :
-			net_connect_ip(ip, port, own_ip);
+			net_connect_ip_ssl(ip, port, own_ip, server) : net_connect_ip(ip, port, own_ip);
 	} else {
 		handle = net_connect_unix(unix_socket);
 	}
@@ -218,6 +249,11 @@ server->connrec->ssl_cafile, server->connrec->ssl_capath, server->connrec->ssl_v
 		g_free(errmsg2);
 	} else {
 		server->handle = net_sendbuffer_create(handle, 0);
+#ifdef HAVE_OPENSSL
+		if (server->connrec->use_ssl)
+			server_connect_callback_init_ssl(server, handle);
+		else
+#endif
 		server->connect_tag =
 			g_input_add(handle, G_INPUT_WRITE | G_INPUT_READ,
 				    (GInputFunction)
@@ -381,8 +417,8 @@ int server_start_connect(SERVER_REC *server)
 			return FALSE;
 		}
 
-		server->connect_pipe[0] = g_io_channel_unix_new(fd[0]);
-		server->connect_pipe[1] = g_io_channel_unix_new(fd[1]);
+		server->connect_pipe[0] = g_io_channel_new(fd[0]);
+		server->connect_pipe[1] = g_io_channel_new(fd[1]);
 
 		connect_address = server->connrec->proxy != NULL ?
 			server->connrec->proxy : server->connrec->address;
@@ -497,7 +533,6 @@ int server_unref(SERVER_REC *server)
         MODULE_DATA_DEINIT(server);
 	server_connect_unref(server->connrec);
 	if (server->rawlog != NULL) rawlog_destroy(server->rawlog);
-	if (server->buffer != NULL) line_split_free(server->buffer);
 	g_free(server->version);
 	g_free(server->away_reason);
 	g_free(server->nick);

@@ -40,7 +40,7 @@
 #include "gui-readline.h"
 #include "statusbar.h"
 #include "gui-windows.h"
-#include "textbuffer-reformat.h"
+#include "irssi-version.h"
 
 #include <signal.h>
 #include <locale.h>
@@ -156,7 +156,6 @@ static void textui_finish_init(void)
 	        textbuffer_init();
 	        textbuffer_view_init();
 		textbuffer_commands_init();
-		textbuffer_reformat_init();
 		gui_expandos_init();
 		gui_printtext_init();
 		gui_readline_init();
@@ -213,7 +212,6 @@ static void textui_deinit(void)
 		mainwindow_activity_deinit();
 		mainwindows_deinit();
 		gui_expandos_deinit();
-		textbuffer_reformat_deinit();
 		textbuffer_commands_deinit();
 	        textbuffer_view_deinit();
 	        textbuffer_deinit();
@@ -230,42 +228,6 @@ static void textui_deinit(void)
 	core_deinit();
 }
 
-static void check_oldcrap(void)
-{
-        FILE *f;
-	char *path, str[256];
-        int found;
-
-        /* check that default.theme is up-to-date */
-	path = g_strdup_printf("%s/default.theme", get_irssi_dir());
-	f = fopen(path, "r+");
-	if (f == NULL) {
-		g_free(path);
-                return;
-	}
-        found = FALSE;
-	while (!found && fgets(str, sizeof(str), f) != NULL)
-                found = strstr(str, "abstracts = ") != NULL;
-	fclose(f);
-
-	if (found) {
-		g_free(path);
-		return;
-	}
-
-	printf("\nYou seem to have old default.theme in "IRSSI_DIR_SHORT"/ directory.\n");
-        printf("Themeing system has changed a bit since last irssi release,\n");
-        printf("you should either delete your old default.theme or manually\n");
-        printf("merge it with the new default.theme.\n\n");
-	printf("Do you want to delete the old theme now? (Y/n)\n");
-
-	str[0] = '\0';
-	fgets(str, sizeof(str), stdin);
-	if (i_toupper(str[0]) == 'Y' || str[0] == '\n' || str[0] == '\0')
-                remove(path);
-	g_free(path);
-}
-
 static void check_files(void)
 {
 	struct stat statbuf;
@@ -273,8 +235,6 @@ static void check_files(void)
 	if (stat(get_irssi_dir(), &statbuf) != 0) {
 		/* ~/.irssi doesn't exist, first time running irssi */
 		display_firsttimer = TRUE;
-	} else {
-                check_oldcrap();
 	}
 }
 
@@ -311,22 +271,24 @@ GMemVTable gc_mem_table = {
 
 int main(int argc, char **argv)
 {
-	static struct poptOption options[] = {
-#if 0 /* --dummy is not available in SILC Client */
-		{ "dummy", 'd', POPT_ARG_NONE, &dummy, 0, "Use the dummy terminal mode", NULL },
-#endif
-		{ NULL, '\0', 0, NULL }
+	static int version = 0;
+	static GOptionEntry options[] = {
+		{ "version", 'v', 0, G_OPTION_ARG_NONE, &version, "Display version", NULL },
+		{ NULL }
 	};
 
 #ifdef USE_GC
 	g_mem_set_vtable(&gc_mem_table);
 #endif
 
+	core_register_options();
+	fe_common_core_register_options();
+
 	srand(time(NULL));
 
 	dummy = FALSE;
 	quitting = FALSE;
-	core_init_paths(argc, argv);
+	core_preinit(argv[0]);
 
 	check_files();
 
@@ -335,11 +297,6 @@ int main(int argc, char **argv)
 #endif
 #ifdef HAVE_SOCKS
 	SOCKSinit(argv[0]);
-#endif
-#ifdef ENABLE_NLS
-	/* initialize the i18n stuff */
-	bindtextdomain(PACKAGE, LOCALEDIR);
-	textdomain(PACKAGE);
 #endif
 
 	/* setlocale() must be called at the beginning before any calls that
@@ -354,8 +311,15 @@ int main(int argc, char **argv)
 	setlocale(LC_ALL, "");
 
 	textui_init();
+
 	args_register(options);
 	args_execute(argc, argv);
+
+	if (version) {
+		printf(PACKAGE" " IRSSI_VERSION" (%d %04d)\n",
+		       IRSSI_VERSION_DATE, IRSSI_VERSION_TIME);
+		return 0;
+	}
 
 	if (!dummy && !term_init()) {
 		fprintf(stderr, "Can't initialize screen handling, quitting.\n");

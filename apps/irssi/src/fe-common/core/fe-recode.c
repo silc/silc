@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -29,19 +29,9 @@
 #include "formats.h"
 #include "recode.h"
 
-#ifdef HAVE_NL_LANGINFO
-#  include <langinfo.h>
-#endif
-
-#define SLIST_FOREACH(var, head)		\
-for ((var) = (head);				\
-		 (var);					\
-		 (var) = g_slist_next((var)))
-
-#ifdef HAVE_GLIB2
-char *recode_fallback = NULL;
-char *recode_out_default = NULL;
-char *term_charset = NULL;
+static char *recode_fallback = NULL;
+static char *recode_out_default = NULL;
+static char *term_charset = NULL;
 
 static const char *fe_recode_get_target (WI_ITEM_REC *witem)
 {
@@ -80,8 +70,7 @@ static void fe_recode_cmd (const char *data, SERVER_REC *server, WI_ITEM_REC *wi
 		}
 
 	 	printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_RECODE_HEADER);
-		SLIST_FOREACH(tmp, sorted)
-		{
+		for (tmp = sorted; tmp != NULL; tmp = tmp->next) {
 			CONFIG_NODE *node = tmp->data;
 			printformat(NULL, NULL, MSGLEVEL_CLIENTCRAP, TXT_RECODE_LINE, node->key, node->value);
 		}
@@ -140,7 +129,7 @@ static void fe_recode_remove_cmd (const char *data, SERVER_REC *server, WI_ITEM_
 
 	if (iconfig_get_str("conversions", target, NULL) == NULL)
 		printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE, TXT_CONVERSION_NOT_FOUND, target);
-	else	{
+	else {
 		iconfig_set_str("conversions", target, NULL);
 		printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE, TXT_CONVERSION_REMOVED, target);
 	}
@@ -171,7 +160,7 @@ static void read_settings(void)
 	if (!is_valid_charset(recode_fallback)) {
 		signal_emit("error command", 2, GINT_TO_POINTER(CMDERR_INVALID_CHARSET), recode_fallback);
 		g_free(recode_fallback);
-		recode_fallback = is_valid_charset(old_recode_fallback) ? g_strdup(old_recode_fallback) : "ISO8859-1";
+		recode_fallback = is_valid_charset(old_recode_fallback) ? g_strdup(old_recode_fallback) : NULL;
 		settings_set_str("recode_fallback", recode_fallback);
 	}
 
@@ -180,25 +169,15 @@ static void read_settings(void)
 	term_charset = g_strdup(settings_get_str("term_charset"));
 	if (!is_valid_charset(term_charset)) {
 		g_free(term_charset);
-#if defined (HAVE_NL_LANGINFO) && defined(CODESET)
-		term_charset = is_valid_charset(old_term_charset) ? g_strdup(old_term_charset) : 
-			       *nl_langinfo(CODESET) != '\0' ? g_strdup(nl_langinfo(CODESET)) : 
-			       "ISO8859-1";
-#else
-		term_charset = is_valid_charset(old_term_charset) ? g_strdup(old_term_charset) : "ISO8859-1";
-#endif		
+		term_charset = is_valid_charset(old_term_charset) ? g_strdup(old_term_charset) : NULL;
 		settings_set_str("term_charset", term_charset);
-		/* FIXME: move the check of term_charset into fe-text/term.c 
-		          it breaks the proper term_input_type 
-		          setup and reemitting of the signal is kludgy */
-		if (g_strcasecmp(term_charset, old_term_charset) != 0)
-			signal_emit("setup changed", 0);
 	}
-	
+	recode_update_charset();
+
 	if (recode_out_default)
 		g_free(recode_out_default);
 	recode_out_default = g_strdup(settings_get_str("recode_out_default_charset"));
-	if (recode_out_default != NULL && *recode_out_default != '\0' && 
+	if (recode_out_default != NULL && *recode_out_default != '\0' &&
 	    !is_valid_charset(recode_out_default)) {
 		signal_emit("error command", 2, GINT_TO_POINTER(CMDERR_INVALID_CHARSET), recode_out_default);
 		g_free(recode_out_default);
@@ -210,27 +189,20 @@ static void read_settings(void)
 	g_free(old_recode_fallback);
 	g_free(old_recode_out_default);
 }
-#endif
 
 void fe_recode_init (void)
 {
-/* FIXME: print this is not supported instead */
-#ifdef HAVE_GLIB2
 	command_bind("recode", NULL, (SIGNAL_FUNC) fe_recode_cmd);
 	command_bind("recode add", NULL, (SIGNAL_FUNC) fe_recode_add_cmd);
 	command_bind("recode remove", NULL, (SIGNAL_FUNC) fe_recode_remove_cmd);
-	signal_add("setup changed", (SIGNAL_FUNC) read_settings);
+	signal_add_first("setup changed", (SIGNAL_FUNC) read_settings);
 	read_settings();
-#endif
 }
 
 void fe_recode_deinit (void)
 {
-/* FIXME: print this is not supported instead */
-#ifdef HAVE_GLIB2
 	command_unbind("recode", (SIGNAL_FUNC) fe_recode_cmd);
 	command_unbind("recode add", (SIGNAL_FUNC) fe_recode_add_cmd);
 	command_unbind("recode remove", (SIGNAL_FUNC) fe_recode_remove_cmd);
 	signal_remove("setup changed", (SIGNAL_FUNC) read_settings);
-#endif
 }

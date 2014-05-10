@@ -49,7 +49,6 @@ static void perl_text_buffer_view_fill_hash(HV *hv, TEXT_BUFFER_VIEW_REC *view)
 
 static void perl_line_fill_hash(HV *hv, LINE_REC *line)
 {
-	hv_store(hv, "refcount", 8, newSViv(line->refcount), 0);
 	hv_store(hv, "info", 4, plain_bless(&line->info, "Irssi::TextUI::LineInfo"), 0);
 }
 
@@ -117,7 +116,44 @@ gui_printtext(xpos, ypos, str)
 	int ypos
 	char *str
 
+void
+gui_input_set(str)
+	char *str
+CODE:
+	gui_entry_set_text(active_entry, str);
+
+int
+gui_input_get_pos()
+CODE:
+	RETVAL = gui_entry_get_pos(active_entry);
+OUTPUT:
+	RETVAL
+
+void
+gui_input_set_pos(pos)
+	int pos
+CODE:
+	gui_entry_set_pos(active_entry, pos);
+
 MODULE = Irssi::TextUI PACKAGE = Irssi::UI::Window
+
+void
+print_after(window, prev, level, str)
+	Irssi::UI::Window window
+	Irssi::TextUI::Line prev
+	int level
+	char *str
+PREINIT:
+	TEXT_DEST_REC dest;
+	char *text;
+	char *text2;
+CODE:
+	format_create_dest(&dest, NULL, NULL, level, window);
+	text = format_string_expand(str, NULL);
+	text2 = g_strconcat(text, "\n", NULL);
+	gui_printtext_after(&dest, prev, text2);
+	g_free(text);
+	g_free(text2);
 
 void
 gui_printtext_after(window, prev, level, str)

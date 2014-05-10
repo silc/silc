@@ -38,11 +38,6 @@ terminfo_sources = \
 curses_sources = \
 	term-curses.c
 
-cuix_sources = \
-	cuix-api.c \
-	cuix-lib.c \
-	cuix.c
-
 if NEED_TPARM
 use_tparm_sources = $(tparm_sources)
 endif
@@ -51,12 +46,6 @@ if USE_CURSES
 use_term_sources = $(curses_sources)
 else
 use_term_sources = $(terminfo_sources)
-endif
-
-if USE_CUIX
-use_term_sources += $(cuix_sources)
-silc_LDADD += -lform -lpanel -lmenu
-INCLUDES += -I$(top_srcdir)/src/irc/core
 endif
 
 silc_SOURCES = \
@@ -78,12 +67,12 @@ silc_SOURCES = \
 	$(use_term_sources) \
         textbuffer.c \
         textbuffer-commands.c \
-        textbuffer-reformat.c \
         textbuffer-view.c \
         silc.c \
 	module-formats.c
 
 noinst_HEADERS = \
+	statusbar-item.h \
         gui-entry.h \
         gui-printtext.h \
         gui-readline.h \
@@ -95,7 +84,6 @@ noinst_HEADERS = \
 	terminfo-core.h \
         textbuffer.h \
         textbuffer-view.h \
-        textbuffer-reformat.h \
 	module.h \
 	module-formats.h
 

@@ -1,6 +1,14 @@
-doc_DATA = signals.txt formats.txt manual.txt startup-HOWTO.html \
-	special_vars.txt
+man_MANS =
 
-EXTRA_DIST = $(doc_DATA)
+doc_DATA = \
+	formats.txt \
+	manual.txt \
+	faq.html \
+	perl.txt \
+	signals.txt \
+	special_vars.txt \
+	startup-HOWTO.html
+
+EXTRA_DIST = $(doc_DATA) $(man_MANS)
 
 SUBDIRS = help

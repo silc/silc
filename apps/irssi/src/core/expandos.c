@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "core.h"
@@ -71,7 +71,7 @@ void expando_create(const char *key, EXPANDO_FUNC func, ...)
         const char *signal;
 	va_list va;
 
-	g_return_if_fail(key != NULL || *key == '\0');
+	g_return_if_fail(key != NULL && *key != '\0');
 	g_return_if_fail(func != NULL);
 
 	if (key[1] != '\0')
@@ -136,7 +136,7 @@ void expando_destroy(const char *key, EXPANDO_FUNC func)
 	gpointer origkey, value;
         EXPANDO_REC *rec;
 
-	g_return_if_fail(key != NULL || *key == '\0');
+	g_return_if_fail(key != NULL && *key != '\0');
 	g_return_if_fail(func != NULL);
 
 	if (key[1] == '\0') {
@@ -341,8 +341,9 @@ static char *expando_cmdchar(SERVER_REC *server, void *item, int *free_ret)
 
 /* modes of current channel, if any */
 static char *expando_chanmode(SERVER_REC *server, void *item, int *free_ret)
-{ 
+{
 	char *cmode;
+	char *args;
 
 	*free_ret = FALSE;
 
@@ -354,8 +355,9 @@ static char *expando_chanmode(SERVER_REC *server, void *item, int *free_ret)
 
 	*free_ret = TRUE;
 	cmode = g_strdup(CHANNEL(item)->mode);
-	if (strchr(cmode, ' ') != NULL)
-		*(strchr(cmode, ' ')) = 0;
+	args = strchr(cmode, ' ');
+	if (args != NULL)
+		*args = 0;
 
 	return cmode;
 }
@@ -691,7 +693,7 @@ void expandos_init(void)
 
 	read_settings();
 
-        timer_tag = g_timeout_add(500, (GSourceFunc) sig_timer, NULL);
+        timer_tag = g_timeout_add(1000, (GSourceFunc) sig_timer, NULL);
 	signal_add("message public", (SIGNAL_FUNC) sig_message_public);
 	signal_add("message private", (SIGNAL_FUNC) sig_message_private);
 	signal_add("message own_private", (SIGNAL_FUNC) sig_message_own_private);

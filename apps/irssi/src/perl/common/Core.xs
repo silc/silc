@@ -7,7 +7,7 @@
 
 #define DEFAULT_COMMAND_CATEGORY "Perl scripts' commands"
 
-void perl_signal_add_hash(int priority, SV *sv)
+static void perl_signal_add_hash(int priority, SV *sv)
 {
 	HV *hv;
         HE *he;
@@ -57,6 +57,23 @@ static void handle_command_bind(int priority, int items, SV *p0, SV *p1, SV *p2)
 	}
 }
 
+static void add_tuple(gpointer key_, gpointer value_, gpointer user_data)
+{
+	HV *hash = user_data;
+	char *key = key_;
+	char *value = value_;
+	hv_store(hash, key, strlen(key), new_pv(value), 0);
+}
+
+static void wrap_signal_emit(void *signal, void **p) {
+	signal_emit(signal, 6, p[0], p[1], p[2], p[3], p[4], p[5]);
+}
+
+static void wrap_signal_continue(void *dummy, void **p) {
+	(void)dummy;
+	signal_continue(6, p[0], p[1], p[2], p[3], p[4], p[5]);
+}
+
 MODULE = Irssi::Core  PACKAGE = Irssi
 PROTOTYPES: ENABLE
 
@@ -64,44 +81,34 @@ void
 signal_emit(signal, ...)
 	char *signal
 CODE:
-	void *p[SIGNAL_MAX_ARGUMENTS];
-	int n;
+	int signal_id;
+	SV *args[SIGNAL_MAX_ARGUMENTS];
+	int n, used;
 
-	memset(p, 0, sizeof(p));
-	for (n = 1; n < items && n < SIGNAL_MAX_ARGUMENTS+1; n++) {
-		if (SvPOKp(ST(n)))
-			p[n-1] = SvPV(ST(n), PL_na);
-		else if (irssi_is_ref_object(ST(n)))
-			p[n-1] = irssi_ref_object(ST(n));
-		else if (SvROK(ST(n)))
-			p[n-1] = (void *) SvIV((SV*)SvRV(ST(n)));
-		else if (SvIOK(ST(n)))
-			p[n-1] = (void *)SvIV(ST(n));
-		else
-			p[n-1] = NULL;
+	signal_id = signal_get_uniq_id(signal);
+	used = items - 1;
+	if (used > SIGNAL_MAX_ARGUMENTS) {
+		used = SIGNAL_MAX_ARGUMENTS;
 	}
-	signal_emit(signal, items-1, p[0], p[1], p[2], p[3], p[4], p[5]);
+	for (n = 0; n < used; ++n) {
+		args[n] = ST(n + 1);
+	}
+	perl_signal_args_to_c(wrap_signal_emit, signal, signal_id, args, used);
 
 void
 signal_continue(...)
 CODE:
-	void *p[SIGNAL_MAX_ARGUMENTS];
-	int n;
+	SV *args[SIGNAL_MAX_ARGUMENTS];
+	int n, used;
 
-	memset(p, 0, sizeof(p));
-	for (n = 0; n < items && n < SIGNAL_MAX_ARGUMENTS; n++) {
-		if (SvPOKp(ST(n)))
-			p[n] = SvPV(ST(n), PL_na);
-		else if (irssi_is_ref_object(ST(n)))
-			p[n] = irssi_ref_object(ST(n));
-		else if (SvROK(ST(n)))
-			p[n] = (void *) SvIV((SV*)SvRV(ST(n)));
-		else if (SvIOK(ST(n)))
-			p[n] = (void *) SvIV(ST(n));
-		else
-			p[n] = NULL;
+	used = items;
+	if (used > SIGNAL_MAX_ARGUMENTS) {
+		used = SIGNAL_MAX_ARGUMENTS;
 	}
-	signal_continue(items, p[0], p[1], p[2], p[3], p[4], p[5]);
+	for (n = 0; n < used; ++n) {
+		args[n] = ST(n);
+	}
+	perl_signal_args_to_c(wrap_signal_continue, NULL, signal_get_emitted_id(), args, used);
 
 void
 signal_add(...)
@@ -485,6 +492,10 @@ OUTPUT:
 int
 level2bits(str)
 	char *str
+CODE:
+	RETVAL = level2bits(str, NULL);
+OUTPUT:
+	RETVAL
 
 void
 bits2level(bits)
@@ -551,6 +562,28 @@ void
 command_set_options(cmd, options)
 	char *cmd
 	char *options
+
+void
+command_parse_options(cmd, data)
+	char *cmd
+	char *data
+PREINIT:
+	HV *hash;
+	GHashTable *optlist;
+	void *free_arg;
+	char *ptr;
+PPCODE:
+	if (cmd_get_params(data, &free_arg, 1 | PARAM_FLAG_OPTIONS | PARAM_FLAG_GETREST,
+			   cmd, &optlist, &ptr)) {
+		hash = newHV();
+		g_hash_table_foreach(optlist, add_tuple, hash);
+		XPUSHs(sv_2mortal(newRV_noinc((SV*)hash)));
+		XPUSHs(sv_2mortal(new_pv(ptr)));
+		cmd_params_free(free_arg);
+	} else {
+		XPUSHs(&PL_sv_undef);
+		XPUSHs(&PL_sv_undef);
+	}
 
 void
 pidwait_add(pid)

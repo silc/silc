@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -206,7 +206,7 @@ static void event_connected(SERVER_REC *server)
 		/* check that we haven't already joined this channel in
 		   same chat network connection.. */
                 if (channel_find_servers(chatnet_servers, rec->name) == NULL)
-			g_string_sprintfa(chans, "%s,", rec->name);
+			g_string_append_printf(chans, "%s,", rec->name);
 	}
         g_slist_free(chatnet_servers);
 

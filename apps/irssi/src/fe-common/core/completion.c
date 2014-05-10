@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -62,7 +62,7 @@ static const char *completion_find(const char *key, int automatic)
 }
 
 /* Return whole word at specified position in string */
-char *get_word_at(const char *str, int pos, char **startpos)
+static char *get_word_at(const char *str, int pos, char **startpos)
 {
 	const char *start, *end;
 
@@ -128,7 +128,7 @@ static void free_completions(void)
 }
 
 /* manual word completion - called when TAB is pressed */
-char *word_complete(WINDOW_REC *window, const char *line, int *pos, int erase)
+char *word_complete(WINDOW_REC *window, const char *line, int *pos, int erase, int backward)
 {
 	static int startpos = 0, wordlen = 0;
         int old_startpos, old_wordlen;
@@ -142,6 +142,9 @@ char *word_complete(WINDOW_REC *window, const char *line, int *pos, int erase)
 
 	continue_complete = complist != NULL && *pos == last_line_pos &&
 		strcmp(line, last_line) == 0;
+
+	if (erase && !continue_complete)
+		return NULL;
 
 	old_startpos = startpos;
 	old_wordlen = wordlen;
@@ -193,20 +196,19 @@ char *word_complete(WINDOW_REC *window, const char *line, int *pos, int erase)
 	if (erase) {
 		signal_emit("complete erase", 3, window, word, linestart);
 
-		if (!continue_complete)
-                        return NULL;
-
                 /* jump to next completion */
-		word = NULL;
-		linestart = NULL;
                 startpos = old_startpos;
 		wordlen = old_wordlen;
 	}
 
 	if (continue_complete) {
 		/* complete from old list */
-		complist = complist->next != NULL ? complist->next :
-			g_list_first(complist);
+		if (backward)
+			complist = complist->prev != NULL ? complist->prev :
+				g_list_last(complist);
+		else
+			complist = complist->next != NULL ? complist->next :
+				g_list_first(complist);
 		want_space = last_want_space;
 	} else {
 		/* get new completion list */
@@ -255,7 +257,7 @@ char *word_complete(WINDOW_REC *window, const char *line, int *pos, int erase)
 	((!g_path_is_absolute(path) || IS_CURRENT_DIR(path)) && \
 	 default_path != NULL)
 
-GList *list_add_file(GList *list, const char *name, const char *default_path)
+static GList *list_add_file(GList *list, const char *name, const char *default_path)
 {
 	struct stat statbuf;
 	char *fname;
@@ -299,7 +301,7 @@ GList *filename_complete(const char *path, const char *default_path)
 	}
 
 	/* open directory for reading */
-	dir = g_dirname(realpath);
+	dir = g_path_get_dirname(realpath);
 	dirp = opendir(dir);
 	g_free(dir);
         g_free(realpath);
@@ -307,7 +309,7 @@ GList *filename_complete(const char *path, const char *default_path)
 	if (dirp == NULL)
 		return NULL;
 
-	dir = g_dirname(path);
+	dir = g_path_get_dirname(path);
 	if (*dir == G_DIR_SEPARATOR && dir[1] == '\0') {
                 /* completing file in root directory */
 		*dir = '\0';
@@ -344,7 +346,7 @@ GList *filename_complete(const char *path, const char *default_path)
         return list;
 }
 
-static GList *completion_get_settings(const char *key)
+static GList *completion_get_settings(const char *key, SettingType type)
 {
 	GList *complist;
 	GSList *tmp, *sets;
@@ -359,29 +361,7 @@ static GList *completion_get_settings(const char *key)
 	for (tmp = sets; tmp != NULL; tmp = tmp->next) {
 		SETTINGS_REC *rec = tmp->data;
 
-		if (g_strncasecmp(rec->key, key, len) == 0)
-			complist = g_list_insert_sorted(complist, g_strdup(rec->key), (GCompareFunc) g_istr_cmp);
-	}
-	g_slist_free(sets);
-	return complist;
-}
-
-static GList *completion_get_bool_settings(const char *key)
-{
-	GList *complist;
-	GSList *tmp, *sets;
-	int len;
-
-	g_return_val_if_fail(key != NULL, NULL);
-
-	sets = settings_get_sorted();
-
-	len = strlen(key);
-	complist = NULL;
-	for (tmp = sets; tmp != NULL; tmp = tmp->next) {
-		SETTINGS_REC *rec = tmp->data;
-
-		if (rec->type == SETTING_TYPE_BOOLEAN &&
+		if ((type == -1 || rec->type == type) &&
 		    g_strncasecmp(rec->key, key, len) == 0)
 			complist = g_list_insert_sorted(complist, g_strdup(rec->key), (GCompareFunc) g_istr_cmp);
 	}
@@ -485,7 +465,7 @@ static GList *completion_get_subcommands(const char *cmd)
 	return complist;
 }
 
-GList *completion_get_options(const char *cmd, const char *option)
+static GList *completion_get_options(const char *cmd, const char *option)
 {
 	COMMAND_REC *rec;
 	GList *list;
@@ -553,7 +533,7 @@ static char *line_get_command(const char *line, char **args, int aliases)
 	} while (ptr != NULL);
 
         if (cmd != NULL)
-		g_strdown(cmd);
+		ascii_strdown(cmd);
 	return cmd;
 }
 
@@ -636,6 +616,7 @@ static void sig_complete_word(GList **list, WINDOW_REC *window,
 	/* we're completing -option? */
 	if (*word == '-') {
 		*list = completion_get_options(cmd, word+1);
+		if (*list != NULL) signal_stop();
 		g_free(cmd);
 		g_free(line);
 		return;
@@ -650,13 +631,11 @@ static void sig_complete_word(GList **list, WINDOW_REC *window,
 		g_free(cmd);
 		cmd = g_strconcat(line, " ", word, NULL);
 		*list = g_list_concat(completion_get_subcommands(cmd), *list);
-
-		if (*list != NULL) signal_stop();
 	}
 
+	if (*list != NULL) signal_stop();
 	g_free(signal);
 	g_free(cmd);
-
 	g_free(line);
 }
 
@@ -700,9 +679,18 @@ static void sig_complete_set(GList **list, WINDOW_REC *window,
 	g_return_if_fail(word != NULL);
 	g_return_if_fail(line != NULL);
 
-	if (*line != '\0') return;
+	if (*line == '\0' ||
+	    !strcmp("-clear", line) || !strcmp("-default", line))
+		*list = completion_get_settings(word, -1);
+	else if (*line != '\0' && *word == '\0') {
+		SETTINGS_REC *rec = settings_get_record(line);
+		if (rec != NULL) {
+			char *value = settings_get_print(rec);
+			if (value != NULL)
+				*list = g_list_append(*list, value);
+		}
+	}
 
-	*list = completion_get_settings(word);
 	if (*list != NULL) signal_stop();
 }
 
@@ -715,7 +703,7 @@ static void sig_complete_toggle(GList **list, WINDOW_REC *window,
 
 	if (*line != '\0') return;
 
-	*list = completion_get_bool_settings(word);
+	*list = completion_get_settings(word, SETTING_TYPE_BOOLEAN);
 	if (*list != NULL) signal_stop();
 }
 

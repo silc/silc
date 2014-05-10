@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -34,26 +34,6 @@
 #define DEFAULT_LASTLOG_BEFORE 3
 #define DEFAULT_LASTLOG_AFTER 3
 #define MAX_LINES_WITHOUT_FORCE 1000
-
-static void window_lastlog_clear(WINDOW_REC *window)
-{
-	TEXT_BUFFER_VIEW_REC *view;
-        LINE_REC *line, *next;
-
-        term_refresh_freeze();
-	view = WINDOW_GUI(window)->view;
-	line = textbuffer_view_get_lines(view);
-
-	while (line != NULL) {
-                next = line->next;
-
-		if (line->info.level & MSGLEVEL_LASTLOG)
-			textbuffer_view_remove_line(view, line);
-                line = next;
-	}
-        textbuffer_view_redraw(view);
-        term_refresh_thaw();
-}
 
 /* Only unknown keys in `optlist' should be levels.
    Returns -1 if unknown option was given. */
@@ -95,7 +75,7 @@ int cmd_options_get_level(const char *cmd, GHashTable *optlist)
 }
 
 static void show_lastlog(const char *searchtext, GHashTable *optlist,
-			 int start, int count, int fhandle)
+			 int start, int count, FILE *fhandle)
 {
 	WINDOW_REC *window;
         LINE_REC *startline;
@@ -109,7 +89,7 @@ static void show_lastlog(const char *searchtext, GHashTable *optlist,
         if (level == 0) level = MSGLEVEL_ALL;
 
 	if (g_hash_table_lookup(optlist, "clear") != NULL) {
-		window_lastlog_clear(active_win);
+		textbuffer_view_remove_lines_by_level(WINDOW_GUI(active_win)->view, MSGLEVEL_LASTLOG);
 		if (*searchtext == '\0')
                         return;
 	}
@@ -177,7 +157,7 @@ static void show_lastlog(const char *searchtext, GHashTable *optlist,
 		return;
 	}
 
-	if (len > MAX_LINES_WITHOUT_FORCE && fhandle == -1 &&
+	if (len > MAX_LINES_WITHOUT_FORCE && fhandle == NULL &&
 	    g_hash_table_lookup(optlist, "force") == NULL) {
 		printformat_window(active_win,
 				   MSGLEVEL_CLIENTNOTICE|MSGLEVEL_LASTLOG,
@@ -186,7 +166,7 @@ static void show_lastlog(const char *searchtext, GHashTable *optlist,
 		return;
 	}
 
-	if (fhandle == -1 && g_hash_table_lookup(optlist, "-") == NULL)
+	if (fhandle == NULL && g_hash_table_lookup(optlist, "-") == NULL)
 		printformat(NULL, NULL, MSGLEVEL_LASTLOG, TXT_LASTLOG_START);
 
 	line = g_string_new(NULL);
@@ -196,8 +176,8 @@ static void show_lastlog(const char *searchtext, GHashTable *optlist,
 		if (rec == NULL) {
 			if (tmp->next == NULL)
                                 break;
-			if (fhandle != -1) {
-				write(fhandle, "--\n", 3);
+			if (fhandle != NULL) {
+				fwrite("--\n", 3, 1, fhandle);
 			} else {
 				printformat_window(active_win,
 						   MSGLEVEL_LASTLOG,
@@ -208,7 +188,7 @@ static void show_lastlog(const char *searchtext, GHashTable *optlist,
 		}
 
                 /* get the line text */
-		textbuffer_line2text(rec, fhandle == -1, line);
+		textbuffer_line2text(rec, fhandle == NULL, line);
 		if (!settings_get_bool("timestamps")) {
 			struct tm *tm = localtime(&rec->info.time);
                         char timestamp[10];
@@ -220,9 +200,9 @@ static void show_lastlog(const char *searchtext, GHashTable *optlist,
 		}
 
                 /* write to file/window */
-		if (fhandle != -1) {
-			write(fhandle, line->str, line->len);
-			write(fhandle, "\n", 1);
+		if (fhandle != NULL) {
+			fwrite(line->str, line->len, 1, fhandle);
+			fputc('\n', fhandle);
 		} else {
 			printtext_window(active_win, MSGLEVEL_LASTLOG,
 					 "%s", line->str);
@@ -233,13 +213,12 @@ static void show_lastlog(const char *searchtext, GHashTable *optlist,
 	}
         g_string_free(line, TRUE);
 
-	if (fhandle == -1 && g_hash_table_lookup(optlist, "-") == NULL)
+	if (fhandle == NULL && g_hash_table_lookup(optlist, "-") == NULL)
 		printformat(NULL, NULL, MSGLEVEL_LASTLOG, TXT_LASTLOG_END);
 
 	textbuffer_view_set_bookmark_bottom(WINDOW_GUI(window)->view,
 					    "lastlog_last_check");
 
-        textbuffer_line_unref_list(WINDOW_GUI(window)->view->buffer, list);
 	g_list_free(list);
 }
 
@@ -252,7 +231,8 @@ static void cmd_lastlog(const char *data)
 	GHashTable *optlist;
 	char *text, *countstr, *start, *fname;
 	void *free_arg;
-        int count, fhandle;
+        int count, fd;
+	FILE *fhandle;
 
 	g_return_if_fail(data != NULL);
 
@@ -271,22 +251,31 @@ static void cmd_lastlog(const char *data)
 	if (count == 0) count = -1;
 
 	/* target where to print it */
-        fhandle = -1;
+        fhandle = NULL;
 	fname = g_hash_table_lookup(optlist, "file");
 	if (fname != NULL) {
                 fname = convert_home(fname);
-		fhandle = open(fname, O_WRONLY | O_APPEND | O_CREAT,
-			       octal2dec(settings_get_int("log_create_mode")));
+		fd = open(fname, O_WRONLY | O_APPEND | O_CREAT,
+			  octal2dec(settings_get_int("log_create_mode")));
+		if (fd != -1) {
+			fhandle = fdopen(fd, "a");
+			if (fhandle == NULL)
+				close(fd);
+		}
                 g_free(fname);
 	}
 
-	if (fname != NULL && fhandle == -1) {
+	if (fname != NULL && fhandle == NULL) {
 		printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
-			  "%s", g_strerror(errno));
+			  "Could not open lastlog: %s", g_strerror(errno));
 	} else {
 		show_lastlog(text, optlist, atoi(start), count, fhandle);
-		if (fhandle != -1)
-			close(fhandle);
+		if (fhandle != NULL) {
+			if (ferror(fhandle))
+				printtext(NULL, NULL, MSGLEVEL_CLIENTERROR,
+				  	  "Could not write lastlog: %s", g_strerror(errno));
+			fclose(fhandle);
+		}
 	}
 
 	cmd_params_free(free_arg);

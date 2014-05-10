@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -40,7 +40,7 @@ static NICKMATCH_REC *nickmatch;
 static int never_hilight_level, default_hilight_level;
 GSList *hilights;
 
-static void reset_cache(void)
+static void reset_level_cache(void)
 {
 	GSList *tmp;
 
@@ -51,7 +51,11 @@ static void reset_cache(void)
 		if (never_hilight_level & rec->level)
                         never_hilight_level &= ~rec->level;
 	}
+}
 
+static void reset_cache(void)
+{
+	reset_level_cache();
 	nickmatch_rebuild(nickmatch);
 }
 
@@ -353,7 +357,7 @@ static void sig_print_text(TEXT_DEST_REC *dest, const char *text,
 	} else {
 		/* hilight part of the line */
                 GString *tmp;
-                char *middle, *lastcolor;
+                char *middle;
 		int pos, color_pos, color_len;
 
                 tmp = g_string_new(NULL);
@@ -377,16 +381,13 @@ static void sig_print_text(TEXT_DEST_REC *dest, const char *text,
 		pos = strip_real_length(text, hilight_end,
 					&color_pos, &color_len);
 		if (color_pos > 0)
-			lastcolor = g_strndup(text+color_pos, color_len);
+			g_string_append_len(tmp, text+color_pos, color_len);
                 else {
                         /* no colors in line, change back to default */
-			lastcolor = g_malloc0(3);
-			lastcolor[0] = 4;
-                        lastcolor[1] = FORMAT_STYLE_DEFAULTS;
+			g_string_append_c(tmp, 4);
+			g_string_append_c(tmp, FORMAT_STYLE_DEFAULTS);
 		}
-		g_string_append(tmp, lastcolor);
 		g_string_append(tmp, text+pos);
-		g_free(lastcolor);
 
                 newstr = tmp->str;
                 g_string_free(tmp, FALSE);
@@ -479,8 +480,8 @@ static void hilight_print(int index, HILIGHT_REC *rec)
 		if (rec->word) g_string_append(options, "-word ");
 	}
 
-	if (rec->nickmask) g_string_append(options, "-nickmask ");
-	if (rec->fullword) g_string_append(options, "-fullword ");
+	if (rec->nickmask) g_string_append(options, "-mask ");
+	if (rec->fullword) g_string_append(options, "-full ");
 	if (rec->regexp) {
 		g_string_append(options, "-regexp ");
 #ifdef HAVE_REGEX_H
@@ -490,11 +491,11 @@ static void hilight_print(int index, HILIGHT_REC *rec)
 	}
 
 	if (rec->priority != 0)
-		g_string_sprintfa(options, "-priority %d ", rec->priority);
+		g_string_append_printf(options, "-priority %d ", rec->priority);
 	if (rec->color != NULL)
-		g_string_sprintfa(options, "-color %s ", rec->color);
+		g_string_append_printf(options, "-color %s ", rec->color);
 	if (rec->act_color != NULL)
-		g_string_sprintfa(options, "-actcolor %s ", rec->act_color);
+		g_string_append_printf(options, "-actcolor %s ", rec->act_color);
 
 	chans = rec->channels == NULL ? NULL :
 		g_strjoinv(",", rec->channels);
@@ -558,7 +559,7 @@ static void cmd_hilight(const char *data)
 	if (*text == '\0') cmd_param_error(CMDERR_NOT_ENOUGH_PARAMS);
 
 	channels = (chanarg == NULL || *chanarg == '\0') ? NULL :
-		g_strsplit(replace_chars(chanarg, ',', ' '), " ", -1);
+		g_strsplit(chanarg, ",", -1);
 
 	rec = hilight_find(text, channels);
 	if (rec == NULL) {
@@ -575,7 +576,7 @@ static void cmd_hilight(const char *data)
 	}
 
 	rec->level = (levelarg == NULL || *levelarg == '\0') ? 0 :
-		level2bits(replace_chars(levelarg, ',', ' '));
+		level2bits(replace_chars(levelarg, ',', ' '), NULL);
 	rec->priority = priorityarg == NULL ? 0 : atoi(priorityarg);
 
 	if (g_hash_table_lookup(optlist, "line") != NULL) {
@@ -675,6 +676,7 @@ static void hilight_nick_cache(GHashTable *list, CHANNEL_REC *channel,
 static void read_settings(void)
 {
 	default_hilight_level = settings_get_level("hilight_level");
+	reset_level_cache();
 }
 
 void hilight_text_init(void)

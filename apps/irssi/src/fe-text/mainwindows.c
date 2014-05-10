@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -206,9 +206,7 @@ MAIN_WINDOW_REC *mainwindow_create(void)
 		rec->last_line = rec->first_line + space;
 		rec->height = rec->last_line-rec->first_line+1;
 
-		parent->first_line = rec->last_line+1;
-		parent->height = parent->last_line-parent->first_line+1;
-
+		parent->first_line += space+1;
 		mainwindow_resize(parent, 0, -space-1);
 	}
 
@@ -356,8 +354,11 @@ static void mainwindows_resize_smaller(int xdiff, int ydiff)
 	GSList *sorted, *tmp;
         int space;
 
+	sorted = mainwindows_get_sorted(TRUE);
+	if (sorted == NULL)
+		return;
+
 	for (;;) {
-		sorted = mainwindows_get_sorted(TRUE);
 		space = 0;
 		for (tmp = mainwindows; tmp != NULL; tmp = tmp->next) {
 			rec = tmp->data;
@@ -368,6 +369,8 @@ static void mainwindows_resize_smaller(int xdiff, int ydiff)
 			break;
 
 		rec = sorted->data;
+		if (rec == active_mainwin && sorted->next != NULL)
+			rec = sorted->next->data;
 		sorted = g_slist_remove(sorted, rec);
 
 		if (sorted != NULL) {
@@ -387,7 +390,7 @@ static void mainwindows_resize_smaller(int xdiff, int ydiff)
 		rec = tmp->data;
 
 		space = MAIN_WINDOW_TEXT_HEIGHT(rec)-WINDOW_MIN_SIZE;
-		if (space <= 0) {
+		if (space == 0) {
 			mainwindow_resize(rec, xdiff, 0);
 
 			rec->first_line += ydiff;
@@ -396,7 +399,6 @@ static void mainwindows_resize_smaller(int xdiff, int ydiff)
 			continue;
 		}
 
-		if (space <= 0) space = 1;
 		if (space > -ydiff) space = -ydiff;
 		rec->last_line += ydiff;
 		ydiff += space;
@@ -418,43 +420,24 @@ static void mainwindows_resize_smaller(int xdiff, int ydiff)
 static void mainwindows_resize_bigger(int xdiff, int ydiff)
 {
 	GSList *sorted, *tmp;
-        int moved, space;
 
 	sorted = mainwindows_get_sorted(FALSE);
-	moved = 0;
 	for (tmp = sorted; tmp != NULL; tmp = tmp->next) {
 		MAIN_WINDOW_REC *rec = tmp->data;
 
-		space = MAIN_WINDOW_TEXT_HEIGHT(rec)-WINDOW_MIN_SIZE;
-		if (ydiff == 0 || (space >= 0 && tmp->next != NULL)) {
+		if (ydiff == 0 || tmp->next != NULL) {
 			mainwindow_resize(rec, xdiff, 0);
-			if (moved > 0) {
-				rec->first_line += moved;
-				rec->last_line += moved;
-				signal_emit("mainwindow moved", 1, rec);
-			}
 			continue;
 		}
 
-		if (space < 0 && tmp->next != NULL) {
-                        /* space below minimum */
-			space = -space;
-			if (space > ydiff) space = ydiff;
-		} else {
-			/* lowest window - give all the extra space for it */
-			space = ydiff;
-		}
-		ydiff -= space;
-		rec->first_line += moved;
-                moved += space;
-		rec->last_line += moved;
-
-		mainwindow_resize(rec, xdiff, space);
+		/* lowest window - give all the extra space for it */
+		rec->last_line += ydiff;
+		mainwindow_resize(rec, xdiff, ydiff);
 	}
 	g_slist_free(sorted);
 }
 
-void mainwindows_resize_horiz(int xdiff)
+static void mainwindows_resize_horiz(int xdiff)
 {
 	GSList *tmp;
 
@@ -820,7 +803,7 @@ static void cmd_window_show(const char *data)
 	if (window == NULL || is_window_visible(window))
 		return;
 
-	if (WINDOW_MAIN(window)->sticky_windows) {
+	if (WINDOW_GUI(window)->sticky) {
 		printformat_window(active_win, MSGLEVEL_CLIENTERROR,
 				   TXT_CANT_SHOW_STICKY_WINDOWS);
                 return;
@@ -974,7 +957,7 @@ static void cmd_window_stick(const char *data)
 		while (*data == ' ') data++;
 	}
 
-	if (g_strncasecmp(data, "OF", 2) == 0 || i_toupper(*data) == 'N') {
+	if (g_ascii_strncasecmp(data, "OF", 2) == 0 || i_toupper(*data) == 'N') {
 		/* unset sticky */
 		if (!WINDOW_GUI(win)->sticky) {
 			printformat_window(win, MSGLEVEL_CLIENTERROR,
@@ -1048,7 +1031,7 @@ static void windows_print_sticky(WINDOW_REC *win)
 	for (tmp = list; tmp != NULL; tmp = tmp->next) {
 		WINDOW_REC *rec = tmp->data;
 
-		g_string_sprintfa(str, "#%d, ", rec->refnum);
+		g_string_append_printf(str, "#%d, ", rec->refnum);
 	}
         g_string_truncate(str, str->len-2);
         g_slist_free(list);

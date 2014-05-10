@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -32,7 +32,8 @@ static int config_write_indent(CONFIG_REC *rec)
 	int n;
 
 	for (n = 0; n < rec->tmp_indent_level/CONFIG_INDENT_SIZE; n++) {
-		if (write(rec->handle, indent_block, CONFIG_INDENT_SIZE) == -1)
+		if (g_io_channel_write_chars(rec->handle, indent_block, CONFIG_INDENT_SIZE,
+					     NULL, NULL) == G_IO_STATUS_ERROR)
 			return -1;
 	}
 
@@ -57,12 +58,14 @@ static int config_write_str(CONFIG_REC *rec, const char *str)
 
 		p = strchr(strpos, '\n');
 		if (p == NULL) {
-			if (write(rec->handle, strpos, strlen(strpos)) == -1)
+			if (g_io_channel_write_chars(rec->handle, strpos, strlen(strpos),
+						     NULL, NULL) == G_IO_STATUS_ERROR)
 				return -1;
 			strpos = "";
 			rec->tmp_last_lf = FALSE;
 		} else {
-			if (write(rec->handle, strpos, (int) (p-strpos)+1) == -1)
+			if (g_io_channel_write_chars(rec->handle, strpos, (int) (p-strpos)+1,
+						     NULL, NULL) == G_IO_STATUS_ERROR)
 				return -1;
 			strpos = p+1;
 			rec->tmp_last_lf = TRUE;
@@ -85,20 +88,6 @@ static int config_has_specials(const char *text)
 	return FALSE;
 }
 
-static int get_octal(int decimal)
-{
-	int octal, pos;
-
-	octal = 0; pos = 0;
-	while (decimal > 0) {
-		octal += (decimal & 7)*(pos == 0 ? 1 : pos);
-		decimal /= 8;
-		pos += 10;
-	}
-
-	return octal;
-}
-
 static char *config_escape_string(const char *text)
 {
 	GString *str;
@@ -109,9 +98,9 @@ static char *config_escape_string(const char *text)
 	str = g_string_new("\"");
 	while (*text != '\0') {
 		if (*text == '\\' || *text == '"')
-			g_string_sprintfa(str, "\\%c", *text);
+			g_string_append_printf(str, "\\%c", *text);
 		else if ((unsigned char) *text < 32)
-			g_string_sprintfa(str, "\\%03d", get_octal(*text));
+			g_string_append_printf(str, "\\%03o", *text);
 		else
 			g_string_append_c(str, *text);
 		text++;
@@ -308,24 +297,24 @@ static int config_write_block(CONFIG_REC *rec, CONFIG_NODE *node, int list, int 
 	return 0;
 }
 
-/* Write configuration file. Write to `fname' if it's not NULL. */
 int config_write(CONFIG_REC *rec, const char *fname, int create_mode)
 {
 	int ret;
+	int fd;
 
 	g_return_val_if_fail(rec != NULL, -1);
         g_return_val_if_fail(fname != NULL || rec->fname != NULL, -1);
         g_return_val_if_fail(create_mode != -1 || rec->create_mode != -1, -1);
 
-	if (rec->handle != -1)
-		close(rec->handle);
-
-	rec->handle = open(fname != NULL ? fname : rec->fname,
+	fd = open(fname != NULL ? fname : rec->fname,
 			   O_WRONLY | O_TRUNC | O_CREAT,
 			   create_mode != -1 ? create_mode : rec->create_mode);
-	if (rec->handle == -1)
+	if (fd == -1)
 		return config_error(rec, g_strerror(errno));
 
+	rec->handle = g_io_channel_unix_new(fd);
+	g_io_channel_set_encoding(rec->handle, NULL, NULL);
+	g_io_channel_set_close_on_unref(rec->handle, TRUE);
 	rec->tmp_indent_level = 0;
 	rec->tmp_last_lf = TRUE;
         ret = config_write_block(rec, rec->mainnode, FALSE, TRUE);
@@ -334,8 +323,8 @@ int config_write(CONFIG_REC *rec, const char *fname, int create_mode)
 		config_error(rec, errno == 0 ? "bug" : g_strerror(errno));
 	}
 
-	close(rec->handle);
-	rec->handle = -1;
+	g_io_channel_unref(rec->handle);
+	rec->handle = NULL;
 
 	return ret;
 }

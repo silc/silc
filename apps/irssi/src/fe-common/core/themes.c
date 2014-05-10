@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -1144,7 +1144,7 @@ static void theme_save(THEME_REC *theme, int save_all)
         if (config != NULL)
                 config_parse(config);
         else {
-                if (g_strcasecmp(theme->name, "default") == 0) {
+                if (g_ascii_strcasecmp(theme->name, "default") == 0) {
                         config = config_open(NULL, -1);
                         config_parse_data(config, default_theme, "internal");
                         config_change_file_name(config, theme->path, 0660);
@@ -1339,6 +1339,8 @@ static THEME_REC *read_internal_theme(void)
 	THEME_REC *theme;
 
 	theme = theme_create("internal", "_internal");
+	theme->refcount++;
+	theme_destroy(theme);
 
 	config = config_open(NULL, -1);
 	config_parse_data(config, default_theme, "internal");
@@ -1359,7 +1361,6 @@ void themes_init(void)
         init_finished = FALSE;
         init_errors = NULL;
 
-	themes = NULL;
 	themes_reload();
 
 	command_bind("format", NULL, (SIGNAL_FUNC) cmd_format);

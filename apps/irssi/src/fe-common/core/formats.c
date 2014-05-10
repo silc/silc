@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -31,11 +31,8 @@
 #include "window-items.h"
 #include "formats.h"
 #include "themes.h"
-#include "translation.h"
-#ifdef HAVE_GLIB2
 #include "recode.h"
 #include "utf8.h"
-#endif
 
 static const char *format_backs = "04261537";
 static const char *format_fores = "kbgcrmyw";
@@ -84,22 +81,6 @@ static void format_expand_code(const char **format, GString *out, int *flags)
 		else if (**format == '-')
 			set = FALSE;
 		else switch (**format) {
-		case 'i':
-			/* indent function */
-			(*format)++;
-			if (**format == '=')
-				(*format)++;
-
-			g_string_append_c(out, 4);
-			g_string_append_c(out, FORMAT_STYLE_INDENT_FUNC);
-			while (**format != ']' && **format != '\0' &&
-			       **format != ',') {
-				g_string_append_c(out, **format);
-				(*format)++;
-			}
-			g_string_append_c(out, ',');
-			(*format)--;
-			break;
 		case 's':
 		case 'S':
 			*flags |= !set ? PRINT_FLAG_UNSET_LINE_START :
@@ -299,7 +280,7 @@ void format_create_dest_tag(TEXT_DEST_REC *dest, void *server,
 	dest->window = window != NULL ? window :
 		window_find_closest(server, target, level);
 }
-#ifdef HAVE_GLIB2
+
 static int advance (char const **str, gboolean utf8)
 {
 	if (utf8) {
@@ -308,28 +289,24 @@ static int advance (char const **str, gboolean utf8)
 		c = g_utf8_get_char(*str);
 		*str = g_utf8_next_char(*str);
 
-		return utf8_width(c);
+		return unichar_isprint(c) ? mk_wcwidth(c) : 1;
 	} else {
 		*str += 1;
 
 		return 1;
 	}
 }
-#endif
+
 /* Return length of text part in string (ie. without % codes) */
 int format_get_length(const char *str)
 {
 	GString *tmp;
 	int len;
-#ifdef HAVE_GLIB2
 	gboolean utf8;
-#endif
 
 	g_return_val_if_fail(str != NULL, 0);
 
-#ifdef HAVE_GLIB2
 	utf8 = is_utf8() && g_utf8_validate(str, -1, NULL);
-#endif
 
 	tmp = g_string_new(NULL);
 	len = 0;
@@ -346,12 +323,8 @@ int format_get_length(const char *str)
 			if (*str != '%')
 				len++;
 		}
-#ifdef HAVE_GLIB2
+
 		len += advance(&str, utf8);
-#else
-	  len++;
-		str++;
-#endif
 	}
 
 	g_string_free(tmp, TRUE);
@@ -365,15 +338,13 @@ int format_real_length(const char *str, int len)
 {
 	GString *tmp;
 	const char *start;
-#ifdef HAVE_GLIB2
+	const char *oldstr;
 	gboolean utf8;
-#endif
+
 	g_return_val_if_fail(str != NULL, 0);
 	g_return_val_if_fail(len >= 0, 0);
 
-#ifdef HAVE_GLIB2
 	utf8 = is_utf8() && g_utf8_validate(str, -1, NULL);
-#endif
 
 	start = str;
 	tmp = g_string_new(NULL);
@@ -393,12 +364,10 @@ int format_real_length(const char *str, int len)
 			}
 		}
 
-#ifdef HAVE_GLIB2
+		oldstr = str;
 		len -= advance(&str, utf8);
-#else
-	  len--;
-		str++;
-#endif
+		if (len < 0)
+			str = oldstr;
 	}
 
 	g_string_free(tmp, TRUE);
@@ -843,10 +812,10 @@ static void get_mirc_color(const char **str, int *fg_ret, int *bg_ret)
 		}
 		if (**str == ',') {
 			/* background color */
-			(*str)++;
-			if (!i_isdigit(**str))
+			if (!i_isdigit((*str)[1]))
 				bg = -1;
 			else {
+				(*str)++;
 				bg = **str-'0';
 				(*str)++;
 				if (i_isdigit(**str)) {
@@ -963,8 +932,7 @@ void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 	int fgcolor, bgcolor;
 	int flags;
 
-	theme = dest->window != NULL && dest->window->theme != NULL ?
-		dest->window->theme : current_theme;
+	theme = window_get_theme(dest->window);
 
 	dup = str = g_strdup(text);
 
@@ -977,8 +945,6 @@ void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 				*ptr++ = '\0';
 				break;
 			}
-
-			*ptr = (char) translation_in[(int) (unsigned char) *ptr];
 		}
 
 		if (type == 7) {
@@ -1000,8 +966,12 @@ void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 			flags &= ~(GUI_PRINT_FLAG_INDENT|GUI_PRINT_FLAG_CLRTOEOL);
 		}
 
-		if (type == '\n')
+		if (type == '\n') {
 			format_newline(dest->window);
+			fgcolor = theme->default_color;
+			bgcolor = -1;
+			flags &= GUI_PRINT_FLAG_INDENT|GUI_PRINT_FLAG_MONOSPACE;
+		}
 
 		if (*ptr == '\0')
 			break;
@@ -1043,18 +1013,6 @@ void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 			case FORMAT_STYLE_INDENT:
 				flags |= GUI_PRINT_FLAG_INDENT;
 				break;
-			case FORMAT_STYLE_INDENT_FUNC: {
-				const char *start = ptr;
-				while (*ptr != ',' && *ptr != '\0')
-					ptr++;
-				if (*ptr != '\0') *ptr++ = '\0';
-				ptr--;
-				signal_emit_id(signal_gui_print_text, 6,
-					       dest->window, NULL, NULL,
-					       GINT_TO_POINTER(GUI_PRINT_FLAG_INDENT_FUNC),
-					       start, dest);
-				break;
-			}
 			case FORMAT_STYLE_DEFAULTS:
 				fgcolor = theme->default_color;
 				bgcolor = -1;
@@ -1065,13 +1023,6 @@ void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 			default:
 				if (*ptr != FORMAT_COLOR_NOCHANGE) {
 					fgcolor = (unsigned char) *ptr-'0';
-					if (fgcolor <= 7)
-						flags &= ~GUI_PRINT_FLAG_BOLD;
-					else {
-						/* bold */
-						if (fgcolor != 8) fgcolor -= 8;
-						flags |= GUI_PRINT_FLAG_BOLD;
-					}
 				}
 				if (ptr[1] == '\0')
 					break;
@@ -1079,13 +1030,6 @@ void format_send_to_gui(TEXT_DEST_REC *dest, const char *text)
 				ptr++;
 				if (*ptr != FORMAT_COLOR_NOCHANGE) {
 					bgcolor = *ptr-'0';
-					if (bgcolor <= 7)
-						flags &= ~GUI_PRINT_FLAG_BLINK;
-					else {
-						/* blink */
-						bgcolor -= 8;
-						flags |= GUI_PRINT_FLAG_BLINK;
-					}
 				}
 			}
 			ptr++;

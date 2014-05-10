@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -48,29 +48,13 @@ static time_t config_last_mtime;
 static long config_last_size;
 static unsigned int config_last_checksum;
 
-static SETTINGS_REC *settings_find(const char *key)
-{
-	SETTINGS_REC *rec;
-
-	g_return_val_if_fail(key != NULL, NULL);
-
-	rec = g_hash_table_lookup(settings, key);
-	if (rec == NULL) {
-		g_warning("settings_get_default_str(%s) : "
-			  "unknown setting", key);
-		return NULL;
-	}
-
-	return rec;
-}
-
 static SETTINGS_REC *settings_get(const char *key, SettingType type)
 {
 	SETTINGS_REC *rec;
 
 	g_return_val_if_fail(key != NULL, NULL);
 
-	rec = settings_find(key);
+	rec = g_hash_table_lookup(settings, key);
 	if (rec == NULL) {
 		g_warning("settings_get(%s) : not found", key);
 		return NULL;
@@ -150,7 +134,7 @@ int settings_get_level(const char *key)
 	const char *str;
 
 	str = settings_get_str_type(key, SETTING_TYPE_LEVEL);
-	return str == NULL ? 0 : level2bits(str);
+	return str == NULL ? 0 : level2bits(str, NULL);
 }
 
 int settings_get_size(const char *key)
@@ -162,6 +146,27 @@ int settings_get_size(const char *key)
 	if (str != NULL && !parse_size(str, &bytes))
 		g_warning("settings_get_size(%s) : Invalid size '%s'", key, str);
 	return str == NULL ? 0 : bytes;
+}
+
+char *settings_get_print(SETTINGS_REC *rec)
+{
+	char *value = NULL;
+
+	switch(rec->type) {
+	case SETTING_TYPE_BOOLEAN:
+		value = g_strdup(settings_get_bool(rec->key) ? "ON" : "OFF");
+		break;
+	case SETTING_TYPE_INT:
+		value = g_strdup_printf("%d", settings_get_int(rec->key));
+		break;
+	case SETTING_TYPE_STRING:
+	case SETTING_TYPE_TIME:
+	case SETTING_TYPE_LEVEL:
+	case SETTING_TYPE_SIZE:
+		value = g_strdup(settings_get_str(rec->key));
+		break;
+	}
+	return value;
 }
 
 static void settings_add(const char *module, const char *section,
@@ -181,8 +186,10 @@ static void settings_add(const char *module, const char *section,
 				  "setting '%s' with different type.", key);
 			return;
 		}
+		rec->refcount++;
 	} else {
 		rec = g_new(SETTINGS_REC, 1);
+		rec->refcount = 1;
 		rec->module = g_strdup(module);
 		rec->key = g_strdup(key);
 		rec->section = g_strdup(section);
@@ -191,8 +198,6 @@ static void settings_add(const char *module, const char *section,
 		rec->default_value = *default_value;
 		g_hash_table_insert(settings, rec->key, rec);
 	}
-
-        rec->refcount++;
 }
 
 void settings_add_str_module(const char *module, const char *section,
@@ -350,6 +355,12 @@ int settings_set_time(const char *key, const char *value)
 
 int settings_set_level(const char *key, const char *value)
 {
+	int iserror;
+
+	(void)level2bits(value, &iserror);
+	if (iserror)
+		return FALSE;
+
         iconfig_node_set_str(settings_get_node(key), key, value);
 	return TRUE;
 }
@@ -443,15 +454,14 @@ static int backwards_compatibility(const char *module, CONFIG_NODE *node,
 	const char *new_key, *new_module;
 	CONFIG_NODE *new_node;
 	char *new_value;
-	int old_value;
 
 	new_value = NULL; new_key = NULL; new_module = NULL;
 
 	/* fe-text term_type -> fe-common/core term_charset - for 0.8.10-> */
 	if (strcmp(module, "fe-text") == 0) {
-		if (strcasecmp(node->key, "term_type") == 0 ||
+		if (g_ascii_strcasecmp(node->key, "term_type") == 0 ||
 		    /* kludge for cvs-version where term_charset was in fe-text */
-		    strcasecmp(node->key, "term_charset") == 0) {
+		    g_ascii_strcasecmp(node->key, "term_charset") == 0) {
 			new_module = "fe-common/core";
 			new_key = "term_charset";
 			new_value = !is_valid_charset(node->value) ? NULL :
@@ -468,53 +478,13 @@ static int backwards_compatibility(const char *module, CONFIG_NODE *node,
 			g_free(new_value);
 			config_changed = TRUE;
 			return new_key != NULL;
+		} else if (g_ascii_strcasecmp(node->key, "actlist_moves") == 0 &&
+			   node->value != NULL && g_ascii_strcasecmp(node->value, "yes") == 0) {
+			config_node_set_str(mainconfig, parent, "actlist_sort", "recent");
+			config_node_set_str(mainconfig, parent, node->key, NULL);
+			config_changed = TRUE;
+			return TRUE;
 		}
-	}
-	new_value = NULL, new_key = NULL;
-	/* FIXME: remove later - for 0.8.6 -> */
-	if (node->value == NULL || !is_numeric(node->value, '\0'))
-		return FALSE;
-
-	old_value = atoi(node->value);
-
-	if (strcmp(module, "fe-text") == 0) {
-		if (strcasecmp(node->key, "lag_min_show") == 0)
-			new_value = g_strdup_printf("%dms", old_value*10);
-		else if (strcasecmp(node->key, "scrollback_hours") == 0) {
-			new_value = g_strdup_printf("%dh", old_value);
-			new_key = "scrollback_time";
-		}
-	} else if (strcmp(module, "irc/core") == 0) {
-		if (strcasecmp(node->key, "cmd_queue_speed") == 0)
-			new_value = g_strdup_printf("%dms", old_value);
-	} else if (strcmp(module, "irc/dcc") == 0) {
-		if (strcasecmp(node->key, "dcc_autoget_max_size") == 0)
-			new_value = g_strdup_printf("%dk", old_value);
-	} else if (strcmp(module, "irc/notify") == 0) {
-		if (strcasecmp(node->key, "notify_idle_time") == 0)
-			new_value = g_strdup_printf("%dmin", old_value);
-	} else if (strcmp(module, "core") == 0) {
-		if (strcasecmp(node->key, "write_buffer_mins") == 0) {
-			new_value = g_strdup_printf("%dmin", old_value);
-			new_key = "write_buffer_timeout";
-		} else if (strcasecmp(node->key, "write_buffer_kb") == 0) {
-			new_value = g_strdup_printf("%dk", old_value);
-			new_key = "write_buffer_size";
-		}
-	}
-
-	if (new_key != NULL || new_value != NULL) {
-		config_node_set_str(mainconfig, parent,
-				    new_key != NULL ? new_key : node->key,
-				    new_value != NULL ?
-				    new_value : node->value);
-		if (new_key != NULL) {
-			/* remove old */
-			config_node_set_str(mainconfig, parent,
-					    node->key, NULL);
-		}
-		config_changed = TRUE;
-		g_free(new_value);
 	}
 	return new_key != NULL;
 }
@@ -536,7 +506,7 @@ void settings_check_module(const char *module)
 	if (node == NULL) return;
 
         errors = g_string_new(NULL);
-	g_string_sprintf(errors, "Unknown settings in configuration "
+	g_string_printf(errors, "Unknown settings in configuration "
 			 "file for module %s:", module);
 
         count = 0;
@@ -551,7 +521,7 @@ void settings_check_module(const char *module)
 			continue;
 
 		if (set == NULL || strcmp(set->module, module) != 0) {
-			g_string_sprintfa(errors, " %s", node->key);
+			g_string_append_printf(errors, " %s", node->key);
                         count++;
 		}
 	}
@@ -578,7 +548,10 @@ void settings_check_module(const char *module)
 
 static int settings_compare(SETTINGS_REC *v1, SETTINGS_REC *v2)
 {
-	return strcmp(v1->section, v2->section);
+	int cmp = strcmp(v1->section, v2->section);
+	if (!cmp)
+		cmp = strcmp(v1->key, v2->key);
+	return cmp;
 }
 
 static void settings_hash_get(const char *key, SETTINGS_REC *rec,

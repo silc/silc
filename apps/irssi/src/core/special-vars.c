@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -87,27 +87,12 @@ static char *get_argument(char **cmd, char **arglist)
 	return ret;
 }
 
-static char *get_internal_setting(const char *key, int type, int *free_ret)
-{
-	switch (type) {
-	case SETTING_TYPE_BOOLEAN:
-		return settings_get_bool(key) ? "yes" : "no";
-	case SETTING_TYPE_INT:
-		*free_ret = TRUE;
-		return g_strdup_printf("%d", settings_get_int(key));
-	case SETTING_TYPE_STRING:
-		return (char *) settings_get_str(key);
-	}
-
-	return NULL;
-}
-
 static char *get_long_variable_value(const char *key, SERVER_REC *server,
 				     void *item, int *free_ret)
 {
 	EXPANDO_FUNC func;
 	const char *ret;
-	int type;
+	SETTINGS_REC *rec;
 
 	*free_ret = FALSE;
 
@@ -119,9 +104,11 @@ static char *get_long_variable_value(const char *key, SERVER_REC *server,
 	}
 
 	/* internal setting? */
-	type = settings_get_type(key);
-	if (type != -1)
-		return get_internal_setting(key, type, free_ret);
+	rec = settings_get_record(key);
+	if (rec != NULL) {
+		*free_ret = TRUE;
+		return settings_get_print(rec);
+	}
 
 	/* environment variable? */
 	ret = g_getenv(key);
@@ -365,8 +352,8 @@ char *parse_special(char **cmd, SERVER_REC *server, void *item,
 	static char **nested_orig_cmd = NULL; /* FIXME: KLUDGE! */
 	char command, *value;
 
-	char align_pad;
-	int align, align_flags;
+	char align_pad = '\0';
+	int align = 0, align_flags = 0;
 
 	char *nest_value;
 	int brackets, nest_free;
@@ -464,7 +451,7 @@ char *parse_special(char **cmd, SERVER_REC *server, void *item,
 static void gstring_append_escaped(GString *str, const char *text, int flags)
 {
 	char esc[4], *escpos;
-	
+
 	escpos = esc;
 	if (flags & PARSE_FLAG_ESCAPE_VARS)
 		*escpos++ = '%';
@@ -478,7 +465,7 @@ static void gstring_append_escaped(GString *str, const char *text, int flags)
 		return;
 	}
 
-	*escpos = '\0';	
+	*escpos = '\0';
 	while (*text != '\0') {
 		for (escpos = esc; *escpos != '\0'; escpos++) {
 			if (*text == *escpos) {

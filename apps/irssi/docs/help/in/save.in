@@ -1,6 +1,10 @@
 
 @SYNTAX:save@
 
-Saves the current configuration.
+     -formats: Save all /FORMATs into theme file
 
-See also: RELOAD, LAYOUT
+Saves the current Irssi configuration into the configuration
+file.
+
+See also: RELOAD
+

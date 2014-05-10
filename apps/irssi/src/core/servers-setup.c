@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -31,7 +31,7 @@
 
 GSList *setupservers;
 
-char *old_source_host;
+static char *old_source_host;
 int source_host_ok; /* Use source_host_ip .. */
 IPADDR *source_host_ip4, *source_host_ip6; /* Resolved address */
 
@@ -352,15 +352,6 @@ SERVER_SETUP_REC *server_setup_find(const char *address, int port,
 	return server;
 }
 
-/* Find matching server from setup. Ports must match or NULL is returned. */
-SERVER_SETUP_REC *server_setup_find_port(const char *address, int port)
-{
-	SERVER_SETUP_REC *rec;
-
-	rec = server_setup_find(address, port, NULL);
-	return rec == NULL || rec->port != port ? NULL : rec;
-}
-
 static SERVER_SETUP_REC *server_setup_read(CONFIG_NODE *node)
 {
 	SERVER_SETUP_REC *rec;
@@ -375,14 +366,13 @@ static SERVER_SETUP_REC *server_setup_read(CONFIG_NODE *node)
 		return NULL;
 
 	port = config_node_get_int(node, "port", 0);
-	if (server_setup_find_port(server, port) != NULL) {
-		/* already exists - don't let it get there twice or
-		   server reconnects will screw up! */
+	chatnet = config_node_get_str(node, "chatnet", NULL);
+
+	if (server_setup_find(server, port, chatnet) != NULL) {
 		return NULL;
 	}
 
 	rec = NULL;
-	chatnet = config_node_get_str(node, "chatnet", NULL);
 
 	chatnetrec = chatnet == NULL ? NULL : chatnet_find(chatnet);
 	if (chatnetrec == NULL && chatnet != NULL) {
@@ -399,8 +389,8 @@ static SERVER_SETUP_REC *server_setup_read(CONFIG_NODE *node)
 	rec->type = module_get_uniq_id("SERVER SETUP", 0);
         rec->chat_type = CHAT_PROTOCOL(chatnetrec)->id;
 	rec->chatnet = chatnetrec == NULL ? NULL : g_strdup(chatnetrec->name);
-	rec->family = g_strcasecmp(family, "inet6") == 0 ? AF_INET6 :
-		(g_strcasecmp(family, "inet") == 0 ? AF_INET : 0);
+	rec->family = g_ascii_strcasecmp(family, "inet6") == 0 ? AF_INET6 :
+		(g_ascii_strcasecmp(family, "inet") == 0 ? AF_INET : 0);
 	rec->address = g_strdup(server);
 	rec->password = g_strdup(config_node_get_str(node, "password", NULL));
 	rec->use_ssl = config_node_get_bool(node, "use_ssl", FALSE);
@@ -544,13 +534,6 @@ void servers_setup_init(void)
 	settings_add_str("server", "nick", NULL);
 	settings_add_str("server", "user_name", NULL);
 	settings_add_str("server", "real_name", NULL);
-
-	settings_add_bool("server", "use_ssl", FALSE);
-	settings_add_str("server", "ssl_cert", NULL);
-	settings_add_str("server", "ssl_pkey", NULL);
-	settings_add_bool("server", "ssl_verify", FALSE);
-	settings_add_str("server", "ssl_cafile", NULL);
-	settings_add_str("server", "ssl_cacert", NULL);
 
 	settings_add_bool("proxy", "use_proxy", FALSE);
 	settings_add_str("proxy", "proxy_address", "");

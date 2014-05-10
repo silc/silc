@@ -13,15 +13,16 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
 #include "signals.h"
 #include "commands.h"
 #include "args.h"
+#include "network.h"
 #include "net-sendbuffer.h"
 #include "pidwait.h"
 #include "lib-config/iconfig.h"
@@ -36,54 +37,6 @@ static char *session_file;
 char *irssi_binary = NULL;
 
 static char **session_args;
-
-#ifndef HAVE_GLIB2
-static char *g_find_program_in_path(const char *path)
-{
-	const char *envpath;
-	char **paths, **tmp;
-        char *str;
-	char *result = NULL;
-
-	if (g_path_is_absolute(path)) {
-                /* full path - easy */
-		if(access(path, X_OK) == -1)
-			return NULL;
-		else
-			return g_strdup(path);
-	}
-
-	if (strchr(path, G_DIR_SEPARATOR) != NULL) {
-		/* relative path */
-                str = g_get_current_dir();
-		result = g_strconcat(str, G_DIR_SEPARATOR_S, path, NULL);
-		g_free(str);
-		if (access(result, X_OK) == -1) {
-			g_free(result);
-			return NULL;
-		}
-		else
-			return result;
-	}
-
-	/* we'll need to find it from path. */
-	envpath = g_getenv("PATH");
-	if (envpath == NULL) return NULL;
-
-	paths = g_strsplit(envpath, ":", -1);
-	for (tmp = paths; *tmp != NULL; tmp++) {
-                str = g_strconcat(*tmp, G_DIR_SEPARATOR_S, path, NULL);
-		if (access(str, X_OK) == 0) {
-			result = str;
-                        break;
-		}
-                g_free(str);
-	}
-	g_strfreev(paths);
-
-	return result;
-}
-#endif
 
 void session_set_binary(const char *path)
 {
@@ -139,17 +92,14 @@ static void cmd_upgrade(const char *data)
 static void session_save_nick(CHANNEL_REC *channel, NICK_REC *nick,
 			      CONFIG_REC *config, CONFIG_NODE *node)
 {
-	static char other[2];
 	node = config_node_section(node, NULL, NODE_TYPE_BLOCK);
 
 	config_node_set_str(config, node, "nick", nick->nick);
 	config_node_set_bool(config, node, "op", nick->op);
 	config_node_set_bool(config, node, "halfop", nick->halfop);
 	config_node_set_bool(config, node, "voice", nick->voice);
-	
-	other[0] = nick->other;
-	other[1] = '\0';
-	config_node_set_str(config, node, "other", other);
+
+	config_node_set_str(config, node, "prefixes", nick->prefixes);
 
 	signal_emit("session save nick", 4, channel, nick, config, node);
 }
@@ -310,10 +260,10 @@ static void session_restore_server(CONFIG_NODE *node)
 				  chatnet, password, nick);
 	if (conn != NULL) {
 		conn->reconnection = TRUE;
-		conn->connect_handle = g_io_channel_unix_new(handle);
+		conn->connect_handle = g_io_channel_new(handle);
 
 		server = proto->server_init_connect(conn);
-		server->version = g_strdup(config_node_get_str(node, "version", NULL));		
+		server->version = g_strdup(config_node_get_str(node, "version", NULL));
 		server->session_reconnect = TRUE;
 		signal_emit("session restore server", 2, server, node);
 
@@ -335,7 +285,7 @@ static void sig_session_save(CONFIG_REC *config)
 	/* save pids */
         str = g_string_new(NULL);
 	for (tmp = pidwait_get_pids(); tmp != NULL; tmp = tmp->next)
-                g_string_sprintfa(str, "%d ", GPOINTER_TO_INT(tmp->data));
+                g_string_append_printf(str, "%d ", GPOINTER_TO_INT(tmp->data));
         config_node_set_str(config, config->mainnode, "pids", str->str);
         g_string_free(str, TRUE);
 }
@@ -377,19 +327,21 @@ static void sig_init_finished(void)
 	config_close(session);
 
 	unlink(session_file);
-	session_file = NULL;
 }
 
-void session_init(void)
+void session_register_options(void)
 {
-	static struct poptOption options[] = {
-		{ "session", 0, POPT_ARG_STRING, &session_file, 0, "Used by /UPGRADE command", "PATH" },
-		{ NULL, '\0', 0, NULL }
+	static GOptionEntry options[] = {
+		{ "session", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &session_file, "Used by /UPGRADE command", "PATH" },
+		{ NULL }
 	};
 
 	session_file = NULL;
 	args_register(options);
+}
 
+void session_init(void)
+{
 	command_bind("upgrade", NULL, (SIGNAL_FUNC) cmd_upgrade);
 
 	signal_add("session save", (SIGNAL_FUNC) sig_session_save);

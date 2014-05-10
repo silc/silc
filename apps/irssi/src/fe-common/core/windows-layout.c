@@ -13,9 +13,9 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "module.h"
@@ -27,6 +27,7 @@
 
 #include "chat-protocols.h"
 #include "servers.h"
+#include "channels.h"
 #include "queries.h"
 
 #include "module-formats.h"
@@ -56,11 +57,11 @@ static void sig_layout_restore_item(WINDOW_REC *window, const char *type,
 	if (name == NULL || tag == NULL)
 		return;
 
-	if (g_strcasecmp(type, "CHANNEL") == 0) {
+	if (g_ascii_strcasecmp(type, "CHANNEL") == 0) {
 		/* bind channel to window */
 		WINDOW_BIND_REC *rec = window_bind_add(window, tag, name);
                 rec->sticky = TRUE;
-	} else if (g_strcasecmp(type, "QUERY") == 0 && chat_type != NULL) {
+	} else if (g_ascii_strcasecmp(type, "QUERY") == 0 && chat_type != NULL) {
 		CHAT_PROTOCOL_REC *protocol;
 		/* create query immediately */
 		signal_add("query created",
@@ -133,7 +134,7 @@ static void sig_layout_restore(void)
                 window->immortal = config_node_get_bool(node, "immortal", FALSE);
 		window_set_name(window, config_node_get_str(node, "name", NULL));
 		window_set_history(window, config_node_get_str(node, "history_name", NULL));
-		window_set_level(window, level2bits(config_node_get_str(node, "level", "")));
+		window_set_level(window, level2bits(config_node_get_str(node, "level", ""), NULL));
 
 		window->servertag = g_strdup(config_node_get_str(node, "servertag", NULL));
 		window->theme_name = g_strdup(config_node_get_str(node, "theme", NULL));
@@ -151,6 +152,7 @@ static void sig_layout_save_item(WINDOW_REC *window, WI_ITEM_REC *item,
 	CONFIG_NODE *subnode;
         CHAT_PROTOCOL_REC *proto;
 	const char *type;
+	WINDOW_BIND_REC *rec;
 
 	type = module_find_id_str("WINDOW ITEM TYPE", item->type);
 	if (type == NULL)
@@ -165,9 +167,14 @@ static void sig_layout_save_item(WINDOW_REC *window, WI_ITEM_REC *item,
 		iconfig_node_set_str(subnode, "chat_type", proto->name);
 	iconfig_node_set_str(subnode, "name", item->visible_name);
 
-	if (item->server != NULL)
+	if (item->server != NULL) {
 		iconfig_node_set_str(subnode, "tag", item->server->tag);
-	else if (IS_QUERY(item)) {
+		if (IS_CHANNEL(item)) {
+			rec = window_bind_add(window, item->server->tag, item->visible_name);
+			if (rec != NULL)
+				rec->sticky = TRUE;
+		}
+	} else if (IS_QUERY(item)) {
 		iconfig_node_set_str(subnode, "tag", QUERY(item)->server_tag);
 	}
 }
@@ -210,6 +217,8 @@ static void window_save(WINDOW_REC *window, CONFIG_NODE *node)
 	if (window->theme_name != NULL)
 		iconfig_node_set_str(node, "theme", window->theme_name);
 
+	while (window->bound_items != NULL)
+		window_bind_destroy(window, window->bound_items->data);
 	if (window->items != NULL)
 		window_save_items(window, node);
 
@@ -219,11 +228,14 @@ static void window_save(WINDOW_REC *window, CONFIG_NODE *node)
 void windows_layout_save(void)
 {
 	CONFIG_NODE *node;
+	GSList *sorted;
 
 	iconfig_set_str(NULL, "windows", NULL);
 	node = iconfig_node_traverse("windows", TRUE);
 
-	g_slist_foreach(windows, (GFunc) window_save, node);
+	sorted = windows_get_sorted();
+	g_slist_foreach(sorted, (GFunc) window_save, node);
+	g_slist_free(sorted);
 	signal_emit("layout save", 0);
 
 	printformat(NULL, NULL, MSGLEVEL_CLIENTNOTICE,
@@ -232,6 +244,14 @@ void windows_layout_save(void)
 
 void windows_layout_reset(void)
 {
+	GSList *tmp;
+
+	for (tmp = windows; tmp != NULL; tmp = tmp->next) {
+		WINDOW_REC *window = tmp->data;
+		while (window->bound_items != NULL)
+			window_bind_destroy(window, window->bound_items->data);
+	}
+
 	iconfig_set_str(NULL, "windows", NULL);
 	signal_emit("layout reset", 0);
 
