@@ -2572,6 +2572,9 @@ silc_verify_public_key_internal(SilcClient client, SilcClientConnection conn,
   fingerprint = silc_hash_fingerprint(NULL, pk, pk_len);
   babbleprint = silc_hash_babbleprint(NULL, pk, pk_len);
 
+  if (!name && conn->context_type == SILC_ID_CLIENT)
+    name = conn->client_entry->nickname;
+
   verify = silc_calloc(1, sizeof(*verify));
   verify->client = client;
   verify->conn = conn;
