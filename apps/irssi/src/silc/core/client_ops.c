@@ -1434,15 +1434,8 @@ void silc_getkey_cb(SilcBool success, void *context)
   silc_pubkey = silc_pkcs_get_context(SILC_PKCS_SILC, public_key);
 
   if (success) {
-    if (getkey->id_type == SILC_ID_CLIENT)
-      printformat_module("fe-common/silc", NULL, NULL,
-			 MSGLEVEL_CRAP, SILCTXT_PUBKEY_VERIFIED_CLIENT,
-			 name,
-			 silc_pubkey->identifier.realname ?
-			 silc_pubkey->identifier.realname : "",
-			 silc_pubkey->identifier.email ?
-			 silc_pubkey->identifier.email : "");
-    else
+    /* Client's verification notice was showed in verify_internal() */
+    if (getkey->id_type != SILC_ID_CLIENT)
       printformat_module("fe-common/silc", NULL, NULL,
 			 MSGLEVEL_CRAP, SILCTXT_PUBKEY_VERIFIED,
 			 entity, name);
