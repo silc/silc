@@ -232,9 +232,9 @@ struct SilcClientConnectionStruct {
   void *callback_context;	       /* Connection context */
   SilcClient client;		       /* Pointer back to SilcClient */
 
-  /* Current say() operation associated context, identifies the client,
-     channel or server the message is related to.  Application can use
-     this information to target the message better. */
+  /* Current say() or verify_public_key() operation associated context,
+     identifies the client, channel or server the operation is related to.
+     Application can use this information to target the operation better. */
   union {
     SilcClientEntry client_entry;
     SilcChannelEntry channel_entry;
@@ -519,8 +519,9 @@ typedef struct SilcClientOperationsStruct {
      The application can for example filter the message according the
      type.  The variable argument list is arguments to the formatted
      message `msg'.  A SilcClientEntry, SilcChannelEntry or SilcServerEntry
-     can be associated with the message inside the `conn' by the library,
-     and application may use it to better target the message. */
+     can be associated with the message inside the SilcClientConnection
+     by the library, and application may use it to better target the
+     message. */
   void (*say)(SilcClient client, SilcClientConnection conn,
 	      SilcClientMessageType type, char *msg, ...);
 
@@ -603,7 +604,9 @@ typedef struct SilcClientOperationsStruct {
      entity (server or client) has sent the public key. If user decides to
      trust the key the application may save the key as trusted public key for
      later use. The `completion' must be called after the public key has
-     been verified. */
+     been verified.  A SilcClientEntry or SilcServerEntry can be associated
+     with this request inside the SilcClientConnection by the library, and
+     application may use it to better target the verification request. */
   void (*verify_public_key)(SilcClient client, SilcClientConnection conn,
 			    SilcConnectionType conn_type,
 			    SilcPublicKey public_key,

@@ -1006,12 +1006,17 @@ silc_client_autoneg_key_verify_pubkey(SilcSKE ske,
   verify->context = ake;
   ake->verify = verify;
 
+  conn->context_type = SILC_ID_CLIENT;
+  conn->client_entry = client_entry;
+
   /* Verify public key in application */
   client->internal->ops->verify_public_key(
 				client, conn,
 				SILC_CONN_CLIENT, ake->public_key,
 				silc_client_autoneg_key_verify_pubkey_cb,
 				verify);
+
+  conn->context_type = SILC_ID_NONE;
 }
 
 /* Key exchange protocol completion callback */
