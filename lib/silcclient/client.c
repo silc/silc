@@ -1020,18 +1020,18 @@ SilcBool silc_client_init(SilcClient client, const char *username,
   if (!silc_identifier_verify(username, strlen(username),
 			      SILC_STRING_UTF8, 128)) {
     SILC_LOG_ERROR(("Malformed username '%s'. Username must be UTF-8 string",
-		    client->username));
+		    username));
     return FALSE;
   }
   if (!silc_identifier_verify(hostname, strlen(hostname),
 			      SILC_STRING_UTF8, 256)) {
     SILC_LOG_ERROR(("Malformed hostname '%s'. Hostname must be UTF-8 string",
-		    client->hostname));
+		    hostname));
     return FALSE;
   }
   if (!silc_utf8_valid(realname, strlen(realname))) {
     SILC_LOG_ERROR(("Malformed realname '%s'. Realname must be UTF-8 string",
-		    client->realname));
+		    realname));
     return FALSE;
   }
 
