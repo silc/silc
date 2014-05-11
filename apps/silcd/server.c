@@ -3926,6 +3926,8 @@ SILC_TASK_CALLBACK(silc_server_channel_key_rekey)
   SilcServer server = app_context;
   SilcServerChannelRekey rekey = (SilcServerChannelRekey)context;
 
+  SILC_LOG_DEBUG(("Channel %s rekey", rekey->channel->channel_name));
+
   rekey->task = NULL;
 
   /* Return now if we are shutting down */

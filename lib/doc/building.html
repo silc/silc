@@ -150,23 +150,15 @@ doing development with the Toolkit.
 <b><a name="macosx"></a>Building on Mac OS X</b>
 
 <br />&nbsp;<br />
-Building the Toolkit on Mac OS X is almost identical on compiling on Unix
-system.  The reason for this is that the Mac OS X is Unix based operating
-system.  To build the Toolkit on Mac OS X, give the following commands:
+Building the Toolkit on Mac OS X requires the following tools:
 
 <br />&nbsp;<br />
-<tt>
-setenv CFLAGS -no-cpp-precomp<br />
-./configure powerpc<br />
-make
-</tt>
+- Apple Xcode with command line tools<br />
+- NASM >= 2.x
 
 <br />&nbsp;<br />
-The ./configure can take several options as arguments.  To see them all give
-command:
-
-<br />&nbsp;<br />
-<tt>./configure --help</tt>
+For actual compilation follow the normal building instructions for
+Unix and Linux based systems.
 
 <br />&nbsp;<br />
 If you do not want to compile the applications, or they do not compile on
