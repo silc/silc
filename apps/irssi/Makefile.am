@@ -42,7 +42,6 @@ EXTRA_DIST = \
 	$(theme_DATA) \
 	irssi-config.in \
 	irssi-icon.png \
-	irssi-version.sh \
 	syntax.pl \
 	Makefile.defines.in \
 	Makefile.defines_int.in
