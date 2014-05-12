@@ -4,7 +4,7 @@
 
   Author: Pekka Riikonen <priikone@silcnet.org>
 
-  Copyright (C) 2001 - 2007 Pekka Riikonen
+  Copyright (C) 2001 - 2014 Pekka Riikonen
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -576,7 +576,7 @@ static gboolean list_ciphers(const gchar *option_name, const gchar *value,
   silc_cipher_register_default();
   silc_client_list_ciphers();
   exit(0);
-  return true;
+  return TRUE;
 }
 
 static gboolean list_hash_funcs(const gchar *option_name, const gchar *value,
@@ -585,7 +585,7 @@ static gboolean list_hash_funcs(const gchar *option_name, const gchar *value,
   silc_hash_register_default();
   silc_client_list_hash_funcs();
   exit(0);
-  return true;
+  return TRUE;
 }
 
 static gboolean list_hmacs(const gchar *option_name, const gchar *value,
@@ -594,7 +594,7 @@ static gboolean list_hmacs(const gchar *option_name, const gchar *value,
   silc_hmac_register_default();
   silc_client_list_hmacs();
   exit(0);
-  return true;
+  return TRUE;
 }
 
 static gboolean list_pkcs(const gchar *option_name, const gchar *value,
@@ -603,7 +603,7 @@ static gboolean list_pkcs(const gchar *option_name, const gchar *value,
   silc_pkcs_register_default();
   silc_client_list_pkcs();
   exit(0);
-  return true;
+  return TRUE;
 }
 
 #ifdef SILC_DEBUG
@@ -618,7 +618,7 @@ static gboolean enable_debug(const gchar *option_name, const gchar *value,
   silc_log_debug(TRUE);
   silc_log_debug_hexdump(TRUE);
   silc_log_set_debug_string((char *)value);
-  return true;
+  return TRUE;
 }
 #else
 static gboolean enable_debug(const gchar *option_name, const gchar *value,
@@ -628,7 +628,7 @@ static gboolean enable_debug(const gchar *option_name, const gchar *value,
 	  "Run-time debugging is not enabled. To enable it recompile\n"
 	  "the client with --enable-debug configuration option.\n");
   sleep(1);
-  return true;
+  return TRUE;
 }
 #endif /* SILC_DEBUG */
 
@@ -642,7 +642,7 @@ static gboolean create_keypair(const gchar *option_name, const gchar *value,
   silc_create_key_pair(opt_pkcs, opt_bits, NULL, NULL, NULL, NULL,
 		       NULL, NULL, TRUE);
   exit(0);
-  return true;
+  return TRUE;
 }
 
 static gboolean change_passphrase(const gchar *option_name, const gchar *value,
@@ -654,7 +654,7 @@ static gboolean change_passphrase(const gchar *option_name, const gchar *value,
   silc_hmac_register_default();
   silc_change_private_key_passphrase((char *)value, NULL, NULL);
   exit(0);
-  return true;
+  return TRUE;
 }
 
 static gboolean show_key(const gchar *option_name, const gchar *value,
@@ -666,7 +666,7 @@ static gboolean show_key(const gchar *option_name, const gchar *value,
   silc_hmac_register_default();
   silc_show_public_key_file((char *)value);
   exit(0);
-  return true;
+  return TRUE;
 }
 #endif /* !SILC_PLUGIN */
 
