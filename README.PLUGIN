@@ -1,18 +1,68 @@
-In order to compile the SILC Plugin (instead of the SILC Client), pass the
-following options to configure, if your Irssi is installed into /usr:
+Compiling SILC Plugin for Irssi
+===============================
+
+In order to compile the SILC Plugin (instead of the SILC Client), pass 
+the following options to configure, if your Irssi is installed into
+/usr/bin/irssi and /usrlib/irssi:
 
 	--prefix=/usr
 	--with-silc-plugin
 	--without-silc-includes
+	--enable-shared
 
-If your Irssi is installed in some other location than /usr, then pass its
-location to --prefix and --with-silc-plugin, for example:
+If your Irssi is installed in some other location than /usr/lib, then 
+pass its location to --prefix and --with-silc-plugin, for example:
 
 	--prefix=/usr/local
 	--with-silc-plugin=/usr/local/lib/irssi
 	--without-silc-includes
+	--enable-shared
 
-Depending on your OS/architecture you may also need to pass the following
-options to configure:
+On some Linux systems Irssi libs may actually be in /usr/lib64/irssi.
+In that case pass that path as argument to --with-silc-plugin.
 
-	--with-pic --without-pthreads
+Depending on your OS/architecture you may also need to pass the 
+following options to configure:
+
+	--with-pic
+	--without-pthreads
+
+
+Using SILC Plugin with Irssi
+============================
+
+After you have compiled and installed the plugin, you can load the 
+plugin in Irssi using:
+
+        /LOAD silc
+
+You can configure the SILC plugin run time with the /SILC command.  See
+the help with:
+
+        /HELP silc/silc
+
+To list all SILC commands available, use normal /HELP command.  To get 
+help about specific SILC command, use (replace <command> with the command 
+of your choice):
+
+        /HELP silc/<command>
+
+For a more detailed help on SILC commands or some FAQs, please refer to 
+the SILCNet homepage. Once you have successfully load the SILC plugin, 
+you can connect to the SILCNet:
+
+        /SERVER silc.silcnet.org
+
+or,
+
+        /CONNECT -silcnet SILCNet silc.silcnet.org
+
+You might want to join the channel "silc" then...
+
+        /JOIN -silcnet silc
+
+If you have compiled Irssi with perl support, you should also load the 
+silc and silc-mime scripts:
+
+        /SCRIPT LOAD silc
+        /SCRIPT LOAD silc-mime

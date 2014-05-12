@@ -1414,7 +1414,7 @@ s_includedir=`eval echo $includedir`;s_includedir=`eval echo $s_includedir`
 
 echo ""
 echo "$PACKAGE Configuration Summary:"
-echo "---------------------------"
+echo "-------------------------------------"
 echo " Target host ...................: $target"
 echo " Compiler ......................: $CC"
 echo " CFLAGS ........................: $CFLAGS"

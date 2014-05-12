@@ -1,6 +1,6 @@
 SUBDIRS = examples
 
-PLUGIN_SCR = silc.pl
+PLUGIN_SCR = silc.pl silc-mime.pl
 
 if SILCPLUGIN
 scriptdir = $(datadir)/irssi/scripts
