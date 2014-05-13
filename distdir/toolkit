@@ -19,7 +19,6 @@ define SILC_DIST_HTTP
 define SILC_DIST_SIM
 
 # Includes
-include README.CVS
 include README.WIN32
 include README.MACOSX
 include README.SYMBIAN
