@@ -162,7 +162,7 @@ FORMAT_REC fecommon_silc_formats[] = {
 	{ "pubkey_mitm_attack", "It is also possible that someone is performing a man-in-the-middle attack", 0 },
 	{ "pubkey_notkey", "Server did not return any public key", 0 },
 	{ "pubkey_verified", "Verified successfully server {hilight $0} cached public key", 1, { 0 } },
-	{ "pubkey_verified_client", "Verified successfully user {hilight $0}'s ($1 $2) cached public key", 3, { 0, 0, 0 } },
+	{ "pubkey_verified_client", "Verified successfully {hilight $0}'s ($1 $2) cached public key", 3, { 0, 0, 0 } },
 	{ "pubkey_notverified", "Could not verify $0 {hilight $1}'s public key", 2, { 0, 0 } },
 
 	/* Misc messages */
