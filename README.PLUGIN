@@ -3,7 +3,7 @@ Compiling SILC Plugin for Irssi
 
 In order to compile the SILC Plugin (instead of the SILC Client), pass 
 the following options to configure, if your Irssi is installed into
-/usr/bin/irssi and /usrlib/irssi:
+/usr/bin/irssi and /usr/lib/irssi:
 
 	--prefix=/usr
 	--with-silc-plugin
