@@ -1,0 +1,63 @@
+Compiling SILC from GIT Tree
+============================
+
+The GIT tree must be prepared for compilation with Autodist.  You can
+download the latest version of Autodist from:
+
+	http://autodist.silc.fi
+
+
+Preparing SILC Client
+=====================
+
+To prepare SILC Client distribution for compilation give the following
+command:
+
+	autodist client
+
+Then configure and compile:
+
+	./configure
+	make
+
+
+Preparing SILC Server
+=====================
+
+To prepare SILC Server distribution for compilation give the following
+command:
+
+	autodist server
+
+Then configure and compile:
+
+	./configure
+	make
+
+
+Preparing SILC Server
+=====================
+
+To prepare SILC Toolkit distribution for compilation give the following
+command:
+
+	autodist toolkit
+
+Then configure and compile:
+
+	./configure
+	make
+
+
+Preparing any distribution
+==========================
+
+To compile so called INLINE version of the SILC sources give the following
+command:
+
+	autodist
+
+Then configure and compile:
+
+	./configure
+	make
