@@ -117,17 +117,26 @@ static void silc_log_checksize(SilcLog log)
 	  silc_time_string(0), log->typename,
 	  (unsigned long)log->maxsize / 1024);
   fflush(log->fp);
-  fclose(log->fp);
 
   memset(newname, 0, sizeof(newname));
   silc_snprintf(newname, sizeof(newname) - 1, "%s.old", log->filename);
   unlink(newname);
-  rename(log->filename, newname);
+  if (rename(log->filename, newname)) {
+    fprintf(log->fp,
+	    "[%s] [%s] Couldn't recycle log file '%s' for type '%s': %s",
+	    silc_time_string(0), log->typename,
+	    log->filename, log->typename, strerror(errno));
+    log->maxsize = 0;
+    return;
+  }
 
+  fclose(log->fp);
   log->fp = fopen(log->filename, "w");
-  if (!log->fp)
+  if (!log->fp) {
     SILC_LOG_WARNING(("Couldn't reopen log file '%s' for type '%s': %s",
 		      log->filename, log->typename, strerror(errno)));
+    log->maxsize = 0;
+  }
 #ifdef HAVE_CHMOD
   chmod(log->filename, 0600);
 #endif /* HAVE_CHMOD */
