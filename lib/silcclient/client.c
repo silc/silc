@@ -604,7 +604,7 @@ silc_client_add_connection(SilcClient client,
   SilcClientConnection conn;
   SilcFSMThread thread;
 
-  if (!callback)
+  if (!client || !callback || !remote_host)
     return NULL;
 
   SILC_LOG_DEBUG(("Adding new connection to %s:%d", remote_host, port));
@@ -624,6 +624,7 @@ silc_client_add_connection(SilcClient client,
 
   conn->internal = silc_calloc(1, sizeof(*conn->internal));
   if (!conn->internal) {
+    silc_free(conn->remote_host);
     silc_free(conn);
     return NULL;
   }
@@ -632,8 +633,9 @@ silc_client_add_connection(SilcClient client,
   silc_atomic_init16(&conn->internal->cmd_ident, 0);
 
   if (!silc_hash_alloc("sha1", &conn->internal->sha1hash)) {
-    silc_free(conn);
+    silc_free(conn->remote_host);
     silc_free(conn->internal);
+    silc_free(conn);
     return NULL;
   }
 
