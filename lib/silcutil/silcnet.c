@@ -447,8 +447,11 @@ SilcBool silc_net_check_host_by_sock(SilcSocket sock, char **hostname,
     if (!ip || !silc_net_gethostbyaddr(*ip, host, sizeof(host)))
       return FALSE;
 
+    SILC_LOG_DEBUG(("Resolved hostname `%s'", host));
+
     *hostname = silc_memdup(host, strlen(host));
-    SILC_LOG_DEBUG(("Resolved hostname `%s'", *hostname));
+    if (!(*hostname))
+      return FALSE;
 
     /* Reverse */
     if (!silc_net_gethostbyname(*hostname, TRUE, host, sizeof(host)))
@@ -533,8 +536,11 @@ SilcBool silc_net_check_local_by_sock(SilcSocket sock, char **hostname,
     if (!ip || !silc_net_gethostbyaddr(*ip, host, sizeof(host)))
       return FALSE;
 
+    SILC_LOG_DEBUG(("Resolved hostname `%s'", host));
+
     *hostname = silc_memdup(host, strlen(host));
-    SILC_LOG_DEBUG(("Resolved hostname `%s'", *hostname));
+    if (!(*hostname))
+      return FALSE;
 
     /* Reverse */
     if (!silc_net_gethostbyname(*hostname, TRUE, host, sizeof(host)))
