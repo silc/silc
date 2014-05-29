@@ -363,9 +363,10 @@ int silc_client_load_keys(SilcClient client)
   ret = silc_load_key_pair(pub, prv, "", &irssi_pubkey, &irssi_privkey);
   if (!ret)
     ret = silc_load_key_pair(pub, prv, NULL, &irssi_pubkey, &irssi_privkey);
-
-  if (!ret)
+  if (!ret) {
     SILC_LOG_ERROR(("Could not load key pair"));
+    return ret;
+  }
 
   if (silc_pkcs_private_key_get_len(irssi_privkey) < 4096) {
     fprintf(stdout,
