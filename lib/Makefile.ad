@@ -141,7 +141,7 @@ LIBSILC_REVISION=@LIBSILC_REVISION@
 LIBSILC_AGE=@LIBSILC_AGE@
 
 libsilc.a:
-	find $(SILCLIB_DIRS) -type f -name *.lo | xargs \
+	find $(SILCLIB_DIRS) -type f -name *.lo | LC_ALL=C sort | xargs \
 	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) $(SILC_LINK_LIBS) \
 	$(LIBTOOL_SILC_VERSION) \
 	$(LIBTOOL_OPTS) -o libsilc.la
@@ -152,7 +152,7 @@ LIBSILCCLIENT_REVISION=@LIBSILCCLIENT_REVISION@
 LIBSILCCLIENT_AGE=@LIBSILCCLIENT_AGE@
 
 libsilcclient.a: libsilc.a
-	find $(SILCCLIENTLIB_DIRS) -type f -name *.lo | xargs \
+	find $(SILCCLIENTLIB_DIRS) -type f -name *.lo | LC_ALL=C sort | xargs \
 	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) \
 	$(SILCCLIENT_LINK_LIBS) $(LIBTOOL_SILCCLIENT_VERSION) \
 	$(LIBTOOL_OPTS) -o libsilcclient.la
@@ -164,7 +164,7 @@ LIBSILCSERVER_REVISION=@LIBSILCSERVER_REVISION@
 LIBSILCSERVER_AGE=@LIBSILCSERVER_AGE@
 
 libsilcserver.a:
-	find $(SILCSERVERLIB_DIRS) -type f -name *.lo | xargs \
+	find $(SILCSERVERLIB_DIRS) -type f -name *.lo | LC_ALL=C sort | xargs \
 	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) $(SILCSERVER_LIBS) \
 	$(LIBTOOL_SILCSERVER_VERSION) \
 	$(LIBTOOL_OPTS) -o libsilcserver.la
